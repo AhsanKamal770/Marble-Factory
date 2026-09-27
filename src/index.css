@@ -2,15 +2,16 @@
 
 :root {
   /* Default: Modern Crisp White + Royal/Navy Blue Theme */
-  --bg-primary: #f8fafc;
+  --bg-primary: #F6F8FB;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --bg-card-hover: #f1f5f9;
+  --bg-card-hover: #f8fafc;
   --bg-card-header: #ffffff;
   --bg-input: #ffffff;
   
-  --border-color: #e2e8f0;
-  --border-subtle: #f1f5f9;
+  --border-color: #DCE3EC;
+  --border-divider: #E5EAF0;
+  --border-subtle: #E5EAF0;
   --border-focus: #2563eb;
   --border-gold: #2563eb;
 
@@ -45,14 +46,15 @@
   --font-urdu: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', -apple-system, sans-serif;
 
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.05);
   --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.07);
   --shadow-gold: 0 4px 14px rgba(37, 99, 235, 0.2);
   --shadow-glow: 0 4px 16px rgba(37, 99, 235, 0.2);
 
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
   --radius-full: 9999px;
 }
 
@@ -445,20 +447,21 @@ body {
 }
 
 /* Card & Surface Styles */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+.card, .dash-card {
+  background: var(--bg-card, #ffffff);
+  border: 1px solid var(--border-color, #DCE3EC);
+  border-radius: var(--radius-lg, 14px);
   padding: 22px;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-card, 0 1px 2px rgba(15, 23, 42, 0.04));
   position: relative;
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.card:hover {
+.card:hover, .dash-card:hover {
   border-color: #cbd5e1;
 }
-[data-theme="dark"] .card:hover {
+[data-theme="dark"] .card:hover, [data-theme="dark"] .dash-card:hover {
   border-color: #334155;
 }
 
@@ -466,7 +469,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-divider, #E5EAF0);
 }
 
 .card-title {
@@ -601,6 +606,100 @@ body {
 .btn-lg {
   padding: 12px 24px;
   font-size: 1rem;
+}
+
+/* ==========================================================================
+   HOMOGENEOUS ACTION BUTTON SYSTEM (48px Height, Uniform Radius, #D8E0EA Border)
+   ========================================================================== */
+.action-btn {
+  height: 48px;
+  padding: 0 18px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+  outline: none;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.action-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Secondary Action Button - Crisp White Surface with Visible #D8E0EA Border */
+.action-btn-secondary {
+  background-color: #ffffff;
+  border: 1px solid #D8E0EA;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.action-btn-secondary:hover:not(:disabled) {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.action-btn-secondary:active:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+/* Primary Action Button - Royal Blue Surface with Same Dimensions */
+.action-btn-primary {
+  background-color: #2563eb;
+  border: 1px solid #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.action-btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+
+.action-btn-primary:active:not(:disabled) {
+  background-color: #1e40af;
+  border-color: #1e40af;
+}
+
+/* Action Button Group - Responsive Layout */
+.action-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (max-width: 680px) {
+  .action-group-desktop {
+    display: none !important;
+  }
+  .action-group-mobile {
+    display: flex !important;
+  }
 }
 
 /* Form Controls */

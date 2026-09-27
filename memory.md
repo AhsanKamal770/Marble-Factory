@@ -11,8 +11,8 @@
 
 | Module ID | Module Name | Urdu / Roman Urdu Title | Status | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| **MOD-01** | **Executive Dashboard** | فیکٹری ڈیش بورڈ / Digital Khata & Dashboard | 🟢 Completed | Revamped with B2B SaaS aesthetics, 4-card KPI strip, cash flow progress bar, operational needs attention section, clean Recent Bills table, and centered floating pop-up modals for expenses, wasooli, and drawer reconciliation. |
-| **MOD-02** | **Factory Bill Book / POS** | فیکٹری بل بک و سیلز / Branded Bill Book | 🟢 Completed | Authentic Rana Shahab bill book, customer Khata & carrier dispatch (loader rickshaw), stone Sutar thickness system (4, 6, 9, 14 sutar with Kitchen/Stairs badge), carriage/labour/polish/discount calculations, dual A4 Bill Book replica & 80mm thermal print engine with WhatsApp copy. |
+| **MOD-01** | **Executive Dashboard** | فیکٹری ڈیش بورڈ / Digital Khata & Dashboard | 🟢 Completed | Revamped with B2B SaaS aesthetics, 4-card KPI strip, action button launchpad (+ Rozana Kharch, + Khata Wasooli, Draz Hisab Roznamcha, + Naya Bill), clickable KPI card triggers, operational needs attention section, clean Recent Bills table, and centered floating pop-up modals for expenses, wasooli, and drawer reconciliation. |
+| **MOD-02** | **Factory Bill Book / POS** | فیکٹری بل بک و کاؤنٹر سیل / Bill Book & POS | 🟢 Completed | Redesigned into a quiet, 2-column POS workspace: unnumbered natural sections (Customer, Items, Additional Charges), zero visible keyboard noise, compact line-item cards, focused popups for complexity (Item entry, Delivery, Charges, Discount, Review), and a sticky right settlement panel with live cash drawer impact. |
 | **MOD-03** | **Product & Stone Master** | مصنوعات و ماربل اسٹاک / Marble & Tiles Stock | 🟡 Up Next | 4 Sutar categories (4, 6, 9, 14 sutar), standard cut sizes, flower medallions, borders/patti (RFT), accessories, inventory valuation & reorder triggers. |
 | **MOD-04** | **Rickshaw Gate Pass** | رکشہ گیٹ پاس / Rickshaw Gate Out Pass | ⚪ Planned | Transport slips, driver & vehicle info, manifest, 3-party signatures. |
 | **MOD-05** | **Customer Ledger & History** | گاہک ریکارڈ و کھاتہ / Digital Khata | ⚪ Planned | 360° timeline, Udhar tracking, payment recovery vouchers. |
@@ -69,3 +69,14 @@
     - Added settlement split for carriage, labour loading, edge cutting/polish, and special discounts.
     - Created `BillPrintModal.jsx` supporting authentic A4 Bill Book replica print, 80mm thermal receipts, and 1-click WhatsApp copy.
     - Executed atomic multi-table Dexie transactions updating stock, invoices, customer balances, and payment vouchers.
+  - Completed **Executive Dashboard Lower Area BI & Operational Context**:
+    - **Row 1 Left (Sales & Collection Trend)**: Pure lightweight SVG dual-polyline chart (Sales `#2563eb` vs Wasooli `#059669`) with 3-way horizon filter (`Today`, `This Week`, `This Month`) and real database metrics.
+    - **Row 1 Right (Customer Dues Panel)**: Top overdue customer Khata list with red balance highlights, total overdue tally, and 1-click Quick Wasooli modal pre-fill.
+    - **Row 2 Left (Yard Stock Position)**: Stone category breakdown (Marble Slabs 51%, Tiles 45%, Steps/Granite/Borders 4%) with horizontal percentage progress bars and factory reorder level triggers.
+    - **Row 2 Right (Recent Factory Activity Feed)**: Real-time operational audit timeline compiled from Dexie invoices, customer payment vouchers, and daily factory expenses.
+  - Implemented **Homogeneous Action Button System (`ActionButton.jsx` & `ActionGroup`)**:
+    - Standardized 48px fixed height, 10px uniform border radius, 0 18px horizontal padding, 18px icon dimension, and 8px icon-to-text gap across all 4 top actions.
+    - Clearly defined, high-contrast `#D8E0EA` border on crisp white `#ffffff` background for secondary actions (`+ Rozana Kharch`, `+ Khata Wasooli`, `Draz Hisab (Roznamcha)`).
+    - Preserved visual priority for primary `+ Naya Bill (POS)` in royal blue `#2563eb` with identical physical dimensions.
+    - Fixed "+ + Naya Bill (POS)" double plus bug.
+    - Built responsive `<ActionGroup>` with clean desktop flex row and mobile `<680px` popover fallback (`More actions ▾`).
