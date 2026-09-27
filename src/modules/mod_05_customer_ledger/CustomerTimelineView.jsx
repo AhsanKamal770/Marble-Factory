@@ -1,106 +1,191 @@
-import React from "react";
-import { FileText, Download, CheckCircle, ArrowRight } from "lucide-react";
+import React, { useState } from "react";
+import { Check, MoreVertical, Edit2, FileText } from "lucide-react";
 
-export default function CustomerTimelineView({ customer, timeline }) {
+export default function CustomerTimelineView({ customer, timeline, onOpenEditProfile, onOpenReceivePayment }) {
+  const [showMenu, setShowMenu] = useState(false);
+
   if (!customer) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--text-muted)", fontSize: "0.95rem" }}>
-        Select a customer to view their ledger and timeline.
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", background: "var(--bg-card)", color: "var(--text-muted)", padding: "40px", textAlign: "center" }}>
+        <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)", margin: "0 0 8px 0" }}>Select a customer</h3>
+        <p style={{ fontSize: "0.9rem", maxWidth: "300px", lineHeight: 1.5, margin: 0 }}>
+          Choose a customer from the list to view their ledger, outstanding balance, and transaction history.
+        </p>
       </div>
     );
   }
 
+  // Calculate running balance going backwards from current balance
+  let runningBal = Number(customer.balanceDue) || 0;
+  const ledgerRows = timeline.map(item => {
+    const isInvoice = item.type === "INVOICE";
+    const debit = isInvoice ? Number(item.balanceDue || item.totalAmount || 0) : 0;
+    const credit = !isInvoice ? Number(item.amount || 0) : 0;
+    
+    const rowObj = {
+      ...item,
+      debit,
+      credit,
+      balance: runningBal
+    };
+
+    if (isInvoice) {
+      runningBal -= debit;
+    } else {
+      runningBal += credit;
+    }
+    
+    return rowObj;
+  });
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-primary)" }}>
-      {/* Profile Header */}
-      <div style={{ padding: "24px 32px", background: "var(--bg-card)", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <h1 style={{ fontSize: "1.4rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>{customer.name}</h1>
-            <span style={{ fontSize: "0.75rem", padding: "4px 8px", background: "rgba(37,99,235,0.1)", color: "var(--accent-blue)", borderRadius: "4px", fontWeight: 600 }}>
-              {customer.customerType || "Retail"}
-            </span>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-card)" }}>
+      {/* ── SELECTED CUSTOMER HEADER ── */}
+      <div style={{ padding: "24px 32px", borderBottom: "1px solid var(--border-divider)", display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
+        
+        {/* Left: Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "baseline", gap: "8px", marginBottom: "6px", flexWrap: "wrap" }}>
+            <h1 style={{ 
+              fontSize: "1.6rem", fontWeight: 800, margin: 0, color: "var(--text-primary)", 
+              lineHeight: 1.15, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", wordBreak: "break-word"
+            }} title={customer.name}>
+              {customer.name}
+            </h1>
+            {customer.customerType && (
+              <span style={{ fontSize: "0.9rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                [{customer.customerType}]
+              </span>
+            )}
           </div>
-          <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "6px", display: "flex", gap: "16px" }}>
-            {customer.phone && <span>Phone: {customer.phone}</span>}
-            {customer.city && <span>City: {customer.city}</span>}
+          <div style={{ fontSize: "0.9rem", color: "var(--text-secondary)", display: "flex", gap: "8px", fontWeight: 500, flexWrap: "wrap" }}>
+            {customer.phone && <span>{customer.phone}</span>}
+            {customer.phone && customer.city && <span>·</span>}
+            {customer.city && <span>{customer.city}</span>}
           </div>
         </div>
         
-        <div style={{ textAlign: "right", padding: "12px 20px", background: customer.balanceDue > 0 ? "rgba(239, 68, 68, 0.05)" : "rgba(16, 185, 129, 0.05)", borderRadius: "8px", border: `1px solid ${customer.balanceDue > 0 ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)"}` }}>
-          <div style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", color: customer.balanceDue > 0 ? "#ef4444" : "#10b981", marginBottom: "4px" }}>
-            {customer.balanceDue > 0 ? "Outstanding Balance (Udhar)" : "Settled (Clear)"}
+        {/* Right: Actions & Balance */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "12px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button 
+              onClick={onOpenReceivePayment}
+              style={{ 
+                background: "#10b981", color: "#fff", border: "none", borderRadius: "6px", 
+                padding: "8px 14px", fontSize: "0.85rem", fontWeight: 700, 
+                display: "flex", alignItems: "center", gap: "6px", cursor: "pointer"
+              }}
+            >
+              <Check size={14} strokeWidth={3} /> Receive Payment
+            </button>
+            
+            <div style={{ position: "relative" }}>
+              <button 
+                onClick={() => setShowMenu(!showMenu)}
+                style={{ 
+                  background: "transparent", border: "1px solid var(--border-divider)", borderRadius: "6px", 
+                  width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center",
+                  cursor: "pointer", color: "var(--text-secondary)"
+                }}
+              >
+                <MoreVertical size={16} />
+              </button>
+              
+              {showMenu && (
+                <>
+                  <div style={{ position: "fixed", inset: 0, zIndex: 10 }} onClick={() => setShowMenu(false)} />
+                  <div style={{ 
+                    position: "absolute", right: 0, top: "40px", width: "160px", background: "var(--bg-card)",
+                    border: "1px solid var(--border-color)", borderRadius: "8px", boxShadow: "var(--shadow-md)",
+                    padding: "6px", zIndex: 20
+                  }}>
+                    <button 
+                      onClick={() => { setShowMenu(false); onOpenEditProfile(); }}
+                      style={{ 
+                        width: "100%", textAlign: "left", background: "transparent", border: "none",
+                        padding: "8px 12px", fontSize: "0.85rem", color: "var(--text-primary)",
+                        cursor: "pointer", borderRadius: "4px", display: "flex", alignItems: "center", gap: "8px"
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = "var(--bg-hover)"}
+                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                    >
+                      <Edit2 size={14} /> Edit Profile
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-          <div style={{ fontSize: "1.5rem", fontWeight: 800, color: customer.balanceDue > 0 ? "#ef4444" : "#10b981", fontFamily: "monospace" }}>
-            Rs. {Number(customer.balanceDue).toLocaleString()}
+          
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: "2px" }}>
+              {customer.balanceDue > 0 ? "Outstanding" : "Settled"}
+            </div>
+            <div style={{ fontSize: "1.3rem", fontWeight: 800, color: customer.balanceDue > 0 ? "#ef4444" : "#10b981", fontFamily: "monospace", letterSpacing: "-0.02em" }}>
+              Rs. {Number(customer.balanceDue).toLocaleString()}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Timeline List */}
-      <div style={{ flex: 1, padding: "32px", overflowY: "auto" }}>
-        <h3 style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "20px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          Transaction Timeline
-        </h3>
+      {/* ── TRANSACTION HISTORY (LEDGER) ── */}
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "24px 32px 16px 32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>
+            Transaction History
+          </h3>
+        </div>
         
-        {timeline.length === 0 ? (
-          <div style={{ padding: "40px", textAlign: "center", background: "var(--bg-card)", borderRadius: "8px", border: "1px dashed var(--border-color)", color: "var(--text-muted)", fontSize: "0.9rem" }}>
-            No transactions found for this customer.
+        {ledgerRows.length === 0 ? (
+          <div style={{ padding: "10px 32px 32px 32px", color: "var(--text-muted)" }}>
+            <div style={{ fontSize: "0.9rem", fontWeight: 500, display: "flex", alignItems: "center", gap: "8px" }}>
+              <FileText size={16} /> No transactions yet
+            </div>
+            <p style={{ margin: "4px 0 0 24px", fontSize: "0.85rem" }}>Transactions and payments for this customer will appear here.</p>
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            {timeline.map((item, idx) => {
-              const isInvoice = item.type === "INVOICE";
-              const dateStr = new Date(item.sortDate).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-              
-              return (
-                <div key={idx} style={{ display: "flex", gap: "16px" }}>
+          <div style={{ padding: "0 32px 32px 32px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+              <thead>
+                <tr>
+                  <th style={{ textAlign: "left", padding: "12px 16px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.75rem", textTransform: "uppercase" }}>Date</th>
+                  <th style={{ textAlign: "left", padding: "12px 16px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.75rem", textTransform: "uppercase" }}>Description</th>
+                  <th style={{ textAlign: "right", padding: "12px 16px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.75rem", textTransform: "uppercase" }}>Debit</th>
+                  <th style={{ textAlign: "right", padding: "12px 16px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.75rem", textTransform: "uppercase" }}>Credit</th>
+                  <th style={{ textAlign: "right", padding: "12px 16px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 600, fontSize: "0.75rem", textTransform: "uppercase" }}>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ledgerRows.map((item, idx) => {
+                  const dateStr = new Date(item.sortDate).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
+                  const isInvoice = item.type === "INVOICE";
                   
-                  {/* Timeline Line & Icon */}
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                    <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: isInvoice ? "rgba(37,99,235,0.1)" : "rgba(16,185,129,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: isInvoice ? "var(--accent-blue)" : "#10b981", flexShrink: 0, zIndex: 2 }}>
-                      {isInvoice ? <FileText size={16} /> : <CheckCircle size={16} />}
-                    </div>
-                    {idx !== timeline.length - 1 && (
-                      <div style={{ width: "2px", flex: 1, background: "var(--border-color)", margin: "4px 0" }} />
-                    )}
-                  </div>
-
-                  {/* Content Card */}
-                  <div style={{ flex: 1, background: "var(--bg-card)", borderRadius: "8px", border: "1px solid var(--border-color)", padding: "16px", marginBottom: "8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
-                      <div>
-                        <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
-                          {isInvoice ? "Invoice Created" : "Payment Received"}
-                          <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 500, fontFamily: "monospace", padding: "2px 6px", background: "var(--bg-primary)", borderRadius: "4px" }}>
-                            {isInvoice ? item.invoiceNo : item.paymentNo}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                          {dateStr}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontSize: "1.1rem", fontWeight: 700, color: isInvoice ? "#ef4444" : "#10b981", fontFamily: "monospace" }}>
-                          {isInvoice ? "+" : "-"} Rs. {Number(isInvoice ? item.balanceDue : item.amount).toLocaleString()}
-                        </div>
-                        {isInvoice && (
-                          <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                            Total: Rs. {Number(item.totalAmount || 0).toLocaleString()}
-                          </div>
+                  return (
+                    <tr key={idx} style={{ borderBottom: "1px solid var(--border-divider)", background: "var(--bg-card)" }}>
+                      <td style={{ padding: "14px 16px", color: "var(--text-secondary)", fontWeight: 500, whiteSpace: "nowrap" }}>
+                        {dateStr}
+                      </td>
+                      <td style={{ padding: "14px 16px", color: "var(--text-primary)", fontWeight: 600 }}>
+                        {isInvoice ? (
+                          <>Invoice <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>#{item.invoiceNo}</span></>
+                        ) : (
+                          <>Payment Received <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>({item.paymentNo})</span></>
                         )}
-                      </div>
-                    </div>
-                    
-                    {!isInvoice && item.notes && (
-                      <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", background: "var(--bg-primary)", padding: "8px 12px", borderRadius: "6px", marginTop: "12px", borderLeft: "3px solid var(--border-color)" }}>
-                        {item.notes}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "right", color: "#ef4444", fontWeight: 600, fontFamily: "monospace" }}>
+                        {item.debit > 0 ? Number(item.debit).toLocaleString() : ""}
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "right", color: "#10b981", fontWeight: 600, fontFamily: "monospace" }}>
+                        {item.credit > 0 ? Number(item.credit).toLocaleString() : ""}
+                      </td>
+                      <td style={{ padding: "14px 16px", textAlign: "right", color: "var(--text-primary)", fontWeight: 700, fontFamily: "monospace" }}>
+                        {Number(item.balance).toLocaleString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

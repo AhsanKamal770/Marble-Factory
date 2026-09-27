@@ -112,36 +112,26 @@ export default function CustomerLedgerView() {
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* ── PAGE HEADER ─────────────────────────────────────────────────── */}
-      <div style={{ paddingBottom: "20px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+      <div style={{ paddingBottom: "24px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
         <div>
-          <h1 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", lineHeight: 1, margin: 0 }}>
-            Customer Ledgers (Udhar)
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", letterSpacing: "-0.02em", lineHeight: 1, margin: 0 }}>
+            Customer Ledgers
           </h1>
-          <p style={{ fontSize: "0.83rem", color: "var(--text-muted)", marginTop: "5px", fontWeight: 400, lineHeight: 1 }}>
-            Manage customer profiles, outstanding balances, and payment recoveries.
+          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "8px", fontWeight: 500, lineHeight: 1 }}>
+            Manage customer accounts and outstanding balances.
           </p>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
-          {selectedCustomer && (
-            <button className="btn btn-secondary" onClick={openEditCustomer}>
-              Edit Profile
-            </button>
-          )}
-          {selectedCustomer && selectedCustomer.balanceDue > 0 && (
-            <button className="btn" style={{ background: "#10b981", color: "#fff", border: "none" }} onClick={() => setIsPaymentModalOpen(true)}>
-              <CheckSquare size={14} style={{ marginRight: "6px" }} /> Receive Payment
-            </button>
-          )}
           <button className="btn btn-primary" onClick={openNewCustomer}>
-            <Plus size={14} /> New Customer
+            <Plus size={16} style={{ marginRight: "6px" }} /> New Customer
           </button>
         </div>
       </div>
 
       {/* ── MAIN CONTENT (Split View) ──────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border-color)", overflow: "hidden", minHeight: 0 }}>
+      <div style={{ flex: 1, display: "flex", background: "var(--bg-card)", borderRadius: "12px", border: "1px solid var(--border-color)", overflow: "hidden", minHeight: 0, boxShadow: "var(--shadow-sm)" }}>
         {/* Sidebar */}
-        <div style={{ width: "320px", flexShrink: 0 }}>
+        <div style={{ width: "34%", flexShrink: 0, borderRight: "1px solid var(--border-divider)", display: "flex", flexDirection: "column" }}>
           <CustomerList 
             customers={filteredCustomers}
             searchTerm={searchTerm}
@@ -152,10 +142,12 @@ export default function CustomerLedgerView() {
         </div>
         
         {/* Main Area */}
-        <div style={{ flex: 1, overflow: "hidden" }}>
+        <div style={{ width: "66%", flexShrink: 0, display: "flex", flexDirection: "column" }}>
           <CustomerTimelineView 
             customer={selectedCustomer}
             timeline={timeline}
+            onOpenEditProfile={openEditCustomer}
+            onOpenReceivePayment={() => setIsPaymentModalOpen(true)}
           />
         </div>
       </div>
