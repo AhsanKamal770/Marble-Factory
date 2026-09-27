@@ -1,19 +1,22 @@
 import { db, logStockMovement } from './index';
 
 export const defaultSettings = {
-  companyName: "Marble & Granite Industry",
-  tagline: "Marble Slabs, Porcelain Tiles & Custom Fabrication",
-  phone: "+92 300 7995171",
-  phoneSecondary: "+92 3039210207",
-  email: "dummy.@gmail.com",
-  address: "Jhumra",
+  companyName: "Rana Shahab Marble Factory",
+  tagline: "نام ہی کافی ہے - دوسرے شہروں سے مناسب ریٹ اور اعلیٰ معیار کی گارنٹی",
+  phone: "0321-6606645",
+  phoneSecondary: "0300-6664187",
+  proprietor1: "Rana Haji Ghulam Akbar (0300-6664187)",
+  proprietor2: "Rana Ghulam Abbas (0300-7995171)",
+  email: "ranashahab.marble@gmail.com",
+  address: "Faisalabad Road near PSO Petrol Pump, Jhumra City",
   city: "Jhumra",
-  ntnNo: "NTN-XXXXXXX-X",
+  ntnNo: "NTN-33102-RSMF",
   currency: "PKR",
-  receiptHeader: "MARBLE & GRANITE INDUSTRY",
-  receiptFooter: "Want this application? Contact +92 3184061465",
+  receiptHeader: "RANA SHAHAB MARBLE GRANITE & TILES",
+  receiptFooter: "مال موقع پر چیک کریں۔ بعد میں کٹوتی یا شکایت قابل قبول نہ ہوگی۔",
   thermalWidthMm: 80,
-  defaultTaxPercent: 0
+  defaultTaxPercent: 0,
+  openingCashBalance: 35000
 };
 
 export const sampleItems = [
@@ -525,5 +528,36 @@ export async function initializeDatabaseWithSeedData() {
     for (const pur of samplePurchases) {
       await db.supplier_purchases.add(pur);
     }
+  }
+
+  const expensesCount = await db.daily_expenses.count();
+  if (expensesCount === 0) {
+    const today = new Date().toISOString().slice(0, 10);
+    await db.daily_expenses.bulkAdd([
+      {
+        date: today,
+        category: "Food / Mess (کھانا چائے)",
+        amount: 1450,
+        paidTo: "Bismillah Hotel & Tea Stall",
+        remarks: "Factory cutter & polish staff lunch + tea",
+        createdAt: new Date().toISOString()
+      },
+      {
+        date: today,
+        category: "Petrol / Fuel (پٹرول ڈیزل)",
+        amount: 3800,
+        paidTo: "PSO Petrol Pump Faisalabad Road",
+        remarks: "15 Litres diesel for factory power generator",
+        createdAt: new Date().toISOString()
+      },
+      {
+        date: today,
+        category: "Customer Udhar / Cash Advance (گاہک ادھار)",
+        amount: 2500,
+        paidTo: "Tariq Mehmood Contractor",
+        remarks: "Emergency loader rickshaw carriage cash advance",
+        createdAt: new Date().toISOString()
+      }
+    ]);
   }
 }

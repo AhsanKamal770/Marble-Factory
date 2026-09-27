@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './db/index';
 import { initializeDatabaseWithSeedData, defaultSettings } from './db/seedData';
+import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginView from './views/LoginView';
@@ -111,7 +112,8 @@ export default function App() {
   }
 
   return (
-    <div className="app-container" data-theme={theme}>
+    <LanguageProvider>
+      <div className="app-container" data-theme={theme}>
       {/* Collapsible Sidebar */}
       <Sidebar
         activeView={activeView}
@@ -177,5 +179,6 @@ export default function App() {
         </main>
       </div>
     </div>
+    </LanguageProvider>
   );
 }

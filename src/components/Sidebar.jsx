@@ -14,6 +14,7 @@ import {
   ChevronRight,
   LogOut
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function Sidebar({
   activeView,
@@ -23,16 +24,18 @@ export default function Sidebar({
   toggleCollapse,
   onLogout
 }) {
+  const { language, t } = useLanguage();
+
   const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'billing', label: 'POS Billing', icon: Receipt, highlight: true },
-    { id: 'invoices', label: 'Invoices & Bills', icon: FileText },
-    { id: 'stock', label: 'Stock Management', icon: Boxes },
-    { id: 'stock-sheet', label: 'Stock Sheet & Audit', icon: ClipboardList },
-    { id: 'customers', label: 'Customer Ledger', icon: Users },
-    { id: 'suppliers', label: 'Supplier Purchases', icon: Truck },
-    { id: 'returns', label: 'Stock Returns', icon: RotateCcw },
-    { id: 'settings', label: 'Factory Settings', icon: Settings },
+    { id: 'dashboard', label: t('nav_dashboard', 'Dashboard (Karkhana)'), icon: LayoutDashboard },
+    { id: 'billing', label: t('nav_billing', 'Naya Bill (POS)'), icon: Receipt, highlight: true },
+    { id: 'invoices', label: t('nav_invoices', 'Bill Book & Invoices'), icon: FileText },
+    { id: 'stock', label: t('nav_stock', 'Marble & Tiles Stock'), icon: Boxes },
+    { id: 'stock-sheet', label: t('nav_stock_sheet', 'Stock Sheet & Audit'), icon: ClipboardList },
+    { id: 'customers', label: t('nav_customers', 'Digital Khata (Customers)'), icon: Users },
+    { id: 'suppliers', label: t('nav_suppliers', 'Supplier Purchases'), icon: Truck },
+    { id: 'returns', label: t('nav_returns', 'Wapsi & Factory Wastage'), icon: RotateCcw },
+    { id: 'settings', label: t('nav_settings', 'Factory Settings'), icon: Settings },
   ];
 
   return (
@@ -43,7 +46,7 @@ export default function Sidebar({
           <div
             className="sidebar-logo-icon"
             onClick={toggleCollapse}
-            title={isCollapsed ? 'Expand Sidebar' : 'Marble & Tiles Factory'}
+            title={isCollapsed ? 'Expand Sidebar' : 'Rana Shahab Marble Factory'}
             style={{ cursor: 'pointer', flexShrink: 0 }}
           >
             <Layers size={22} />
@@ -51,10 +54,10 @@ export default function Sidebar({
           {!isCollapsed && (
             <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
               <h2 style={{ fontSize: '0.98rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.2, textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                {settings?.companyName?.split(' ')[0] || 'AL-MADINA'}
+                {language === 'ur' ? 'رانا شہاب ماربل' : (settings?.companyName?.split(' ')[0] || 'RANA SHAHAB')}
               </h2>
               <span style={{ fontSize: '0.7rem', color: '#60a5fa', letterSpacing: '0.08em', fontWeight: 600 }}>
-                MARBLE & TILES
+                {language === 'ur' ? 'ماربل و ٹائلز فیکٹری' : 'MARBLE & TILES'}
               </span>
             </div>
           )}
