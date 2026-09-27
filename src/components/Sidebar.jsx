@@ -12,7 +12,8 @@ import {
   Layers,
   ChevronLeft,
   ChevronRight,
-  LogOut
+  LogOut,
+  Wallet
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -53,6 +54,7 @@ export default function Sidebar({
       title: language === 'ur' ? 'فیکٹری آپریشنز' : 'FACTORY',
       items: [
         { id: 'gate-pass', label: language === 'ur' ? 'رکشہ گیٹ پاس' : 'Gate Passes', icon: Truck },
+        { id: 'daily-expenses', label: language === 'ur' ? 'روزانہ اخراجات' : 'Daily Expenses', icon: Wallet },
         { id: 'returns', label: language === 'ur' ? 'واپسی و نقصان' : 'Wapsi & Wastage', icon: RotateCcw }
       ]
     },

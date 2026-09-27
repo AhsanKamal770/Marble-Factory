@@ -15,7 +15,7 @@ import SupplierManagementView from './views/SupplierManagementView';
 import ReturnsView from './views/ReturnsView';
 import SettingsView from './views/SettingsView';
 import GatePassView from './modules/mod_04_gate_pass/GatePassView';
-
+import DailyExpensesView from './modules/mod_06_daily_expenses/DailyExpensesView';
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
   const [settings, setSettings] = useState(defaultSettings);
@@ -173,6 +173,10 @@ export default function App() {
 
           {activeView === 'gate-pass' && (
             <GatePassView />
+          )}
+
+          {activeView === 'daily-expenses' && (
+            <DailyExpensesView />
           )}
 
           {activeView === 'settings' && (
