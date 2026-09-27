@@ -11,9 +11,9 @@
 
 | Module ID | Module Name | Urdu / Roman Urdu Title | Status | Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| **MOD-01** | **Executive Dashboard** | فیکٹری ڈیش بورڈ / Digital Khata & Dashboard | 🟢 Completed | Revamped with Fitts's Law quick action launchpad, Roman Urdu/Urdu Nastaleeq toggle, live Roznamcha cash drawer strip, instant expense modal, verified in browser. |
-| **MOD-02** | **Factory Bill Book / POS** | فیکٹری بل بک و سیلز / Branded Bill Book | 🟡 Up Next | Next up. Authentic Rana Shahab bill book, customer header & carrier, Sutar selection (4/6/9/14), A4 & Thermal prints. |
-| **MOD-03** | **Product & Stone Master** | مصنوعات و ماربل اسٹاک / Marble & Tiles Stock | ⚪ Planned | 4 Sutar categories (4, 6, 9, 14 sutar), cut sizes, flower medallions, borders/patti (RFT), accessories. |
+| **MOD-01** | **Executive Dashboard** | فیکٹری ڈیش بورڈ / Digital Khata & Dashboard | 🟢 Completed | Revamped with B2B SaaS aesthetics, 4-card KPI strip, cash flow progress bar, operational needs attention section, clean Recent Bills table, and centered floating pop-up modals for expenses, wasooli, and drawer reconciliation. |
+| **MOD-02** | **Factory Bill Book / POS** | فیکٹری بل بک و سیلز / Branded Bill Book | 🟢 Completed | Authentic Rana Shahab bill book, customer Khata & carrier dispatch (loader rickshaw), stone Sutar thickness system (4, 6, 9, 14 sutar with Kitchen/Stairs badge), carriage/labour/polish/discount calculations, dual A4 Bill Book replica & 80mm thermal print engine with WhatsApp copy. |
+| **MOD-03** | **Product & Stone Master** | مصنوعات و ماربل اسٹاک / Marble & Tiles Stock | 🟡 Up Next | 4 Sutar categories (4, 6, 9, 14 sutar), standard cut sizes, flower medallions, borders/patti (RFT), accessories, inventory valuation & reorder triggers. |
 | **MOD-04** | **Rickshaw Gate Pass** | رکشہ گیٹ پاس / Rickshaw Gate Out Pass | ⚪ Planned | Transport slips, driver & vehicle info, manifest, 3-party signatures. |
 | **MOD-05** | **Customer Ledger & History** | گاہک ریکارڈ و کھاتہ / Digital Khata | ⚪ Planned | 360° timeline, Udhar tracking, payment recovery vouchers. |
 | **MOD-06** | **Daily Expenses & Cash Flow** | روزانہ اخراجات / Rozana Kharch & Roznamcha | ⚪ Planned | Food/mess, petrol, customer udhar advance, day-end reconciliation. |
@@ -28,15 +28,17 @@
 
 ## 🎨 UI/UX Guidelines & Conventions
 1. **Roman Urdu & Urdu Integration:**
-   - English mode uses intuitive Roman Urdu terminology familiar to Pakistani industrial users:
+   - English mode uses intuitive Pakistani Roman Urdu terminology familiar to counter operators and low-literacy trade staff:
+     - *Customer Due* $\rightarrow$ **Customer Udhaar Due**
+     - *Received / Cash Collected* $\rightarrow$ **Cash / Bank Wasooli**
+     - *Total Sales* $\rightarrow$ **Total Sales (Kul Sales)**
      - *Customer Ledger* $\rightarrow$ **Digital Khata**
-     - *Cash Collected* $\rightarrow$ **Kul Wasooli**
-     - *Receivables / Due* $\rightarrow$ **Udhar Baqaya**
      - *New Invoice* $\rightarrow$ **Naya Bill (POS)**
      - *Daily Expenses* $\rightarrow$ **Rozana Kharch**
-     - *Cash Drawer / Day Reconciliation* $\rightarrow$ **Roznamcha (Cash in Hand)**
+     - *Cash Drawer / Day Reconciliation* $\rightarrow$ **Draz Cash (Roznamcha)**
+     - *Factory Yard Stock* $\rightarrow$ **Yard Stock (Maal)**
      - *Gate Pass* $\rightarrow$ **Rickshaw Gate Pass**
-     - *Low Stock* $\rightarrow$ **Khatam Honay Wala Maal**
+     - *Low Stock* $\rightarrow$ **Khatam Honay Wala Maal (Reorder)**
    - Urdu mode provides full Nastaleeq RTL typography.
 2. **Ergonomics & Fitts's Law:**
    - Primary action buttons (Naya Bill, Kharch, Wasooli) have large touch targets (min height 44px, generous padding).
@@ -56,7 +58,14 @@
   - Streamlined UI/UX with progressive disclosure pop-ups:
     - **Roznamcha Drawer Pop-up**: Detailed daily cash flow breakdown & today's expense list.
     - **Quick Wasooli Pop-up**: Direct customer payment collection from the dashboard.
-    - **Quick Expense Pop-up**: Instant cash drawer expense recording.
+    - **Quick Expense Pop-up**: Instant cash drawer expense recording with centered viewport modal.
     - **Invoice Quick Preview Pop-up**: Row-click full invoice preview with 80mm print.
     - **Quick Restock Pop-up**: Row-click stock addition on low stock alert items.
-    - Fixed header wrapping & 4-card grid alignment.
+    - Fixed header wrapping, table cell line-breaks, and 4-card grid alignment.
+  - Completed **MOD-02 (Factory Bill Book & POS Engine)**:
+    - Built authentic Rana Shahab factory bill book branding & slogans (*"نام ہی کافی ہے"*).
+    - Integrated customer Khata selection and carrier dispatch tracking (*"درج ذیل مال بدست - مثلاً رکشہ"*).
+    - Added stone Sutar thickness system (4, 6, 9, 14 sutar) with dedicated Kitchen / Stairs badges.
+    - Added settlement split for carriage, labour loading, edge cutting/polish, and special discounts.
+    - Created `BillPrintModal.jsx` supporting authentic A4 Bill Book replica print, 80mm thermal receipts, and 1-click WhatsApp copy.
+    - Executed atomic multi-table Dexie transactions updating stock, invoices, customer balances, and payment vouchers.

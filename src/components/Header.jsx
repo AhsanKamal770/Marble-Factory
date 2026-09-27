@@ -103,74 +103,73 @@ export default function Header({
 
   return (
     <header className="top-header">
+      {/* Zone 1 (Left): Sidebar toggle & Page title */}
       <div className="header-title-section">
-        {/* Sidebar Collapse Toggle Button */}
         <button
           type="button"
           className="header-icon-btn"
           onClick={toggleSidebar}
           title={isSidebarCollapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
         >
-          {isSidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          {isSidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
         </button>
 
         <h1 style={{
-          fontSize: '1.12rem',
-          fontWeight: 800,
+          fontSize: '1.05rem',
+          fontWeight: 700,
           color: 'var(--text-primary)',
-          letterSpacing: '-0.02em',
+          letterSpacing: '-0.01em',
           margin: 0,
           whiteSpace: 'nowrap'
         }}>
-          {currentInfo.title}
+          {activeView === 'dashboard' ? (language === 'ur' ? 'کارخانہ ڈیش بورڈ' : 'Karkhana Dashboard') : currentInfo.title}
         </h1>
       </div>
 
-      <div className="header-actions">
-        {/* Live Cash in Drawer (Roznamcha Pill) */}
-        <div
-          title={t('drawer_live_total', 'Draz Mein Mojood Cash')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            padding: '4px 10px',
-            borderRadius: 'var(--radius-md)',
-            color: '#059669',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <Wallet size={13} className="text-emerald" />
-          <span style={{ fontSize: '0.7rem', opacity: 0.85 }}>
-            {language === 'ur' ? 'کیش دراز:' : 'Draz Cash:'}
+      {/* Zone 2 (Center/Right): Subdued contextual info */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        {/* Compact Financial Indicator (Not a loud pill) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          lineHeight: 1.2,
+          paddingRight: '12px',
+          borderRight: '1px solid var(--border-color)'
+        }}>
+          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+            {language === 'ur' ? 'دراز کیش (روزنامچہ)' : 'Draz Cash (Drawer)'}
           </span>
-          <span className="font-mono" style={{ fontWeight: 800 }}>
+          <span className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
             Rs. {Number(liveCash).toLocaleString()}
           </span>
         </div>
 
-        {/* Urdu / English Language Toggle */}
+        {/* Subtle Language Toggle */}
         <button
           type="button"
-          className="lang-toggle-btn"
           onClick={toggleLanguage}
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--border-color)',
+            borderRadius: '6px',
+            padding: '3px 8px',
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            transition: 'all 0.15s ease'
+          }}
           title={language === 'en' ? 'اردو میں تبدیل کریں' : 'Switch to English'}
         >
-          <Globe size={13} style={{ color: 'var(--accent-blue)' }} />
-          <span className={language === 'en' ? 'lang-pill-active' : 'lang-pill-inactive'}>
-            EN
-          </span>
-          <span style={{ opacity: 0.3 }}>|</span>
-          <span className={language === 'ur' ? 'lang-pill-active' : 'lang-pill-inactive'}>
-            اردو
-          </span>
+          <Globe size={12} style={{ color: 'var(--accent-blue)' }} />
+          <span>{language === 'en' ? 'EN' : 'اردو'}</span>
         </button>
 
-        {/* Theme Toggle Button (Icon only) */}
+        {/* Theme Toggle (Minimal clean icon button) */}
         <button
           type="button"
           className="header-icon-btn"
@@ -178,32 +177,40 @@ export default function Header({
           title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
         >
           {theme === 'light' ? (
-            <Moon size={15} style={{ color: '#2563eb' }} />
+            <Moon size={14} style={{ color: 'var(--text-secondary)' }} />
           ) : (
-            <Sun size={15} style={{ color: '#38bdf8' }} />
+            <Sun size={14} style={{ color: '#38bdf8' }} />
           )}
         </button>
 
-        {/* User Pill & Logout */}
+        {/* User Menu */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '6px',
-          padding: '3px 6px 3px 10px',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--bg-primary)',
-          border: '1px solid var(--border-color)'
+          gap: '8px',
+          paddingLeft: '10px',
+          borderLeft: '1px solid var(--border-color)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-            <UserCheck size={13} className="text-accent" />
-            <span>Admin</span>
+          <div style={{
+            width: '26px',
+            height: '26px',
+            borderRadius: '50%',
+            background: 'rgba(37, 99, 235, 0.1)',
+            color: 'var(--accent-blue)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '0.72rem',
+            fontWeight: 700
+          }}>
+            A
           </div>
-
+          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)' }}>Admin</span>
           <button
             type="button"
             onClick={onLogout}
             className="btn btn-ghost btn-sm"
-            style={{ padding: '3px 5px', color: '#fb7185' }}
+            style={{ padding: '2px 4px', color: '#94a3b8' }}
             title="Sign Out"
           >
             <LogOut size={13} />
