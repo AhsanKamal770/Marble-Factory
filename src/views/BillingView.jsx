@@ -103,6 +103,8 @@ export default function BillingView({ setActiveView, settings }) {
   const [billNote, setBillNote] = useState('');
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [noteForm, setNoteForm] = useState('');
+  const [isChargesMenuOpen, setIsChargesMenuOpen] = useState(false);
+  const chargesMenuRef = useRef(null);
 
   // Payment Settlement
   const [paidAmount, setPaidAmount] = useState(0);
@@ -125,6 +127,9 @@ export default function BillingView({ setActiveView, settings }) {
     const handleClickOutside = (e) => {
       if (customerDropdownRef.current && !customerDropdownRef.current.contains(e.target)) {
         setIsCustomerDropdownOpen(false);
+      }
+      if (chargesMenuRef.current && !chargesMenuRef.current.contains(e.target)) {
+        setIsChargesMenuOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -620,46 +625,26 @@ export default function BillingView({ setActiveView, settings }) {
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 2. MAIN POS WORKSPACE: 2-COLUMN ERGONOMIC LAYOUT              */}
+      {/* 2. MAIN POS WORKSPACE: 2-COLUMN ERGONOMIC WORKFLOW            */}
       {/* ------------------------------------------------------------- */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1fr) 380px',
-        gap: '18px',
-        alignItems: 'start'
-      }}>
+      <div className="billing-layout-grid">
 
         {/* =========================================================== */}
-        {/* LEFT COLUMN: CUSTOMER, ITEMS & CHARGES (~65%)               */}
+        {/* LEFT COLUMN: CUSTOMER, ITEMS & CHARGES                      */}
         {/* =========================================================== */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
           {/* --------------------------------------------------------- */}
-          {/* CUSTOMER SECTION                                          */}
+          {/* STEP 1: CUSTOMER SELECTION                                */}
           {/* --------------------------------------------------------- */}
-          <div style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '16px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          <div className="dash-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {isUrdu ? 'گاہک' : 'Customer'}
               </span>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => setIsNewCustomerModalOpen(true)}
-                style={{ padding: '4px 9px', fontSize: '0.74rem', fontWeight: 600 }}
-              >
-                <UserPlus size={13} />
-                <span>{isUrdu ? '+ نیا' : '+ New'}</span>
-              </button>
             </div>
 
-            {/* Selected Customer Card OR Search Selector */}
+            {/* Selected Customer Card OR Primary Search Selector */}
             <div ref={customerDropdownRef} style={{ position: 'relative' }}>
               {selectedCustomer ? (
                 <div style={{
@@ -672,30 +657,41 @@ export default function BillingView({ setActiveView, settings }) {
                   justifyContent: 'space-between'
                 }}>
                   <div>
-                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
                       {selectedCustomer.name}
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', gap: '10px', marginTop: '2px' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', gap: '12px', marginTop: '2px' }}>
                       <span>📞 {selectedCustomer.phone || (isUrdu ? 'فون درج نہیں' : 'No phone')}</span>
                       <span>📍 {selectedCustomer.city || 'Faisalabad'}</span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: '0.68rem', color: '#dc2626', fontWeight: 700 }}>
-                        {isUrdu ? 'سابقہ ادھار' : 'Previous Due'}
+                    {Number(selectedCustomer.balanceDue || 0) > 0 && (
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#dc2626', fontWeight: 700 }}>
+                          {isUrdu ? 'سابقہ ادھار' : 'Previous Due'}
+                        </div>
+                        <div className="font-mono" style={{ fontSize: '0.86rem', fontWeight: 800, color: '#dc2626' }}>
+                          Rs. {Number(selectedCustomer.balanceDue).toLocaleString()}
+                        </div>
                       </div>
-                      <div className="font-mono" style={{ fontSize: '0.86rem', fontWeight: 800, color: '#dc2626' }}>
-                        Rs. {Number(selectedCustomer.balanceDue || 0).toLocaleString()}
-                      </div>
-                    </div>
+                    )}
                     <button
                       type="button"
                       onClick={() => setSelectedCustomer(null)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}
-                      title="Clear Customer"
+                      style={{
+                        background: 'transparent',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '6px',
+                        padding: '4px 8px',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.74rem',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                      title="Change customer"
                     >
-                      <X size={15} />
+                      {isUrdu ? 'تبدیل کریں' : 'Change'}
                     </button>
                   </div>
                 </div>
@@ -707,17 +703,18 @@ export default function BillingView({ setActiveView, settings }) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      padding: '8px 12px',
+                      padding: '9px 12px',
                       background: 'var(--bg-primary)',
                       border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-md)',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      transition: 'border-color 0.15s ease'
                     }}
                   >
                     <Search size={15} style={{ color: 'var(--text-muted)' }} />
                     <input
                       type="text"
-                      placeholder={isUrdu ? 'گاہک تلاش کریں یا عام نقد منتخب کریں...' : 'Search customer or select Walk-in...'}
+                      placeholder={isUrdu ? 'گاہک تلاش کریں یا عام خریدار منتخب کریں...' : 'Search customer or select Walk-in...'}
                       value={customerSearch}
                       onChange={(e) => {
                         setCustomerSearch(e.target.value);
@@ -729,26 +726,26 @@ export default function BillingView({ setActiveView, settings }) {
                         outline: 'none',
                         background: 'transparent',
                         width: '100%',
-                        fontSize: '0.84rem',
+                        fontSize: '0.86rem',
                         color: 'var(--text-primary)'
                       }}
                     />
                     <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />
                   </div>
 
-                  {/* Customer Dropdown Menu */}
+                  {/* Customer Dropdown Menu with "Create New Customer" inside */}
                   {isCustomerDropdownOpen && (
                     <div style={{
                       position: 'absolute',
                       top: '105%',
                       left: 0,
                       right: 0,
-                      background: 'var(--bg-secondary)',
+                      background: 'var(--bg-card, #FFFFFF)',
                       border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-md)',
-                      boxShadow: 'var(--shadow-lg)',
+                      boxShadow: 'var(--shadow-lg, 0 10px 25px -5px rgba(15,23,42,0.15))',
                       zIndex: 100,
-                      maxHeight: '260px',
+                      maxHeight: '270px',
                       overflowY: 'auto'
                     }}>
                       {/* Walk-in Cash Sale */}
@@ -763,7 +760,7 @@ export default function BillingView({ setActiveView, settings }) {
                           justifyContent: 'space-between',
                           background: 'rgba(37, 99, 235, 0.03)'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.03)'}
                       >
                         <div>
@@ -780,7 +777,7 @@ export default function BillingView({ setActiveView, settings }) {
                       {/* Filtered Customer List */}
                       {filteredCustomers.length === 0 ? (
                         <div style={{ padding: '14px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                          {isUrdu ? 'کوئی گاہک نہیں ملا' : 'No registered customer found'}
+                          {isUrdu ? 'کوئی رجسٹرڈ گاہک نہیں ملا' : 'No registered customer found'}
                         </div>
                       ) : (
                         filteredCustomers.map(cust => (
@@ -795,7 +792,7 @@ export default function BillingView({ setActiveView, settings }) {
                               alignItems: 'center',
                               justifyContent: 'space-between'
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover)'}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                           >
                             <div>
@@ -803,7 +800,7 @@ export default function BillingView({ setActiveView, settings }) {
                                 {cust.name}
                               </div>
                               <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                {cust.phone || 'No phone'} • {cust.city || 'Jhumra'}
+                                {cust.phone || 'No phone'} • {cust.city || 'Faisalabad'}
                               </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
@@ -815,7 +812,7 @@ export default function BillingView({ setActiveView, settings }) {
                         ))
                       )}
 
-                      {/* Quick Add Action */}
+                      {/* Integrated "Create New Customer" Option in Dropdown */}
                       <div
                         onClick={() => {
                           setIsCustomerDropdownOpen(false);
@@ -823,15 +820,21 @@ export default function BillingView({ setActiveView, settings }) {
                         }}
                         style={{
                           padding: '10px 14px',
-                          background: 'var(--bg-primary)',
-                          textAlign: 'center',
-                          fontSize: '0.76rem',
+                          background: 'var(--bg-primary, #F8FAFC)',
+                          borderTop: '1px solid var(--border-divider, #E5EAF0)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          fontSize: '0.78rem',
                           fontWeight: 700,
                           color: 'var(--accent-blue)',
                           cursor: 'pointer'
                         }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.08)'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-primary, #F8FAFC)'}
                       >
-                        + {isUrdu ? 'نیا گاہک درج کریں' : 'Register New Customer'}
+                        <UserPlus size={14} />
+                        <span>+ {isUrdu ? 'نیا گاہک رجسٹر کریں' : 'Create New Customer'}</span>
                       </div>
                     </div>
                   )}
@@ -839,8 +842,8 @@ export default function BillingView({ setActiveView, settings }) {
               )}
             </div>
 
-            {/* Delivery / Carrier Trigger (Progressive Disclosure) */}
-            <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', fontSize: '0.76rem' }}>
+            {/* Delivery / Carrier Trigger (Quiet & Secondary) */}
+            <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.76rem' }}>
               {carrierDetails ? (
                 <div style={{
                   display: 'flex',
@@ -877,44 +880,41 @@ export default function BillingView({ setActiveView, settings }) {
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: 'var(--accent-blue)',
+                    color: 'var(--text-secondary)',
                     fontSize: '0.76rem',
                     fontWeight: 600,
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '4px',
-                    padding: 0
+                    gap: '5px',
+                    padding: '2px 0',
+                    transition: 'color 0.15s ease'
                   }}
+                  onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-blue)'}
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
                 >
                   <Truck size={13} />
-                  <span>+ {isUrdu ? 'ڈیلیوری شامل کریں' : 'Add Delivery'}</span>
+                  <span>+ {isUrdu ? 'ڈیلیوری و لوڈر معلومات' : 'Add Delivery'}</span>
                 </button>
               )}
             </div>
           </div>
 
           {/* --------------------------------------------------------- */}
-          {/* ITEMS SECTION (Clean Line-Item Cards)                     */}
+          {/* STEP 2: ITEMS SECTION (Primary Content Area)              */}
           {/* --------------------------------------------------------- */}
-          <div style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '16px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                {isUrdu ? `آئٹمز (${lineItems.length})` : `Items (${lineItems.length})`}
+          <div className="dash-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {isUrdu ? `آئٹمز (${lineItems.length})` : `ITEMS (${lineItems.length})`}
               </span>
 
-              {/* Primary + Add Item Button (No keyboard hints) */}
+              {/* Main Section Action: + Add Item */}
               <button
                 type="button"
                 className="btn btn-primary btn-sm"
                 onClick={handleOpenAddItemModal}
-                style={{ fontWeight: 700, padding: '7px 14px', gap: '6px' }}
+                style={{ fontWeight: 700, padding: '7px 14px', gap: '6px', borderRadius: '8px' }}
               >
                 <Plus size={15} />
                 <span>{isUrdu ? '+ آئٹم شامل کریں' : '+ Add Item'}</span>
@@ -924,14 +924,15 @@ export default function BillingView({ setActiveView, settings }) {
             {/* Line Items List */}
             {lineItems.length === 0 ? (
               <div style={{
-                padding: '32px 16px',
+                padding: '36px 16px',
                 textAlign: 'center',
                 border: '1px dashed var(--border-color)',
                 borderRadius: 'var(--radius-md)',
-                color: 'var(--text-muted)'
+                color: 'var(--text-muted)',
+                background: 'var(--bg-primary)'
               }}>
-                <Layers size={24} style={{ margin: '0 auto 6px', opacity: 0.4 }} />
-                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                <Layers size={26} style={{ margin: '0 auto 8px', opacity: 0.35 }} />
+                <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
                   {isUrdu ? 'کوئی آئٹم درج نہیں ہے۔ "+ آئٹم شامل کریں" پر کلک کریں۔' : 'No items added yet. Click "+ Add Item" to begin.'}
                 </div>
               </div>
@@ -944,19 +945,21 @@ export default function BillingView({ setActiveView, settings }) {
                       background: 'var(--bg-primary)',
                       border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-md)',
-                      padding: '12px 14px',
+                      padding: '13px 16px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '6px'
+                      gap: '8px',
+                      transition: 'border-color 0.15s ease'
                     }}
                   >
-                    {/* Top Row: Name & Amount */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                      <div>
-                        <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+                    {/* Top Row: Name (Left) & Price (Right) */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.96rem', color: 'var(--text-primary)', fontWeight: 800, letterSpacing: '-0.01em' }}>
                           {item.name}
-                        </strong>
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                        </div>
+                        {/* Subordinate product metadata */}
+                        <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
                           {item.thicknessSutar} Sutar • {item.usageTag || 'Standard'}
                         </div>
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -965,20 +968,20 @@ export default function BillingView({ setActiveView, settings }) {
                         </div>
                       </div>
 
-                      {/* Right: Subtotal */}
-                      <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {/* Highly Readable Financial Amount */}
+                      <div className="font-mono" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
                         Rs. {Number(item.amount || 0).toLocaleString()}
                       </div>
                     </div>
 
-                    {/* Bottom Row: Actions (Edit, Duplicate, Remove) */}
+                    {/* Bottom Row: Subtle Tertiary Actions (Edit, Duplicate, Remove) */}
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'flex-end',
-                      gap: '14px',
-                      paddingTop: '6px',
-                      borderTop: '1px solid var(--border-color)',
+                      gap: '16px',
+                      paddingTop: '8px',
+                      borderTop: '1px solid var(--border-divider, #E5EAF0)',
                       fontSize: '0.74rem'
                     }}>
                       <button
@@ -987,14 +990,17 @@ export default function BillingView({ setActiveView, settings }) {
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: 'var(--accent-blue)',
+                          color: 'var(--text-secondary)',
                           cursor: 'pointer',
-                          display: 'flex',
+                          display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '3px',
+                          gap: '4px',
                           fontWeight: 600,
-                          padding: 0
+                          padding: '2px 4px',
+                          transition: 'color 0.15s ease'
                         }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-blue)'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
                       >
                         <Edit2 size={12} />
                         <span>{isUrdu ? 'ترمیم' : 'Edit'}</span>
@@ -1008,12 +1014,15 @@ export default function BillingView({ setActiveView, settings }) {
                           border: 'none',
                           color: 'var(--text-secondary)',
                           cursor: 'pointer',
-                          display: 'flex',
+                          display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '3px',
+                          gap: '4px',
                           fontWeight: 600,
-                          padding: 0
+                          padding: '2px 4px',
+                          transition: 'color 0.15s ease'
                         }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-blue)'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
                       >
                         <Copy size={12} />
                         <span>{isUrdu ? 'کاپی' : 'Duplicate'}</span>
@@ -1025,14 +1034,17 @@ export default function BillingView({ setActiveView, settings }) {
                         style={{
                           background: 'transparent',
                           border: 'none',
-                          color: '#dc2626',
+                          color: 'var(--text-muted)',
                           cursor: 'pointer',
-                          display: 'flex',
+                          display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '3px',
+                          gap: '4px',
                           fontWeight: 600,
-                          padding: 0
+                          padding: '2px 4px',
+                          transition: 'color 0.15s ease'
                         }}
+                        onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
                       >
                         <Trash2 size={12} />
                         <span>{isUrdu ? 'حذف' : 'Remove'}</span>
@@ -1045,118 +1057,254 @@ export default function BillingView({ setActiveView, settings }) {
           </div>
 
           {/* --------------------------------------------------------- */}
-          {/* ADDITIONAL CHARGES & DISCOUNT                             */}
+          {/* STEP 3: ADDITIONAL CHARGES (Progressive Disclosure)       */}
           {/* --------------------------------------------------------- */}
-          <div style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '16px',
-            boxShadow: 'var(--shadow-sm)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                {isUrdu ? 'اضافی اخراجات و رعایت' : 'Additional Charges'}
-              </span>
+          {(() => {
+            const hasAdditional = (totalCharges > 0 || netDiscount > 0 || Boolean(billNote));
 
-              {/* Action Triggers */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setIsChargeModalOpen(true)}
-                  style={{ padding: '4px 8px', fontSize: '0.72rem' }}
-                >
-                  <Plus size={12} />
-                  <span>{isUrdu ? '+ کرایہ' : '+ Charge'}</span>
-                </button>
+            if (!hasAdditional) {
+              return (
+                <div className="dash-card" style={{
+                  padding: '12px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  minHeight: '48px'
+                }}>
+                  <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    {isUrdu ? 'اضافی اخراجات، رعایت یا نوٹ' : 'Additional charges'}
+                  </span>
+                  
+                  <div ref={chargesMenuRef} style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setIsChargesMenuOpen(prev => !prev)}
+                      style={{ padding: '5px 12px', fontSize: '0.76rem', fontWeight: 600, gap: '4px' }}
+                    >
+                      <Plus size={13} />
+                      <span>{isUrdu ? '+ شامل کریں' : '+ Add'}</span>
+                    </button>
 
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => setIsDiscountModalOpen(true)}
-                  style={{ padding: '4px 8px', fontSize: '0.72rem' }}
-                >
-                  <Percent size={12} />
-                  <span>{isUrdu ? '+ رعایت' : '+ Discount'}</span>
-                </button>
+                    {/* Popover Menu for Adding Charges / Concessions */}
+                    {isChargesMenuOpen && (
+                      <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: '110%',
+                        background: 'var(--bg-card, #FFFFFF)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        boxShadow: 'var(--shadow-lg, 0 10px 25px -5px rgba(15,23,42,0.15))',
+                        zIndex: 100,
+                        minWidth: '190px',
+                        overflow: 'hidden',
+                        padding: '4px 0'
+                      }}>
+                        <div
+                          onClick={() => {
+                            setIsChargesMenuOpen(false);
+                            setIsChargeModalOpen(true);
+                          }}
+                          style={{
+                            padding: '8px 14px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <Plus size={13} style={{ color: 'var(--accent-blue)' }} />
+                          <span>{isUrdu ? 'کرایہ / مزدوری / پالش' : 'Carriage / Labour / Polish'}</span>
+                        </div>
+                        <div
+                          onClick={() => {
+                            setIsChargesMenuOpen(false);
+                            setIsDiscountModalOpen(true);
+                          }}
+                          style={{
+                            padding: '8px 14px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <Percent size={13} style={{ color: '#059669' }} />
+                          <span>{isUrdu ? 'بل رعایت (Discount)' : 'Discount Concession'}</span>
+                        </div>
+                        <div
+                          onClick={() => {
+                            setIsChargesMenuOpen(false);
+                            setNoteForm(billNote);
+                            setIsNoteModalOpen(true);
+                          }}
+                          style={{
+                            padding: '8px 14px',
+                            fontSize: '0.78rem',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <FileText size={13} style={{ color: 'var(--text-secondary)' }} />
+                          <span>{isUrdu ? 'خصوصی ہدایات / نوٹ' : 'Special Note / Remark'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            }
 
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => {
-                    setNoteForm(billNote);
-                    setIsNoteModalOpen(true);
-                  }}
-                  style={{ padding: '4px 8px', fontSize: '0.72rem' }}
-                >
-                  <FileText size={12} />
-                  <span>{billNote ? (isUrdu ? 'نوٹ تبدیل' : 'Edit Note') : (isUrdu ? '+ نوٹ' : '+ Note')}</span>
-                </button>
+            // Expanded state when charges/discount/note are active
+            return (
+              <div className="dash-card" style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {isUrdu ? 'اضافی اخراجات و رعایت' : 'Additional Charges'}
+                  </span>
+
+                  <div ref={chargesMenuRef} style={{ position: 'relative' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => setIsChargesMenuOpen(prev => !prev)}
+                      style={{ padding: '4px 10px', fontSize: '0.72rem', fontWeight: 600, gap: '4px' }}
+                    >
+                      <Plus size={12} />
+                      <span>{isUrdu ? '+ مزید شامل کریں' : '+ Add More'}</span>
+                    </button>
+
+                    {/* Popover Menu for Adding More */}
+                    {isChargesMenuOpen && (
+                      <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: '110%',
+                        background: 'var(--bg-card, #FFFFFF)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        boxShadow: 'var(--shadow-lg, 0 10px 25px -5px rgba(15,23,42,0.15))',
+                        zIndex: 100,
+                        minWidth: '190px',
+                        overflow: 'hidden',
+                        padding: '4px 0'
+                      }}>
+                        <div
+                          onClick={() => {
+                            setIsChargesMenuOpen(false);
+                            setIsChargeModalOpen(true);
+                          }}
+                          style={{ padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <Plus size={13} style={{ color: 'var(--accent-blue)' }} />
+                          <span>{isUrdu ? 'کرایہ / مزدوری / پالش' : 'Carriage / Labour / Polish'}</span>
+                        </div>
+                        <div
+                          onClick={() => {
+                            setIsChargesMenuOpen(false);
+                            setIsDiscountModalOpen(true);
+                          }}
+                          style={{ padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <Percent size={13} style={{ color: '#059669' }} />
+                          <span>{isUrdu ? 'بل رعایت (Discount)' : 'Discount Concession'}</span>
+                        </div>
+                        <div
+                          onClick={() => {
+                            setIsChargesMenuOpen(false);
+                            setNoteForm(billNote);
+                            setIsNoteModalOpen(true);
+                          }}
+                          style={{ padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-hover, #F8FAFC)'}
+                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <FileText size={13} style={{ color: 'var(--text-secondary)' }} />
+                          <span>{isUrdu ? 'خصوصی ہدایات / نوٹ' : 'Special Note / Remark'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Active Charge Rows */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {charges.carriage > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '6px 10px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>🚚 {isUrdu ? 'کرایہ' : 'Carriage'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>+ Rs. {charges.carriage.toLocaleString()}</strong>
+                        <button type="button" onClick={() => handleRemoveCharge('carriage')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px' }}><X size={13} /></button>
+                      </div>
+                    </div>
+                  )}
+
+                  {charges.labour > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '6px 10px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>💪 {isUrdu ? 'مزدوری' : 'Labour'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>+ Rs. {charges.labour.toLocaleString()}</strong>
+                        <button type="button" onClick={() => handleRemoveCharge('labour')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px' }}><X size={13} /></button>
+                      </div>
+                    </div>
+                  )}
+
+                  {charges.polish > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '6px 10px', background: 'var(--bg-primary)', borderRadius: '6px' }}>
+                      <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>✨ {isUrdu ? 'پالش و کٹنگ' : 'Polishing & Cutting'}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>+ Rs. {charges.polish.toLocaleString()}</strong>
+                        <button type="button" onClick={() => handleRemoveCharge('polish')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px' }}><X size={13} /></button>
+                      </div>
+                    </div>
+                  )}
+
+                  {netDiscount > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '6px 10px', background: 'rgba(220, 38, 38, 0.05)', borderRadius: '6px' }}>
+                      <span style={{ color: '#dc2626', fontWeight: 600 }}>🏷️ {isUrdu ? 'رعایت' : `Discount (${discount.reason || 'Concession'})`}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong className="font-mono" style={{ color: '#dc2626' }}>- Rs. {netDiscount.toLocaleString()}</strong>
+                        <button type="button" onClick={() => setDiscount({ type: 'fixed', value: 0, reason: '' })} style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer', padding: '2px' }}><X size={13} /></button>
+                      </div>
+                    </div>
+                  )}
+
+                  {billNote && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'var(--bg-primary)', padding: '6px 10px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span>📝 {billNote}</span>
+                      <button type="button" onClick={() => setBillNote('')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px' }}><X size={12} /></button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-
-            {/* Display Added Charges or Quiet Placeholder */}
-            {totalCharges === 0 && netDiscount === 0 && !billNote ? (
-              <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', padding: '2px 0' }}>
-                {isUrdu ? 'کوئی اضافی اخراجات نہیں' : 'No additional charges'}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {charges.carriage > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '4px 8px', background: 'var(--bg-primary)', borderRadius: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>🚚 {isUrdu ? 'کرایہ (Carriage)' : 'Carriage'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>+ Rs. {charges.carriage.toLocaleString()}</strong>
-                      <button type="button" onClick={() => handleRemoveCharge('carriage')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={13} /></button>
-                    </div>
-                  </div>
-                )}
-
-                {charges.labour > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '4px 8px', background: 'var(--bg-primary)', borderRadius: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>💪 {isUrdu ? 'مزدوری (Labour)' : 'Labour'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>+ Rs. {charges.labour.toLocaleString()}</strong>
-                      <button type="button" onClick={() => handleRemoveCharge('labour')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={13} /></button>
-                    </div>
-                  </div>
-                )}
-
-                {charges.polish > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '4px 8px', background: 'var(--bg-primary)', borderRadius: '4px' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>✨ {isUrdu ? 'پالش و کٹنگ' : 'Polishing & Cutting'}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>+ Rs. {charges.polish.toLocaleString()}</strong>
-                      <button type="button" onClick={() => handleRemoveCharge('polish')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={13} /></button>
-                    </div>
-                  </div>
-                )}
-
-                {netDiscount > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', padding: '4px 8px', background: 'rgba(220, 38, 38, 0.05)', borderRadius: '4px' }}>
-                    <span style={{ color: '#dc2626', fontWeight: 600 }}>🏷️ {isUrdu ? 'رعایت (Discount)' : `Discount (${discount.reason || 'Concession'})`}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <strong className="font-mono" style={{ color: '#dc2626' }}>- Rs. {netDiscount.toLocaleString()}</strong>
-                      <button type="button" onClick={() => setDiscount({ type: 'fixed', value: 0, reason: '' })} style={{ background: 'transparent', border: 'none', color: '#dc2626', cursor: 'pointer' }}><X size={13} /></button>
-                    </div>
-                  </div>
-                )}
-
-                {billNote && (
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', background: 'var(--bg-primary)', padding: '5px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span>📝 {billNote}</span>
-                    <button type="button" onClick={() => setBillNote('')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={12} /></button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+            );
+          })()}
 
         </div>
 
         {/* =========================================================== */}
-        {/* RIGHT COLUMN: STICKY BILL SUMMARY & PAYMENT (~35%)          */}
+        {/* RIGHT COLUMN: STICKY BILL SUMMARY & PAYMENT PANEL           */}
         {/* =========================================================== */}
         <div style={{
           position: 'sticky',
@@ -1166,28 +1314,23 @@ export default function BillingView({ setActiveView, settings }) {
           gap: '14px'
         }}>
 
-          {/* Sticky Financial Summary Card */}
-          <div style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '18px',
-            boxShadow: 'var(--shadow-md)',
+          <div className="dash-card" style={{
+            padding: '20px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '14px'
+            gap: '16px'
           }}>
             
-            {/* Bill Total (Dominant visual anchor) */}
+            {/* 1. BILL TOTAL (The Dominant Financial Value) */}
             <div>
               <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {isUrdu ? 'کل رقم' : 'BILL TOTAL'}
               </div>
-              <div className="font-mono" style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginTop: '2px' }}>
+              <div className="font-mono" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.02em', marginTop: '2px' }}>
                 Rs. {grandTotal.toLocaleString()}
               </div>
 
-              {/* Subtotal & Charges Micro Breakdown */}
+              {/* Subtotal & Charges Breakdown (Quiet supporting text) */}
               {(totalCharges > 0 || netDiscount > 0) && (
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', gap: '8px' }}>
                   <span>Subtotal: Rs. {subtotal.toLocaleString()}</span>
@@ -1197,71 +1340,52 @@ export default function BillingView({ setActiveView, settings }) {
               )}
             </div>
 
-            {/* How Much Paying Now? */}
-            <div style={{
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)',
-              padding: '12px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px'
-            }}>
-              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {isUrdu ? 'کتنی رقم ادا کر رہے ہیں؟' : 'Amount Paying Now'}
-              </span>
+            {/* 2. PAYMENT MODE (Clean Segmented Control) */}
+            <div>
+              <label style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px', display: 'block' }}>
+                {isUrdu ? 'ادائیگی طریقہ' : 'PAYMENT'}
+              </label>
 
-              {/* Quick Payment Buttons (Full, 50%, Udhar) */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => handleQuickPayment(1.0)}
-                  style={{
-                    padding: '5px 4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: numPaid === grandTotal && grandTotal > 0 ? '#ffffff' : '#059669',
-                    background: numPaid === grandTotal && grandTotal > 0 ? '#059669' : 'transparent',
-                    borderColor: '#059669'
-                  }}
-                >
-                  Full
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => handleQuickPayment(0.5)}
-                  style={{
-                    padding: '5px 4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: numPaid === Math.round(grandTotal * 0.5) && numPaid > 0 ? '#ffffff' : 'var(--accent-blue)',
-                    background: numPaid === Math.round(grandTotal * 0.5) && numPaid > 0 ? 'var(--accent-blue)' : 'transparent'
-                  }}
-                >
-                  50%
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => handleQuickPayment(0)}
-                  style={{
-                    padding: '5px 4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
-                    color: numPaid === 0 ? '#ffffff' : '#dc2626',
-                    background: numPaid === 0 ? '#dc2626' : 'transparent',
-                    borderColor: '#dc2626'
-                  }}
-                >
-                  Udhar
-                </button>
-              </div>
+              {(() => {
+                const isFull = (numPaid === grandTotal && grandTotal > 0);
+                const isHalf = (numPaid === Math.round(grandTotal * 0.5) && numPaid > 0 && grandTotal > 0 && !isFull);
+                const isUdhar = (numPaid === 0);
 
-              {/* Amount Paid Input */}
+                return (
+                  <div className="pos-segmented-control">
+                    <button
+                      type="button"
+                      className={`pos-segment-btn ${isFull ? 'active' : ''}`}
+                      onClick={() => handleQuickPayment(1.0)}
+                    >
+                      {isUrdu ? 'مکمل نقد' : 'Full'}
+                    </button>
+                    <button
+                      type="button"
+                      className={`pos-segment-btn ${isHalf ? 'active' : ''}`}
+                      onClick={() => handleQuickPayment(0.5)}
+                    >
+                      50%
+                    </button>
+                    <button
+                      type="button"
+                      className={`pos-segment-btn ${isUdhar ? 'active-udhar' : ''}`}
+                      onClick={() => handleQuickPayment(0)}
+                    >
+                      {isUrdu ? 'ادھار' : 'Udhar'}
+                    </button>
+                  </div>
+                );
+              })()}
+            </div>
+
+            {/* 3. AMOUNT PAYING (Editable Numeric Input) */}
+            <div>
+              <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '5px', display: 'block' }}>
+                {isUrdu ? 'ادا کی جانے والی رقم' : 'Amount Paying'}
+              </label>
               <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: '10px', top: '9px', fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                <span style={{ position: 'absolute', left: '12px', top: '10px', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700 }}>
                   Rs.
                 </span>
                 <input
@@ -1272,67 +1396,66 @@ export default function BillingView({ setActiveView, settings }) {
                   onChange={(e) => setPaidAmount(parseFloat(e.target.value) || 0)}
                   className="form-control font-mono"
                   style={{
-                    paddingLeft: '34px',
-                    fontSize: '1.05rem',
+                    paddingLeft: '38px',
+                    fontSize: '1.15rem',
                     fontWeight: 800,
-                    color: '#059669',
-                    height: '38px'
+                    color: 'var(--text-primary)',
+                    height: '42px',
+                    borderRadius: '8px'
                   }}
                   placeholder="0"
                 />
               </div>
-
-              {/* Due Display (Colors convey status; no redundant badge) */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', paddingTop: '2px' }}>
-                <span style={{ color: balanceDue > 0 ? '#dc2626' : 'var(--text-muted)', fontWeight: 600 }}>
-                  {isUrdu ? 'بقایا ادھار (Due):' : 'Due:'}
-                </span>
-                <strong className="font-mono" style={{ color: balanceDue > 0 ? '#dc2626' : '#059669', fontSize: '0.92rem' }}>
-                  Rs. {balanceDue.toLocaleString()}
-                </strong>
-              </div>
             </div>
 
-            {/* Payment Method Selector & Subtle Drawer Indicator */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* 4. DUE (Clean Secondary Stat) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 2px', fontSize: '0.82rem' }}>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {isUrdu ? 'بقایا ادھار' : 'Due'}
+              </span>
+              <strong className="font-mono" style={{
+                color: balanceDue > 0 ? '#dc2626' : '#059669',
+                fontSize: '1rem',
+                fontWeight: 800
+              }}>
+                Rs. {balanceDue.toLocaleString()}
+              </strong>
+            </div>
+
+            {/* 5. PAYMENT METHOD */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
               <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
                 {isUrdu ? 'طریقہ ادائیگی' : 'Payment Method'}
               </label>
               <select
-                className="form-control form-control-sm"
+                className="form-control"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-                style={{ fontWeight: 600 }}
+                style={{ fontWeight: 600, height: '38px', borderRadius: '8px', fontSize: '0.84rem' }}
               >
                 <option value="Cash">{isUrdu ? 'نقد دراز کیش' : 'Cash in Drawer'}</option>
                 <option value="Bank Transfer">{isUrdu ? 'بینک ٹرانسفر' : 'Bank Transfer'}</option>
                 <option value="JazzCash">JazzCash</option>
                 <option value="Easypaisa">Easypaisa</option>
               </select>
-
-              {paymentMethod === 'Cash' && numPaid > 0 && (
-                <div style={{ fontSize: '0.7rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '4px', paddingTop: '2px' }}>
-                  <Wallet size={12} />
-                  <span>Cash drawer: +Rs. {numPaid.toLocaleString()}</span>
-                </div>
-              )}
             </div>
 
-            {/* Primary Action CTA: SAVE & PRINT BILL (No visible shortcut text) */}
+            {/* 6. PRIMARY CTA: SAVE & PRINT BILL (Dominant Single Focus) */}
             <button
               type="button"
               className="btn btn-primary"
               disabled={lineItems.length === 0 || isSaving}
               onClick={() => setIsReviewModalOpen(true)}
               style={{
-                padding: '12px',
-                fontSize: '0.95rem',
+                padding: '13px',
+                fontSize: '0.96rem',
                 fontWeight: 800,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                borderRadius: 'var(--radius-md)',
+                borderRadius: '10px',
+                marginTop: '4px',
                 boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)'
               }}
             >
@@ -1340,21 +1463,42 @@ export default function BillingView({ setActiveView, settings }) {
               <span>{isUrdu ? 'محفوظ و پرنٹ کریں' : 'SAVE & PRINT BILL'}</span>
             </button>
 
-            {/* Secondary Actions */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {/* 7. SECONDARY ACTIONS: Save Draft & Cancel (Quiet Tertiary Text Links) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginTop: '2px' }}>
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
                 onClick={() => alert(isUrdu ? 'ڈرافٹ محفوظ ہو گیا۔' : 'Bill draft saved.')}
-                style={{ fontSize: '0.74rem', padding: '6px' }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '4px 6px',
+                  transition: 'color 0.15s ease'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
               >
                 {isUrdu ? 'ڈرافٹ محفوظ' : 'Save Draft'}
               </button>
+              <span style={{ color: 'var(--border-divider, #E5EAF0)' }}>|</span>
               <button
                 type="button"
-                className="btn btn-ghost btn-sm"
                 onClick={() => setIsDiscardModalOpen(true)}
-                style={{ fontSize: '0.74rem', padding: '6px', color: 'var(--text-muted)' }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  padding: '4px 6px',
+                  transition: 'color 0.15s ease'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#dc2626'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
               >
                 {isUrdu ? 'کینسل' : 'Cancel'}
               </button>
