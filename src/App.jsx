@@ -10,10 +10,11 @@ import BillingView from './views/BillingView';
 import InvoicesView from './views/InvoicesView';
 import StockManagementView from './views/StockManagementView';
 import StockSheetView from './views/StockSheetView';
-import CustomerLedgerView from './views/CustomerLedgerView';
+import CustomerLedgerView from './modules/mod_05_customer_ledger/CustomerLedgerView';
 import SupplierManagementView from './views/SupplierManagementView';
 import ReturnsView from './views/ReturnsView';
 import SettingsView from './views/SettingsView';
+import GatePassView from './modules/mod_04_gate_pass/GatePassView';
 
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -168,6 +169,10 @@ export default function App() {
 
           {activeView === 'returns' && (
             <ReturnsView />
+          )}
+
+          {activeView === 'gate-pass' && (
+            <GatePassView />
           )}
 
           {activeView === 'settings' && (

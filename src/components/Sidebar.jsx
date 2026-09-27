@@ -52,6 +52,7 @@ export default function Sidebar({
     {
       title: language === 'ur' ? 'فیکٹری آپریشنز' : 'FACTORY',
       items: [
+        { id: 'gate-pass', label: language === 'ur' ? 'رکشہ گیٹ پاس' : 'Gate Passes', icon: Truck },
         { id: 'returns', label: language === 'ur' ? 'واپسی و نقصان' : 'Wapsi & Wastage', icon: RotateCcw }
       ]
     },
@@ -105,7 +106,7 @@ export default function Sidebar({
       {/* Grouped Navigation Links */}
       <nav className="sidebar-nav">
         {navSections.map((sec, sIdx) => (
-          <div key={sIdx} style={{ display: 'flex', flexDirection: 'column' }}>
+          <div key={sIdx} style={{ display: 'flex', flexDirection: 'column', marginBottom: '20px' }}>
             {!isCollapsed && (
               <div className="nav-section-label">
                 {sec.title}

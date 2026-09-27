@@ -127,7 +127,7 @@ export default function Header({
       </div>
 
       {/* Zone 2 (Center/Right): Subdued contextual info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
         {/* Compact Financial Indicator (Not a loud pill) */}
         <div style={{
           display: 'flex',

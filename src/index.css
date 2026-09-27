@@ -211,6 +211,18 @@ body {
   background: #94a3b8;
 }
 
+/* Sidebar Specific Scrollbar */
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: #1e293b; /* Navy blue thumb */
+  border-radius: 4px;
+}
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
 /* Sidebar Styles */
 .sidebar {
   width: 270px;
@@ -279,32 +291,32 @@ body {
 
 .sidebar-nav {
   flex: 1;
-  padding: 10px 8px;
+  padding: 16px 12px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
 .nav-section-label {
-  font-size: 0.66rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 10px 10px 4px 10px;
+  padding: 10px 14px 6px 14px;
   user-select: none;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 7px 10px;
+  gap: 12px;
+  padding: 10px 14px;
   color: #94a3b8;
-  border-radius: 6px;
+  border-radius: 8px;
   font-weight: 500;
-  font-size: 0.84rem;
+  font-size: 0.88rem;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
