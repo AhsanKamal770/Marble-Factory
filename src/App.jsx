@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from './db/index';
 import { initializeDatabaseWithSeedData, defaultSettings } from './db/seedData';
+import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import LoginView from './views/LoginView';
@@ -9,11 +10,12 @@ import BillingView from './views/BillingView';
 import InvoicesView from './views/InvoicesView';
 import StockManagementView from './views/StockManagementView';
 import StockSheetView from './views/StockSheetView';
-import CustomerLedgerView from './views/CustomerLedgerView';
+import CustomerLedgerView from './modules/mod_05_customer_ledger/CustomerLedgerView';
 import SupplierManagementView from './views/SupplierManagementView';
 import ReturnsView from './views/ReturnsView';
 import SettingsView from './views/SettingsView';
-
+import GatePassView from './modules/mod_04_gate_pass/GatePassView';
+import DailyExpensesView from './modules/mod_06_daily_expenses/DailyExpensesView';
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
   const [settings, setSettings] = useState(defaultSettings);
@@ -111,7 +113,8 @@ export default function App() {
   }
 
   return (
-    <div className="app-container" data-theme={theme}>
+    <LanguageProvider>
+      <div className="app-container" data-theme={theme}>
       {/* Collapsible Sidebar */}
       <Sidebar
         activeView={activeView}
@@ -168,6 +171,14 @@ export default function App() {
             <ReturnsView />
           )}
 
+          {activeView === 'gate-pass' && (
+            <GatePassView />
+          )}
+
+          {activeView === 'daily-expenses' && (
+            <DailyExpensesView />
+          )}
+
           {activeView === 'settings' && (
             <SettingsView
               settings={settings}
@@ -177,5 +188,6 @@ export default function App() {
         </main>
       </div>
     </div>
+    </LanguageProvider>
   );
 }
