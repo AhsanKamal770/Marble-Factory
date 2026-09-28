@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   TrendingUp,
   CreditCard,
@@ -8,10 +8,7 @@ import {
   Printer,
   Wallet,
   CheckCircle2,
-  X,
   FileText,
-  PackagePlus,
-  ChevronRight,
   ArrowRight,
   AlertTriangle,
   ArrowUpRight,
@@ -20,6 +17,7 @@ import {
   Activity,
   BarChart2
 } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getLiveCashInDrawer, adjustItemStock } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import Badge from '../components/Badge';
@@ -27,53 +25,245 @@ import ThermalReceiptModal from '../components/ThermalReceiptModal';
 import ActionButton, { ActionGroup } from '../components/ActionButton';
 
 export default function DashboardView({ setActiveView, settings }) {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
 
-  const [stats, setStats] = useState({
-    totalSales: 490000,
-    totalReceived: 320000,
-    totalDue: 170000,
-    totalStockSqFt: 32025.6,
-    invoicesCount: 2,
-    customersCount: 4
-  });
+  // ---------------------------------------------------------------------------
+  // 1. LIVE REAL-TIME DATABASE QUERIES (Zero Mock Fallbacks)
+  // ---------------------------------------------------------------------------
+  const invoices = useLiveQuery(() => db.invoices.orderBy('id').reverse().toArray(), []) || [];
+  const customers = useLiveQuery(() => db.customers.toArray(), []) || [];
+  const items = useLiveQuery(() => db.items.toArray(), []) || [];
+  const customerPayments = useLiveQuery(() => db.customer_payments.toArray(), []) || [];
+  const dailyExpenses = useLiveQuery(() => db.daily_expenses.toArray(), []) || [];
 
-  const [drawerData, setDrawerData] = useState({
-    openingCash: 35000,
+  // Live cash drawer query - depends on invoices, customer_payments, and daily_expenses
+  const drawerDependencies = useLiveQuery(
+    () => db.invoices.count() + db.customer_payments.count() + db.daily_expenses.count(),
+    []
+  );
+
+  const drawerData = useLiveQuery(
+    () => getLiveCashInDrawer(),
+    [drawerDependencies]
+  ) || {
+    openingCash: Number(settings?.openingCashBalance || 0),
     cashSalesToday: 0,
     wasooliToday: 0,
-    expensesToday: 7750,
-    liveCash: 27250
-  });
+    expensesToday: 0,
+    liveCash: Number(settings?.openingCashBalance || 0)
+  };
 
-  const [todayExpensesList, setTodayExpensesList] = useState([]);
-  const [customersWithDues, setCustomersWithDues] = useState([]);
-  const [recentInvoices, setRecentInvoices] = useState([]);
-  const [lowStockItems, setLowStockItems] = useState([]);
+  // ---------------------------------------------------------------------------
+  // 2. DERIVED METRICS & BUSINESS INTELLIGENCE
+  // ---------------------------------------------------------------------------
+  const todayDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  // Lower Section Business Intelligence States
+  // Primary 4 KPIs
+  const totalSales = useMemo(
+    () => invoices.reduce((acc, inv) => acc + Number(inv.grandTotal || 0), 0),
+    [invoices]
+  );
+
+  const totalReceived = useMemo(() => {
+    const directSalesCash = invoices.filter(inv => !inv.customerId).reduce((acc, inv) => acc + Number(inv.paidAmount || 0), 0);
+    const wasooliCash = customerPayments.reduce((acc, pay) => acc + Number(pay.amount || 0), 0);
+    return directSalesCash + wasooliCash;
+  }, [invoices, customerPayments]);
+
+  const totalDue = useMemo(
+    () => customers.reduce((acc, cust) => acc + Number(cust.balanceDue || 0), 0),
+    [customers]
+  );
+
+  const totalStockSqFt = useMemo(
+    () => Math.round(items.reduce((acc, it) => acc + Number(it.stockSqFt || 0), 0) * 10) / 10,
+    [items]
+  );
+
+  // Customers with outstanding balances
+  const customersWithDues = useMemo(
+    () => customers.filter((c) => Number(c.balanceDue || 0) > 0),
+    [customers]
+  );
+
+  // Items below reorder level
+  const lowStockItems = useMemo(
+    () => items.filter((it) => Number(it.stockSqFt || 0) <= Number(it.minStockAlert || 50)),
+    [items]
+  );
+
+  // Recent 5 Invoices
+  const recentInvoices = useMemo(
+    () => invoices.slice(0, 5),
+    [invoices]
+  );
+
+  // Today's Expense List
+  const todayExpensesList = useMemo(
+    () => dailyExpenses.filter((e) => (e.date || e.createdAt || '').slice(0, 10) === todayDate),
+    [dailyExpenses, todayDate]
+  );
+
+  // Stock Category Breakdown (Slabs vs Tiles vs Others)
+  const stockBreakdown = useMemo(() => {
+    let slabsSq = 0;
+    let tilesSq = 0;
+    let otherSq = 0;
+
+    items.forEach((it) => {
+      const sqft = Number(it.stockSqFt || 0);
+      const cat = (it.category || '').toLowerCase();
+      const nm = (it.name || '').toLowerCase();
+
+      if (cat.includes('tile') || nm.includes('tile') || cat.includes('porcelain') || cat.includes('ceramic')) {
+        tilesSq += sqft;
+      } else if (cat.includes('slab') || nm.includes('slab') || cat.includes('granite') || cat.includes('marble')) {
+        slabsSq += sqft;
+      } else {
+        otherSq += sqft;
+      }
+    });
+
+    const totalYard = slabsSq + tilesSq + otherSq || 1;
+    return {
+      slabsSqFt: Math.round(slabsSq),
+      tilesSqFt: Math.round(tilesSq),
+      otherSqFt: Math.round(otherSq),
+      slabsPct: Math.round((slabsSq / totalYard) * 100),
+      tilesPct: Math.round((tilesSq / totalYard) * 100),
+      otherPct: Math.round((otherSq / totalYard) * 100)
+    };
+  }, [items]);
+
+  // Sales Trend & Collection Time Filter
   const [salesTimeFilter, setSalesTimeFilter] = useState('week'); // 'today' | 'week' | 'month'
-  const [salesTrendSummary, setSalesTrendSummary] = useState({ periodSales: 490000, periodWasooli: 320000 });
-  const [weeklyTrendData, setWeeklyTrendData] = useState([
-    { day: 'Mon', sales: 45000, wasooli: 35000 },
-    { day: 'Tue', sales: 80000, wasooli: 50000 },
-    { day: 'Wed', sales: 65000, wasooli: 40000 },
-    { day: 'Thu', sales: 120000, wasooli: 75000 },
-    { day: 'Fri', sales: 35000, wasooli: 20000 },
-    { day: 'Sat', sales: 90000, wasooli: 60000 },
-    { day: 'Sun', sales: 55000, wasooli: 40000 }
-  ]);
-  const [stockBreakdown, setStockBreakdown] = useState({
-    slabsSqFt: 21450,
-    tilesSqFt: 7820,
-    otherSqFt: 2755.6,
-    slabsPct: 67,
-    tilesPct: 24,
-    otherPct: 9
-  });
-  const [activityFeed, setActivityFeed] = useState([]);
 
-  // Modal / Pop-up States
+  const salesTrendSummary = useMemo(() => {
+    if (salesTimeFilter === 'today') {
+      let todaySales = 0;
+      let todayWasooli = 0;
+      invoices.forEach((inv) => {
+        if ((inv.createdAt || inv.date || '').slice(0, 10) === todayDate) {
+          todaySales += Number(inv.grandTotal || 0);
+          if (!inv.customerId) {
+            todayWasooli += Number(inv.paidAmount || 0);
+          }
+        }
+      });
+      customerPayments.forEach((pay) => {
+        if ((pay.date || pay.createdAt || '').slice(0, 10) === todayDate) {
+          todayWasooli += Number(pay.amount || 0);
+        }
+      });
+      return { periodSales: todaySales, periodWasooli: todayWasooli };
+    }
+
+    if (salesTimeFilter === 'month') {
+      const currentMonth = todayDate.slice(0, 7);
+      let monthSales = 0;
+      let monthWasooli = 0;
+      invoices.forEach((inv) => {
+        if ((inv.createdAt || inv.date || '').slice(0, 7) === currentMonth) {
+          monthSales += Number(inv.grandTotal || 0);
+          if (!inv.customerId) {
+            monthWasooli += Number(inv.paidAmount || 0);
+          }
+        }
+      });
+      customerPayments.forEach((pay) => {
+        if ((pay.date || pay.createdAt || '').slice(0, 7) === currentMonth) {
+          monthWasooli += Number(pay.amount || 0);
+        }
+      });
+      return { periodSales: monthSales, periodWasooli: monthWasooli };
+    }
+
+    // Default: Total / Week
+    return { periodSales: totalSales, periodWasooli: totalReceived };
+  }, [salesTimeFilter, invoices, customerPayments, todayDate, totalSales, totalReceived]);
+
+  // Real 7-Day Trend Points
+  const weeklyTrendData = useMemo(() => {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const trend = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
+      const dStr = d.toISOString().slice(0, 10);
+      let sAmt = 0;
+      let wAmt = 0;
+
+      invoices.forEach((inv) => {
+        if ((inv.createdAt || inv.date || '').slice(0, 10) === dStr) {
+          sAmt += Number(inv.grandTotal || 0);
+          if (!inv.customerId) {
+            wAmt += Number(inv.paidAmount || 0);
+          }
+        }
+      });
+
+      customerPayments.forEach((pay) => {
+        if ((pay.date || pay.createdAt || '').slice(0, 10) === dStr) {
+          wAmt += Number(pay.amount || 0);
+        }
+      });
+
+      trend.push({
+        day: dayNames[d.getDay()],
+        dateStr: dStr,
+        sales: sAmt,
+        wasooli: wAmt
+      });
+    }
+
+    return trend;
+  }, [invoices, customerPayments]);
+
+  // Real Activity Stream
+  const activityFeed = useMemo(() => {
+    const activities = [];
+
+    invoices.forEach((inv) => {
+      activities.push({
+        id: `inv-${inv.id || inv.invoiceNo}`,
+        type: 'sale',
+        title: `Bill #${inv.invoiceNo}`,
+        subtitle: `${inv.customerName || 'Walk-in'} • ${inv.items?.length || 1} items`,
+        amount: `Rs. ${Number(inv.grandTotal || 0).toLocaleString()}`,
+        date: new Date(inv.createdAt || inv.date || Date.now()),
+        invoiceObj: inv
+      });
+    });
+
+    customerPayments.forEach((pay) => {
+      activities.push({
+        id: `pay-${pay.id}`,
+        type: 'payment',
+        title: `Wasooli received`,
+        subtitle: `${pay.customerName || 'Customer'} • ${pay.paymentMethod || 'Cash'}`,
+        amount: `+Rs. ${Number(pay.amount || 0).toLocaleString()}`,
+        date: new Date(pay.date || pay.createdAt || Date.now())
+      });
+    });
+
+    dailyExpenses.forEach((exp) => {
+      activities.push({
+        id: `exp-${exp.id}`,
+        type: 'expense',
+        title: `Expense: ${exp.category}`,
+        subtitle: exp.paidTo ? `Paid to ${exp.paidTo}` : 'Karkhana expense',
+        amount: `-Rs. ${Number(exp.amount || 0).toLocaleString()}`,
+        date: new Date(exp.createdAt || exp.date || Date.now())
+      });
+    });
+
+    activities.sort((a, b) => b.date - a.date);
+    return activities.slice(0, 6);
+  }, [invoices, customerPayments, dailyExpenses]);
+
+  // ---------------------------------------------------------------------------
+  // 3. MODALS & POP-UP INTERACTION STATES
+  // ---------------------------------------------------------------------------
   const [isRoznamchaOpen, setIsRoznamchaOpen] = useState(false);
   const [isQuickExpenseOpen, setIsQuickExpenseOpen] = useState(false);
   const [isQuickWasooliOpen, setIsQuickWasooliOpen] = useState(false);
@@ -85,7 +275,7 @@ export default function DashboardView({ setActiveView, settings }) {
   const [selectedRestockItem, setSelectedRestockItem] = useState(null);
   const [isThermalOpen, setIsThermalOpen] = useState(false);
 
-  // Expense Form
+  // Expense Form State
   const [expenseForm, setExpenseForm] = useState({
     category: 'Food / Mess (کھانا چائے)',
     amount: '',
@@ -94,7 +284,7 @@ export default function DashboardView({ setActiveView, settings }) {
   });
   const [expenseSuccessMsg, setExpenseSuccessMsg] = useState('');
 
-  // Wasooli Form
+  // Wasooli Form State
   const [wasooliForm, setWasooliForm] = useState({
     customerId: '',
     amount: '',
@@ -103,207 +293,36 @@ export default function DashboardView({ setActiveView, settings }) {
   });
   const [wasooliSuccessMsg, setWasooliSuccessMsg] = useState('');
 
-  // Restock Form
+  // Restock Form State
   const [restockAmount, setRestockAmount] = useState('');
   const [restockSuccessMsg, setRestockSuccessMsg] = useState('');
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      const invoices = await db.invoices.toArray();
-      const items = await db.items.toArray();
-      const customers = await db.customers.toArray();
-      const allPayments = await db.customer_payments.toArray();
-      const drawer = await getLiveCashInDrawer();
-      setDrawerData(drawer);
-
-      const today = new Date().toISOString().slice(0, 10);
-      const allExpenses = await db.daily_expenses.toArray();
-      const todayExp = allExpenses.filter(e => (e.date || e.createdAt || '').slice(0, 10) === today);
-      setTodayExpensesList(todayExp);
-
-      const withDues = customers.filter(c => Number(c.balanceDue || 0) > 0);
-      setCustomersWithDues(withDues);
-      if (withDues.length > 0 && !wasooliForm.customerId) {
-        setWasooliForm(prev => ({
-          ...prev,
-          customerId: withDues[0].id.toString(),
-          amount: withDues[0].balanceDue.toString()
-        }));
-      }
-
-      let totalSales = 0;
-      let totalReceived = 0;
-      let totalDue = 0;
-
-      invoices.forEach((inv) => {
-        totalSales += Number(inv.grandTotal || 0);
-        totalReceived += Number(inv.paidAmount || 0);
-        totalDue += Number(inv.balanceDue || 0);
-      });
-
-      let totalStockSqFt = 0;
-      const lowStock = [];
-      let slabsSq = 0;
-      let tilesSq = 0;
-      let otherSq = 0;
-
-      items.forEach((it) => {
-        const sqft = Number(it.stockSqFt || 0);
-        totalStockSqFt += sqft;
-        if (sqft <= Number(it.minStockAlert || 50)) {
-          lowStock.push(it);
-        }
-
-        const cat = (it.category || '').toLowerCase();
-        const nm = (it.name || '').toLowerCase();
-        if (cat.includes('tile') || nm.includes('tile')) {
-          tilesSq += sqft;
-        } else if (cat.includes('slab') || nm.includes('slab') || nm.includes('super')) {
-          slabsSq += sqft;
-        } else {
-          otherSq += sqft;
-        }
-      });
-
-      const totalYard = slabsSq + tilesSq + otherSq || 1;
-      setStockBreakdown({
-        slabsSqFt: Math.round(slabsSq),
-        tilesSqFt: Math.round(tilesSq),
-        otherSqFt: Math.round(otherSq),
-        slabsPct: Math.round((slabsSq / totalYard) * 100),
-        tilesPct: Math.round((tilesSq / totalYard) * 100),
-        otherPct: Math.round((otherSq / totalYard) * 100)
-      });
-
-      setStats({
-        totalSales: totalSales || 490000,
-        totalReceived: totalReceived || 320000,
-        totalDue: totalDue || 170000,
-        totalStockSqFt: Math.round(totalStockSqFt * 10) / 10 || 32025.6,
-        invoicesCount: invoices.length || 2,
-        customersCount: withDues.length || 4
-      });
-
-      setSalesTrendSummary({
-        periodSales: totalSales || 490000,
-        periodWasooli: totalReceived || 320000
-      });
-
-      const sortedInvoices = [...invoices].sort(
-        (a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date)
-      ).slice(0, 5);
-      setRecentInvoices(sortedInvoices);
-
-      setLowStockItems(lowStock.slice(0, 3));
-
-      // Build Real Factory Activity Feed
-      const activities = [];
-      invoices.forEach(inv => {
-        activities.push({
-          id: `inv-${inv.id || inv.invoiceNo}`,
-          type: 'sale',
-          title: `Bill #${inv.invoiceNo} created`,
-          subtitle: `${inv.customerName || 'Walk-in'} • ${inv.items?.length || 1} items`,
-          amount: `Rs. ${Number(inv.grandTotal || 0).toLocaleString()}`,
-          date: new Date(inv.createdAt || inv.date || Date.now()),
-          invoiceObj: inv
-        });
-      });
-
-      allPayments.forEach(pay => {
-        activities.push({
-          id: `pay-${pay.id}`,
-          type: 'payment',
-          title: `Wasooli received`,
-          subtitle: `${pay.customerName || 'Customer'} • ${pay.paymentMethod || 'Cash'}`,
-          amount: `+Rs. ${Number(pay.amount || 0).toLocaleString()}`,
-          date: new Date(pay.date || pay.createdAt || Date.now())
-        });
-      });
-
-      allExpenses.forEach(exp => {
-        activities.push({
-          id: `exp-${exp.id}`,
-          type: 'expense',
-          title: `Daily Expense: ${exp.category}`,
-          subtitle: exp.paidTo ? `Paid to ${exp.paidTo}` : 'Karkhana expense',
-          amount: `-Rs. ${Number(exp.amount || 0).toLocaleString()}`,
-          date: new Date(exp.createdAt || exp.date || Date.now())
-        });
-      });
-
-      activities.sort((a, b) => b.date - a.date);
-      setActivityFeed(activities.slice(0, 5));
-
-      // Build Weekly Trend from actual data if available
-      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      const dynamicTrend = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
-        const dStr = d.toISOString().slice(0, 10);
-        let sAmt = 0;
-        let wAmt = 0;
-
-        invoices.forEach(inv => {
-          if ((inv.createdAt || inv.date || '').slice(0, 10) === dStr) {
-            sAmt += Number(inv.grandTotal || 0);
-            wAmt += Number(inv.paidAmount || 0);
-          }
-        });
-
-        allPayments.forEach(pay => {
-          if ((pay.date || pay.createdAt || '').slice(0, 10) === dStr) {
-            wAmt += Number(pay.amount || 0);
-          }
-        });
-
-        // Default baseline curve if historical day is 0 so the chart looks realistic
-        const baselineSales = [45000, 80000, 65000, 120000, 35000, 90000, 55000][(7 - i) % 7];
-        const baselineWasooli = [35000, 50000, 40000, 75000, 20000, 60000, 40000][(7 - i) % 7];
-
-        dynamicTrend.push({
-          day: dayNames[d.getDay()],
-          dateStr: dStr,
-          sales: sAmt > 0 ? sAmt : baselineSales,
-          wasooli: wAmt > 0 ? wAmt : baselineWasooli
-        });
-      }
-      setWeeklyTrendData(dynamicTrend);
-
-    } catch (err) {
-      console.error('Error loading dashboard data:', err);
-    }
-  };
-
+  // ---------------------------------------------------------------------------
+  // 4. DATABASE ACTION HANDLERS
+  // ---------------------------------------------------------------------------
   const handleSaveQuickExpense = async (e) => {
     e.preventDefault();
     if (!expenseForm.amount || Number(expenseForm.amount) <= 0) return;
 
     try {
-      const today = new Date().toISOString().slice(0, 10);
       await db.daily_expenses.add({
-        date: today,
+        date: todayDate,
         category: expenseForm.category,
         amount: Number(expenseForm.amount),
-        paidTo: expenseForm.paidTo || (language === 'ur' ? 'عام خرچ' : 'General'),
+        paidTo: expenseForm.paidTo || (language === 'ur' ? 'عام خرچ' : 'General Expense'),
         remarks: expenseForm.remarks || '',
         createdAt: new Date().toISOString()
       });
 
-      setExpenseSuccessMsg(language === 'ur' ? 'خرچ درج ہوگیا' : 'Expense recorded');
+      setExpenseSuccessMsg(language === 'ur' ? 'خرچ کامیابی سے درج ہوگیا' : 'Expense recorded successfully');
       setExpenseForm({ category: 'Food / Mess (کھانا چائے)', amount: '', paidTo: '', remarks: '' });
-      await loadDashboardData();
 
       setTimeout(() => {
         setExpenseSuccessMsg('');
         setIsQuickExpenseOpen(false);
       }, 700);
     } catch (err) {
-      console.error(err);
+      console.error('Error saving quick expense:', err);
     }
   };
 
@@ -318,7 +337,7 @@ export default function DashboardView({ setActiveView, settings }) {
         const customer = await db.customers.get(targetCustId);
         if (!customer) return;
 
-        const paymentNo = `PAY-${Date.now().toString().slice(-6)}`;
+        const paymentNo = `PAY-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
         await db.customer_payments.add({
           paymentNo,
           customerId: customer.id,
@@ -330,22 +349,27 @@ export default function DashboardView({ setActiveView, settings }) {
           createdAt: new Date().toISOString()
         });
 
-        const newBalance = Math.max(0, (Number(customer.balanceDue) || 0) - payAmount);
+        const currentBalance = Number(customer.balanceDue || 0);
+        const currentPaid = Number(customer.totalPaid || 0);
+        const newBalance = Math.max(0, currentBalance - payAmount);
+        const newPaid = currentPaid + payAmount;
+
         await db.customers.update(customer.id, {
           balanceDue: newBalance,
+          totalPaid: newPaid,
           updatedAt: new Date().toISOString()
         });
       });
 
       setWasooliSuccessMsg(language === 'ur' ? 'وصولی درج ہوگئی' : 'Payment received');
-      await loadDashboardData();
+      setWasooliForm({ customerId: '', amount: '', paymentMethod: 'Cash', notes: '' });
 
       setTimeout(() => {
         setWasooliSuccessMsg('');
         setIsQuickWasooliOpen(false);
       }, 700);
     } catch (err) {
-      console.error(err);
+      console.error('Error recording wasooli:', err);
     }
   };
 
@@ -361,32 +385,26 @@ export default function DashboardView({ setActiveView, settings }) {
         0,
         'Quick Intake',
         'RESTOCK-DASH',
-        'Quick restock from alert'
+        'Quick restock from low stock alert'
       );
 
       setRestockSuccessMsg(language === 'ur' ? 'اسٹاک بڑھ گیا' : 'Stock updated');
       setRestockAmount('');
-      await loadDashboardData();
 
       setTimeout(() => {
         setRestockSuccessMsg('');
         setIsRestockModalOpen(false);
       }, 700);
     } catch (err) {
-      console.error(err);
+      console.error('Error updating stock:', err);
     }
   };
-
-  // Percentage of sales collected
-  const collectionPercentage = stats.totalSales > 0
-    ? Math.round((stats.totalReceived / stats.totalSales) * 100)
-    : 65;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto' }}>
 
       {/* ------------------------------------------------------------------------- */}
-      {/* 1. PAGE HEADER (Compact Operational Header with Clear Action Hierarchy)  */}
+      {/* 1. PAGE HEADER (Action Buttons & Live Factory Context)                     */}
       {/* ------------------------------------------------------------------------- */}
       <div style={{
         display: 'flex',
@@ -403,7 +421,7 @@ export default function DashboardView({ setActiveView, settings }) {
             letterSpacing: '-0.02em',
             margin: 0
           }}>
-            {language === 'ur' ? 'کارخانہ جائزہ' : 'Karkhana Overview'}
+            {language === 'ur' ? 'کارخانہ ڈیش بورڈ' : 'Karkhana Dashboard'}
           </h2>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
             {new Date().toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-US', {
@@ -415,7 +433,7 @@ export default function DashboardView({ setActiveView, settings }) {
           </div>
         </div>
 
-        {/* Homogeneous Action Button System (48px Height, Uniform Radius, #D8E0EA Border) */}
+        {/* Action Button System */}
         <ActionGroup
           language={language}
           primaryAction={{
@@ -436,7 +454,17 @@ export default function DashboardView({ setActiveView, settings }) {
               icon: CreditCard,
               iconColor: 'var(--text-secondary, #475569)',
               label: language === 'ur' ? 'ادھار وصولی' : '+ Receive Payment',
-              onClick: () => setIsQuickWasooliOpen(true),
+              onClick: () => {
+                if (customersWithDues.length > 0) {
+                  setWasooliForm({
+                    customerId: customersWithDues[0].id.toString(),
+                    amount: customersWithDues[0].balanceDue.toString(),
+                    paymentMethod: 'Cash',
+                    notes: `Payment for ${customersWithDues[0].name}`
+                  });
+                }
+                setIsQuickWasooliOpen(true);
+              },
               title: language === 'ur' ? 'گاہک سے رقم وصول کریں' : 'Receive customer payment'
             },
             {
@@ -451,7 +479,7 @@ export default function DashboardView({ setActiveView, settings }) {
       </div>
 
       {/* ------------------------------------------------------------------------- */}
-      {/* 2. COHERENT KPI STRIP (Unified Container, #CBD5E1 Border, 14px Radius)     */}
+      {/* 2. REAL-TIME KPI STRIP (Derived from Real Live Database)                   */}
       {/* ------------------------------------------------------------------------- */}
       <div className="kpi-unified-strip">
         {/* KPI 1: TOTAL SALES */}
@@ -463,7 +491,7 @@ export default function DashboardView({ setActiveView, settings }) {
             <TrendingUp size={14} style={{ color: 'var(--text-muted)' }} />
           </div>
           <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            Rs. {stats.totalSales.toLocaleString()}
+            Rs. {totalSales.toLocaleString()}
           </div>
         </div>
 
@@ -486,7 +514,7 @@ export default function DashboardView({ setActiveView, settings }) {
             </div>
           </div>
           <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#059669', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            Rs. {stats.totalReceived.toLocaleString()}
+            Rs. {totalReceived.toLocaleString()}
           </div>
         </div>
 
@@ -499,7 +527,7 @@ export default function DashboardView({ setActiveView, settings }) {
             <AlertCircle size={14} style={{ color: '#dc2626' }} />
           </div>
           <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#dc2626', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            Rs. {stats.totalDue.toLocaleString()}
+            Rs. {totalDue.toLocaleString()}
           </div>
         </div>
 
@@ -512,16 +540,16 @@ export default function DashboardView({ setActiveView, settings }) {
             <Boxes size={14} style={{ color: 'var(--accent-blue)' }} />
           </div>
           <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--accent-blue)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            {stats.totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Sq.Ft</span>
+            {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Sq.Ft</span>
           </div>
         </div>
       </div>
 
       {/* ------------------------------------------------------------------------- */}
-      {/* 3. OPERATIONAL ALERT BANNER (Compact Needs Attention Strip, 56-64px)       */}
+      {/* 3. REAL OPERATIONAL ALERT BANNER                                          */}
       {/* ------------------------------------------------------------------------- */}
       {(() => {
-        const hasUdhaarAlert = stats.totalDue > 0;
+        const hasUdhaarAlert = totalDue > 0;
         const hasStockAlert = lowStockItems.length > 0;
         const totalAlerts = (hasUdhaarAlert ? 1 : 0) + (hasStockAlert ? 1 : 0);
 
@@ -536,16 +564,26 @@ export default function DashboardView({ setActiveView, settings }) {
                     <AlertTriangle size={18} style={{ color: '#DC2626', flexShrink: 0 }} />
                     <span>
                       {language === 'ur'
-                        ? `${customersWithDues.length || stats.customersCount} گاہکوں کا ادھار بقایا ہے`
-                        : `${customersWithDues.length || stats.customersCount} Customers have outstanding Udhaar`}
+                        ? `${customersWithDues.length} گاہکوں کا ادھار بقایا ہے (Rs. ${totalDue.toLocaleString()})`
+                        : `${customersWithDues.length} Customers have outstanding Udhaar (Rs. ${totalDue.toLocaleString()})`}
                     </span>
                   </div>
                   <button
                     type="button"
                     className="dash-alert-action-btn"
-                    onClick={() => setIsQuickWasooliOpen(true)}
+                    onClick={() => {
+                      if (customersWithDues.length > 0) {
+                        setWasooliForm({
+                          customerId: customersWithDues[0].id.toString(),
+                          amount: customersWithDues[0].balanceDue.toString(),
+                          paymentMethod: 'Cash',
+                          notes: `Payment for ${customersWithDues[0].name}`
+                        });
+                      }
+                      setIsQuickWasooliOpen(true);
+                    }}
                   >
-                    <span>{language === 'ur' ? 'کھاتہ دیکھیں' : 'View details'}</span>
+                    <span>{language === 'ur' ? 'وصولی درج کریں' : 'Receive Payment'}</span>
                     <ArrowRight size={13} />
                   </button>
                 </>
@@ -577,7 +615,7 @@ export default function DashboardView({ setActiveView, settings }) {
           );
         }
 
-        // Multiple Alerts: Expand gracefully
+        // Multiple Alerts
         return (
           <div className="dash-alert-strip dash-alert-multi">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '2px' }}>
@@ -586,33 +624,41 @@ export default function DashboardView({ setActiveView, settings }) {
                 <span>{language === 'ur' ? 'توجہ طلب امور' : 'Needs Attention'}</span>
               </div>
               <span style={{ fontSize: '0.72rem', color: '#991B1B', fontWeight: 600 }}>
-                {totalAlerts} {language === 'ur' ? 'ضروری اقدامات' : 'Actionable items'}
+                {totalAlerts} {language === 'ur' ? 'ضروری الرٹس' : 'Active alerts'}
               </span>
             </div>
 
-            {/* Alert Row 1: Udhaar Due */}
             {hasUdhaarAlert && (
               <div className="dash-alert-row" style={{ paddingTop: '6px', borderTop: '1px solid rgba(239, 68, 68, 0.15)' }}>
                 <div className="dash-alert-message">
                   <AlertCircle size={15} style={{ flexShrink: 0 }} />
                   <span>
                     {language === 'ur'
-                      ? `${customersWithDues.length || stats.customersCount} گاہکوں کا ادھار بقایا ہے (Rs. ${stats.totalDue.toLocaleString()})`
-                      : `${customersWithDues.length || stats.customersCount} Customers have outstanding Udhaar (Rs. ${stats.totalDue.toLocaleString()})`}
+                      ? `${customersWithDues.length} گاہکوں کا ادھار بقایا ہے (Rs. ${totalDue.toLocaleString()})`
+                      : `${customersWithDues.length} Customers have outstanding Udhaar (Rs. ${totalDue.toLocaleString()})`}
                   </span>
                 </div>
                 <button
                   type="button"
                   className="dash-alert-action-btn"
-                  onClick={() => setIsQuickWasooliOpen(true)}
+                  onClick={() => {
+                    if (customersWithDues.length > 0) {
+                      setWasooliForm({
+                        customerId: customersWithDues[0].id.toString(),
+                        amount: customersWithDues[0].balanceDue.toString(),
+                        paymentMethod: 'Cash',
+                        notes: `Payment for ${customersWithDues[0].name}`
+                      });
+                    }
+                    setIsQuickWasooliOpen(true);
+                  }}
                 >
-                  <span>{language === 'ur' ? 'دیکھیں' : 'View'}</span>
+                  <span>{language === 'ur' ? 'وصولی' : 'Payment'}</span>
                   <ArrowRight size={13} />
                 </button>
               </div>
             )}
 
-            {/* Alert Row 2: Low Stock Items */}
             {hasStockAlert && (
               <div className="dash-alert-row" style={{ paddingTop: '6px', borderTop: '1px solid rgba(239, 68, 68, 0.15)' }}>
                 <div className="dash-alert-message" style={{ color: '#B45309' }}>
@@ -632,7 +678,7 @@ export default function DashboardView({ setActiveView, settings }) {
                     setIsRestockModalOpen(true);
                   }}
                 >
-                  <span>{language === 'ur' ? 'دیکھیں' : 'View'}</span>
+                  <span>{language === 'ur' ? 'اسٹاک بڑھائیں' : 'Restock'}</span>
                   <ArrowRight size={13} />
                 </button>
               </div>
@@ -642,7 +688,7 @@ export default function DashboardView({ setActiveView, settings }) {
       })()}
 
       {/* ------------------------------------------------------------------------- */}
-      {/* 4. RECENT BILLS TABLE (100% Full Width, Primary Operational Hub)           */}
+      {/* 4. RECENT BILLS TABLE (Real Database Records)                              */}
       {/* ------------------------------------------------------------------------- */}
       <div className="dash-card dash-card-flush" style={{ width: '100%' }}>
         <div className="dash-card-header-flush">
@@ -664,8 +710,8 @@ export default function DashboardView({ setActiveView, settings }) {
           <table className="dash-table">
             <thead>
               <tr>
-                <th style={{ width: '13%' }}>{language === 'ur' ? 'بل نمبر' : 'Bill #'}</th>
-                <th style={{ width: '27%' }}>{language === 'ur' ? 'گاہک' : 'Customer'}</th>
+                <th style={{ width: '14%' }}>{language === 'ur' ? 'بل نمبر' : 'Bill #'}</th>
+                <th style={{ width: '26%' }}>{language === 'ur' ? 'گاہک' : 'Customer'}</th>
                 <th style={{ width: '14%', textAlign: 'right' }}>{language === 'ur' ? 'کل رقم' : 'Total'}</th>
                 <th style={{ width: '14%', textAlign: 'right' }}>{language === 'ur' ? 'وصول' : 'Paid'}</th>
                 <th style={{ width: '14%', textAlign: 'right' }}>{language === 'ur' ? 'ادھار باقی' : 'Due'}</th>
@@ -676,8 +722,17 @@ export default function DashboardView({ setActiveView, settings }) {
             <tbody>
               {recentInvoices.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '28px', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
-                    {language === 'ur' ? 'کوئی بل موجود نہیں ہے۔' : 'No recent bills found.'}
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                    <div>{language === 'ur' ? 'ابھی تک کوئی بل ریکارڈ نہیں ہوا۔' : 'No invoices generated yet.'}</div>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm"
+                      onClick={() => setActiveView('billing')}
+                      style={{ marginTop: '10px' }}
+                    >
+                      <Plus size={14} />
+                      <span>{language === 'ur' ? 'نیا بل بنائیں (POS)' : 'Create First Bill'}</span>
+                    </button>
                   </td>
                 </tr>
               ) : (
@@ -690,12 +745,10 @@ export default function DashboardView({ setActiveView, settings }) {
                     }}
                     style={{ cursor: 'pointer' }}
                   >
-                    {/* Bill # */}
                     <td className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.84rem', whiteSpace: 'nowrap' }}>
                       {inv.invoiceNo}
                     </td>
 
-                    {/* Customer Name + subtle phone underneath */}
                     <td>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.85rem' }}>
                         {inv.customerName}
@@ -707,27 +760,22 @@ export default function DashboardView({ setActiveView, settings }) {
                       )}
                     </td>
 
-                    {/* Total (Kul) */}
                     <td className="num-cell" style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       Rs. {Number(inv.grandTotal || 0).toLocaleString()}
                     </td>
 
-                    {/* Paid (Wasooli) */}
                     <td className="num-cell" style={{ fontSize: '0.86rem', fontWeight: 700, color: '#059669' }}>
                       Rs. {Number(inv.paidAmount || 0).toLocaleString()}
                     </td>
 
-                    {/* Due (Udhaar) */}
                     <td className="num-cell" style={{ fontSize: '0.86rem', fontWeight: 700, color: Number(inv.balanceDue) > 0 ? '#dc2626' : 'var(--text-muted)' }}>
                       Rs. {Number(inv.balanceDue || 0).toLocaleString()}
                     </td>
 
-                    {/* Status */}
                     <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
                       <Badge status={inv.paymentStatus} />
                     </td>
 
-                    {/* Print Action */}
                     <td style={{ textAlign: 'center' }}>
                       <button
                         type="button"
@@ -756,259 +804,253 @@ export default function DashboardView({ setActiveView, settings }) {
       {/* ------------------------------------------------------------------------- */}
       <div className="dash-grid-2x2">
 
-        {/* 1. SALES & COLLECTION OVERVIEW (Clean Trend Visualization) */}
+        {/* 1. SALES & COLLECTION TREND */}
         <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          {/* Header with Period Toggles */}
-          <div className="dash-card-header">
-            <div>
+          <div>
+            <div className="dash-card-header">
+              <div>
+                <h3 className="dash-card-title">
+                  <BarChart2 size={16} style={{ color: 'var(--accent-blue)' }} />
+                  <span>{language === 'ur' ? 'سیلز و وصولی رجحان' : 'Sales & Collection Trend'}</span>
+                </h3>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  {salesTimeFilter === 'today'
+                    ? (language === 'ur' ? 'آج کی کارکردگی' : "Today's performance")
+                    : salesTimeFilter === 'month'
+                    ? (language === 'ur' ? 'اس ماہ کا مجموعہ' : 'This Month total')
+                    : (language === 'ur' ? 'حالیہ 7 دن کا جائزہ' : 'Last 7 days daily trend')}
+                </div>
+              </div>
+
+              {/* Filter Pills */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: 'var(--bg-primary)',
+                padding: '2px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                fontSize: '0.72rem'
+              }}>
+                {[
+                  { key: 'today', labelEn: 'Today', labelUr: 'آج' },
+                  { key: 'week', labelEn: 'This Week', labelUr: 'اس ہفتے' },
+                  { key: 'month', labelEn: 'This Month', labelUr: 'اس ماہ' }
+                ].map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setSalesTimeFilter(f.key)}
+                    style={{
+                      background: salesTimeFilter === f.key ? 'var(--bg-card)' : 'transparent',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontWeight: salesTimeFilter === f.key ? 700 : 500,
+                      color: salesTimeFilter === f.key ? 'var(--accent-blue)' : 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      boxShadow: salesTimeFilter === f.key ? '0 1px 2px rgba(15,23,42,0.06)' : 'none'
+                    }}
+                  >
+                    {language === 'ur' ? f.labelUr : f.labelEn}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Metric KPIs */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '14px' }}>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {language === 'ur' ? 'سیلز' : 'Sales'}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
+                  Rs. {salesTrendSummary.periodSales.toLocaleString()}
+                </div>
+              </div>
+              <div style={{ borderLeft: '1px solid var(--border-color)', height: '30px' }}></div>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {language === 'ur' ? 'وصول رقم' : 'Received'}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#059669' }}>
+                  Rs. {salesTrendSummary.periodWasooli.toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            {/* SVG Trend Visualization */}
+            <div style={{ width: '100%', overflowX: 'auto', padding: '4px 0' }}>
+              {(() => {
+                const maxVal = Math.max(...weeklyTrendData.map((d) => Math.max(d.sales, d.wasooli)), 1000);
+                const salesPoints = weeklyTrendData.map((d, i) => `${35 + i * 65},${120 - (d.sales / maxVal) * 95}`).join(' ');
+                const wasooliPoints = weeklyTrendData.map((d, i) => `${35 + i * 65},${120 - (d.wasooli / maxVal) * 95}`).join(' ');
+
+                return (
+                  <svg viewBox="0 0 460 145" style={{ width: '100%', height: '145px', overflow: 'visible' }}>
+                    <line x1="20" y1="25" x2="445" y2="25" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
+                    <line x1="20" y1="72" x2="445" y2="72" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
+                    <line x1="20" y1="120" x2="445" y2="120" stroke="var(--border-color)" />
+
+                    <polyline points={salesPoints} fill="none" stroke="var(--accent-blue)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    <polyline points={wasooliPoints} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                    {weeklyTrendData.map((d, i) => {
+                      const cx = 35 + i * 65;
+                      const cySales = 120 - (d.sales / maxVal) * 95;
+                      const cyWasooli = 120 - (d.wasooli / maxVal) * 95;
+                      return (
+                        <g key={i}>
+                          <circle cx={cx} cy={cySales} r="3.5" fill="var(--accent-blue)" />
+                          <circle cx={cx} cy={cyWasooli} r="3.5" fill="#059669" />
+                          <text x={cx} y="138" textAnchor="middle" fontSize="11" fill="var(--text-secondary)" fontWeight="600">
+                            {d.day}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                );
+              })()}
+            </div>
+          </div>
+
+          <div className="dash-card-footer">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.74rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-blue)' }}></span>
+                <span style={{ color: 'var(--text-secondary)' }}>{language === 'ur' ? 'سیلز' : 'Sales'}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669' }}></span>
+                <span style={{ color: 'var(--text-secondary)' }}>{language === 'ur' ? 'وصولی' : 'Received'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. CUSTOMER DUES PANEL */}
+        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div className="dash-card-header">
               <h3 className="dash-card-title">
-                <BarChart2 size={16} style={{ color: 'var(--accent-blue)' }} />
-                <span>{language === 'ur' ? 'سیلز و وصولی رجحان' : 'Sales & Collection Trend'}</span>
+                <CreditCard size={16} style={{ color: '#dc2626' }} />
+                <span>{language === 'ur' ? 'گاہک ادھار' : 'Customer Dues'}</span>
               </h3>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                {salesTimeFilter === 'today'
-                  ? (language === 'ur' ? 'آج کی کارکردگی' : "Today's performance")
-                  : salesTimeFilter === 'month'
-                  ? (language === 'ur' ? 'اس ماہ کا مجموعہ' : 'This Month total')
-                  : (language === 'ur' ? 'حالیہ 7 دن کا جائزہ' : 'Last 7 days daily trend')}
-              </div>
+              <button
+                type="button"
+                className="dash-card-action"
+                onClick={() => setActiveView('customers')}
+              >
+                <span>{language === 'ur' ? 'تمام دیکھیں' : 'View all'}</span>
+                <ArrowRight size={13} />
+              </button>
             </div>
 
-            {/* Time Filter Pills */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              background: 'var(--bg-primary)',
-              padding: '2px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              fontSize: '0.72rem'
-            }}>
-              {[
-                { key: 'today', labelEn: 'Today', labelUr: 'آج' },
-                { key: 'week', labelEn: 'This Week', labelUr: 'اس ہفتے' },
-                { key: 'month', labelEn: 'This Month', labelUr: 'اس ماہ' }
-              ].map(f => (
-                <button
-                  key={f.key}
-                  type="button"
-                  onClick={() => setSalesTimeFilter(f.key)}
-                  style={{
-                    background: salesTimeFilter === f.key ? '#ffffff' : 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '4px 10px',
-                    fontWeight: salesTimeFilter === f.key ? 700 : 500,
-                    color: salesTimeFilter === f.key ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    boxShadow: salesTimeFilter === f.key ? '0 1px 2px rgba(15,23,42,0.06)' : 'none'
-                  }}
-                >
-                  {language === 'ur' ? f.labelUr : f.labelEn}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Metric KPIs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '14px' }}>
-            <div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                {language === 'ur' ? 'کل سیلز' : 'Total Sales'}
+            {customersWithDues.length === 0 ? (
+              <div style={{
+                padding: '28px 12px',
+                textAlign: 'center',
+                color: '#059669',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px'
+              }}>
+                <CheckCircle2 size={16} />
+                <span>{language === 'ur' ? 'تمام گاہکوں کے ادھار کھاتے کلیئر ہیں' : 'All customer accounts are settled'}</span>
               </div>
-              <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
-                Rs. {salesTimeFilter === 'today' ? Number(stats.totalSales * 0.4).toLocaleString() : stats.totalSales.toLocaleString()}
-              </div>
-            </div>
-            <div style={{ borderLeft: '1px solid #E5EAF0', height: '30px' }}></div>
-            <div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                {language === 'ur' ? 'وصول کردہ رقم' : 'Wasooli Collected'}
-              </div>
-              <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#059669' }}>
-                Rs. {salesTimeFilter === 'today' ? Number(stats.totalReceived * 0.35).toLocaleString() : stats.totalReceived.toLocaleString()}
-              </div>
-            </div>
-          </div>
-
-          {/* Clean Lightweight SVG Dual-Trend Visualization */}
-          <div style={{ width: '100%', overflowX: 'auto', padding: '4px 0' }}>
-            {(() => {
-              const maxVal = Math.max(...weeklyTrendData.map(d => Math.max(d.sales, d.wasooli)), 120000);
-              const salesPoints = weeklyTrendData.map((d, i) => `${35 + i * 65},${120 - (d.sales / maxVal) * 95}`).join(' ');
-              const wasooliPoints = weeklyTrendData.map((d, i) => `${35 + i * 65},${120 - (d.wasooli / maxVal) * 95}`).join(' ');
-
-              return (
-                <svg viewBox="0 0 460 145" style={{ width: '100%', height: '145px', overflow: 'visible' }}>
-                  {/* Grid lines */}
-                  <line x1="20" y1="25" x2="445" y2="25" stroke="#E5EAF0" strokeDasharray="3 3" opacity="0.8" />
-                  <line x1="20" y1="72" x2="445" y2="72" stroke="#E5EAF0" strokeDasharray="3 3" opacity="0.8" />
-                  <line x1="20" y1="120" x2="445" y2="120" stroke="#E5EAF0" />
-
-                  {/* Trend Lines */}
-                  <polyline points={salesPoints} fill="none" stroke="var(--accent-blue)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <polyline points={wasooliPoints} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-                  {/* Nodes & Day Labels */}
-                  {weeklyTrendData.map((d, i) => {
-                    const cx = 35 + i * 65;
-                    const cySales = 120 - (d.sales / maxVal) * 95;
-                    const cyWasooli = 120 - (d.wasooli / maxVal) * 95;
-                    return (
-                      <g key={i}>
-                        <circle cx={cx} cy={cySales} r="3.5" fill="var(--accent-blue)" />
-                        <circle cx={cx} cy={cyWasooli} r="3.5" fill="#059669" />
-                        <text x={cx} y="138" textAnchor="middle" fontSize="11" fill="var(--text-secondary)" fontWeight="600">
-                          {d.day}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
-              );
-            })()}
-          </div>
-
-              {/* Simple Legend Footer */}
-              <div className="dash-card-footer">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.74rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-blue)' }}></span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{language === 'ur' ? 'سیلز' : 'Sales'}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669' }}></span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{language === 'ur' ? 'وصولی' : 'Received'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. CUSTOMER DUES PANEL (No Nested Boxes — Simple Flat Rows) */}
-            <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <div className="dash-card-header">
-                  <h3 className="dash-card-title">
-                    <CreditCard size={16} style={{ color: '#dc2626' }} />
-                    <span>{language === 'ur' ? 'گاہک ادھار' : 'Customer Dues'}</span>
-                  </h3>
-                  <button
-                    type="button"
-                    className="dash-card-action"
-                    onClick={() => setActiveView('customers')}
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {customersWithDues.slice(0, 4).map((cust) => (
+                  <div
+                    key={cust.id}
+                    className="dash-row-item interactive"
+                    onClick={() => {
+                      setWasooliForm({
+                        customerId: cust.id.toString(),
+                        amount: cust.balanceDue.toString(),
+                        paymentMethod: 'Cash',
+                        notes: `Payment for ${cust.name}`
+                      });
+                      setIsQuickWasooliOpen(true);
+                    }}
+                    title="Click to record payment"
                   >
-                    <span>{language === 'ur' ? 'تمام دیکھیں' : 'View all'}</span>
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-
-                {/* Customer Dues List - Simple Flat Rows with Hairline Dividers (NO Nested Boxes!) */}
-                {customersWithDues.length === 0 ? (
-                  <div style={{
-                    padding: '28px 12px',
-                    textAlign: 'center',
-                    color: '#059669',
-                    fontSize: '0.8rem',
-                    fontWeight: 600,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px'
-                  }}>
-                    <CheckCircle2 size={16} />
-                    <span>{language === 'ur' ? 'تمام گاہکوں کے ادھار کھاتے کلیئر ہیں' : 'All customer accounts are settled'}</span>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {customersWithDues.slice(0, 4).map(cust => (
-                      <div
-                        key={cust.id}
-                        className="dash-row-item interactive"
-                        onClick={() => {
-                          setWasooliForm({
-                            customerId: cust.id.toString(),
-                            amount: cust.balanceDue.toString(),
-                            paymentMethod: 'Cash',
-                            notes: `Payment for ${cust.name}`
-                          });
-                          setIsQuickWasooliOpen(true);
-                        }}
-                        title="Click to record payment"
-                      >
-                        <div>
-                          <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                            {cust.name}
-                          </div>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                            {cust.phone || '0300-8456123'}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div className="font-mono" style={{ fontSize: '0.88rem', fontWeight: 800, color: '#dc2626' }}>
-                            Rs. {Number(cust.balanceDue).toLocaleString()}
-                          </div>
-                          <div style={{ fontSize: '0.68rem', color: 'var(--accent-blue)', fontWeight: 600 }}>
-                            + {language === 'ur' ? 'وصولی' : 'Payment'}
-                          </div>
-                        </div>
+                    <div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {cust.name}
                       </div>
-                    ))}
+                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {cust.phone || 'No phone'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="font-mono" style={{ fontSize: '0.88rem', fontWeight: 800, color: '#dc2626' }}>
+                        Rs. {Number(cust.balanceDue).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--accent-blue)', fontWeight: 600 }}>
+                        + {language === 'ur' ? 'وصولی' : 'Payment'}
+                      </div>
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
+            )}
+          </div>
 
-              {/* Dues Summary Footer */}
-              <div className="dash-card-footer">
-                <span style={{ color: 'var(--text-secondary)' }}>
-                  {customersWithDues.length} {language === 'ur' ? 'گاہکوں کا ادھار' : 'customers overdue'}
-                </span>
-                <div>
-                  <span style={{ color: 'var(--text-muted)', marginRight: '6px' }}>{language === 'ur' ? 'کل بقایا:' : 'Total Due:'}</span>
-                  <strong className="font-mono" style={{ color: '#dc2626', fontSize: '0.92rem' }}>
-                    Rs. {stats.totalDue.toLocaleString()}
-                  </strong>
-                </div>
-              </div>
+          <div className="dash-card-footer">
+            <span style={{ color: 'var(--text-secondary)' }}>
+              {customersWithDues.length} {language === 'ur' ? 'گاہکوں کا ادھار' : 'customers overdue'}
+            </span>
+            <div>
+              <span style={{ color: 'var(--text-muted)', marginRight: '6px' }}>{language === 'ur' ? 'کل بقایا:' : 'Total Due:'}</span>
+              <strong className="font-mono" style={{ color: '#dc2626', fontSize: '0.92rem' }}>
+                Rs. {totalDue.toLocaleString()}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. YARD STOCK POSITION & BREAKDOWN */}
+        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div className="dash-card-header">
+              <h3 className="dash-card-title">
+                <Boxes size={16} style={{ color: 'var(--accent-blue)' }} />
+                <span>{language === 'ur' ? 'یارڈ اسٹاک پوزیشن' : 'Yard Stock Position'}</span>
+              </h3>
+              <button
+                type="button"
+                className="dash-card-action"
+                onClick={() => setActiveView('stock')}
+              >
+                <span>{language === 'ur' ? 'اسٹاک لسٹ' : 'View stock'}</span>
+                <ArrowRight size={13} />
+              </button>
             </div>
 
-            {/* 3. YARD STOCK POSITION & BREAKDOWN */}
-            <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <span className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Sq.Ft Total</span>
+              </span>
+            </div>
+
+            {/* Category Proportion Bars */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Slabs */}
               <div>
-                <div className="dash-card-header">
-                  <h3 className="dash-card-title">
-                    <Boxes size={16} style={{ color: 'var(--accent-blue)' }} />
-                    <span>{language === 'ur' ? 'یارڈ اسٹاک پوزیشن' : 'Yard Stock Position'}</span>
-                  </h3>
-                  <button
-                    type="button"
-                    className="dash-card-action"
-                    onClick={() => setActiveView('stock')}
-                  >
-                    <span>{language === 'ur' ? 'اسٹاک لسٹ' : 'View stock'}</span>
-                    <ArrowRight size={13} />
-                  </button>
-                </div>
-
-                {/* Total Metric */}
-                <div style={{ marginBottom: '16px' }}>
-                  <span className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                    {stats.totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Sq.Ft Total</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {language === 'ur' ? 'ماربل سلیبز' : 'Marble Slabs'}
                   </span>
-                </div>
-
-                {/* Category Proportion Bars */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {/* Slabs */}
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '4px' }}>
-                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {language === 'ur' ? 'ماربل سلیبز' : 'Marble Slabs'}
-                      </span>
                   <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
                     {stockBreakdown.slabsSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.slabsPct}%)
                   </span>
                 </div>
-                <div style={{ height: '7px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{ height: '7px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
                   <div style={{ width: `${stockBreakdown.slabsPct}%`, height: '100%', background: 'var(--accent-blue)', borderRadius: '99px' }}></div>
                 </div>
               </div>
@@ -1023,7 +1065,7 @@ export default function DashboardView({ setActiveView, settings }) {
                     {stockBreakdown.tilesSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.tilesPct}%)
                   </span>
                 </div>
-                <div style={{ height: '7px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{ height: '7px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
                   <div style={{ width: `${stockBreakdown.tilesPct}%`, height: '100%', background: '#059669', borderRadius: '99px' }}></div>
                 </div>
               </div>
@@ -1038,14 +1080,13 @@ export default function DashboardView({ setActiveView, settings }) {
                     {stockBreakdown.otherSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.otherPct}%)
                   </span>
                 </div>
-                <div style={{ height: '7px', background: '#f1f5f9', borderRadius: '99px', overflow: 'hidden' }}>
+                <div style={{ height: '7px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
                   <div style={{ width: `${stockBreakdown.otherPct}%`, height: '100%', background: '#d97706', borderRadius: '99px' }}></div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Alert Footer */}
           <div className="dash-card-footer">
             {lowStockItems.length > 0 ? (
               <div
@@ -1071,7 +1112,7 @@ export default function DashboardView({ setActiveView, settings }) {
           </div>
         </div>
 
-        {/* 4. RECENT FACTORY ACTIVITY FEED (No Nested Mini-Cards — Simple Flat Rows) */}
+        {/* 4. RECENT FACTORY ACTIVITY FEED */}
         <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
           <div>
             <div className="dash-card-header">
@@ -1081,7 +1122,6 @@ export default function DashboardView({ setActiveView, settings }) {
               </h3>
             </div>
 
-            {/* Activity Stream - Flat Rows with Hairline Dividers (NO Nested Mini-Boxes!) */}
             {activityFeed.length === 0 ? (
               <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                 {language === 'ur' ? 'کوئی حالیہ سرگرمی ریکارڈ نہیں ہے' : 'No recent factory activity recorded'}
@@ -1151,7 +1191,7 @@ export default function DashboardView({ setActiveView, settings }) {
       </div>
 
       {/* ------------------------------------------------------------------------- */}
-      {/* POP-UPS / MODALS (Progressive Disclosure)                                  */}
+      {/* 6. POP-UPS / MODALS (Progressive Disclosure)                               */}
       {/* ------------------------------------------------------------------------- */}
 
       {/* Modal 1: Roznamcha Cash Drawer */}
@@ -1190,7 +1230,6 @@ export default function DashboardView({ setActiveView, settings }) {
                 </div>
               </div>
 
-              {/* Expense list */}
               {todayExpensesList.length > 0 && (
                 <div>
                   <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '4px' }}>Today Expenses:</div>
@@ -1243,22 +1282,28 @@ export default function DashboardView({ setActiveView, settings }) {
                 )}
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '0.78rem' }}>Customer</label>
-                  <select
-                    className="form-control"
-                    value={wasooliForm.customerId}
-                    onChange={(e) => {
-                      const cid = e.target.value;
-                      const cust = customersWithDues.find(c => c.id.toString() === cid);
-                      setWasooliForm({ ...wasooliForm, customerId: cid, amount: cust ? cust.balanceDue.toString() : '' });
-                    }}
-                    required
-                  >
-                    {customersWithDues.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} (Due: Rs. {Number(c.balanceDue).toLocaleString()})
-                      </option>
-                    ))}
-                  </select>
+                  {customersWithDues.length === 0 ? (
+                    <div style={{ padding: '8px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      No customers with pending dues found.
+                    </div>
+                  ) : (
+                    <select
+                      className="form-control"
+                      value={wasooliForm.customerId}
+                      onChange={(e) => {
+                        const cid = e.target.value;
+                        const cust = customersWithDues.find((c) => c.id.toString() === cid);
+                        setWasooliForm({ ...wasooliForm, customerId: cid, amount: cust ? cust.balanceDue.toString() : '' });
+                      }}
+                      required
+                    >
+                      {customersWithDues.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} (Due: Rs. {Number(c.balanceDue).toLocaleString()})
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 700, color: '#059669' }}>
@@ -1289,7 +1334,9 @@ export default function DashboardView({ setActiveView, settings }) {
               </div>
               <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsQuickWasooliOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary btn-sm">Confirm Payment</button>
+                <button type="submit" className="btn btn-primary btn-sm" disabled={customersWithDues.length === 0}>
+                  Confirm Payment
+                </button>
               </div>
             </form>
           </div>
@@ -1384,20 +1431,18 @@ export default function DashboardView({ setActiveView, settings }) {
                 </div>
               </div>
 
-              {/* Items */}
               <div>
                 <span style={{ fontWeight: 700, color: 'var(--text-secondary)', fontSize: '0.75rem' }}>Billed Stone Items:</span>
                 <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '4px' }}>
                   {(selectedInvoice.items || []).map((it, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 6px', background: 'var(--bg-primary)', borderRadius: '4px' }}>
-                      <span>{it.name} ({it.totalSqFt} Sq.Ft)</span>
-                      <span className="font-mono">Rs. {Number(it.amount).toLocaleString()}</span>
+                      <span>{it.name} ({it.totalSqFt || 0} Sq.Ft)</span>
+                      <span className="font-mono">Rs. {Number(it.amount || 0).toLocaleString()}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* Totals */}
               <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span>Grand Total:</span>

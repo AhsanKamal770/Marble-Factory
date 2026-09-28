@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import {
   ClipboardList,
   Search,
@@ -9,22 +10,15 @@ import {
 import { db } from '../db/index';
 
 export default function StockSheetView({ settings }) {
-  const [items, setItems] = useState([]);
-  const [movements, setMovements] = useState([]);
   const [activeTab, setActiveTab] = useState('sheet'); // 'sheet' | 'movements'
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('ALL');
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    const allItems = await db.items.toArray();
-    const allMovements = await db.stock_movements.toArray();
-    setItems(allItems);
-    setMovements(allMovements.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)));
-  };
+  const items = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
+  const movements = useLiveQuery(async () => {
+    const all = await db.stock_movements.toArray();
+    return all.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+  }, []) || [];
 
   // Calculations for stock sheet summary
   const totalSqFt = items.reduce((acc, it) => acc + (Number(it.stockSqFt) || 0), 0);

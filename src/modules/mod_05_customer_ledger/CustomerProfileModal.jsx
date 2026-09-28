@@ -1,78 +1,262 @@
 import React, { useState, useEffect } from "react";
-import { X, Save } from "lucide-react";
+import { X, Save, User, Phone, MapPin, CreditCard, Building2 } from "lucide-react";
 
 export default function CustomerProfileModal({ customer, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    city: "",
-    customerType: "Retail", // Retail, Wholesale, Builder
+    cnic: "",
+    city: "Faisalabad / Jhumra",
+    address: "",
+    customerType: "Retail", // Retail, Builder, Contractor, Architect
+    creditLimit: 0,
     balanceDue: 0,
+    notes: ""
   });
 
   useEffect(() => {
     if (customer) {
       setFormData({
         ...customer,
+        creditLimit: Number(customer.creditLimit || 0),
+        balanceDue: Number(customer.balanceDue || 0)
       });
     }
   }, [customer]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!formData.name.trim()) return;
     onSave(formData);
   };
 
   return (
-    <div className="modal-overlay" style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "20px", zIndex: 1000 }}>
-      <div className="modal-card" style={{ maxWidth: "500px", width: "100%", background: "var(--bg-card)", borderRadius: "12px", boxShadow: "0 24px 48px rgba(0,0,0,0.2)" }}>
-        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            {customer ? "Edit Customer Profile" : "Add New Customer"}
-          </h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: "4px" }}>
-            <X size={20} />
+    <div className="modal-overlay" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+      backdropFilter: 'blur(6px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+      padding: '20px'
+    }}>
+      <div className="modal-card" style={{
+        maxWidth: "520px",
+        width: "100%",
+        background: "var(--bg-card)",
+        borderRadius: "16px",
+        boxShadow: "var(--shadow-lg)",
+        border: "1px solid var(--border-color)",
+        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column"
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: "18px 24px",
+          borderBottom: "1px solid var(--border-color)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <User size={18} style={{ color: 'var(--accent-blue)' }} />
+            <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>
+              {customer ? "Edit Customer Khata Profile" : "Register New Customer Khata"}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn btn-ghost btn-sm"
+            style={{ padding: "4px", color: "var(--text-muted)" }}
+          >
+            <X size={18} />
           </button>
         </div>
         
+        {/* Form */}
         <form onSubmit={handleSubmit}>
-          <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px", maxHeight: '72vh', overflowY: 'auto' }}>
+            {/* Customer Name */}
             <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>Customer Name *</label>
-              <input required type="text" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", outline: "none", color: "var(--text-primary)" }} placeholder="e.g. Ali Ahmed" />
+              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                Customer / Party Name *
+              </label>
+              <input
+                required
+                type="text"
+                value={formData.name}
+                onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                className="form-control"
+                style={{ padding: "10px 12px", fontSize: "0.9rem" }}
+                placeholder="e.g. Chaudhry Tariq (Builder)"
+                autoFocus
+              />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            {/* Phone & CNIC */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>Phone Number</label>
-                <input type="text" value={formData.phone} onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", outline: "none", color: "var(--text-primary)", fontFamily: "monospace" }} placeholder="0300-1234567" />
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.phone}
+                  onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
+                  className="form-control font-mono"
+                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                  placeholder="0300-8456123"
+                />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>City</label>
-                <input type="text" value={formData.city} onChange={e => setFormData(p => ({ ...p, city: e.target.value }))} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", outline: "none", color: "var(--text-primary)" }} placeholder="e.g. Faisalabad" />
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                  CNIC No (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.cnic}
+                  onChange={e => setFormData(p => ({ ...p, cnic: e.target.value }))}
+                  className="form-control font-mono"
+                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                  placeholder="33102-1234567-1"
+                />
               </div>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            {/* City & Address */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>Customer Type</label>
-                <select value={formData.customerType} onChange={e => setFormData(p => ({ ...p, customerType: e.target.value }))} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", outline: "none", color: "var(--text-primary)" }}>
-                  <option>Retail</option>
-                  <option>Wholesale</option>
-                  <option>Builder</option>
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                  City / Location
+                </label>
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
+                  className="form-control"
+                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                  placeholder="Jhumra / Faisalabad"
+                />
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                  Customer Category
+                </label>
+                <select
+                  value={formData.customerType}
+                  onChange={e => setFormData(p => ({ ...p, customerType: e.target.value }))}
+                  className="form-control"
+                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                >
+                  <option value="Retail">Retail (عام خریدار)</option>
+                  <option value="Builder">Builder (بلڈر کھاتہ)</option>
+                  <option value="Contractor">Contractor (ٹھیکیدار)</option>
+                  <option value="Architect">Architect (آرکیٹیکٹ)</option>
                 </select>
               </div>
+            </div>
+
+            {/* Address */}
+            <div>
+              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                Site / Delivery Address
+              </label>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={e => setFormData(p => ({ ...p, address: e.target.value }))}
+                className="form-control"
+                style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                placeholder="Plot #, Street, Area"
+              />
+            </div>
+
+            {/* Credit Limit & Opening Balance */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, color: "var(--text-primary)", marginBottom: "6px" }}>Opening Balance</label>
-                <input type="number" disabled={!!customer} value={formData.balanceDue} onChange={e => setFormData(p => ({ ...p, balanceDue: Number(e.target.value) }))} style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", background: !!customer ? "var(--bg-hover)" : "var(--bg-primary)", outline: "none", color: "var(--text-primary)" }} placeholder="0" />
-                {!!customer && <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "4px" }}>Balance cannot be changed directly after creation.</div>}
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                  Credit Limit (Rs.)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.creditLimit}
+                  onChange={e => setFormData(p => ({ ...p, creditLimit: Number(e.target.value) }))}
+                  className="form-control font-mono"
+                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                  placeholder="500000"
+                />
               </div>
+              <div>
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                  Opening Balance (Rs.)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  disabled={!!customer}
+                  value={formData.balanceDue}
+                  onChange={e => setFormData(p => ({ ...p, balanceDue: Number(e.target.value) }))}
+                  className="form-control font-mono"
+                  style={{ padding: "10px 12px", fontSize: "0.88rem", background: !!customer ? "var(--bg-primary)" : "var(--bg-card)" }}
+                  placeholder="0"
+                />
+                {!!customer && (
+                  <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "3px" }}>
+                    Khata balance updates via Bills & Receipts.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
+                Khata Remarks / Special Terms
+              </label>
+              <input
+                type="text"
+                value={formData.notes}
+                onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
+                className="form-control"
+                style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                placeholder="Payment terms, bank details, etc."
+              />
             </div>
           </div>
           
-          <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "10px", background: "var(--bg-primary)", borderRadius: "0 0 12px 12px" }}>
-            <button type="button" onClick={onClose} style={{ padding: "8px 16px", borderRadius: "6px", background: "none", border: "1px solid var(--border-color)", cursor: "pointer", color: "var(--text-secondary)", fontWeight: 600 }}>Cancel</button>
-            <button type="submit" style={{ padding: "8px 20px", borderRadius: "6px", background: "var(--accent-blue)", border: "none", cursor: "pointer", color: "#fff", fontWeight: 600, display: "flex", alignItems: "center", gap: "6px" }}><Save size={16} /> Save Profile</button>
+          {/* Footer */}
+          <div style={{
+            padding: "16px 24px",
+            borderTop: "1px solid var(--border-color)",
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: "10px",
+            background: "var(--bg-primary)",
+            borderRadius: "0 0 16px 16px"
+          }}>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-secondary btn-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary btn-sm"
+              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              <Save size={15} />
+              <span>Save Customer Khata</span>
+            </button>
           </div>
         </form>
       </div>

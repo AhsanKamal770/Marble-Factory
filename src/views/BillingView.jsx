@@ -32,7 +32,7 @@ export default function BillingView({ setActiveView, settings }) {
   // Master Data
   const [items, setItems] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [liveCash, setLiveCash] = useState(26250);
+  const [liveCash, setLiveCash] = useState(0);
 
   // Bill Identity
   const [invoiceNo] = useState(`INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`);
@@ -172,31 +172,7 @@ export default function BillingView({ setActiveView, settings }) {
       const drawer = await getLiveCashInDrawer();
       setItems(allItems);
       setCustomers(allCustomers);
-      setLiveCash(drawer.liveCash || 26250);
-
-      // Clean default line item for instant demonstration
-      if (allItems.length > 0 && lineItems.length === 0) {
-        const def = allItems[0];
-        const defaultRate = def.ratePerSqFt || 380;
-        setLineItems([
-          {
-            id: 'init-1',
-            itemId: def.id,
-            name: def.name,
-            category: def.category,
-            thicknessSutar: def.thicknessMm === 18 ? 6 : 4,
-            usageTag: def.thicknessMm === 18 ? 'Kitchen / Stairs' : 'Standard Floor',
-            length: 4,
-            width: 2.5,
-            pieces: 10,
-            boxes: 0,
-            totalSqFt: 100,
-            ratePerSqFt: defaultRate,
-            amount: 100 * defaultRate
-          }
-        ]);
-        setPaidAmount(100 * defaultRate);
-      }
+      setLiveCash(drawer.liveCash || 0);
     } catch (err) {
       console.error('Error loading POS master data:', err);
     }

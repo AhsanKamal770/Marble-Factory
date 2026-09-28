@@ -1,45 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import {
   Search,
   Printer,
-  Eye,
   Trash2,
   DollarSign,
-  Filter,
   FileText,
-  Calendar,
-  Layers,
-  Clock,
+  Truck,
   CheckCircle2,
   AlertCircle
 } from 'lucide-react';
 import { db, adjustItemStock } from '../db/index';
 import Badge from '../components/Badge';
-import ThermalReceiptModal from '../components/ThermalReceiptModal';
+import BillPrintModal from '../components/BillPrintModal';
 import PaymentCollectionModal from '../components/PaymentCollectionModal';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function InvoicesView({ settings }) {
-  const [invoices, setInvoices] = useState([]);
+  const { language } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [isThermalOpen, setIsThermalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
-  useEffect(() => {
-    loadInvoices();
-  }, []);
-
-  const loadInvoices = async () => {
+  // Live Query from Dexie DB
+  const invoices = useLiveQuery(async () => {
     const all = await db.invoices.toArray();
-    setInvoices(all.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)));
-  };
+    return all.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+  }, []) || [];
 
   const handlePrint = (inv) => {
     setSelectedInvoice(inv);
-    setIsThermalOpen(true);
+    setIsPrintModalOpen(true);
   };
 
   const handleCollectPayment = async (inv) => {
@@ -64,7 +59,7 @@ export default function InvoicesView({ settings }) {
   };
 
   const handleDeleteInvoice = async (inv) => {
-    if (!window.confirm(`Are you sure you want to void invoice #${inv.invoiceNo}? This will return all ${inv.items?.length || 0} items back to stock.`)) {
+    if (!window.confirm(language === 'ur' ? `کیا آپ واقعی بل نمبر #${inv.invoiceNo} منسوخ کرنا چاہتے ہیں؟ اس سے تمام آئٹمز کا اسٹاک واپس ہو جائے گا۔` : `Are you sure you want to void invoice #${inv.invoiceNo}? This will return all ${inv.items?.length || 0} items back to inventory stock.`)) {
       return;
     }
 
@@ -75,7 +70,7 @@ export default function InvoicesView({ settings }) {
           if (item.itemId) {
             await adjustItemStock(
               item.itemId,
-              Number(item.totalSqFt || 0),
+              Number(item.totalSqFt || item.sqFt || 0),
               Number(item.boxes || 0),
               Number(item.pieces || 0),
               'Adjustment',
@@ -99,8 +94,6 @@ export default function InvoicesView({ settings }) {
 
         await db.invoices.delete(inv.id);
       });
-
-      loadInvoices();
     } catch (err) {
       alert('Error deleting invoice: ' + err.message);
     }
@@ -131,20 +124,20 @@ export default function InvoicesView({ settings }) {
               style={{ paddingLeft: '36px' }}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search by Invoice #, Customer Name, or Phone..."
+              placeholder={language === 'ur' ? "تلاش: بل نمبر، گاہک کا نام یا فون..." : "Search by Invoice #, Customer Name, or Phone..."}
             />
           </div>
 
           {/* Status Filter Tabs */}
           <div style={{ display: 'flex', gap: '8px' }}>
-            {['ALL', 'Paid', 'Half Paid', 'Pending'].map((status) => (
+            {['ALL', 'Paid', 'Half Paid', 'Udhar'].map((status) => (
               <button
                 key={status}
                 type="button"
                 className={`btn btn-sm ${statusFilter === status ? 'btn-primary' : 'btn-secondary'}`}
                 onClick={() => setStatusFilter(status)}
               >
-                {status === 'ALL' ? 'All Invoices' : status}
+                {status === 'ALL' ? (language === 'ur' ? 'تمام بلز (All)' : 'All Invoices') : status}
               </button>
             ))}
           </div>
@@ -155,7 +148,7 @@ export default function InvoicesView({ settings }) {
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">
-            <FileText size={18} className="text-gold" /> Sales Invoices Register ({filtered.length})
+            <FileText size={18} className="text-gold" /> {language === 'ur' ? `سیلز انوائس رجسٹر (${filtered.length})` : `Sales Invoices Register (${filtered.length})`}
           </h3>
         </div>
 
@@ -163,22 +156,22 @@ export default function InvoicesView({ settings }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Invoice #</th>
-                <th>Date & Time</th>
-                <th>Customer / Account</th>
-                <th>Items Count</th>
-                <th>Grand Total</th>
-                <th>Paid Amount</th>
-                <th>Balance Due</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'center' }}>Actions</th>
+                <th>{language === 'ur' ? 'بل نمبر' : 'Invoice #'}</th>
+                <th>{language === 'ur' ? 'تاریخ و وقت' : 'Date & Time'}</th>
+                <th>{language === 'ur' ? 'خریدار / کھاتہ' : 'Customer / Account'}</th>
+                <th>{language === 'ur' ? 'آئٹمز' : 'Items'}</th>
+                <th>{language === 'ur' ? 'کل بل رقم' : 'Grand Total'}</th>
+                <th>{language === 'ur' ? 'نقد وصولی' : 'Paid Amount'}</th>
+                <th>{language === 'ur' ? 'بقایا ادھار' : 'Balance Due'}</th>
+                <th>{language === 'ur' ? 'اسٹیٹس' : 'Status'}</th>
+                <th style={{ textAlign: 'center' }}>{language === 'ur' ? 'ایکشن' : 'Actions'}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={9} style={{ textAlign: 'center', padding: '36px', color: '#94a3b8' }}>
-                    No invoices match your filter criteria.
+                    {language === 'ur' ? 'کوئی انوائس ریکارڈ نہیں ملا۔' : 'No invoices match your filter criteria.'}
                   </td>
                 </tr>
               ) : (
@@ -195,7 +188,7 @@ export default function InvoicesView({ settings }) {
                       {inv.customerPhone && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{inv.customerPhone}</div>}
                     </td>
                     <td style={{ fontSize: '0.85rem' }}>
-                      {inv.items?.length || 0} Line Items
+                      {inv.items?.length || 0} items
                     </td>
                     <td className="font-mono" style={{ fontWeight: 800 }}>
                       Rs. {Number(inv.grandTotal || 0).toLocaleString()}
@@ -214,7 +207,7 @@ export default function InvoicesView({ settings }) {
                         <button
                           className="btn btn-secondary btn-sm"
                           onClick={() => handlePrint(inv)}
-                          title="Print 80mm Receipt Slip"
+                          title="Print A4 / 80mm Bill"
                         >
                           <Printer size={14} className="text-accent" />
                         </button>
@@ -245,11 +238,11 @@ export default function InvoicesView({ settings }) {
         </div>
       </div>
 
-      {/* 80mm Thermal Receipt Modal */}
-      {isThermalOpen && selectedInvoice && (
-        <ThermalReceiptModal
-          isOpen={isThermalOpen}
-          onClose={() => setIsThermalOpen(false)}
+      {/* A4 Bill Book & 80mm Thermal Receipt Modal */}
+      {isPrintModalOpen && selectedInvoice && (
+        <BillPrintModal
+          isOpen={isPrintModalOpen}
+          onClose={() => setIsPrintModalOpen(false)}
           invoice={selectedInvoice}
           settings={settings}
         />
@@ -261,7 +254,7 @@ export default function InvoicesView({ settings }) {
           isOpen={isPaymentOpen}
           onClose={() => setIsPaymentOpen(false)}
           customer={selectedCustomerForPayment}
-          onSuccess={loadInvoices}
+          onSuccess={() => {}}
         />
       )}
     </div>

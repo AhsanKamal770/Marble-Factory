@@ -29,7 +29,7 @@ export default function Header({
   const { language, toggleLanguage, t } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [backupMsg, setBackupMsg] = useState('');
-  const [liveCash, setLiveCash] = useState(25000);
+  const [liveCash, setLiveCash] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);

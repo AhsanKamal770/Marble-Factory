@@ -12,7 +12,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { db } from '../db/index';
-import { exportDatabaseToJson, importDatabaseFromJson, resetDatabaseToDefault } from '../db/backupService';
+import { exportDatabaseToJson, importDatabaseFromJson, resetDatabaseToClean, resetDatabaseWithSampleData } from '../db/backupService';
 import ThermalReceiptModal from '../components/ThermalReceiptModal';
 
 export default function SettingsView({ settings, onSettingsUpdated }) {
@@ -77,12 +77,21 @@ export default function SettingsView({ settings, onSettingsUpdated }) {
     reader.readAsText(file);
   };
 
-  const handleResetSampleData = async () => {
-    if (!window.confirm('Reset database to default sample marble factory data? All existing custom data will be replaced.')) {
+  const handleResetClean = async () => {
+    if (!window.confirm('Kiya aap tamam records (Bills, Customers, Stock, Expenses) saaf kar ke bilkul Clean Working Database karna chahte hain?')) {
       return;
     }
-    await resetDatabaseToDefault();
-    alert('Database reset to defaults. Reloading...');
+    await resetDatabaseToClean();
+    alert('Database bilkul clean aur empty kar di gayi hai! Reloading...');
+    window.location.reload();
+  };
+
+  const handleResetSampleData = async () => {
+    if (!window.confirm('Reset database to sample demo data for testing?')) {
+      return;
+    }
+    await resetDatabaseWithSampleData();
+    alert('Sample test data loaded. Reloading...');
     window.location.reload();
   };
 
@@ -209,6 +218,30 @@ export default function SettingsView({ settings, onSettingsUpdated }) {
             </div>
           </div>
 
+          {/* Cash Drawer Settings */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-group">
+              <label className="form-label">Default Subah Ka Opening Cash (Rs.)</label>
+              <input
+                type="number"
+                min="0"
+                className="form-control font-mono"
+                value={formData.openingCashBalance !== undefined ? formData.openingCashBalance : 0}
+                onChange={(e) => setFormData({ ...formData, openingCashBalance: Number(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Default Sales Tax / GST (%)</label>
+              <input
+                type="number"
+                min="0"
+                className="form-control font-mono"
+                value={formData.defaultTaxPercent !== undefined ? formData.defaultTaxPercent : 0}
+                onChange={(e) => setFormData({ ...formData, defaultTaxPercent: Number(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+
           {/* 80mm Thermal Receipt Options */}
           <div style={{ borderTop: '1px solid #242f47', paddingTop: '16px', marginTop: '16px' }}>
             <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -304,17 +337,31 @@ export default function SettingsView({ settings, onSettingsUpdated }) {
               <input type="file" accept=".json" style={{ display: 'none' }} onChange={handleImportFile} />
             </label>
 
-            {/* Reset Defaults */}
+            {/* Wipe to Clean Database */}
             <button
               type="button"
               className="btn btn-ghost"
-              style={{ justifyContent: 'flex-start', padding: '12px 16px', color: '#fb7185', border: '1px dashed rgba(244, 63, 94, 0.3)' }}
+              style={{ justifyContent: 'flex-start', padding: '12px 16px', color: '#fb7185', border: '1px dashed rgba(244, 63, 94, 0.4)' }}
+              onClick={handleResetClean}
+            >
+              <RotateCcw size={18} />
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontWeight: 700 }}>Clean Working Database (Zero Records)</div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Wipes all dummy data and starts fresh for live factory use</div>
+              </div>
+            </button>
+
+            {/* Load Sample Demo Data */}
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ justifyContent: 'flex-start', padding: '12px 16px', color: 'var(--accent-blue)', border: '1px dashed rgba(37, 99, 235, 0.4)' }}
               onClick={handleResetSampleData}
             >
               <RotateCcw size={18} />
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontWeight: 700 }}>Reset to Sample Factory Data</div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Restores default marble varieties & sample accounts</div>
+                <div style={{ fontWeight: 700 }}>Load Sample Demo Data (Testing)</div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Loads sample marble slabs and customer demo records</div>
               </div>
             </button>
           </div>

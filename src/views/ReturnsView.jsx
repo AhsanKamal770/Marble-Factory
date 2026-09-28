@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import {
   RotateCcw,
   Plus,
@@ -17,11 +18,14 @@ import { db, adjustItemStock } from '../db/index';
 import Badge from '../components/Badge';
 
 export default function ReturnsView() {
-  const [returns, setReturns] = useState([]);
-  const [items, setItems] = useState([]);
-  const [customers, setCustomers] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
-  const [invoices, setInvoices] = useState([]);
+  const returns = useLiveQuery(async () => {
+    const all = await db.returns.toArray();
+    return all.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+  }, []) || [];
+  const items = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
+  const customers = useLiveQuery(() => db.customers.toArray(), []) || [];
+  const suppliers = useLiveQuery(() => db.suppliers.toArray(), []) || [];
+  const invoices = useLiveQuery(() => db.invoices.toArray(), []) || [];
 
   const [returnTypeFilter, setReturnTypeFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,24 +41,6 @@ export default function ReturnsView() {
   const [condition, setCondition] = useState('Good - Return to Yard Stock'); // 'Good - Return to Yard Stock' | 'Damaged - Scrap'
   const [refundMethod, setRefundMethod] = useState('Deduct from Khata Due Balance'); // 'Cash Refund' | 'Deduct from Khata Due Balance'
   const [reason, setReason] = useState('Leftover marble after flooring completion');
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    const allReturns = await db.returns.toArray();
-    const allItems = await db.items.toArray();
-    const allCustomers = await db.customers.toArray();
-    const allSuppliers = await db.suppliers.toArray();
-    const allInvoices = await db.invoices.toArray();
-
-    setReturns(allReturns.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)));
-    setItems(allItems);
-    setCustomers(allCustomers);
-    setSuppliers(allSuppliers);
-    setInvoices(allInvoices);
-  };
 
   const handleOpenNewReturn = () => {
     setReturnType('Sales Return');
@@ -206,7 +192,6 @@ export default function ReturnsView() {
       });
 
       setIsModalOpen(false);
-      loadData();
     } catch (err) {
       alert('Error recording stock return: ' + err.message);
     }
