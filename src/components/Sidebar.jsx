@@ -45,7 +45,6 @@ export default function Sidebar({
         { id: 'billing', label: language === 'ur' ? 'نیا بل (POS)' : 'New Bill', icon: Receipt, highlight: true },
         { id: 'invoices', label: language === 'ur' ? 'بل بک ریکارڈ' : 'Bills & Invoices', icon: FileText },
         { id: 'customers', label: language === 'ur' ? 'گاہک کھاتہ' : 'Customers / Khata', icon: Users },
-        { id: 'sales-reports', label: language === 'ur' ? 'سیلز رپورٹس و منافع' : 'Sales & Munafa Reports', icon: ChartColumn }
       ]
     },
     {
