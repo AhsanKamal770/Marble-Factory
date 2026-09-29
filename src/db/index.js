@@ -34,6 +34,12 @@ db.version(2).stores({
   wastage_logs: '++id, date, itemId, itemName, sqFt, pieces, reason'
 });
 
+db.version(3).stores({
+  zakat_beneficiaries: '++id, name, monthlyAmount',
+  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, monthKey, status, date',
+  payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date'
+});
+
 // Helper: Calculate live cash drawer / Roznamcha
 export async function getLiveCashInDrawer(customDate = null) {
   try {

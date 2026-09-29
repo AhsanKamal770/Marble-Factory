@@ -10,6 +10,7 @@ import {
   saveCustomer,
   recordPaymentRecovery,
 } from "./customerLedgerService";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function CustomerLedgerView() {
   const [customers, setCustomers] = useState([]);

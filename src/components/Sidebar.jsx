@@ -13,7 +13,12 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Wallet
+  Wallet,
+  ChartColumn,
+  UserCog,
+  TrendingUp,
+  Heart,
+  HandHeart
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -39,7 +44,8 @@ export default function Sidebar({
       items: [
         { id: 'billing', label: language === 'ur' ? 'نیا بل (POS)' : 'New Bill', icon: Receipt, highlight: true },
         { id: 'invoices', label: language === 'ur' ? 'بل بک ریکارڈ' : 'Bills & Invoices', icon: FileText },
-        { id: 'customers', label: language === 'ur' ? 'گاہک کھاتہ' : 'Customers / Khata', icon: Users }
+        { id: 'customers', label: language === 'ur' ? 'گاہک کھاتہ' : 'Customers / Khata', icon: Users },
+        { id: 'sales-reports', label: language === 'ur' ? 'سیلز رپورٹس و منافع' : 'Sales & Munafa Reports', icon: ChartColumn }
       ]
     },
     {
@@ -56,6 +62,16 @@ export default function Sidebar({
         { id: 'gate-pass', label: language === 'ur' ? 'رکشہ گیٹ پاس' : 'Gate Passes', icon: Truck },
         { id: 'daily-expenses', label: language === 'ur' ? 'روزانہ اخراجات' : 'Daily Expenses', icon: Wallet },
         { id: 'returns', label: language === 'ur' ? 'واپسی و نقصان' : 'Wapsi & Wastage', icon: RotateCcw }
+      ]
+    },
+    
+    
+    {
+      title: language === 'ur' ? 'رپورٹس و افرادی قوت' : 'REPORTS & WORKFORCE',
+      items: [
+        { id: 'sales-reports', label: language === 'ur' ? 'سیلز رپورٹس' : 'Sales Reports', icon: TrendingUp },
+        { id: 'employees', label: language === 'ur' ? 'ملازمین و تنخواہ' : 'Employees & Payroll', icon: Users },
+        { id: 'zakat', label: language === 'ur' ? 'زکوٰۃ فنڈ' : 'Zakat Fund', icon: Heart }
       ]
     },
     {
