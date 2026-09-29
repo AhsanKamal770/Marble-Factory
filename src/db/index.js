@@ -40,6 +40,11 @@ db.version(3).stores({
   payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date'
 });
 
+db.version(4).stores({
+  returns: '++id, returnNo, type, refDocNo, partyId, partyName, date, createdAt, status',
+  wastage_logs: '++id, logNo, date, itemId, itemName, sqFt, pieces, reason, source, createdAt'
+});
+
 // Helper: Calculate live cash drawer / Roznamcha
 export async function getLiveCashInDrawer(customDate = null) {
   try {

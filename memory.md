@@ -17,11 +17,11 @@
 | **MOD-04** | **Rickshaw Gate Pass** | رکشہ گیٹ پاس / Rickshaw Gate Out Pass | ⚪ Planned | Transport slips, driver & vehicle info, manifest, 3-party signatures. |
 | **MOD-05** | **Customer Ledger & History** | گاہک ریکارڈ و کھاتہ / Digital Khata | ⚪ Planned | 360° timeline, Udhar tracking, payment recovery vouchers. |
 | **MOD-06** | **Daily Expenses & Cash Flow** | روزانہ اخراجات / Rozana Kharch & Roznamcha | ⚪ Planned | Food/mess, petrol, customer udhar advance, day-end reconciliation. |
-| **MOD-07** | **Sales Reports & Analytics** | سیلز رپورٹس / Sales & Munafa Reports | ⚪ Planned | 5 time horizons (Daily, Weekly, Monthly, Yearly, Custom) with P&L. |
+| **MOD-07** | **Sales Reports & Analytics** | سیلز رپورٹس / Sales & Munafa Reports | 🟢 Completed | Offline-first Dexie.js 4 backend service (`salesReportsService.js`) with 5 time horizons (Daily, Weekly, Monthly, Yearly, Custom), COGS calculation, Gross & Net Profit (Munafa) margins, Sutar thickness (4, 6, 9, 14 sutar) breakdown, top customer Khata ranking, SVG trend charts, and UTF-8 BOM CSV / JSON exports. |
 | **MOD-08** | **Employees & Payroll** | ملازمین و تنخواہ / Workers & 10% Increment | ⚪ Planned | Salary advances, automated 10% annual anniversary wage raises. |
 | **MOD-09** | **Monthly Zakat Management** | ماہانہ زکوٰۃ فنڈ / Mahana Zakat Fund | ⚪ Planned | Fixed distribution for 3-4 deserving families with audit log. |
 | **MOD-10** | **Multilingual & Urdu Engine** | اردو و انگریزی سپورٹ / Roman Urdu & Nastaleeq | 🟢 Foundation Live | Navbar language toggle [ EN (Roman Urdu) \| اردو ] active across all views; Nastaleeq RTL typography enabled. |
-| **MOD-11** | **Returns & Wastage** | واپسی مال و نقصان / Returns & Factory Wastage | ⚪ Planned | Sales returns and bridge-cutter breakage/wastage logging. |
+| **MOD-11** | **Returns & Wastage** | واپسی مال و نقصان / Returns & Factory Wastage | 🟢 Completed | Dexie.js 4 atomic backend service (`returnsWastageService.js`) supporting customer sales returns (Khata reversal / cash drawer refund), supplier purchase returns, bridge-cutter / gangsaw / polish breakage logs, live yard stock reconciliation, and safe rollback transactions. |
 | **MOD-12** | **Settings & Local Backup** | سیٹنگز و بیک اپ / Factory Settings & Backup | ⚪ Planned | Rana Shahab factory profile, receipt options, 1-click JSON backup/restore. |
 
 ---
@@ -80,3 +80,22 @@
     - Preserved visual priority for primary `+ Naya Bill (POS)` in royal blue `#2563eb` with identical physical dimensions.
     - Fixed "+ + Naya Bill (POS)" double plus bug.
     - Built responsive `<ActionGroup>` with clean desktop flex row and mobile `<680px` popover fallback (`More actions ▾`).
+- **2026-09-30:**
+  - Upgraded **Dexie 4 Database Schema (`db.version(4)`)**: Added specialized indexed keys for `returns` and `wastage_logs`.
+  - Built **MOD-07 Backend Service (`salesReportsService.js`)**:
+    - Multi-horizon time window engine (Daily, Weekly, Monthly, Yearly, Custom range) with previous period comparison.
+    - Cost of Goods Sold (COGS) stone catalog integration with Gross Profit and True Net Profit (Munafa) calculation after deducting factory daily expenses.
+    - Cash vs Credit (Udhar) ratio and Wasooli collection tracking.
+    - Stone category and 4-tier Sutar thickness (4, 6, 9, 14 sutar) performance analysis.
+    - Customer Khata ranking and top selling stone products tables.
+    - Time-series SVG trend trajectory generator and Excel UTF-8 BOM CSV / JSON exports.
+  - Built **MOD-11 Backend Service (`returnsWastageService.js`)**:
+    - Atomic multi-table Dexie transactions across `returns`, `wastage_logs`, `items`, `customers`, `suppliers`, `stock_movements`, and `daily_expenses`.
+    - Customer Sales Returns with Khata balance reversal or Cash Drawer refund and yard stock restocking.
+    - Supplier Purchase Returns with accounts payable reductions.
+    - Factory cutting & breakage logging (Bridge-Cutter trimming, Gangsaw sawing, Polish, Yard Transit) deducting damaged stock without touching customer accounts.
+    - Safe document rollback mechanism restoring physical inventory and Khata balances.
+    - Instant invoice linking helper for 1-click return populating.
+  - Created authentic Rana Shahab sample seed data for returns and bridge-cutter wastage in `seedData.js`.
+  - Upgraded and re-routed `SalesReportsView.jsx` and `ReturnsView.jsx` into modular architectures with interactive B2B SaaS UIs, Confetti feedback, and dual Urdu/English localization.
+  - Verified clean production build with Vite (`npm run build`).

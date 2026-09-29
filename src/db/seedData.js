@@ -560,4 +560,87 @@ export async function initializeDatabaseWithSeedData() {
       }
     ]);
   }
+
+  const returnsCount = await db.returns.count();
+  if (returnsCount === 0) {
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+    const oneDayAgo = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString();
+
+    await db.returns.bulkAdd([
+      {
+        returnNo: "RET-2026-0001",
+        type: "Sales Return",
+        refDocNo: "INV-2026-001",
+        partyId: 1,
+        partyName: "Tariq Mehmood Contractor",
+        date: twoDaysAgo,
+        items: [
+          {
+            itemId: 2,
+            name: "Sunny Grey Classic Slab",
+            category: "Marble Slabs",
+            sqft: 40,
+            rate: 180,
+            amount: 7200,
+            condition: "Good - Return to Yard Stock"
+          }
+        ],
+        totalAmount: 7200,
+        refundAmount: 7200,
+        refundMethod: "Deduct from Khata Due Balance",
+        reason: "Leftover 40 sq ft after ground floor completion",
+        status: "Completed",
+        createdAt: twoDaysAgo
+      },
+      {
+        returnNo: "WST-2026-0001",
+        type: "Factory Wastage",
+        refDocNo: "N/A - Internal",
+        partyId: null,
+        partyName: "Factory Loss (Bridge-Cutter)",
+        date: oneDayAgo,
+        items: [
+          {
+            itemId: 1,
+            name: "Ziarat White Super Slab",
+            category: "Marble Slabs",
+            sqft: 25,
+            rate: 290,
+            amount: 7250,
+            condition: "Damaged - Scrap"
+          }
+        ],
+        totalAmount: 7250,
+        refundAmount: 0,
+        refundMethod: "N/A - Factory Loss",
+        reason: "Bridge-Cutter Cutting Loss: Edge cracked during diagonal 45-degree angle cutting",
+        operatorName: "Master Aslam (Cutter Master)",
+        status: "Completed",
+        createdAt: oneDayAgo
+      }
+    ]);
+  }
+
+  const wastageCount = await db.wastage_logs.count();
+  if (wastageCount === 0) {
+    const oneDayAgo = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString();
+    await db.wastage_logs.add({
+      logNo: "WST-2026-0001",
+      date: oneDayAgo,
+      itemId: 1,
+      itemName: "Ziarat White Super Slab",
+      itemCode: "MB-ZW-01",
+      category: "Marble Slabs",
+      sutarThickness: "6 Sutar (18mm)",
+      sqFt: 25,
+      pieces: 2,
+      boxes: 0,
+      unitCost: 290,
+      financialLoss: 7250,
+      source: "Bridge-Cutter Cutting Loss",
+      reason: "Edge cracked during diagonal 45-degree angle cutting",
+      operatorName: "Master Aslam (Cutter Master)",
+      createdAt: oneDayAgo
+    });
+  }
 }
