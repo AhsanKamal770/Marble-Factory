@@ -31,6 +31,7 @@ import {
   getInvoicesForLinking,
 } from "./gatePassService";
 import PrintableGateSlip from "./PrintableGateSlip";
+import { useLanguage } from "../../context/LanguageContext";
 
 // ── Status config ──────────────────────────────────────────────────────────
 const STATUS_CONFIG = {

@@ -16,6 +16,8 @@ import {
   Wallet,
   ChartColumn,
   UserCog,
+  TrendingUp,
+  Heart,
   HandHeart
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
@@ -62,11 +64,14 @@ export default function Sidebar({
         { id: 'returns', label: language === 'ur' ? 'واپسی و نقصان' : 'Wapsi & Wastage', icon: RotateCcw }
       ]
     },
+    
+    
     {
-      title: language === 'ur' ? 'عملہ و فلاح' : 'STAFF & WELFARE',
+      title: language === 'ur' ? 'رپورٹس و افرادی قوت' : 'REPORTS & WORKFORCE',
       items: [
-        { id: 'employees', label: language === 'ur' ? 'ملازمین و تنخواہ' : 'Workers & Payroll', icon: UserCog },
-        { id: 'zakat', label: language === 'ur' ? 'ماہانہ زکوٰۃ فنڈ' : 'Mahana Zakat Fund', icon: HandHeart }
+        { id: 'sales-reports', label: language === 'ur' ? 'سیلز رپورٹس' : 'Sales Reports', icon: TrendingUp },
+        { id: 'employees', label: language === 'ur' ? 'ملازمین و تنخواہ' : 'Employees & Payroll', icon: Users },
+        { id: 'zakat', label: language === 'ur' ? 'زکوٰۃ فنڈ' : 'Zakat Fund', icon: Heart }
       ]
     },
     {

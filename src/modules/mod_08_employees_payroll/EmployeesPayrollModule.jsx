@@ -14,6 +14,7 @@ import {
   Briefcase
 } from "lucide-react";
 import { db } from "../../db/index";
+import { useLanguage } from "../../context/LanguageContext";
 
 export default function EmployeesPayrollModule() {
   const [employees, setEmployees] = useState([]);

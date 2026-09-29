@@ -12,6 +12,8 @@ import {
   Users
 } from "lucide-react";
 import { db } from "../../db/index";
+import { useLanguage } from "../../context/LanguageContext";
+
 
 export default function ZakatWelfareModule() {
   const [zakatRecords, setZakatRecords] = useState([]);

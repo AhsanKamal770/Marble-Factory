@@ -13,7 +13,8 @@ import StockSheetView from './views/StockSheetView';
 import CustomerLedgerView from './modules/mod_05_customer_ledger/CustomerLedgerView';
 import SupplierManagementView from './views/SupplierManagementView';
 import ReturnsView from './views/ReturnsView';
-import SettingsView from './views/SettingsView';
+import SalesReportsView from './views/SalesReportsView';
+import SettingsView from './modules/mod_12_settings_backup/SettingsView';
 import GatePassView from './modules/mod_04_gate_pass/GatePassView';
 import DailyExpensesView from './modules/mod_06_daily_expenses/DailyExpensesView';
 import ZakatWelfareModule from './modules/mod_09_zakat_welfare/ZakatWelfareModule';
@@ -182,7 +183,7 @@ export default function App() {
           )}
           {activeView === 'zakat' && <ZakatWelfareModule />}
           {activeView === 'employees' && <EmployeesPayrollModule />}
-
+          {activeView === 'sales-reports' && <SalesReportsView />}
           {activeView === 'settings' && (
             <SettingsView
               settings={settings}

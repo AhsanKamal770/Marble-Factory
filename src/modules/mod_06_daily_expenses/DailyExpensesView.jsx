@@ -7,7 +7,7 @@ import DayEndReconciliationCard from "./DayEndReconciliationCard";
 import PrintableDayClosingSheet from "./PrintableDayClosingSheet";
 import { addExpense, deleteExpense, getLiveCashInDrawer } from "./dailyExpenseService";
 import { db } from "../../db";
-
+import { useLanguage } from "../../context/LanguageContext";
 export default function DailyExpensesView() {
   const [cashData, setCashData] = useState(null);
 
