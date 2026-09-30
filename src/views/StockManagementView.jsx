@@ -7,6 +7,8 @@ import {
   ArrowUpDown, Edit2, Trash2, SlidersHorizontal,
 } from "lucide-react";
 import { db, adjustItemStock, logStockMovement } from "../db/index";
+import Modal from "../shared/components/Modal";
+import SutarBadge from "../components/SutarBadge";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONCEPT: Domain-Driven Category Configuration
@@ -699,8 +701,8 @@ export default function StockManagementView() {
                       <td style={rowTD}>
                         {item.sutarThickness ? (
                           <>
-                            <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                              {item.sutarThickness} Sutar
+                            <div style={{ marginBottom: "2px" }}>
+                              <SutarBadge sutar={item.sutarThickness} size="sm" />
                             </div>
                             {item.thicknessMm > 0 && (
                               <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "1px" }}>
@@ -855,16 +857,23 @@ export default function StockManagementView() {
           ADD / EDIT MODAL
       ══════════════════════════════════════════════════════════════════ */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: "720px", width: "95vw" }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#fff" }}>
-                {editingItem ? `Edit: ${editingItem.name}` : "Add New Catalog Item"}
-              </h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsModalOpen(false)}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveItem}>
-              <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingItem ? `Edit: ${editingItem.name}` : "Add New Catalog Item"}
+          icon={PackagePlus}
+          size="lg"
+          footerActions={
+            <>
+              <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
+              <button type="button" className="btn btn-primary" onClick={handleSaveItem}>
+                <Check size={16} /> {editingItem ? "Save Changes" : "Add to Catalog"}
+              </button>
+            </>
+          }
+        >
+            <form id="catalog-form" onSubmit={handleSaveItem}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
 
                 <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "12px" }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
@@ -898,7 +907,7 @@ export default function StockManagementView() {
 
                 {activeCatConfig.hasSutar && (
                   <div>
-                    <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Sutar Thickness Classification</label>
+                    <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Sutar Thickness</label>
                     <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
                       {SUTAR_OPTIONS.map(opt => {
                         const isSel = formData.sutarThickness === opt.value;
@@ -932,8 +941,8 @@ export default function StockManagementView() {
                     <input type="text" className="form-control" value={formData.finish} onChange={e => setFormData({ ...formData, finish: e.target.value })} placeholder="e.g. Mirror Polished" />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Grade / Quality</label>
-                    <input type="text" className="form-control" value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} placeholder="e.g. Grade A (Super)" />
+                    <label className="form-label">Grade</label>
+                    <input type="text" className="form-control" value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} placeholder="e.g. Grade A" />
                   </div>
                 </div>
 
@@ -949,10 +958,10 @@ export default function StockManagementView() {
                 </div>
 
                 <div>
-                  <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Opening Stock &amp; Alert Threshold</label>
+                  <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Stock & Alerts</label>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px" }}>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Sq.Ft / RFT</label>
+                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Sq.Ft/RFT</label>
                       <input type="number" step="0.1" className="form-control font-mono" style={{ color: "#10b981", fontWeight: 700 }} value={formData.stockSqFt} onChange={e => setFormData({ ...formData, stockSqFt: e.target.value })} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -964,7 +973,7 @@ export default function StockManagementView() {
                       <input type="number" className="form-control" value={formData.stockPieces} onChange={e => setFormData({ ...formData, stockPieces: e.target.value })} />
                     </div>
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Min Alert</label>
+                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Alert Qty</label>
                       <input type="number" className="form-control" value={formData.minStockAlert} onChange={e => setFormData({ ...formData, minStockAlert: e.target.value })} />
                     </div>
                   </div>
@@ -972,42 +981,41 @@ export default function StockManagementView() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Yard / Shed Location</label>
-                    <input type="text" className="form-control" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. Shed 1 - Bay A" />
+                    <label className="form-label">Location</label>
+                    <input type="text" className="form-control" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. Shed 1" />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Lot / Batch Number</label>
+                    <label className="form-label">Lot No.</label>
                     <input type="text" className="form-control font-mono" value={formData.lotNo} onChange={e => setFormData({ ...formData, lotNo: e.target.value })} />
                   </div>
                 </div>
-
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Notes</label>
-                  <input type="text" className="form-control" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Additional notes about this variety..." />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary"><Check size={15} /> {editingItem ? "Save Changes" : "Add to Catalog"}</button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
           STOCK ADJUSTMENT MODAL — unit-aware label
       ══════════════════════════════════════════════════════════════════ */}
       {isAdjustModalOpen && adjustingItem && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: "440px" }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#fff" }}>Stock Adjustment</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsAdjustModalOpen(false)}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveAdjustment}>
-              <div className="modal-body">
-                <div style={{ padding: "12px 14px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", marginBottom: "16px" }}>
+        <Modal
+          isOpen={isAdjustModalOpen}
+          onClose={() => setIsAdjustModalOpen(false)}
+          title="Stock Adjustment"
+          icon={ArrowUpDown}
+          size="sm"
+          footerActions={
+            <>
+              <button type="button" className="btn btn-secondary" onClick={() => setIsAdjustModalOpen(false)}>Cancel</button>
+              <button type="button" className="btn btn-primary" onClick={handleSaveAdjustment}>
+                <Check size={16} /> Apply Adjustment
+              </button>
+            </>
+          }
+        >
+            <form id="adjust-form" onSubmit={handleSaveAdjustment}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <div style={{ padding: "12px 14px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px" }}>
                   <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>{adjustingItem.name}</div>
                   <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "2px" }}>{adjustingItem.category}</div>
                   <div style={{ marginTop: "8px" }}>
@@ -1018,34 +1026,28 @@ export default function StockManagementView() {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Adjustment Quantity ({adjustingItem.unit || "Sq. Ft."}) *</label>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Qty ({adjustingItem.unit || "Sq. Ft."}) *</label>
                   <input type="number" step="0.1" required autoFocus className="form-control font-mono" value={adjustQty} onChange={e => setAdjustQty(e.target.value)} placeholder="e.g. +200 to add, -50 to reduce" />
-                  <span style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>Positive = add | Negative = reduce</span>
                 </div>
 
-                <div className="form-group">
+                <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Reason</label>
                   <select className="form-control" value={adjustType} onChange={e => setAdjustType(e.target.value)}>
                     <option value="Adjustment">Yard Physical Audit Count</option>
-                    <option value="Initial">Additional Loading / Purchase Received</option>
+                    <option value="Initial">Additional Loading / Purchase</option>
                     <option value="Damaged/Wastage">Damaged / Broken Scrap</option>
-                    <option value="Return">Customer Return - Restocked</option>
+                    <option value="Return">Customer Return</option>
                   </select>
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label className="form-label">Reference Note</label>
-                  <input type="text" className="form-control" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} placeholder="e.g. Monthly yard count - Sep 2026" />
+                  <input type="text" className="form-control" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} placeholder="e.g. Monthly yard count" />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsAdjustModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary"><Check size={15} /> Apply Adjustment</button>
-              </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

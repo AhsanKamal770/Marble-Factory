@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Check, X, Layers, Box } from 'lucide-react';
+import Modal from '../shared/components/Modal';
 
 export default function DimensionCalculator({ isOpen, onClose, onApply, initialItem = null }) {
   const [calcMode, setCalcMode] = useState('dimension'); // 'dimension' | 'boxes' | 'pieces'
@@ -80,26 +81,31 @@ export default function DimensionCalculator({ isOpen, onClose, onApply, initialI
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-card" style={{ maxWidth: '540px' }}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ padding: '8px', background: 'rgba(37, 99, 235, 0.12)', borderRadius: '8px', color: 'var(--accent-blue)' }}>
-              <Calculator size={20} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Marble Area & Dimension Calculator</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                {initialItem ? initialItem.name : 'Calculate Square Feet & Pricing'}
-              </p>
-            </div>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span>Marble Area & Dimension Calculator</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: 'normal' }}>
+            {initialItem ? initialItem.name : 'Calculate Square Feet & Pricing'}
+          </span>
         </div>
-
-        <div className="modal-body">
+      }
+      icon={Calculator}
+      size="md"
+      footerActions={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-primary" onClick={handleApply}>
+            <Check size={16} /> Apply to Line Item
+          </button>
+        </>
+      }
+    >
+      <div>
           {/* Mode Selector */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
             <button
@@ -262,16 +268,6 @@ export default function DimensionCalculator({ isOpen, onClose, onApply, initialI
             </div>
           </div>
         </div>
-
-        <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="btn btn-primary" onClick={handleApply}>
-            <Check size={16} /> Apply to Line Item
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

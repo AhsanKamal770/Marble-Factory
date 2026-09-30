@@ -7,10 +7,18 @@ export default function Modal({
   title,
   icon: Icon,
   children,
-  maxWidth = '500px',
+  size = 'md', // 'sm' (400px), 'md' (500px), 'lg' (700px)
   footerActions
 }) {
   const [show, setShow] = useState(false);
+
+  // Map size to standard maxWidth
+  const sizeMap = {
+    sm: '400px',
+    md: '520px',
+    lg: '700px'
+  };
+  const computedMaxWidth = sizeMap[size] || sizeMap.md;
 
   useEffect(() => {
     let timeoutId;
@@ -50,7 +58,7 @@ export default function Modal({
         background: '#ffffff',
         borderRadius: '16px',
         width: '100%',
-        maxWidth,
+        maxWidth: computedMaxWidth,
         boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         transform: show ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(10px)',
         transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -80,7 +88,7 @@ export default function Modal({
                 <Icon size={18} />
               </div>
             )}
-            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.01em' }}>
               {title}
             </h2>
           </div>
@@ -103,14 +111,21 @@ export default function Modal({
         </div>
 
         {/* Content */}
-        <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
+        <div style={{ 
+          padding: '24px', 
+          overflowY: 'auto', 
+          flex: 1,
+          fontSize: '0.86rem',
+          color: '#334155',
+          lineHeight: 1.5
+        }}>
           {children}
         </div>
 
         {/* Footer */}
         {footerActions && (
           <div style={{
-            padding: '16px 20px',
+            padding: '16px 24px',
             borderTop: '1px solid #e2e8f0',
             background: '#f8fafc',
             display: 'flex',

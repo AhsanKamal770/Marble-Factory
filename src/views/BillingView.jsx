@@ -619,6 +619,29 @@ export default function BillingView({ setActiveView, settings }) {
               <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {isUrdu ? 'گاہک' : 'Customer'}
               </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomerDropdownOpen(false);
+                  setIsNewCustomerModalOpen(true);
+                }}
+                style={{
+                  background: 'rgba(37, 99, 235, 0.08)',
+                  color: 'var(--accent-blue)',
+                  border: 'none',
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                <UserPlus size={13} />
+                <span>+ {isUrdu ? 'نیا گاہک رجسٹر کریں' : 'Create New Customer'}</span>
+              </button>
             </div>
 
             {/* Selected Customer Card OR Primary Search Selector */}
@@ -777,31 +800,6 @@ export default function BillingView({ setActiveView, settings }) {
                           </div>
                         ))
                       )}
-
-                      {/* Integrated "Create New Customer" Option in Dropdown */}
-                      <div
-                        onClick={() => {
-                          setIsCustomerDropdownOpen(false);
-                          setIsNewCustomerModalOpen(true);
-                        }}
-                        style={{
-                          padding: '10px 14px',
-                          background: 'var(--bg-primary, #F8FAFC)',
-                          borderTop: '1px solid var(--border-divider, #E5EAF0)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          color: 'var(--accent-blue)',
-                          cursor: 'pointer'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.08)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-primary, #F8FAFC)'}
-                      >
-                        <UserPlus size={14} />
-                        <span>+ {isUrdu ? 'نیا گاہک رجسٹر کریں' : 'Create New Customer'}</span>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -1321,15 +1319,19 @@ export default function BillingView({ setActiveView, settings }) {
                   <div className="pos-segmented-control">
                     <button
                       type="button"
+                      disabled={grandTotal === 0}
                       className={`pos-segment-btn ${isFull ? 'active' : ''}`}
                       onClick={() => handleQuickPayment(1.0)}
+                      style={{ opacity: grandTotal === 0 ? 0.5 : 1, cursor: grandTotal === 0 ? 'not-allowed' : 'pointer' }}
                     >
                       {isUrdu ? 'مکمل نقد' : 'Full'}
                     </button>
                     <button
                       type="button"
+                      disabled={grandTotal === 0}
                       className={`pos-segment-btn ${isHalf ? 'active' : ''}`}
                       onClick={() => handleQuickPayment(0.5)}
+                      style={{ opacity: grandTotal === 0 ? 0.5 : 1, cursor: grandTotal === 0 ? 'not-allowed' : 'pointer' }}
                     >
                       50%
                     </button>
@@ -1486,7 +1488,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsItemModalOpen(false)}
         title={editingItemIndex !== null ? (isUrdu ? 'آئٹم میں ترمیم' : 'Edit Marble / Tile Item') : (isUrdu ? 'آئٹم شامل کریں' : 'Add Marble / Tile Item')}
         icon={Layers}
-        maxWidth="520px"
+        size="md"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsItemModalOpen(false)}>
@@ -1516,7 +1518,7 @@ export default function BillingView({ setActiveView, settings }) {
                 >
                   {items.map(it => (
                     <option key={it.id} value={it.id}>
-                      {it.name} ({it.category}) • Stock: {it.stockSqFt} Sq.Ft • Rs.{it.ratePerSqFt}/Sq.Ft
+                      {it.name}
                     </option>
                   ))}
                 </select>
@@ -1702,7 +1704,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsNewCustomerModalOpen(false)}
         title={isUrdu ? 'نیا گاہک رجسٹر کریں' : 'New Customer'}
         icon={UserPlus}
-        maxWidth="440px"
+        size="sm"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsNewCustomerModalOpen(false)}>
@@ -1772,7 +1774,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsDeliveryModalOpen(false)}
         title={isUrdu ? 'ڈیلیوری تفصیلات' : 'Delivery Details'}
         icon={Truck}
-        maxWidth="440px"
+        size="sm"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsDeliveryModalOpen(false)}>
@@ -1844,7 +1846,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsChargeModalOpen(false)}
         title={isUrdu ? 'اضافی خرچہ' : 'Add Charge'}
         icon={Plus}
-        maxWidth="380px"
+        size="sm"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsChargeModalOpen(false)}>
@@ -1893,7 +1895,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsDiscountModalOpen(false)}
         title={isUrdu ? 'رعایت' : 'Discount'}
         icon={Percent}
-        maxWidth="380px"
+        size="sm"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsDiscountModalOpen(false)}>
@@ -1973,7 +1975,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsNoteModalOpen(false)}
         title={isUrdu ? 'بل پر نوٹ' : 'Bill Note'}
         icon={FileText}
-        maxWidth="400px"
+        size="sm"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsNoteModalOpen(false)}>
@@ -2003,7 +2005,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setItemToDeleteIndex(null)}
         title={isUrdu ? 'آئٹم حذف کریں؟' : 'Remove Item?'}
         icon={AlertTriangle}
-        maxWidth="380px"
+        size="sm"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setItemToDeleteIndex(null)}>
@@ -2031,7 +2033,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsReviewModalOpen(false)}
         title={isUrdu ? 'بل جائزہ و تصدیق' : 'Bill Review'}
         icon={ShieldCheck}
-        maxWidth="460px"
+        size="md"
         footerActions={
           <>
             <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsReviewModalOpen(false)}>
@@ -2115,7 +2117,7 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => setIsDiscardModalOpen(false)}
         title={isUrdu ? 'غیر محفوظ بل' : 'Unsaved Bill'}
         icon={AlertCircle}
-        maxWidth="380px"
+        size="sm"
         footerActions={
           <>
             <button
