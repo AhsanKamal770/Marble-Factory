@@ -314,7 +314,7 @@ body {
   gap: 12px;
   padding: 10px 14px;
   color: #94a3b8;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   font-size: 0.88rem;
   cursor: pointer;
@@ -324,17 +324,18 @@ body {
 
 .nav-item:hover {
   color: #f1f5f9;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .nav-item.active {
   color: #ffffff;
-  background: rgba(37, 99, 235, 0.14);
+  background: #2563eb;
   font-weight: 600;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
 }
 
 .nav-item.active .nav-icon {
-  color: #38bdf8;
+  color: #ffffff;
 }
 
 .nav-item-collapsed {

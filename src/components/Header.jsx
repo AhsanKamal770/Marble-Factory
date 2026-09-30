@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import {
-  PlusCircle,
-  Clock,
-  Database,
-  Sun,
+  Menu,
+  Search,
+  Calendar,
+  Bell,
   Moon,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Sun,
+  ChevronDown,
   LogOut,
-  UserCheck,
-  Globe,
-  Wallet
+  Globe
 } from 'lucide-react';
-import { exportDatabaseToJson } from '../db/backupService';
 import { useLanguage } from '../context/LanguageContext';
-import { getLiveCashInDrawer } from '../db/index';
 
 export default function Header({
   activeView,
@@ -26,195 +22,328 @@ export default function Header({
   toggleSidebar,
   onLogout
 }) {
-  const { language, toggleLanguage, t } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [backupMsg, setBackupMsg] = useState('');
-  const [liveCash, setLiveCash] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    fetchLiveDrawer();
-  }, [activeView]);
+  const formattedDate = currentTime.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
 
-  const fetchLiveDrawer = async () => {
-    try {
-      const data = await getLiveCashInDrawer();
-      setLiveCash(data.liveCash || 0);
-    } catch {
-      // fallback
-    }
-  };
-
-  const titles = {
-    'dashboard': {
-      title: language === 'ur' ? 'ماربل فیکٹری جائزہ' : 'Karkhana Dashboard',
-      subtitle: language === 'ur' ? 'لائیو سیلز، دراز کیش اور کھاتہ سمری' : 'Live sales, Roznamcha drawer cash & Digital Khata'
-    },
-    'billing': {
-      title: language === 'ur' ? 'نیا بل بک (سیلز)' : 'Naya Bill Book (POS)',
-      subtitle: language === 'ur' ? 'سوتر، اسکوائر فٹ اور برانڈڈ انوائس' : 'Sutar thickness & Sq.Ft marble/tile billing'
-    },
-    'invoices': {
-      title: language === 'ur' ? 'بل بک ریکارڈ و پرنٹ' : 'Bill Book & Invoices',
-      subtitle: language === 'ur' ? 'تمام پرانے بل، وصولی اور پرنٹ' : 'Search, 80mm thermal receipt reprint & Udhar dues'
-    },
-    'stock': {
-      title: language === 'ur' ? 'ماربل و ٹائلز اسٹاک' : 'Marble & Tiles Stock',
-      subtitle: language === 'ur' ? '4 سوتر درجہ بندی، کٹنگ سائز اور ریٹ' : 'Sutar categories (4, 6, 9, 14 sutar) & pricing'
-    },
-    'stock-sheet': {
-      title: language === 'ur' ? 'اسٹاک لیجر و آڈٹ' : 'Stock Sheet & Audit',
-      subtitle: language === 'ur' ? 'مال کی آمد و روانگی کا کھاتہ' : 'Stock ledger, In/Out movements & valuation'
-    },
-    'customers': {
-      title: language === 'ur' ? 'ڈیجیٹل کھاتہ (گاہک)' : 'Digital Khata (Customers)',
-      subtitle: language === 'ur' ? 'گاہکوں کا مکمل ادھار اور وصولی' : 'Customer ledger, Udhar balance & wasooli history'
-    },
-    'suppliers': {
-      title: language === 'ur' ? 'سپلائر مال آمد' : 'Supplier Purchases',
-      subtitle: language === 'ur' ? 'ٹرک و چالان کی انٹری' : 'Raw stone blocks, truck intake & supplier balance'
-    },
-    'returns': {
-      title: language === 'ur' ? 'واپسی مال و کٹائی نقصان' : 'Wapsi & Factory Wastage',
-      subtitle: language === 'ur' ? 'گاہک واپسی اور فیکٹری بریکیج' : 'Sales returns & bridge-cutter breakage logs'
-    },
-    'settings': {
-      title: language === 'ur' ? 'فیکٹری ترتیبات و بیک اپ' : 'Factory Settings',
-      subtitle: language === 'ur' ? 'رانا شہاب ماربل پروفائل اور ڈیٹا بیک اپ' : 'Rana Shahab profile, bill book terms & local backup'
-    }
-  };
-
-  const currentInfo = titles[activeView] || {
-    title: language === 'ur' ? 'رانا شہاب ماربل فیکٹری' : 'Rana Shahab Marble Factory',
-    subtitle: 'ERP + POS System'
-  };
-
-  const handleQuickBackup = async () => {
-    const res = await exportDatabaseToJson();
-    if (res.success) {
-      setBackupMsg(language === 'ur' ? 'محفوظ!' : 'Saved!');
-      setTimeout(() => setBackupMsg(''), 3000);
-    }
-  };
+  const formattedTime = currentTime.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
 
   return (
-    <header className="top-header">
-      {/* Zone 1 (Left): Sidebar toggle & Page title */}
-      <div className="header-title-section">
+    <header style={{
+      height: '64px',
+      background: '#ffffff',
+      borderBottom: '1px solid #e2e8f0',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 24px',
+      zIndex: 15,
+      position: 'relative',
+      boxSizing: 'border-box'
+    }}>
+      {/* Left: Sidebar Hamburger + Search Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, maxWidth: '520px' }}>
         <button
           type="button"
-          className="header-icon-btn"
           onClick={toggleSidebar}
-          title={isSidebarCollapsed ? 'Expand Sidebar (Ctrl+B)' : 'Collapse Sidebar (Ctrl+B)'}
-        >
-          {isSidebarCollapsed ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
-        </button>
-
-        <h1 style={{
-          fontSize: '1.05rem',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.01em',
-          margin: 0,
-          whiteSpace: 'nowrap'
-        }}>
-          {activeView === 'dashboard' ? (language === 'ur' ? 'کارخانہ ڈیش بورڈ' : 'Karkhana Dashboard') : currentInfo.title}
-        </h1>
-      </div>
-
-      {/* Zone 2 (Center/Right): Subdued contextual info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        {/* Compact Financial Indicator (Not a loud pill) */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          lineHeight: 1.2,
-          paddingRight: '12px',
-          borderRight: '1px solid var(--border-color)'
-        }}>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-            {language === 'ur' ? 'دراز کیش (روزنامچہ)' : 'Draz Cash (Drawer)'}
-          </span>
-          <span className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Rs. {Number(liveCash).toLocaleString()}
-          </span>
-        </div>
-
-        {/* Subtle Language Toggle */}
-        <button
-          type="button"
-          onClick={toggleLanguage}
           style={{
             background: 'transparent',
-            border: '1px solid var(--border-color)',
-            borderRadius: '6px',
-            padding: '3px 8px',
-            fontSize: '0.74rem',
-            fontWeight: 600,
-            color: 'var(--text-secondary)',
+            border: 'none',
+            color: '#475569',
             cursor: 'pointer',
+            padding: '6px',
+            borderRadius: '8px',
             display: 'flex',
             alignItems: 'center',
-            gap: '4px',
-            transition: 'all 0.15s ease'
+            justifyContent: 'center',
+            transition: 'background 0.15s ease'
           }}
-          title={language === 'en' ? 'اردو میں تبدیل کریں' : 'Switch to English'}
+          onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+          title="Toggle Navigation"
         >
-          <Globe size={12} style={{ color: 'var(--accent-blue)' }} />
-          <span>{language === 'en' ? 'EN' : 'اردو'}</span>
+          <Menu size={20} />
         </button>
 
-        {/* Theme Toggle (Minimal clean icon button) */}
-        <button
-          type="button"
-          className="header-icon-btn"
-          onClick={toggleTheme}
-          title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-        >
-          {theme === 'light' ? (
-            <Moon size={14} style={{ color: 'var(--text-secondary)' }} />
-          ) : (
-            <Sun size={14} style={{ color: '#38bdf8' }} />
-          )}
-        </button>
+        {/* Global Search Bar */}
+        <div style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: '420px'
+        }}>
+          <Search
+            size={16}
+            style={{
+              position: 'absolute',
+              left: '12px',
+              color: '#94a3b8',
+              pointerEvents: 'none'
+            }}
+          />
+          <input
+            type="text"
+            placeholder={language === 'ur' ? 'کچھ بھی تلاش کریں... (انوائس، گاہک، پروڈکٹ)' : 'Search anything... (e.g. invoice, customer, product)'}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              width: '100%',
+              height: '38px',
+              paddingLeft: '38px',
+              paddingRight: '14px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '10px',
+              fontSize: '0.85rem',
+              color: '#0f172a',
+              outline: 'none',
+              transition: 'all 0.15s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#2563eb';
+              e.target.style.background = '#ffffff';
+              e.target.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e2e8f0';
+              e.target.style.background = '#f8fafc';
+              e.target.style.boxShadow = 'none';
+            }}
+          />
+        </div>
+      </div>
 
-        {/* User Menu */}
+      {/* Right: Date/Time + Notification + Theme + Profile */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+        {/* Date and Time Widget */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          paddingLeft: '10px',
-          borderLeft: '1px solid var(--border-color)'
+          color: '#64748b',
+          fontSize: '0.82rem',
+          fontWeight: 500,
+          borderRight: '1px solid #e2e8f0',
+          paddingRight: '18px'
         }}>
-          <div style={{
-            width: '26px',
-            height: '26px',
+          <Calendar size={15} style={{ color: '#2563eb' }} />
+          <span>{formattedDate}</span>
+          <span style={{ color: '#cbd5e1' }}>|</span>
+          <span style={{ fontWeight: 700, color: '#0f172a' }}>{formattedTime}</span>
+        </div>
+
+        {/* Notifications Icon with Red Badge */}
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#475569',
+              cursor: 'pointer',
+              padding: '6px',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'background 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+            title="Notifications"
+          >
+            <Bell size={18} />
+          </button>
+          <span style={{
+            position: 'absolute',
+            top: '2px',
+            right: '2px',
+            width: '16px',
+            height: '16px',
+            background: '#ef4444',
+            color: '#ffffff',
             borderRadius: '50%',
-            background: 'rgba(37, 99, 235, 0.1)',
-            color: 'var(--accent-blue)',
+            fontSize: '0.62rem',
+            fontWeight: 800,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '0.72rem',
-            fontWeight: 700
+            boxShadow: '0 0 0 2px #ffffff'
           }}>
-            A
-          </div>
-          <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)' }}>Admin</span>
+            3
+          </span>
+        </div>
+
+        {/* Theme Toggle Button */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: '#475569',
+            cursor: 'pointer',
+            padding: '6px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background 0.15s ease'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+        >
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} style={{ color: '#d97706' }} />}
+        </button>
+
+        {/* Language Switcher */}
+        <button
+          type="button"
+          onClick={toggleLanguage}
+          style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            color: '#475569',
+            cursor: 'pointer',
+            padding: '4px 8px',
+            borderRadius: '6px',
+            fontSize: '0.74rem',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+          title="Toggle Language"
+        >
+          <Globe size={13} style={{ color: '#2563eb' }} />
+          <span>{language === 'en' ? 'EN' : 'اردو'}</span>
+        </button>
+
+        {/* Profile Pill Dropdown */}
+        <div style={{ position: 'relative' }}>
           <button
             type="button"
-            onClick={onLogout}
-            className="btn btn-ghost btn-sm"
-            style={{ padding: '2px 4px', color: '#94a3b8' }}
-            title="Sign Out"
+            onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              padding: '4px 8px',
+              borderRadius: '10px',
+              transition: 'background 0.15s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#f1f5f9'}
+            onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
           >
-            <LogOut size={13} />
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              background: '#0f172a',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 800,
+              fontSize: '0.85rem'
+            }}>
+              R
+            </div>
+            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#0f172a' }}>
+              Rana Shahab
+            </span>
+            <ChevronDown size={14} style={{ color: '#64748b' }} />
           </button>
+
+          {profileDropdownOpen && (
+            <div style={{
+              position: 'absolute',
+              top: '44px',
+              right: '0',
+              width: '180px',
+              background: '#ffffff',
+              borderRadius: '12px',
+              boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+              border: '1px solid #e2e8f0',
+              padding: '6px',
+              zIndex: 30
+            }}>
+              <div style={{ padding: '8px 10px', borderBottom: '1px solid #f1f5f9' }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>Rana Shahab</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Master Administrator</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  setActiveView('settings');
+                }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: '8px 10px',
+                  fontSize: '0.82rem',
+                  color: '#334155',
+                  cursor: 'pointer',
+                  borderRadius: '6px'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#f8fafc'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+              >
+                Settings
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  onLogout();
+                }}
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  background: 'none',
+                  border: 'none',
+                  padding: '8px 10px',
+                  fontSize: '0.82rem',
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = '#fef2f2'}
+                onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+              >
+                <LogOut size={14} />
+                <span>Sign Out</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
