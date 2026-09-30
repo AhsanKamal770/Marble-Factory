@@ -71,7 +71,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      backgroundImage: `url('/login-bg.jpg')`,
+      backgroundImage: `url('./background.jpeg')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
