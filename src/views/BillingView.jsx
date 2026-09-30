@@ -1716,53 +1716,56 @@ export default function BillingView({ setActiveView, settings }) {
           </>
         }
       >
-        <form id="newCustomerForm" onSubmit={handleCreateNewCustomer} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Name *</label>
-            <input
-              type="text"
-              required
-              className="form-control form-control-sm"
-              value={newCustomerForm.name}
-              onChange={(e) => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
-              placeholder="e.g. Mian Rashid Builder"
-              style={{ padding: '10px 12px', borderRadius: '8px' }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Phone</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={newCustomerForm.phone}
-              onChange={(e) => setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })}
-              placeholder="0300-1234567"
-              style={{ padding: '10px 12px', borderRadius: '8px' }}
-            />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>City</label>
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                value={newCustomerForm.city}
-                onChange={(e) => setNewCustomerForm({ ...newCustomerForm, city: e.target.value })}
-                style={{ padding: '10px 12px', borderRadius: '8px' }}
-              />
-            </div>
-            <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Type</label>
-              <select
-                className="form-control form-control-sm"
-                value={newCustomerForm.customerType}
-                onChange={(e) => setNewCustomerForm({ ...newCustomerForm, customerType: e.target.value })}
-                style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer' }}
-              >
-                <option value="Retail">Retail</option>
-                <option value="Builder / Contractor">Builder / Contractor</option>
-                <option value="Wholesaler">Wholesaler</option>
-              </select>
+        <form id="newCustomerForm" onSubmit={handleCreateNewCustomer}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+              <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>{isUrdu ? 'گاہک کی تفصیلات' : 'Customer Details'}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'نام' : 'Name'} *</label>
+                  <input
+                    type="text"
+                    required
+                    className="form-control"
+                    value={newCustomerForm.name}
+                    onChange={(e) => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
+                    placeholder="e.g. Mian Rashid Builder"
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'فون نمبر' : 'Phone'}</label>
+                  <input
+                    type="text"
+                    className="form-control font-mono"
+                    value={newCustomerForm.phone}
+                    onChange={(e) => setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })}
+                    placeholder="0300-1234567"
+                  />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">{isUrdu ? 'شہر' : 'City'}</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={newCustomerForm.city}
+                      onChange={(e) => setNewCustomerForm({ ...newCustomerForm, city: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">{isUrdu ? 'قسم' : 'Type'}</label>
+                    <select
+                      className="form-control"
+                      value={newCustomerForm.customerType}
+                      onChange={(e) => setNewCustomerForm({ ...newCustomerForm, customerType: e.target.value })}
+                    >
+                      <option value="Retail">Retail</option>
+                      <option value="Builder / Contractor">Builder / Contractor</option>
+                      <option value="Wholesaler">Wholesaler</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </form>
@@ -1789,53 +1792,58 @@ export default function BillingView({ setActiveView, settings }) {
           </>
         }
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Method / Carrier</label>
-            <select
-              className="form-control form-control-sm"
-              value={deliveryForm.method}
-              onChange={(e) => setDeliveryForm({ ...deliveryForm, method: e.target.value })}
-              style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer' }}
-            >
-              <option value="Rickshaw (رکشہ)">Rickshaw (رکشہ)</option>
-              <option value="Pickup">Pickup (Factory Gate)</option>
-              <option value="Truck / Shahzor">Truck / Shahzor (ڈالہ)</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Carrier / Driver Name</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={deliveryForm.driverName}
-              onChange={(e) => setDeliveryForm({ ...deliveryForm, driverName: e.target.value })}
-              placeholder="e.g. Aslam"
-              style={{ padding: '10px 12px', borderRadius: '8px' }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Vehicle Number</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={deliveryForm.vehicleNo}
-              onChange={(e) => setDeliveryForm({ ...deliveryForm, vehicleNo: e.target.value })}
-              placeholder="e.g. FSD-4821"
-              style={{ padding: '10px 12px', borderRadius: '8px' }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Destination / Notes</label>
-            <input
-              type="text"
-              className="form-control form-control-sm"
-              value={deliveryForm.notes}
-              onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
-              placeholder="e.g. Site near Jhumra canal"
-              style={{ padding: '10px 12px', borderRadius: '8px' }}
-            />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+            <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>{isUrdu ? 'ڈرائیور کی معلومات' : 'Driver & Vehicle Info'}</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'گاڑی کی قسم' : 'Method / Carrier'}</label>
+                  <select
+                    className="form-control"
+                    value={deliveryForm.method}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, method: e.target.value })}
+                  >
+                    <option value="Rickshaw (رکشہ)">Rickshaw (رکشہ)</option>
+                    <option value="Pickup">Pickup (Factory Gate)</option>
+                    <option value="Truck / Shahzor">Truck / Shahzor (ڈالہ)</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'ڈرائیور کا نام' : 'Carrier / Driver Name'}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={deliveryForm.driverName}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, driverName: e.target.value })}
+                    placeholder="e.g. Aslam"
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'گاڑی کا نمبر' : 'Vehicle Number'}</label>
+                  <input
+                    type="text"
+                    className="form-control font-mono"
+                    value={deliveryForm.vehicleNo}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, vehicleNo: e.target.value })}
+                    placeholder="e.g. FSD-4821"
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'منزل مقصود' : 'Destination / Notes'}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={deliveryForm.notes}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
+                    placeholder="e.g. Site near Jhumra canal"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </Modal>
@@ -1858,33 +1866,39 @@ export default function BillingView({ setActiveView, settings }) {
           </>
         }
       >
-        <form id="addChargeForm" onSubmit={handleApplyCharge} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Type</label>
-            <select
-              className="form-control form-control-sm"
-              value={chargeForm.type}
-              onChange={(e) => setChargeForm({ ...chargeForm, type: e.target.value })}
-              style={{ padding: '10px 12px', borderRadius: '8px', cursor: 'pointer' }}
-            >
-              <option value="Carriage (کرایہ)">Carriage / Freight (کرایہ)</option>
-              <option value="Labour (مزدوری)">Labour / Loading (مزدوری)</option>
-              <option value="Polish (پالش)">Polishing & Edge Cutting (پالش)</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Amount (Rs.) *</label>
-            <input
-              type="number"
-              required
-              min="1"
-              className="form-control form-control-sm font-mono"
-              value={chargeForm.amount}
-              onChange={(e) => setChargeForm({ ...chargeForm, amount: e.target.value })}
-              placeholder="e.g. 2000"
-              style={{ padding: '10px 12px', borderRadius: '8px' }}
-            />
+        <form id="addChargeForm" onSubmit={handleApplyCharge}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+              <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>{isUrdu ? 'اخراجات کی تفصیل' : 'Charge Details'}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'قسم' : 'Type'}</label>
+                  <select
+                    className="form-control"
+                    value={chargeForm.type}
+                    onChange={(e) => setChargeForm({ ...chargeForm, type: e.target.value })}
+                  >
+                    <option value="Carriage (کرایہ)">Carriage / Freight (کرایہ)</option>
+                    <option value="Labour (مزدوری)">Labour / Loading (مزدوری)</option>
+                    <option value="Polish (پالش)">Polishing & Edge Cutting (پالش)</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ color: "#059669" }}>{isUrdu ? 'رقم' : 'Amount (Rs.)'} *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    className="form-control font-mono"
+                    style={{ fontSize: "1.05rem", fontWeight: 700, color: "#059669", borderColor: "rgba(5, 150, 105, 0.3)" }}
+                    value={chargeForm.amount}
+                    onChange={(e) => setChargeForm({ ...chargeForm, amount: e.target.value })}
+                    placeholder="e.g. 2000"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </form>
       </Modal>
