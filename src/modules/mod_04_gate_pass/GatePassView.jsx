@@ -355,7 +355,18 @@ export default function GatePassView() {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+
+    if (!formData.customerName.trim()) {
+      alert(language === "ur" ? "براہ کرم خریدار کا نام درج کریں۔" : "Please enter the Customer Name.");
+      return;
+    }
+
+    if (!formData.destination.trim()) {
+      alert(language === "ur" ? "براہ کرم ترسیل کا پتہ درج کریں۔" : "Please enter the Delivery Destination.");
+      return;
+    }
+
     try {
       const manifest = formData.manifestItems.filter(r => r.name.trim());
       if (manifest.length === 0) {
@@ -640,17 +651,15 @@ export default function GatePassView() {
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <SlidersHorizontal size={14} style={{ color: "var(--text-muted)" }} />
           <select
+            className="form-control"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
             style={{
-              padding: "8px 12px",
+              width: "auto",
+              padding: "8px 36px 8px 12px",
               fontSize: "0.82rem",
               fontWeight: 600,
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              color: "var(--text-primary)",
-              outline: "none"
+              minWidth: "150px"
             }}
           >
             <option value="All">{language === "ur" ? "تمام اسٹیٹس (All Status)" : "All Status"}</option>
@@ -663,17 +672,15 @@ export default function GatePassView() {
         {/* Vehicle Filter */}
         <div>
           <select
+            className="form-control"
             value={vehicleFilter}
             onChange={e => setVehicleFilter(e.target.value)}
             style={{
-              padding: "8px 12px",
+              width: "auto",
+              padding: "8px 36px 8px 12px",
               fontSize: "0.82rem",
               fontWeight: 600,
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              color: "var(--text-primary)",
-              outline: "none"
+              minWidth: "150px"
             }}
           >
             <option value="All">{language === "ur" ? "تمام گاڑیاں (All Vehicles)" : "All Vehicles"}</option>
@@ -768,24 +775,13 @@ export default function GatePassView() {
                       {/* Customer & Destination */}
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>{gp.customerName}</div>
-                        <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
-                          <MapPin size={11} style={{ flexShrink: 0 }} />
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "180px" }}>
-                            {gp.destination || "Factory Yard Delivery"}
-                          </span>
-                        </div>
                       </td>
 
                       {/* Vehicle & Driver */}
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.82rem" }}>
-                          {gp.vehicleType} {gp.vehicleRegNo ? <span style={{ fontFamily: "monospace", color: "var(--text-muted)" }}>({gp.vehicleRegNo})</span> : ''}
+                          {gp.vehicleType}
                         </div>
-                        {gp.driverName && (
-                          <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {gp.driverName} {gp.driverPhone ? `• ${gp.driverPhone}` : ''}
-                          </div>
-                        )}
                       </td>
 
                       {/* Manifest Quantity */}
@@ -793,9 +789,7 @@ export default function GatePassView() {
                         <div style={{ fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace" }}>
                           {gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Sq.Ft</span>
                         </div>
-                        <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                          {gp.totalPieces || (gp.manifest || []).length} Pcs • {(gp.manifest || []).length} items
-                        </div>
+
                       </td>
 
                       {/* Date & Time */}
@@ -899,8 +893,8 @@ export default function GatePassView() {
               Cancel
             </button>
             <button
-              type="submit"
-              form="gate-pass-form"
+              type="button"
+              onClick={handleSave}
               className="btn btn-primary"
               style={{ display: "flex", alignItems: "center", gap: "6px" }}
             >
@@ -912,26 +906,17 @@ export default function GatePassView() {
         <form id="gate-pass-form" onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
                 {/* 1. Invoice Reference Picker */}
-                <div style={{ background: "var(--bg-primary)", padding: "14px 16px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
-                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
                     {language === "ur" ? "بل بک انوائس سے لنک کریں (اختیاری)" : "Link with Invoice Bill (Optional)"}
                   </label>
                   <select
+                    className="form-control"
                     value={formData.invoiceId}
                     onChange={e => handleInvoiceSelect(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "9px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-color)",
-                      background: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                      fontSize: "0.88rem",
-                      fontWeight: 600,
-                      outline: "none"
-                    }}
+                    style={{ width: "100%", fontSize: "0.85rem", fontWeight: 600 }}
                   >
-                    <option value="">{language === "ur" ? "— بل منتخب کریں یا نیچے دستی درج کریں —" : "— Select Invoice ▼ (or fill manually below) —"}</option>
+                    <option value="">{language === "ur" ? "بل منتخب کریں یا نیچے دستی درج کریں" : "Select Invoice (or fill manually below)"}</option>
                     {invoices.map(inv => (
                       <option key={inv.id} value={inv.id}>
                         {inv.invoiceNo} — {inv.customerName} ({inv.items.length} items • Rs. {Number(inv.totalAmount).toLocaleString()})
@@ -951,7 +936,6 @@ export default function GatePassView() {
                         {language === "ur" ? "خریدار کا نام *" : "Customer Name *"}
                       </label>
                       <input
-                        required
                         type="text"
                         value={formData.customerName}
                         onChange={e => setFormData(p => ({ ...p, customerName: e.target.value }))}
@@ -996,7 +980,6 @@ export default function GatePassView() {
                         {language === "ur" ? "ترسیل کا پتہ / منزل *" : "Delivery Destination / Site Address *"}
                       </label>
                       <input
-                        required
                         type="text"
                         value={formData.destination}
                         onChange={e => setFormData(p => ({ ...p, destination: e.target.value }))}
@@ -1027,19 +1010,10 @@ export default function GatePassView() {
                         {language === "ur" ? "گاڑی کی قسم *" : "Vehicle Type *"}
                       </label>
                       <select
+                        className="form-control"
                         value={formData.vehicleType}
                         onChange={e => setFormData(p => ({ ...p, vehicleType: e.target.value }))}
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          fontWeight: 600,
-                          outline: "none"
-                        }}
+                        style={{ width: "100%", fontSize: "0.85rem", fontWeight: 600 }}
                       >
                         {VEHICLE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
                       </select>
@@ -1141,19 +1115,10 @@ export default function GatePassView() {
                         {language === "ur" ? "کرایہ کون دے گا؟" : "Carriage Paid By"}
                       </label>
                       <select
+                        className="form-control"
                         value={formData.carriagePaidBy}
                         onChange={e => setFormData(p => ({ ...p, carriagePaidBy: e.target.value }))}
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.82rem",
-                          fontWeight: 600,
-                          outline: "none"
-                        }}
+                        style={{ width: "100%", fontSize: "0.82rem", fontWeight: 600 }}
                       >
                         {CARRIAGE_PAID_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                       </select>

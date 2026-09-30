@@ -180,48 +180,40 @@ export default function CustomerTimelineView({
         </div>
 
         {/* Row 2: Customer Account Metric Strip */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-          gap: "10px",
-          background: "var(--bg-primary)",
-          padding: "10px 14px",
-          borderRadius: "10px",
-          border: "1px solid var(--border-divider)"
-        }}>
-          <div>
-            <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Total Purchases (خریداری)
+        <div className="kpi-cards-grid" style={{ marginTop: "10px" }}>
+          <div className="kpi-stat-card">
+            <div className="kpi-header">
+              <span className="kpi-title">Total Purchases (خریداری)</span>
             </div>
-            <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+            <div className="kpi-value font-mono">
               Rs. {totalBilled.toLocaleString()}
             </div>
           </div>
 
-          <div>
-            <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Total Wasooli (وصولی)
+          <div className="kpi-stat-card">
+            <div className="kpi-header">
+              <span className="kpi-title">Total Wasooli (وصولی)</span>
             </div>
-            <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 800, color: "#059669" }}>
+            <div className="kpi-value font-mono" style={{ color: "var(--accent-green)" }}>
               Rs. {totalPaid.toLocaleString()}
             </div>
           </div>
 
-          <div>
-            <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Balance Due (بقایا کھاتہ)
+          <div className="kpi-stat-card" style={{ background: hasDue ? "rgba(220, 38, 38, 0.05)" : "var(--bg-card)" }}>
+            <div className="kpi-header">
+              <span className="kpi-title">Balance Due (بقایا کھاتہ)</span>
             </div>
-            <div className="font-mono" style={{ fontSize: "1.05rem", fontWeight: 900, color: hasDue ? "#dc2626" : "#059669" }}>
+            <div className="kpi-value font-mono" style={{ color: hasDue ? "var(--accent-red)" : "var(--accent-green)" }}>
               Rs. {balanceDue.toLocaleString()}
             </div>
           </div>
 
           {customer.creditLimit > 0 && (
-            <div>
-              <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-                Credit Limit
+            <div className="kpi-stat-card">
+              <div className="kpi-header">
+                <span className="kpi-title">Credit Limit</span>
               </div>
-              <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+              <div className="kpi-value font-mono" style={{ color: "var(--text-muted)", fontSize: "1.1rem" }}>
                 Rs. {Number(customer.creditLimit).toLocaleString()}
               </div>
             </div>

@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { Printer, X, FileText, CheckCircle2, Phone, MapPin } from 'lucide-react';
+import { Printer, FileText, CheckCircle2, Phone, MapPin } from 'lucide-react';
+import Modal from "../../shared/components/Modal";
 
 export default function PrintableKhataModal({ isOpen, onClose, customer, timeline = [], settings }) {
   const printRef = useRef(null);
@@ -21,56 +22,28 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
   const balanceDue = Number(customer.balanceDue || 0);
 
   return (
-    <div className="modal-overlay" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px'
-    }}>
-      <div className="modal-card" style={{
-        width: '100%',
-        maxWidth: '460px',
-        maxHeight: '90vh',
-        background: 'var(--bg-card)',
-        borderRadius: '16px',
-        border: '1px solid var(--border-color)',
-        boxShadow: 'var(--shadow-lg)',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden'
-      }}>
-        {/* Header Bar */}
-        <div style={{
-          padding: '16px 20px',
-          borderBottom: '1px solid var(--border-color)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={18} style={{ color: 'var(--accent-blue)' }} />
-            <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              Customer Khata Statement Slip
-            </h3>
-          </div>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Customer Khata Statement Slip"
+      icon={FileText}
+      size="md"
+      footerActions={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Close
+          </button>
           <button
             type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-sm"
-            style={{ padding: '4px', color: 'var(--text-muted)' }}
+            className="btn btn-primary"
+            onClick={handlePrint}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <X size={18} />
+            <Printer size={15} /> Print Khata Slip
           </button>
-        </div>
-
+        </>
+      }
+    >
         {/* Printable Area */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
           <div ref={printRef} className="thermal-receipt-preview" style={{
@@ -177,34 +150,6 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
             </div>
           </div>
         </div>
-
-        {/* Footer Actions */}
-        <div style={{
-          padding: '14px 20px',
-          borderTop: '1px solid var(--border-color)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          background: 'var(--bg-primary)'
-        }}>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={onClose}
-          >
-            Close
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={handlePrint}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Printer size={15} />
-            <span>Print 80mm Khata Slip</span>
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

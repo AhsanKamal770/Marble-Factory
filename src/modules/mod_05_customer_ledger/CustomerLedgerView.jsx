@@ -195,56 +195,55 @@ export default function CustomerLedgerView() {
           </button>
         </div>
 
-        {/* 4 KPI Summary Strip */}
-        <div className="kpi-unified-strip">
+        <div className="kpi-cards-grid">
           {/* KPI 1: Total Market Udhaar */}
-          <div className="kpi-strip-cell">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#dc2626", textTransform: "uppercase" }}>
+          <div className="kpi-stat-card">
+            <div className="kpi-header">
+              <span className="kpi-title">
                 {language === 'ur' ? 'کل مارکیٹ ادھار' : 'TOTAL MARKET DUES'}
               </span>
-              <AlertCircle size={14} style={{ color: "#dc2626" }} />
+              <AlertCircle size={14} style={{ color: "var(--accent-red)" }} />
             </div>
-            <div className="font-mono" style={{ fontSize: "1.35rem", fontWeight: 900, color: "#dc2626" }}>
+            <div className="kpi-value font-mono" style={{ color: "var(--accent-red)" }}>
               Rs. {totalMarketUdhaar.toLocaleString()}
             </div>
           </div>
 
           {/* KPI 2: Total Recovered */}
-          <div className="kpi-strip-cell">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#059669", textTransform: "uppercase" }}>
+          <div className="kpi-stat-card">
+            <div className="kpi-header">
+              <span className="kpi-title">
                 {language === 'ur' ? 'کل وصول شدہ رقم' : 'TOTAL RECOVERED'}
               </span>
-              <CreditCard size={14} style={{ color: "#059669" }} />
+              <CreditCard size={14} style={{ color: "var(--accent-green)" }} />
             </div>
-            <div className="font-mono" style={{ fontSize: "1.35rem", fontWeight: 900, color: "#059669" }}>
+            <div className="kpi-value font-mono" style={{ color: "var(--accent-green)" }}>
               Rs. {totalWasooliAllTime.toLocaleString()}
             </div>
           </div>
 
           {/* KPI 3: Overdue Accounts Count */}
-          <div className="kpi-strip-cell">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--accent-blue)", textTransform: "uppercase" }}>
+          <div className="kpi-stat-card">
+            <div className="kpi-header">
+              <span className="kpi-title">
                 {language === 'ur' ? 'بقایا دار گاہک' : 'OVERDUE ACCOUNTS'}
               </span>
               <TrendingDown size={14} style={{ color: "var(--accent-blue)" }} />
             </div>
-            <div className="font-mono" style={{ fontSize: "1.35rem", fontWeight: 900, color: "var(--accent-blue)" }}>
-              {overdueCustomersCount} <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>/ {customers.length}</span>
+            <div className="kpi-value font-mono" style={{ color: "var(--accent-blue)" }}>
+              {overdueCustomersCount} <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)" }}>/ {customers.length}</span>
             </div>
           </div>
 
           {/* KPI 4: Total Registered Customers */}
-          <div className="kpi-strip-cell">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase" }}>
+          <div className="kpi-stat-card">
+            <div className="kpi-header">
+              <span className="kpi-title">
                 {language === 'ur' ? 'کل رجسٹرڈ کھاتے' : 'REGISTERED KHATAS'}
               </span>
-              <Users size={14} style={{ color: "var(--text-muted)" }} />
+              <Users size={14} style={{ color: "var(--text-secondary)" }} />
             </div>
-            <div className="font-mono" style={{ fontSize: "1.35rem", fontWeight: 900, color: "var(--text-primary)" }}>
+            <div className="kpi-value font-mono">
               {customers.length}
             </div>
           </div>
