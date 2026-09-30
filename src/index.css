@@ -1486,8 +1486,8 @@ select.form-control option {
 
 .dashboard-analytics-grid {
   display: grid;
-  grid-template-columns: 1.55fr 1.35fr 1fr;
-  gap: 18px;
+  grid-template-columns: 1.8fr 1.2fr 1fr;
+  gap: 12px;
 }
 
 @media (max-width: 1250px) {

@@ -704,14 +704,14 @@ export default function DashboardView({ setActiveView, settings }) {
             {/* SVG Donut Container - Prominent & Enlarged */}
             <div style={{
               position: 'relative',
-              width: '152px',
-              height: '152px',
+              width: '170px',
+              height: '170px',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <svg width="152" height="152" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+              <svg width="170" height="170" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
                 {/* Background Ring (r=58 -> circumference = 364.42) */}
                 <circle cx="80" cy="80" r="58" stroke="#f1f5f9" strokeWidth="15" fill="none" />
                 {/* Paid: 18/28 = 64.3% -> 234.27 */}
@@ -731,19 +731,16 @@ export default function DashboardView({ setActiveView, settings }) {
                 left: '50%',
                 transform: 'translate(-50%, -50%)',
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
+                alignItems: 'baseline',
                 justifyContent: 'center',
-                pointerEvents: 'none',
-                textAlign: 'center',
-                width: '92px',
-                lineHeight: 1.15
+                gap: '4px',
+                pointerEvents: 'none'
               }}>
-                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', letterSpacing: '0.2px' }}>
-                  Total Invoices
-                </span>
-                <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+                <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
                   28
+                </span>
+                <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>
+                  Invoices
                 </span>
               </div>
             </div>
