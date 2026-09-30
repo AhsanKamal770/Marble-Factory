@@ -55,13 +55,15 @@ export default function Modal({
       padding: '20px'
     }}>
       <div style={{
-        background: '#ffffff',
-        borderRadius: '16px',
+        background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.8))",
+        backdropFilter: "blur(20px)",
+        borderRadius: '20px',
         width: '100%',
         maxWidth: computedMaxWidth,
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+        boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.5) inset",
+        border: "1px solid rgba(255,255,255,0.8)",
         transform: show ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(10px)',
-        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
         display: 'flex',
         flexDirection: 'column',
         maxHeight: '90vh',
@@ -69,42 +71,43 @@ export default function Modal({
       }}>
         {/* Header */}
         <div style={{
-          padding: '16px 20px',
-          borderBottom: '1px solid #e2e8f0',
+          padding: '20px 24px',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: '#f8fafc'
+          background: 'rgba(255, 255, 255, 0.4)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {Icon && (
               <div style={{
-                width: '32px', height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(37, 99, 235, 0.1)',
+                width: '36px', height: '36px',
+                borderRadius: '10px',
+                background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(37, 99, 235, 0.05))',
                 color: '#2563eb',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 2px 5px rgba(37, 99, 235, 0.1)'
               }}>
-                <Icon size={18} />
+                <Icon size={20} />
               </div>
             )}
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0, letterSpacing: '-0.01em' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
               {title}
             </h2>
           </div>
           <button
             onClick={onClose}
             style={{
-              background: 'transparent', border: 'none',
+              background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.05)',
               width: '32px', height: '32px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               borderRadius: '8px',
               cursor: 'pointer',
               color: '#64748b',
-              transition: 'all 0.15s ease'
+              transition: 'all 0.2s ease'
             }}
-            onMouseOver={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.color = '#0f172a'; }}
-            onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#64748b'; }}
+            onMouseOver={(e) => { e.currentTarget.style.background = '#ef4444'; e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.borderColor = '#ef4444'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderColor = 'rgba(0,0,0,0.05)'; }}
           >
             <X size={18} />
           </button>
@@ -115,9 +118,10 @@ export default function Modal({
           padding: '24px', 
           overflowY: 'auto', 
           flex: 1,
-          fontSize: '0.86rem',
-          color: '#334155',
-          lineHeight: 1.5
+          fontSize: '0.88rem',
+          color: 'var(--text-primary)',
+          lineHeight: 1.5,
+          background: 'transparent'
         }}>
           {children}
         </div>
@@ -126,12 +130,12 @@ export default function Modal({
         {footerActions && (
           <div style={{
             padding: '16px 24px',
-            borderTop: '1px solid #e2e8f0',
-            background: '#f8fafc',
+            borderTop: '1px solid rgba(0,0,0,0.06)',
+            background: 'rgba(255, 255, 255, 0.5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'flex-end',
-            gap: '10px'
+            gap: '12px'
           }}>
             {footerActions}
           </div>

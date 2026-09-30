@@ -82,72 +82,80 @@ export default function CustomerList({
       </div>
 
       {/* Customers List */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px" }}>
         {customers.length === 0 ? (
           <div style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem" }}>
             <User size={28} style={{ margin: "0 auto 8px", opacity: 0.4 }} />
             <div>No matching customers found</div>
           </div>
         ) : (
-          customers.map(c => {
-            const isSelected = selectedCustomerId === c.id;
-            const hasDue = Number(c.balanceDue || 0) > 0;
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
+            gap: "16px" 
+          }}>
+            {customers.map(c => {
+              const isSelected = selectedCustomerId === c.id;
+              const hasDue = Number(c.balanceDue || 0) > 0;
 
-            return (
-              <div
-                key={c.id}
-                onClick={() => onSelectCustomer(c.id)}
-                style={{
-                  padding: "14px 18px",
-                  borderBottom: "1px solid rgba(0,0,0,0.04)",
-                  cursor: "pointer",
-                  transition: "all 0.15s ease",
-                  background: isSelected ? "rgba(255,255,255,0.7)" : "transparent",
-                  borderLeft: isSelected ? "3px solid var(--accent-blue)" : "3px solid transparent",
-                }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.3)"; }}
-                onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
+              return (
+                <div
+                  key={c.id}
+                  onClick={() => onSelectCustomer(c.id)}
+                  style={{
+                    padding: "16px",
+                    borderRadius: "12px",
+                    border: "1px solid rgba(0,0,0,0.06)",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    background: isSelected ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)",
+                    boxShadow: "0 2px 10px rgba(0,0,0,0.02)"
+                  }}
+                  onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = "rgba(255,255,255,0.7)"; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,0.04)"; } }}
+                  onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = "rgba(255,255,255,0.4)"; e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.02)"; } }}
+                >
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px", height: "100%", justifyContent: "space-between" }}>
                     <div style={{
                       fontWeight: 800,
                       color: "var(--text-primary)",
-                      fontSize: "0.9rem",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis"
+                      fontSize: "1.05rem",
+                      lineHeight: 1.3
                     }}>
                       {c.name}
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px", fontSize: "0.75rem", color: "var(--text-muted)", flexWrap: "wrap" }}>
-                      <span className="font-mono" style={{ whiteSpace: "nowrap" }}>{c.phone || 'No phone'}</span>
-                      {c.city && <span style={{ whiteSpace: "nowrap" }}>• {c.city}</span>}
-                      {c.customerType && (
-                        <span style={{ fontSize: "0.68rem", background: "var(--bg-primary)", padding: "1px 5px", borderRadius: "4px", border: "1px solid var(--border-color)", fontWeight: 600 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      {c.customerType ? (
+                        <span style={{ 
+                          fontSize: "0.7rem", 
+                          background: "rgba(37, 99, 235, 0.1)", 
+                          color: "var(--accent-blue)", 
+                          padding: "3px 8px", 
+                          borderRadius: "6px", 
+                          fontWeight: 800, 
+                          textTransform: "uppercase" 
+                        }}>
                           {c.customerType}
                         </span>
+                      ) : (
+                        <span />
                       )}
-                    </div>
-                  </div>
 
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div className="font-mono" style={{
-                      fontWeight: 800,
-                      color: hasDue ? "#dc2626" : "#059669",
-                      fontSize: "0.92rem"
-                    }}>
-                      Rs. {Number(c.balanceDue || 0).toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: "0.68rem", color: hasDue ? "#dc2626" : "#059669", fontWeight: 700 }}>
-                      {hasDue ? "Overdue" : "Cleared"}
+                      <div style={{ textAlign: "right" }}>
+                        <span className="font-mono" style={{
+                          fontWeight: 800,
+                          color: hasDue ? "#dc2626" : "#059669",
+                          fontSize: "1.1rem"
+                        }}>
+                          Rs. {Number(c.balanceDue || 0).toLocaleString()}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

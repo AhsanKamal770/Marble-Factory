@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Clock,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  ArrowLeft
 } from "lucide-react";
 
 export default function CustomerTimelineView({
@@ -23,7 +24,8 @@ export default function CustomerTimelineView({
   onOpenEditProfile,
   onOpenReceivePayment,
   onOpenPrintKhata,
-  onDeleteCustomer
+  onDeleteCustomer,
+  onBack
 }) {
   if (!customer) {
     return (
@@ -80,6 +82,17 @@ export default function CustomerTimelineView({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBack(); }}
+                  className="btn btn-ghost btn-sm"
+                  style={{ padding: "6px 8px", marginRight: "4px", color: "var(--text-secondary)", zIndex: 10 }}
+                  title="Back to Customers"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              )}
               <h1 style={{
                 fontSize: "1.45rem",
                 fontWeight: 900,

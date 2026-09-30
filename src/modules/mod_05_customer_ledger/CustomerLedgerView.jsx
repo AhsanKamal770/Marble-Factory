@@ -58,10 +58,8 @@ export default function CustomerLedgerView() {
 
   // Active Selected Customer Object
   const selectedCustomer = useMemo(() => {
-    if (!selectedCustomerId && customers.length > 0) {
-      return customers[0];
-    }
-    return customers.find(c => c.id === selectedCustomerId) || customers[0] || null;
+    if (!selectedCustomerId) return null;
+    return customers.find(c => c.id === selectedCustomerId) || null;
   }, [customers, selectedCustomerId]);
 
   // Live Timeline for Selected Customer
@@ -194,116 +192,122 @@ export default function CustomerLedgerView() {
             <span>{language === 'ur' ? 'نیا گاہک کھاتہ' : 'Register New Customer'}</span>
           </button>
         </div>
-
-        <div className="kpi-cards-grid">
-          {/* KPI 1: Total Market Udhaar */}
-          <div className="kpi-stat-card">
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#ef4444', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <AlertCircle size={18} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
-                {language === 'ur' ? 'کل مارکیٹ ادھار' : 'TOTAL MARKET DUES'}
-              </span>
-              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-                Rs. {totalMarketUdhaar.toLocaleString()}
-              </span>
-            </div>
-          </div>
-
-          {/* KPI 2: Total Recovered */}
-          <div className="kpi-stat-card">
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <CreditCard size={18} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
-                {language === 'ur' ? 'کل وصول شدہ رقم' : 'TOTAL RECOVERED'}
-              </span>
-              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-                Rs. {totalWasooliAllTime.toLocaleString()}
-              </span>
-            </div>
-          </div>
-
-          {/* KPI 3: Overdue Accounts Count */}
-          <div className="kpi-stat-card">
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#f59e0b', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <TrendingDown size={18} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
-                {language === 'ur' ? 'بقایا دار گاہک' : 'OVERDUE ACCOUNTS'}
-              </span>
-              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-                {overdueCustomersCount} <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>/ {customers.length}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* KPI 4: Total Registered Customers */}
-          <div className="kpi-stat-card">
-            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <Users size={18} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
-              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
-                {language === 'ur' ? 'کل رجسٹرڈ کھاتے' : 'REGISTERED KHATAS'}
-              </span>
-              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-                {customers.length}
-              </span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* ── MAIN SPLIT VIEW CONTAINER ── */}
-      <div className="glass-card" style={{
-        flex: 1,
-        display: "flex",
-        overflow: "hidden",
-        minHeight: "480px",
-        borderRadius: "16px",
-        border: "1px solid rgba(255,255,255,0.7)",
-        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.08)",
-        background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
-        backdropFilter: "blur(20px)"
-      }}>
-        {/* Left Side: Customer List */}
-        <div style={{
-          width: "35%",
-          minWidth: "300px",
-          maxWidth: "400px",
-          flexShrink: 0,
-          borderRight: "1px solid rgba(0,0,0,0.06)",
+      {/* ── CONDITIONAL RENDER: MASTER LIST OR DETAIL VIEW ── */}
+      {!selectedCustomer ? (
+        <>
+          <div className="kpi-cards-grid">
+            {/* KPI 1: Total Market Udhaar */}
+            <div className="kpi-stat-card">
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#ef4444', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <AlertCircle size={18} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                  {language === 'ur' ? 'کل مارکیٹ ادھار' : 'TOTAL MARKET DUES'}
+                </span>
+                <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                  Rs. {totalMarketUdhaar.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* KPI 2: Total Recovered */}
+            <div className="kpi-stat-card">
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CreditCard size={18} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                  {language === 'ur' ? 'کل وصول شدہ رقم' : 'TOTAL RECOVERED'}
+                </span>
+                <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                  Rs. {totalWasooliAllTime.toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* KPI 3: Overdue Accounts Count */}
+            <div className="kpi-stat-card">
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#f59e0b', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <TrendingDown size={18} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                  {language === 'ur' ? 'بقایا دار گاہک' : 'OVERDUE ACCOUNTS'}
+                </span>
+                <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                  {overdueCustomersCount} <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>/ {customers.length}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* KPI 4: Total Registered Customers */}
+            <div className="kpi-stat-card">
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Users size={18} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                  {language === 'ur' ? 'کل رجسٹرڈ کھاتے' : 'REGISTERED KHATAS'}
+                </span>
+                <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                  {customers.length}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card" style={{
+            flex: 1,
+            display: "flex",
+            overflow: "hidden",
+            minHeight: "480px",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.7)",
+            boxShadow: "0 10px 40px -10px rgba(0,0,0,0.08)",
+            background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
+            backdropFilter: "blur(20px)"
+          }}>
+            <div style={{ width: "100%", display: "flex", flexDirection: "column", background: "rgba(255, 255, 255, 0.4)" }}>
+              <CustomerList
+                customers={filteredCustomers}
+                selectedCustomerId={selectedCustomer?.id}
+                onSelectCustomer={handleSelectCustomer}
+                searchTerm={searchTerm}
+                onSearchChange={setSearchTerm}
+                activeFilter={activeCategoryFilter}
+                onFilterChange={setActiveCategoryFilter}
+              />
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="glass-card" style={{
+          flex: 1,
           display: "flex",
-          flexDirection: "column",
-          background: "rgba(255, 255, 255, 0.4)"
+          overflow: "hidden",
+          minHeight: "480px",
+          borderRadius: "16px",
+          border: "1px solid rgba(255,255,255,0.7)",
+          boxShadow: "0 10px 40px -10px rgba(0,0,0,0.08)",
+          background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
+          backdropFilter: "blur(20px)"
         }}>
-          <CustomerList
-            customers={filteredCustomers}
-            selectedCustomerId={selectedCustomer?.id}
-            onSelectCustomer={handleSelectCustomer}
-            searchTerm={searchTerm}
-            onSearchChange={setSearchTerm}
-            activeFilter={activeCategoryFilter}
-            onFilterChange={setActiveCategoryFilter}
-          />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+            <CustomerTimelineView
+              customer={selectedCustomer}
+              timeline={activeTimeline}
+              onOpenEditProfile={openEditCustomerModal}
+              onOpenReceivePayment={() => setIsPaymentModalOpen(true)}
+              onOpenPrintKhata={() => setIsPrintModalOpen(true)}
+              onDeleteCustomer={handleDeleteCustomer}
+              onBack={() => handleSelectCustomer(null)}
+            />
+          </div>
         </div>
-        
-        {/* Right Side: Selected Customer Running Ledger Timeline */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <CustomerTimelineView
-            customer={selectedCustomer}
-            timeline={activeTimeline}
-            onOpenEditProfile={openEditCustomerModal}
-            onOpenReceivePayment={() => setIsPaymentModalOpen(true)}
-            onOpenPrintKhata={() => setIsPrintModalOpen(true)}
-            onDeleteCustomer={handleDeleteCustomer}
-          />
-        </div>
-      </div>
+      )}
 
       {/* ── MODALS ── */}
       {isProfileModalOpen && (

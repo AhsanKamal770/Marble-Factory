@@ -37,7 +37,6 @@ export default function Sidebar({
     { id: 'stock', label: language === 'ur' ? 'اسٹاک و یارڈ' : 'Inventory', icon: Boxes, hasChevron: true },
     { id: 'customers', label: language === 'ur' ? 'گاہک کھاتہ' : 'Customer Management', icon: Users },
     { id: 'suppliers', label: language === 'ur' ? 'سپلائر مال آمد' : 'Supplier Management', icon: Truck },
-    { id: 'dues', label: language === 'ur' ? 'ادھار و ادائیگیاں' : 'Dues & Payments', icon: CreditCard },
     { id: 'sales-reports', label: language === 'ur' ? 'سیلز رپورٹس' : 'Reports', icon: TrendingUp, hasChevron: true },
     { id: 'employees', label: language === 'ur' ? 'افرادی قوت' : 'Users & Roles', icon: ShieldCheck },
     { id: 'settings', label: language === 'ur' ? 'ترتیبات' : 'Settings', icon: Settings }
@@ -50,11 +49,7 @@ export default function Sidebar({
   ];
 
   const handleNavClick = (id) => {
-    if (id === 'dues') {
-      setActiveView('customers');
-    } else {
-      setActiveView(id);
-    }
+    setActiveView(id);
   };
 
   return (
@@ -136,7 +131,7 @@ export default function Sidebar({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
           {mainNavItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeView === item.id || (item.id === 'dues' && activeView === 'customers');
+            const isActive = activeView === item.id;
             return (
               <div
                 key={item.id}
