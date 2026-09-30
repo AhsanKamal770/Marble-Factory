@@ -208,8 +208,6 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                 placeholder="Payment terms, bank details, etc."
               />
             </div>
-          </div>
-          
         </form>
     </Modal>
   );

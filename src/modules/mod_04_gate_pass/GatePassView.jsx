@@ -894,8 +894,13 @@ export default function GatePassView() {
             </button>
             <button
               type="button"
-              onClick={handleSave}
               className="btn btn-primary"
+              onClick={() => {
+                const form = document.getElementById("gate-pass-form");
+                if (form && form.reportValidity()) {
+                  handleSave();
+                }
+              }}
               style={{ display: "flex", alignItems: "center", gap: "6px" }}
             >
               <Check size={16} /> {language === "ur" ? "گیٹ پاس جاری کریں اور پرنٹ کریں" : "Issue & Print Gate Pass"}
@@ -936,6 +941,7 @@ export default function GatePassView() {
                         {language === "ur" ? "خریدار کا نام *" : "Customer Name *"}
                       </label>
                       <input
+                        required
                         type="text"
                         value={formData.customerName}
                         onChange={e => setFormData(p => ({ ...p, customerName: e.target.value }))}
@@ -980,6 +986,7 @@ export default function GatePassView() {
                         {language === "ur" ? "ترسیل کا پتہ / منزل *" : "Delivery Destination / Site Address *"}
                       </label>
                       <input
+                        required
                         type="text"
                         value={formData.destination}
                         onChange={e => setFormData(p => ({ ...p, destination: e.target.value }))}

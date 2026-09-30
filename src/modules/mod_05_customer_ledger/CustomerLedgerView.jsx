@@ -251,25 +251,27 @@ export default function CustomerLedgerView() {
       </div>
 
       {/* ── MAIN SPLIT VIEW CONTAINER ── */}
-      <div style={{
+      <div className="glass-card" style={{
         flex: 1,
         display: "flex",
-        background: "var(--bg-card)",
-        borderRadius: "14px",
-        border: "1px solid var(--border-color)",
         overflow: "hidden",
         minHeight: "480px",
-        boxShadow: "var(--shadow-sm)"
+        borderRadius: "16px",
+        border: "1px solid rgba(255,255,255,0.7)",
+        boxShadow: "0 10px 40px -10px rgba(0,0,0,0.08)",
+        background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255,255,255,0.7))",
+        backdropFilter: "blur(20px)"
       }}>
         {/* Left Side: Customer List */}
         <div style={{
           width: "35%",
-          minWidth: "280px",
-          maxWidth: "380px",
+          minWidth: "300px",
+          maxWidth: "400px",
           flexShrink: 0,
-          borderRight: "1px solid var(--border-divider)",
+          borderRight: "1px solid rgba(0,0,0,0.06)",
           display: "flex",
-          flexDirection: "column"
+          flexDirection: "column",
+          background: "rgba(255, 255, 255, 0.4)"
         }}>
           <CustomerList
             customers={filteredCustomers}

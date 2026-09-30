@@ -11,7 +11,7 @@ export default function CustomerList({
   onFilterChange
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-card)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "transparent" }}>
       {/* Search Header */}
       <div style={{ padding: "16px 18px", borderBottom: "1px solid var(--border-divider)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
@@ -38,9 +38,9 @@ export default function CustomerList({
               width: "100%",
               padding: "9px 12px 9px 36px",
               fontSize: "0.86rem",
-              border: "1px solid var(--border-color)",
+              border: "1px solid rgba(0,0,0,0.08)",
               borderRadius: "8px",
-              background: "var(--bg-primary)",
+              background: "rgba(255,255,255,0.7)",
               color: "var(--text-primary)",
               outline: "none",
               boxSizing: "border-box"
@@ -63,9 +63,9 @@ export default function CustomerList({
                 type="button"
                 onClick={() => onFilterChange(f.key)}
                 style={{
-                  background: activeFilter === f.key ? "var(--accent-blue)" : "var(--bg-primary)",
+                  background: activeFilter === f.key ? "var(--accent-blue)" : "rgba(255,255,255,0.6)",
                   color: activeFilter === f.key ? "#ffffff" : "var(--text-secondary)",
-                  border: "1px solid var(--border-color)",
+                  border: "1px solid rgba(0,0,0,0.06)",
                   borderRadius: "6px",
                   padding: "3px 8px",
                   fontSize: "0.72rem",
@@ -99,13 +99,13 @@ export default function CustomerList({
                 onClick={() => onSelectCustomer(c.id)}
                 style={{
                   padding: "14px 18px",
-                  borderBottom: "1px solid var(--border-divider)",
+                  borderBottom: "1px solid rgba(0,0,0,0.04)",
                   cursor: "pointer",
                   transition: "all 0.15s ease",
-                  background: isSelected ? "rgba(37,99,235,0.06)" : "transparent",
+                  background: isSelected ? "rgba(255,255,255,0.7)" : "transparent",
                   borderLeft: isSelected ? "3px solid var(--accent-blue)" : "3px solid transparent",
                 }}
-                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "var(--bg-primary)"; }}
+                onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "rgba(255,255,255,0.3)"; }}
                 onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "10px" }}>

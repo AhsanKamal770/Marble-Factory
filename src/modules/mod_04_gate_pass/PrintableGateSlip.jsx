@@ -119,17 +119,19 @@ export default function PrintableGateSlip({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: "var(--bg-primary)"
+            background: "var(--bg-primary)",
+            flexWrap: "wrap",
+            gap: "12px"
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <span style={{ fontSize: "0.98rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Truck size={18} style={{ color: "var(--accent-blue)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", flex: 1 }}>
+            <span style={{ fontSize: "0.98rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+              <Truck size={18} style={{ color: "var(--accent-blue)", flexShrink: 0 }} />
               {language === "ur" ? "رکشہ گیٹ پاس پرچی پرنٹ" : "Print Gate Out Pass"}
             </span>
 
             {/* Format Switcher Tabs */}
-            <div style={{ display: "flex", background: "var(--bg-card)", padding: "2px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+            <div style={{ display: "flex", background: "var(--bg-card)", padding: "2px", borderRadius: "6px", border: "1px solid var(--border-color)", whiteSpace: "nowrap" }}>
               <button
                 type="button"
                 onClick={() => setPrintFormat("a4")}
@@ -147,7 +149,7 @@ export default function PrintableGateSlip({
                   color: printFormat === "a4" ? "#ffffff" : "var(--text-secondary)"
                 }}
               >
-                <FileText size={13} />
+                <FileText size={13} style={{ flexShrink: 0 }} />
                 <span>A4 / A5 Gate Slip</span>
               </button>
 
@@ -168,13 +170,13 @@ export default function PrintableGateSlip({
                   color: printFormat === "thermal" ? "#ffffff" : "var(--text-secondary)"
                 }}
               >
-                <Receipt size={13} />
+                <Receipt size={13} style={{ flexShrink: 0 }} />
                 <span>80mm Driver Slip</span>
               </button>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", flexShrink: 0 }}>
             <button
               type="button"
               onClick={handleCopyWhatsApp}
@@ -301,7 +303,7 @@ export default function PrintableGateSlip({
                         {tagline}
                       </div>
                       <div style={{ fontSize: "0.85rem", color: "#475569", marginTop: "3px" }}>
-                        {address} | فون: {phone}
+                        {address} | فون: <span style={{ direction: "ltr", display: "inline-block" }}>{phone}</span>
                       </div>
                     </div>
 
@@ -543,7 +545,7 @@ export default function PrintableGateSlip({
                 <div style={{ textAlign: "center", borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
                   <div style={{ fontSize: "16px", fontWeight: "bold" }}>{companyName}</div>
                   <div style={{ fontSize: "11px" }}>{address}</div>
-                  <div style={{ fontSize: "11px" }}>فون: {phone}</div>
+                  <div style={{ fontSize: "11px" }}>فون: <span style={{ direction: "ltr", display: "inline-block" }}>{phone}</span></div>
                   <div style={{ fontSize: "13px", fontWeight: "bold", margin: "4px 0 2px 0", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
                     رکشہ گیٹ پاس پرچی
                   </div>
@@ -566,7 +568,7 @@ export default function PrintableGateSlip({
                   <div style={{ borderTop: "1px dotted #888", marginTop: "4px", paddingTop: "4px" }}>
                     <strong>رکشہ/گاڑی:</strong> {gatePass.vehicleType === "Qingqi Rickshaw" ? "چنگ چی رکشہ" : gatePass.vehicleType} {gatePass.vehicleRegNo ? `(${gatePass.vehicleRegNo})` : ''}
                   </div>
-                  <div><strong>ڈرائیور:</strong> {gatePass.driverName || '-'} {gatePass.driverPhone ? `• ${gatePass.driverPhone}` : ''}</div>
+                  <div><strong>ڈرائیور:</strong> {gatePass.driverName || '-'} {gatePass.driverPhone ? <><span style={{ margin: "0 4px" }}>•</span><span style={{ direction: "ltr", display: "inline-block" }}>{gatePass.driverPhone}</span></> : ''}</div>
                   {gatePass.carriageCharges > 0 && (
                     <div><strong>کرایہ:</strong> <span style={{ direction: "ltr", display: "inline-block" }}>Rs. {Number(gatePass.carriageCharges).toLocaleString()}</span> ({gatePass.carriagePaidBy === "Customer (موقع پر ادا کرے گا)" ? "موقع پر وصولی" : gatePass.carriagePaidBy})</div>
                   )}
@@ -602,6 +604,7 @@ export default function PrintableGateSlip({
                   </div>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ borderTop: "1px solid #000", width: "70px", paddingTop: "2px" }}>منشی</div>
+                  </div>
                 </div>
 
                 <div style={{ textAlign: "center", fontSize: "10px", marginTop: "12px", borderTop: "1px dotted #888", paddingTop: "4px" }}>

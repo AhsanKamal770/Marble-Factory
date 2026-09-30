@@ -33,7 +33,7 @@ export default function CustomerTimelineView({
         alignItems: "center",
         justifyContent: "center",
         height: "100%",
-        background: "var(--bg-card)",
+        background: "transparent",
         color: "var(--text-muted)",
         padding: "40px",
         textAlign: "center"
@@ -67,7 +67,7 @@ export default function CustomerTimelineView({
   const balanceDue = Number(customer.balanceDue || 0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-card)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "transparent" }}>
       {/* ── SELECTED CUSTOMER HEADER ── */}
       <div style={{
         padding: "20px 26px",
@@ -245,11 +245,11 @@ export default function CustomerTimelineView({
           <div style={{ padding: "0 26px 26px 26px" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.84rem" }}>
               <thead>
-                <tr style={{ background: "var(--bg-primary)" }}>
-                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Date</th>
-                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Document / Description</th>
-                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Debit (+خریداری)</th>
-                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Credit (-وصولی)</th>
+                <tr style={{ background: "rgba(255, 255, 255, 0.4)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Date</th>
+                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Document / Description</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Debit (+خریداری)</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Credit (-وصولی)</th>
                   <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Balance (بقایا)</th>
                 </tr>
               </thead>

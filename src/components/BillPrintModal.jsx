@@ -68,14 +68,14 @@ export default function BillPrintModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div className="modal-header print-hide" style={{ padding: '12px 20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div className="modal-header print-hide" style={{ padding: '12px 20px', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', flex: 1 }}>
             <span style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               {language === 'ur' ? 'بل پرنٹ و ریکارڈ' : 'Print Invoice'}
             </span>
 
             {/* Print Format Tabs */}
-            <div style={{ display: 'flex', background: 'var(--bg-primary)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+            <div style={{ display: 'flex', background: 'var(--bg-primary)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-color)', whiteSpace: 'nowrap' }}>
               <button
                 type="button"
                 onClick={() => setPrintFormat('a4')}
@@ -93,7 +93,7 @@ export default function BillPrintModal({
                   color: printFormat === 'a4' ? '#ffffff' : 'var(--text-secondary)'
                 }}
               >
-                <FileText size={13} />
+                <FileText size={13} style={{ flexShrink: 0 }} />
                 <span>A4 Bill Book</span>
               </button>
 
@@ -114,13 +114,13 @@ export default function BillPrintModal({
                   color: printFormat === 'thermal' ? '#ffffff' : 'var(--text-secondary)'
                 }}
               >
-                <Receipt size={13} />
+                <Receipt size={13} style={{ flexShrink: 0 }} />
                 <span>80mm Thermal</span>
               </button>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', flexShrink: 0 }}>
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -397,95 +397,111 @@ export default function BillPrintModal({
             {/* ------------------------------------------------------------- */}
             {printFormat === 'thermal' && (
               <div
+                dir="rtl"
                 style={{
                   background: '#ffffff',
                   color: '#000000',
                   width: '76mm',
                   margin: '0 auto',
                   padding: '12px 10px',
-                  fontFamily: 'Courier New, Courier, monospace',
-                  fontSize: '11px',
-                  lineHeight: 1.3,
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.1)',
+                  fontFamily: 'var(--font-urdu)',
+                  fontSize: '12px',
+                  lineHeight: 1.45,
+                  border: '1px dashed #cbd5e1',
                   borderRadius: '4px'
                 }}
               >
                 <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '6px', marginBottom: '8px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '14px' }}>RANA SHAHAB MARBLE</div>
-                  <div style={{ fontSize: '10px' }}>MARBLE & TILES KARKHANA</div>
-                  <div style={{ fontSize: '9px' }}>Jhumra City | Ph: 0300-7708899</div>
-                  <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: 700 }}>
-                    {invoice.invoiceNo}
+                  <div style={{ fontWeight: 800, fontSize: '16px' }}>{settings?.companyName || 'رانا شہاب ماربل فیکٹری'}</div>
+                  <div style={{ fontSize: '11px' }}>{settings?.tagline || 'نام ہی کافی ہے — جھمرہ سٹی'}</div>
+                  <div style={{ fontSize: '11px' }}>فون: <span style={{ direction: 'ltr', display: 'inline-block' }}>{settings?.phone || '0321-6606645'}</span></div>
+                  <div style={{ fontSize: '13px', fontWeight: 'bold', margin: '4px 0 2px 0', borderTop: '1px solid #000', borderBottom: '1px solid #000', padding: '4px 0' }}>
+                    بل پرچی
                   </div>
-                  <div style={{ fontSize: '9px' }}>{new Date(invoice.date || invoice.createdAt).toLocaleString()}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginTop: '4px' }}>
+                    <span>بل #: <span style={{ direction: 'ltr', display: 'inline-block' }}>{invoice.invoiceNo}</span></span>
+                    <span style={{ direction: 'ltr', display: 'inline-block' }}>{dateFormatted}</span>
+                  </div>
                 </div>
 
-                <div style={{ fontSize: '10px', marginBottom: '6px' }}>
-                  <div>Cust: <strong>{invoice.customerName}</strong></div>
-                  {invoice.carrier && <div>Via: {invoice.carrier}</div>}
+                <div style={{ fontSize: '11px', marginBottom: '6px', borderBottom: '1px dashed #000', paddingBottom: '6px' }}>
+                  <div><strong>خریدار:</strong> {invoice.customerName}</div>
+                  {invoice.carrier && <div><strong>بذریعہ:</strong> {invoice.carrier}</div>}
                 </div>
 
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px', marginBottom: '6px' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', marginBottom: '6px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #000', borderTop: '1px solid #000' }}>
-                      <th style={{ textAlign: 'left', padding: '2px 0' }}>Item</th>
-                      <th style={{ textAlign: 'right', padding: '2px 0' }}>Sq.Ft</th>
-                      <th style={{ textAlign: 'right', padding: '2px 0' }}>Rate</th>
-                      <th style={{ textAlign: 'right', padding: '2px 0' }}>Total</th>
+                      <th style={{ textAlign: 'right', padding: '2px 0' }}>تفصیل</th>
+                      <th style={{ textAlign: 'center', padding: '2px 0' }}>فٹ</th>
+                      <th style={{ textAlign: 'center', padding: '2px 0' }}>ریٹ</th>
+                      <th style={{ textAlign: 'left', padding: '2px 0' }}>رقم</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(invoice.items || []).map((it, idx) => (
                       <tr key={idx}>
                         <td style={{ padding: '2px 0' }}>
-                          {it.name} <span style={{ fontSize: '9px' }}>({it.thicknessSutar || 4}S)</span>
+                          {it.name} <span style={{ fontSize: '10px' }}>({it.thicknessSutar || 4} سوتر)</span>
                         </td>
-                        <td style={{ textAlign: 'right', padding: '2px 0' }}>{it.totalSqFt}</td>
-                        <td style={{ textAlign: 'right', padding: '2px 0' }}>{it.ratePerSqFt}</td>
-                        <td style={{ textAlign: 'right', padding: '2px 0' }}>{Number(it.amount).toLocaleString()}</td>
+                        <td style={{ textAlign: 'center', padding: '2px 0', direction: 'ltr' }}>{it.totalSqFt}</td>
+                        <td style={{ textAlign: 'center', padding: '2px 0', direction: 'ltr' }}>{it.ratePerSqFt}</td>
+                        <td style={{ textAlign: 'left', padding: '2px 0', direction: 'ltr' }}>{Number(it.amount).toLocaleString()}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div style={{ borderTop: '1px dashed #000', paddingTop: '4px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                <div style={{ borderTop: '1px dashed #000', paddingTop: '4px', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Subtotal:</span>
-                    <span>Rs. {Number(invoice.subtotal).toLocaleString()}</span>
+                    <span>سب ٹوٹل:</span>
+                    <span style={{ direction: 'ltr', display: 'inline-block' }}>{Number(invoice.subtotal).toLocaleString()}</span>
                   </div>
                   {invoice.carriageCharges > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Carriage:</span>
-                      <span>+Rs. {Number(invoice.carriageCharges).toLocaleString()}</span>
+                      <span>کرایہ:</span>
+                      <span style={{ direction: 'ltr', display: 'inline-block' }}>+{Number(invoice.carriageCharges).toLocaleString()}</span>
                     </div>
                   )}
                   {invoice.labourCharges > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Labour:</span>
-                      <span>+Rs. {Number(invoice.labourCharges).toLocaleString()}</span>
+                      <span>لیبر:</span>
+                      <span style={{ direction: 'ltr', display: 'inline-block' }}>+{Number(invoice.labourCharges).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {invoice.polishCharges > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>پالش:</span>
+                      <span style={{ direction: 'ltr', display: 'inline-block' }}>+{Number(invoice.polishCharges).toLocaleString()}</span>
                     </div>
                   )}
                   {invoice.discountAmount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span>Discount:</span>
-                      <span>-Rs. {Number(invoice.discountAmount).toLocaleString()}</span>
+                      <span>ڈسکاؤنٹ:</span>
+                      <span style={{ direction: 'ltr', display: 'inline-block' }}>-{Number(invoice.discountAmount).toLocaleString()}</span>
                     </div>
                   )}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '12px', borderTop: '1px solid #000', paddingTop: '2px' }}>
-                    <span>TOTAL:</span>
-                    <span>Rs. {Number(invoice.grandTotal).toLocaleString()}</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '13px', borderTop: '1px solid #000', paddingTop: '4px', marginTop: '2px' }}>
+                    <span>کل رقم:</span>
+                    <span style={{ direction: 'ltr', display: 'inline-block' }}>{Number(invoice.grandTotal).toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, marginTop: '2px' }}>
+                    <span>ایڈوانس / وصول:</span>
+                    <span style={{ direction: 'ltr', display: 'inline-block' }}>{Number(invoice.paidAmount).toLocaleString()}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                    <span>Paid (Cash):</span>
-                    <span>Rs. {Number(invoice.paidAmount).toLocaleString()}</span>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                    <span>Balance Due:</span>
-                    <span>Rs. {Number(invoice.balanceDue).toLocaleString()}</span>
+                    <span>بقایا (ادھار):</span>
+                    <span style={{ direction: 'ltr', display: 'inline-block' }}>{Number(invoice.balanceDue).toLocaleString()}</span>
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '10px', borderTop: '1px dashed #000', paddingTop: '6px' }}>
+                <div style={{ marginTop: '16px', textAlign: 'center' }}>
+                  <div style={{ display: 'inline-block', borderTop: '1px solid #000', padding: '2px 10px', fontSize: '10px' }}>
+                    دستخط
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '10px', borderTop: '1px dashed #000', paddingTop: '6px' }}>
                   شکریہ! برائے مہربانی رسید سنبھال کر رکھیں۔
                 </div>
               </div>

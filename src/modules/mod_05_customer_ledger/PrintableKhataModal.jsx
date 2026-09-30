@@ -46,48 +46,48 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
     >
         {/* Printable Area */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-          <div ref={printRef} className="thermal-receipt-preview" style={{
+          <div ref={printRef} className="thermal-receipt-preview" dir="rtl" style={{
             background: '#ffffff',
             color: '#000000',
             padding: '16px 14px',
             borderRadius: '8px',
             border: '1px dashed #cbd5e1',
-            fontFamily: 'monospace',
+            fontFamily: 'var(--font-urdu)',
             fontSize: '12px',
-            lineHeight: 1.4
+            lineHeight: 1.45
           }}>
             {/* Header */}
             <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '10px', marginBottom: '10px' }}>
-              <div style={{ fontSize: '15px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+              <div style={{ fontSize: '16px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
                 {companyName}
               </div>
-              <div style={{ fontSize: '11px', fontFamily: 'var(--font-urdu)', marginTop: '2px', fontWeight: 700 }}>
-                رانا شہاب ماربل، گرینائٹ اینڈ ٹائلز
+              <div style={{ fontSize: '11px', marginTop: '2px', fontWeight: 700 }}>
+                {tagline}
               </div>
-              <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
+              <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>
                 {address}
               </div>
               <div style={{ fontSize: '11px', fontWeight: 700, marginTop: '2px' }}>
-                Ph: {phone} • {phoneSecondary}
+                فون: <span style={{ direction: 'ltr', display: 'inline-block' }}>{phone}</span> • <span style={{ direction: 'ltr', display: 'inline-block' }}>{phoneSecondary}</span>
               </div>
-              <div style={{ marginTop: '6px', fontSize: '11px', fontWeight: 800, background: '#f1f5f9', padding: '2px 6px', display: 'inline-block', borderRadius: '4px' }}>
-                CUSTOMER KHATA STATEMENT (کھاتہ پرچی)
+              <div style={{ marginTop: '8px', fontSize: '13px', fontWeight: 800, background: '#f1f5f9', padding: '4px 10px', display: 'inline-block', borderRadius: '4px', borderTop: '1px solid #000', borderBottom: '1px solid #000' }}>
+                کھاتہ پرچی (CUSTOMER STATEMENT)
               </div>
             </div>
 
             {/* Customer Details */}
             <div style={{ borderBottom: '1px dashed #000', paddingBottom: '8px', marginBottom: '8px', fontSize: '11px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span><strong>Customer:</strong> {customer.name}</span>
-                <span><strong>Type:</strong> {customer.customerType || 'Retail'}</span>
+                <span><strong>خریدار:</strong> {customer.name}</span>
+                <span><strong>قسم:</strong> {customer.customerType === 'Wholesale' ? 'ہول سیل' : 'ریٹیل'}</span>
               </div>
               {customer.phone && (
-                <div><strong>Phone:</strong> {customer.phone}</div>
+                <div><strong>فون:</strong> <span style={{ direction: 'ltr', display: 'inline-block' }}>{customer.phone}</span></div>
               )}
               {customer.city && (
-                <div><strong>City:</strong> {customer.city}</div>
+                <div><strong>شہر:</strong> {customer.city}</div>
               )}
-              <div><strong>Date:</strong> {new Date().toLocaleString()}</div>
+              <div style={{ marginTop: '2px' }}><strong>تاریخ:</strong> <span style={{ direction: 'ltr', display: 'inline-block' }}>{new Date().toLocaleString('en-PK')}</span></div>
             </div>
 
             {/* Summary Account Totals */}
@@ -100,35 +100,37 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
               fontSize: '11px'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Total Purchases / Billed:</span>
-                <strong>Rs. {totalBilled.toLocaleString()}</strong>
+                <span>کل خریداری (بل):</span>
+                <strong style={{ direction: 'ltr', display: 'inline-block' }}>Rs. {totalBilled.toLocaleString()}</strong>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669' }}>
-                <span>Total Wasooli / Paid:</span>
-                <strong>Rs. {totalPaid.toLocaleString()}</strong>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669', marginTop: '2px' }}>
+                <span>کل وصولی (جمع):</span>
+                <strong style={{ direction: 'ltr', display: 'inline-block' }}>Rs. {totalPaid.toLocaleString()}</strong>
               </div>
               <div style={{ borderTop: '1px solid #cbd5e1', paddingTop: '4px', marginTop: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 900, color: balanceDue > 0 ? '#dc2626' : '#059669' }}>
-                <span>Baqaya / Balance Due:</span>
-                <span>Rs. {balanceDue.toLocaleString()}</span>
+                <span>موجودہ بقایا:</span>
+                <span style={{ direction: 'ltr', display: 'inline-block' }}>Rs. {balanceDue.toLocaleString()}</span>
               </div>
             </div>
 
             {/* Transactions Breakdown */}
             <div style={{ marginBottom: '10px' }}>
-              <div style={{ fontWeight: 800, fontSize: '11px', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '4px' }}>
-                RECENT TRANSACTIONS (حالیہ لین دین):
+              <div style={{ fontWeight: 800, fontSize: '12px', borderBottom: '1px solid #000', paddingBottom: '2px', marginBottom: '6px' }}>
+                حالیہ لین دین (RECENT TRANSACTIONS):
               </div>
               {timeline.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '6px', color: '#64748b' }}>No transactions recorded</div>
+                <div style={{ textAlign: 'center', padding: '6px', color: '#64748b' }}>کوئی لین دین ریکارڈ نہیں</div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {timeline.slice(0, 8).map((t, idx) => {
                     const isInv = t.type === 'INVOICE';
                     const dateStr = new Date(t.sortDate).toLocaleDateString('en-PK', { day: '2-digit', month: 'short' });
                     return (
-                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', borderBottom: '1px dotted #e2e8f0', paddingBottom: '2px' }}>
-                        <span>{dateStr} • {isInv ? `Bill #${t.invoiceNo}` : `Rec #${t.paymentNo || 'Payment'}`}</span>
-                        <strong style={{ color: isInv ? '#dc2626' : '#059669' }}>
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', borderBottom: '1px dotted #e2e8f0', paddingBottom: '3px' }}>
+                        <span>
+                          <span style={{ direction: 'ltr', display: 'inline-block' }}>{dateStr}</span> • {isInv ? `بل #${t.invoiceNo}` : `رسید #${t.paymentNo || 'وصولی'}`}
+                        </span>
+                        <strong style={{ direction: 'ltr', display: 'inline-block', color: isInv ? '#dc2626' : '#059669' }}>
                           {isInv ? `+Rs. ${(t.debit || t.amount).toLocaleString()}` : `-Rs. ${(t.credit || t.amount).toLocaleString()}`}
                         </strong>
                       </div>
@@ -139,13 +141,13 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
             </div>
 
             {/* Urdu Note & Signatures */}
-            <div style={{ borderTop: '1px dashed #000', paddingTop: '8px', textAlign: 'center', fontSize: '10px' }}>
-              <div style={{ fontFamily: 'var(--font-urdu)', fontSize: '11px', marginBottom: '12px' }}>
+            <div style={{ borderTop: '1px dashed #000', paddingTop: '8px', textAlign: 'center', fontSize: '11px' }}>
+              <div style={{ fontWeight: 700, marginBottom: '12px' }}>
                 کسی بھی قسم کے اختلاف کی صورت میں فوری منشی سے رابطہ کریں۔
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px', paddingTop: '10px' }}>
-                <span style={{ borderTop: '1px solid #000', padding: '2px 10px' }}>Customer Sign</span>
-                <span style={{ borderTop: '1px solid #000', padding: '2px 10px' }}>Munshi / Factory Sign</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '20px', paddingTop: '10px' }}>
+                <span style={{ borderTop: '1px solid #000', padding: '2px 10px' }}>دستخط خریدار</span>
+                <span style={{ borderTop: '1px solid #000', padding: '2px 10px' }}>دستخط منشی</span>
               </div>
             </div>
           </div>
