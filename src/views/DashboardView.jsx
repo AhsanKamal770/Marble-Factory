@@ -383,12 +383,14 @@ export default function DashboardView({ setActiveView, settings }) {
             }}>
               Rs. {totalSalesAmount.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, lineHeight: 1.2 }}>
-              &uarr; 12%
-            </span>
-            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
-              This Month
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 700 }}>
+                &uarr; 12%
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500 }}>
+                This Month
+              </span>
+            </div>
           </div>
         </div>
 
@@ -422,12 +424,14 @@ export default function DashboardView({ setActiveView, settings }) {
             }}>
               Rs. {liveCashAmount.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, lineHeight: 1.2 }}>
-              &uarr; 8%
-            </span>
-            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
-              This Month
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 700 }}>
+                &uarr; 8%
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500 }}>
+                This Month
+              </span>
+            </div>
           </div>
         </div>
 
@@ -461,12 +465,14 @@ export default function DashboardView({ setActiveView, settings }) {
             }}>
               Rs. {customerDuesAmount.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 700, lineHeight: 1.2 }}>
-              &darr; 5%
-            </span>
-            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
-              Pending
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.74rem', color: '#ef4444', fontWeight: 700 }}>
+                &darr; 5%
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500 }}>
+                Pending
+              </span>
+            </div>
           </div>
         </div>
 
@@ -500,12 +506,14 @@ export default function DashboardView({ setActiveView, settings }) {
             }}>
               Rs. {stockValuationAmount.toLocaleString()}
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, lineHeight: 1.2 }}>
-              &uarr; 15%
-            </span>
-            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
-              Total Inventory
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '0.74rem', color: '#16a34a', fontWeight: 700 }}>
+                &uarr; 15%
+              </span>
+              <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 500 }}>
+                Total Inventory
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -519,17 +527,18 @@ export default function DashboardView({ setActiveView, settings }) {
           background: '#ffffff',
           borderRadius: '16px',
           border: '1px solid #e2e8f0',
-          padding: '22px 24px',
+          padding: '16px 20px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          justifyContent: 'space-between'
         }}>
           {/* Header */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '20px'
+            marginBottom: '10px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <BarChart3 size={18} style={{ color: '#2563eb' }} />
@@ -542,7 +551,7 @@ export default function DashboardView({ setActiveView, settings }) {
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
               borderRadius: '8px',
-              padding: '4px 10px',
+              padding: '3px 8px',
               fontSize: '0.78rem',
               fontWeight: 600,
               color: '#475569',
@@ -556,15 +565,15 @@ export default function DashboardView({ setActiveView, settings }) {
           </div>
 
           {/* Pure SVG & CSS Bar Chart */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '200px' }}>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '135px' }}>
             <div style={{ display: 'flex', flex: 1, position: 'relative' }}>
               {/* Y-Axis Labels */}
               <div style={{
-                width: '45px',
+                width: '42px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                paddingBottom: '22px',
+                paddingBottom: '20px',
                 fontSize: '0.68rem',
                 color: '#94a3b8',
                 fontWeight: 600
@@ -582,7 +591,7 @@ export default function DashboardView({ setActiveView, settings }) {
                 display: 'flex',
                 alignItems: 'flex-end',
                 justifyContent: 'space-around',
-                paddingBottom: '22px',
+                paddingBottom: '20px',
                 borderBottom: '1px solid #e2e8f0',
                 position: 'relative'
               }}>
@@ -608,10 +617,10 @@ export default function DashboardView({ setActiveView, settings }) {
                       <div
                         title={`Sales: Rs. ${(d.sales * 1000).toLocaleString()}`}
                         style={{
-                          width: '14px',
+                          width: '13px',
                           height: `${Math.min(100, (d.sales / 160) * 100)}%`,
                           background: '#2563eb',
-                          borderRadius: '4px 4px 0 0',
+                          borderRadius: '3px 3px 0 0',
                           transition: 'height 0.3s ease',
                           cursor: 'pointer'
                         }}
@@ -620,10 +629,10 @@ export default function DashboardView({ setActiveView, settings }) {
                       <div
                         title={`Cash: Rs. ${(d.cash * 1000).toLocaleString()}`}
                         style={{
-                          width: '14px',
+                          width: '13px',
                           height: `${Math.min(100, (d.cash / 160) * 100)}%`,
                           background: '#10b981',
-                          borderRadius: '4px 4px 0 0',
+                          borderRadius: '3px 3px 0 0',
                           transition: 'height 0.3s ease',
                           cursor: 'pointer'
                         }}
@@ -634,7 +643,7 @@ export default function DashboardView({ setActiveView, settings }) {
                     <span style={{
                       position: 'absolute',
                       bottom: '2px',
-                      fontSize: '0.72rem',
+                      fontSize: '0.70rem',
                       color: '#64748b',
                       fontWeight: 600
                     }}>
@@ -651,73 +660,71 @@ export default function DashboardView({ setActiveView, settings }) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '20px',
-              marginTop: '12px'
+              marginTop: '8px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', color: '#475569', fontWeight: 600 }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#2563eb' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: '#475569', fontWeight: 600 }}>
+                <span style={{ width: '9px', height: '9px', borderRadius: '2px', background: '#2563eb' }} />
                 <span>Total Sales</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.76rem', color: '#475569', fontWeight: 600 }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '2px', background: '#10b981' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: '#475569', fontWeight: 600 }}>
+                <span style={{ width: '9px', height: '9px', borderRadius: '2px', background: '#10b981' }} />
                 <span>Cash Received</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Col 2: Payment Status (Donut Chart - Refactored Proportional Geometry) */}
-        {/* Col 2: Payment Status (Donut Chart - Refactored Proportional Geometry) */}
+        {/* Col 2: Payment Status (Compact & Balanced Hero Donut with Side Legend) */}
         <div style={{
           background: '#ffffff',
           borderRadius: '16px',
           border: '1px solid #e2e8f0',
-          padding: '20px 18px',
+          padding: '16px 18px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
         }}>
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
             <CheckSquare size={18} style={{ color: '#2563eb' }} />
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
               Payment Status
             </h3>
           </div>
 
-          {/* Donut and Legend Layout - Vertically Centered & Balanced */}
+          {/* Donut and Legend Layout - Perfectly Centered & Filling the Card */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '14px',
-            margin: 'auto 0',
-            padding: '6px 0'
+            flex: 1
           }}>
-            {/* SVG Donut Container with Perfectly Centered Geometry */}
+            {/* SVG Donut Container - Prominent & Enlarged */}
             <div style={{
               position: 'relative',
-              width: '130px',
-              height: '130px',
+              width: '152px',
+              height: '152px',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
-                {/* Background Ring (r=47 -> circumference = 295.31) */}
-                <circle cx="65" cy="65" r="47" stroke="#f1f5f9" strokeWidth="13" fill="none" />
-                {/* Paid: 18/28 = 64.3% -> 189.84 */}
-                <circle cx="65" cy="65" r="47" stroke="#10b981" strokeWidth="13" strokeDasharray="189.84 295.31" strokeDashoffset="0" fill="none" strokeLinecap="round" />
-                {/* Partial: 5/28 = 17.9% -> 52.73 */}
-                <circle cx="65" cy="65" r="47" stroke="#f59e0b" strokeWidth="13" strokeDasharray="52.73 295.31" strokeDashoffset="-189.84" fill="none" />
-                {/* Due: 4/28 = 14.3% -> 42.19 */}
-                <circle cx="65" cy="65" r="47" stroke="#ef4444" strokeWidth="13" strokeDasharray="42.19 295.31" strokeDashoffset="-242.57" fill="none" />
-                {/* Overdue: 1/28 = 3.6% -> 10.55 */}
-                <circle cx="65" cy="65" r="47" stroke="#8b5cf6" strokeWidth="13" strokeDasharray="10.55 295.31" strokeDashoffset="-284.76" fill="none" />
+              <svg width="152" height="152" viewBox="0 0 160 160" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+                {/* Background Ring (r=58 -> circumference = 364.42) */}
+                <circle cx="80" cy="80" r="58" stroke="#f1f5f9" strokeWidth="15" fill="none" />
+                {/* Paid: 18/28 = 64.3% -> 234.27 */}
+                <circle cx="80" cy="80" r="58" stroke="#10b981" strokeWidth="15" strokeDasharray="234.27 364.42" strokeDashoffset="0" fill="none" strokeLinecap="round" />
+                {/* Partial: 5/28 = 17.9% -> 65.07 */}
+                <circle cx="80" cy="80" r="58" stroke="#f59e0b" strokeWidth="15" strokeDasharray="65.07 364.42" strokeDashoffset="-234.27" fill="none" />
+                {/* Due: 4/28 = 14.3% -> 52.06 */}
+                <circle cx="80" cy="80" r="58" stroke="#ef4444" strokeWidth="15" strokeDasharray="52.06 364.42" strokeDashoffset="-299.34" fill="none" />
+                {/* Overdue: 1/28 = 3.6% -> 13.01 */}
+                <circle cx="80" cy="80" r="58" stroke="#8b5cf6" strokeWidth="15" strokeDasharray="13.01 364.42" strokeDashoffset="-351.40" fill="none" />
               </svg>
 
-              {/* Exact Mathematically Centered Label Inside Hole (Cleanly Cleared of Edges) */}
+              {/* Centered Total Invoices Label Inside Spacious Hole */}
               <div style={{
                 position: 'absolute',
                 top: '50%',
@@ -729,50 +736,50 @@ export default function DashboardView({ setActiveView, settings }) {
                 justifyContent: 'center',
                 pointerEvents: 'none',
                 textAlign: 'center',
-                width: '78px',
+                width: '92px',
                 lineHeight: 1.15
               }}>
-                <span style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: '0.68rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap', letterSpacing: '0.2px' }}>
                   Total Invoices
                 </span>
-                <span style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+                <span style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
                   28
                 </span>
               </div>
             </div>
 
-            {/* Legend List - Evenly Spaced with Guaranteed No-Wrap */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', flex: 1, minWidth: '110px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
+            {/* Subtle Side Legend - Clean, Compact & Secondary */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, minWidth: '95px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 500, fontSize: '0.75rem' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
                   Paid
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>18 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(64%)</span></span>
+                <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.74rem' }}>18 (64%)</span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 500, fontSize: '0.75rem' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
                   Partial
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>5 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(18%)</span></span>
+                <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.74rem' }}>5 (18%)</span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 500, fontSize: '0.75rem' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
                   Due
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>4 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(14%)</span></span>
+                <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.74rem' }}>4 (14%)</span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontWeight: 500, fontSize: '0.75rem' }}>
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#8b5cf6', flexShrink: 0 }} />
                   Overdue
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>1 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(4%)</span></span>
+                <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.74rem' }}>1 (4%)</span>
               </div>
             </div>
           </div>
@@ -783,13 +790,14 @@ export default function DashboardView({ setActiveView, settings }) {
           background: '#ffffff',
           borderRadius: '16px',
           border: '1px solid #e2e8f0',
-          padding: '22px 20px',
+          padding: '16px 18px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          justifyContent: 'space-between'
         }}>
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <Zap size={18} style={{ color: '#2563eb' }} />
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
               Quick Actions
@@ -797,7 +805,7 @@ export default function DashboardView({ setActiveView, settings }) {
           </div>
 
           {/* 4 Action Buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '7px', flex: 1, justifyContent: 'center' }}>
             {/* Action 1: New Sale / Invoice */}
             <div
               onClick={() => setActiveView('billing')}
@@ -805,7 +813,7 @@ export default function DashboardView({ setActiveView, settings }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '10px 12px',
+                padding: '8px 12px',
                 border: '1px solid #e2e8f0',
                 borderRadius: '10px',
                 cursor: 'pointer',
