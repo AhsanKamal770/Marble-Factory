@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Printer, CheckCircle2, AlertTriangle, Calculator, FileText, ArrowDownRight, ArrowUpRight, DollarSign } from "lucide-react";
+import { Printer, CheckCircle2, AlertTriangle, Calculator, FileText, ArrowDownRight, ArrowUpRight, DollarSign, Coins, ChevronDown, ChevronUp } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function DayEndReconciliationCard({ cashData, onPrintThermal, onPrintA4 }) {
@@ -53,52 +53,126 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
   return (
     <div style={{
       background: "var(--bg-card)",
-      padding: "28px",
+      padding: "24px",
       borderRadius: "16px",
       border: "1px solid var(--border-color)",
-      boxShadow: "0 6px 20px rgba(0,0,0,0.05)"
+      boxShadow: "0 2px 10px rgba(15, 23, 42, 0.04)"
     }}>
-      {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: "24px" }}>
-        <h3 style={{
-          fontSize: "1.25rem",
-          fontWeight: 800,
-          margin: 0,
-          color: "var(--text-primary)",
-          letterSpacing: "-0.01em"
-        }}>
-          {language === 'ur' ? "روزنامچہ و کیش دراز آڈٹ (Day-End Cash Reconciliation)" : "DAY-END ROZNAMCHA & CASH DRAWER RECONCILIATION"}
-        </h3>
-        <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "4px" }}>
-          {language === 'ur' ? "اوپننگ کیش، نقد سیلز، ریکوری اور اخراجات کا جامع موازنہ" : "Compare system expected cash with actual physical cash in the drawer."}
-        </p>
+      {/* Header with Title and Print Actions */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        flexWrap: "wrap",
+        gap: "14px",
+        marginBottom: "22px",
+        paddingBottom: "16px",
+        borderBottom: "1px solid var(--border-divider)"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: "38px",
+            height: "38px",
+            borderRadius: "10px",
+            background: "rgba(37, 99, 235, 0.1)",
+            color: "var(--accent-primary, #2563eb)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0
+          }}>
+            <Calculator size={20} />
+          </div>
+          <div>
+            <h3 style={{
+              fontSize: "1.08rem",
+              fontWeight: 800,
+              margin: 0,
+              color: "var(--text-primary)",
+              letterSpacing: "-0.01em"
+            }}>
+              {language === 'ur' ? "روزنامچہ و کیش دراز آڈٹ (Day-End Reconciliation)" : "DAY-END ROZNAMCHA & CASH DRAWER RECONCILIATION"}
+            </h3>
+            <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
+              {language === 'ur' ? "اوپننگ کیش، نقد سیلز، ریکوری اور اخراجات کا جامع موازنہ" : "Compare system expected cash with actual physical cash in the drawer."}
+            </p>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            type="button"
+            onClick={onPrintThermal}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "7px 12px",
+              borderRadius: "8px",
+              border: "1px solid var(--border-color)",
+              background: "var(--bg-primary)",
+              color: "var(--text-primary)",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              transition: "all 0.15s ease"
+            }}
+          >
+            <Printer size={14} style={{ color: "var(--accent-primary, #2563eb)" }} />
+            <span>{language === 'ur' ? "تھرمل پرچی" : "Thermal Slip"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onPrintA4}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "7px 14px",
+              borderRadius: "8px",
+              border: "none",
+              background: "var(--accent-primary, #2563eb)",
+              color: "#ffffff",
+              fontSize: "0.78rem",
+              fontWeight: 700,
+              cursor: "pointer",
+              boxShadow: "0 2px 6px rgba(37, 99, 235, 0.2)",
+              transition: "all 0.15s ease"
+            }}
+          >
+            <FileText size={14} />
+            <span>{language === 'ur' ? "A4 روزنامچہ رپورٹ" : "A4 Closing Sheet"}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main 2-Column Math Grid */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-        gap: "24px",
-        marginBottom: "28px"
+        gridTemplateColumns: "1fr 1fr",
+        gap: "20px",
+        marginBottom: "24px"
       }}>
         {/* Left Column: Cash Inflow (+) */}
         <div style={{
           background: "var(--bg-primary)",
-          padding: "20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-divider)"
+          padding: "18px",
+          borderRadius: "14px",
+          border: "1px solid var(--border-color)"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px", color: "#10b981", fontWeight: 800, fontSize: "0.95rem" }}>
-            <ArrowUpRight size={18} />
-            {language === 'ur' ? "کل کیش آمد / وصولیاں (+)" : "Total Cash Inflow (+)"}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", color: "#10b981", fontWeight: 800, fontSize: "0.90rem" }}>
+            <ArrowUpRight size={17} />
+            <span>{language === 'ur' ? "کل کیش آمد / وصولیاں (+)" : "Total Cash Inflow (+)"}</span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.85rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.82rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "var(--text-secondary)" }}>
                 {language === 'ur' ? "صبح کا اوپننگ کیش (Opening):" : "Opening Cash Balance:"}
               </span>
-              <span style={{ fontWeight: 700, color: "var(--text-primary)", fontFamily: "monospace" }}>
+              <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>
                 Rs. {Number(openingCash).toLocaleString()}
               </span>
             </div>
@@ -107,7 +181,7 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
               <span style={{ color: "var(--text-secondary)" }}>
                 {language === 'ur' ? `آج کی نقد بل سیلز (${todayInvoicesCount}):` : `Cash Sales Today (${todayInvoicesCount}):`}
               </span>
-              <span style={{ fontWeight: 700, color: "#10b981", fontFamily: "monospace" }}>
+              <span style={{ fontWeight: 700, color: "#10b981" }}>
                 + Rs. {Number(cashSalesToday).toLocaleString()}
               </span>
             </div>
@@ -116,16 +190,23 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
               <span style={{ color: "var(--text-secondary)" }}>
                 {language === 'ur' ? `گاہک کھاتہ وصولی / Wasooli (${todayPaymentsCount}):` : `Customer Udhar Recoveries (${todayPaymentsCount}):`}
               </span>
-              <span style={{ fontWeight: 700, color: "#10b981", fontFamily: "monospace" }}>
+              <span style={{ fontWeight: 700, color: "#10b981" }}>
                 + Rs. {Number(wasooliToday).toLocaleString()}
               </span>
             </div>
 
-            <div style={{ borderTop: "1px dashed var(--border-divider)", paddingTop: "8px", display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
+            <div style={{
+              borderTop: "1px dashed var(--border-divider)",
+              paddingTop: "8px",
+              marginTop: "2px",
+              display: "flex",
+              justifyContent: "space-between",
+              fontWeight: 800
+            }}>
               <span style={{ color: "var(--text-primary)" }}>
                 {language === 'ur' ? "کل آمد (Total Inflow):" : "Total Cash Inflow:"}
               </span>
-              <span style={{ color: "#10b981", fontFamily: "monospace", fontSize: "0.95rem" }}>
+              <span style={{ color: "#10b981", fontSize: "0.92rem" }}>
                 Rs. {Number(totalCashInflow).toLocaleString()}
               </span>
             </div>
@@ -135,21 +216,21 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
         {/* Right Column: Cash Outflow (-) */}
         <div style={{
           background: "var(--bg-primary)",
-          padding: "20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-divider)"
+          padding: "18px",
+          borderRadius: "14px",
+          border: "1px solid var(--border-color)"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px", color: "#ef4444", fontWeight: 800, fontSize: "0.95rem" }}>
-            <ArrowDownRight size={18} />
-            {language === 'ur' ? "کل کیش نکاسی / اخراجات (-)" : "Total Cash Outflow (-)"}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px", color: "#ef4444", fontWeight: 800, fontSize: "0.90rem" }}>
+            <ArrowDownRight size={17} />
+            <span>{language === 'ur' ? "کل کیش نکاسی / اخراجات (-)" : "Total Cash Outflow (-)"}</span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.85rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "0.82rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <span style={{ color: "var(--text-secondary)" }}>
                 {language === 'ur' ? `روزانہ فیکٹری اخراجات (${todayExpensesCount}):` : `Daily Factory Expenses (${todayExpensesCount}):`}
               </span>
-              <span style={{ fontWeight: 700, color: "#ef4444", fontFamily: "monospace" }}>
+              <span style={{ fontWeight: 700, color: "#ef4444" }}>
                 - Rs. {Number(expensesToday).toLocaleString()}
               </span>
             </div>
@@ -157,9 +238,9 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
             {supplierCashToday > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "var(--text-secondary)" }}>
-                  {language === 'ur' ? "سپلائر نقد ادائیگیاں:" : "Supplier Cash Payments:"}
+                  {language === 'ur' ? "سپلائر نقد ادائیگی:" : "Supplier Cash Payments:"}
                 </span>
-                <span style={{ fontWeight: 700, color: "#ef4444", fontFamily: "monospace" }}>
+                <span style={{ fontWeight: 700, color: "#ef4444" }}>
                   - Rs. {Number(supplierCashToday).toLocaleString()}
                 </span>
               </div>
@@ -168,19 +249,26 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
             {employeeAdvancesToday > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "var(--text-secondary)" }}>
-                  {language === 'ur' ? "ملازمین کیش ایڈوانس / خرچہ:" : "Worker Cash Advances:"}
+                  {language === 'ur' ? "ملازمین ایڈوانس تنخواہ:" : "Worker Cash Advances:"}
                 </span>
-                <span style={{ fontWeight: 700, color: "#ef4444", fontFamily: "monospace" }}>
+                <span style={{ fontWeight: 700, color: "#ef4444" }}>
                   - Rs. {Number(employeeAdvancesToday).toLocaleString()}
                 </span>
               </div>
             )}
 
-            <div style={{ borderTop: "1px dashed var(--border-divider)", paddingTop: "8px", display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
+            <div style={{
+              borderTop: "1px dashed var(--border-divider)",
+              paddingTop: "8px",
+              marginTop: "2px",
+              display: "flex",
+              justifyContent: "space-between",
+              fontWeight: 800
+            }}>
               <span style={{ color: "var(--text-primary)" }}>
-                {language === 'ur' ? "کل خرچ (Total Outflow):" : "Total Cash Outflow:"}
+                {language === 'ur' ? "کل نکاسی (Total Outflow):" : "Total Cash Outflow:"}
               </span>
-              <span style={{ color: "#ef4444", fontFamily: "monospace", fontSize: "0.95rem" }}>
+              <span style={{ color: "#ef4444", fontSize: "0.92rem" }}>
                 - Rs. {Number(totalCashOutflow).toLocaleString()}
               </span>
             </div>
@@ -188,209 +276,223 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
         </div>
       </div>
 
-      {/* Center Net Expected Balance Box */}
-      <div style={{
-        background: liveCash >= 0 ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
-        border: `2px solid ${liveCash >= 0 ? "#10b981" : "#ef4444"}`,
-        padding: "20px 24px",
-        borderRadius: "14px",
-        display: "flex",
-        flexWrap: "wrap",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: "16px",
-        marginBottom: "24px"
-      }}>
-        <div>
-          <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-            {language === 'ur' ? "دراز میں متوقع کل کیش بیلنس (Expected Drawer Balance)" : "EXPECTED LIVE CASH IN DRAWER"}
-          </div>
-          <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "2px" }}>
-            (Opening + Inflow - Outflow)
-          </div>
-        </div>
-
-        <div style={{
-          fontSize: "1.85rem",
-          fontWeight: 900,
-          color: liveCash >= 0 ? "#10b981" : "#ef4444",
-          fontFamily: "monospace"
-        }}>
-          Rs. {Number(liveCash).toLocaleString()}
-        </div>
-      </div>
-
-      {/* Physical Cash Verification & Denomination Calculator */}
+      {/* Audit Reconciliation Section: Expected vs Actual */}
       <div style={{
         background: "var(--bg-primary)",
-        padding: "20px",
-        borderRadius: "12px",
-        border: "1px solid var(--border-divider)",
-        marginBottom: "24px"
+        padding: "18px",
+        borderRadius: "14px",
+        border: "1px solid var(--border-color)",
+        marginBottom: "16px"
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px", marginBottom: "14px" }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "20px",
+          alignItems: "center"
+        }}>
+          {/* Expected Live Drawer Cash */}
           <div>
-            <h4 style={{ margin: 0, fontSize: "0.92rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {language === 'ur' ? "دراز میں فزیکل گنتی شدہ کیش درج کریں" : "Physical Drawer Cash Audit"}
-            </h4>
-            <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-              {language === 'ur' ? "دراز گن کر رقم درج کریں تاکہ کمی یا بیشی کا پتہ چل سکے" : "Count real notes in drawer to verify balance"}
+            <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+              {language === 'ur' ? "سسٹم کے مطابق لائیو کیش (متوقع):" : "System Expected Live Cash:"}
             </span>
+            <div style={{
+              fontSize: "1.45rem",
+              fontWeight: 900,
+              color: "#059669",
+              marginTop: "4px"
+            }}>
+              Rs. {Number(liveCash).toLocaleString()}
+            </div>
+            <p style={{ margin: "2px 0 0 0", fontSize: "0.72rem", color: "var(--text-muted)" }}>
+              Inflow (Rs. {totalCashInflow.toLocaleString()}) - Outflow (Rs. {totalCashOutflow.toLocaleString()})
+            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setShowDenominations(!showDenominations)}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--border-color)",
-              padding: "6px 12px",
-              borderRadius: "6px",
-              fontSize: "0.75rem",
-              fontWeight: 700,
-              color: "var(--text-secondary)",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px"
-            }}
-          >
-            <Calculator size={14} />
-            {showDenominations ? (language === 'ur' ? "گنتی چھپائیں" : "Hide Note Calculator") : (language === 'ur' ? "نوٹ گنتی کیلکولیٹر" : "Note Denominations")}
-          </button>
+          {/* Actual Counted Physical Cash Input */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+              <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                {language === 'ur' ? "دراز میں موجود اصل نقد کیش (گنتی):" : "Actual Physical Cash in Drawer:"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowDenominations(!showDenominations)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  border: "none",
+                  background: "transparent",
+                  color: "var(--accent-primary, #2563eb)",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                <Coins size={12} />
+                <span>{showDenominations ? (language === 'ur' ? "کاؤنٹر بند کریں" : "Hide Counter") : (language === 'ur' ? "نوٹ کاؤنٹر کھولیں" : "Note Counter")}</span>
+                {showDenominations ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+            </div>
+
+            <div style={{ position: "relative" }}>
+              <span style={{
+                position: "absolute",
+                left: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                fontWeight: 800,
+                color: "var(--text-secondary)",
+                fontSize: "0.88rem"
+              }}>
+                Rs.
+              </span>
+              <input
+                type="number"
+                min="0"
+                value={actualPhysicalCash}
+                onChange={e => setActualPhysicalCash(e.target.value)}
+                placeholder="Enter physical cash counted..."
+                style={{
+                  width: "100%",
+                  padding: "9px 12px 9px 42px",
+                  borderRadius: "10px",
+                  border: "1.5px solid var(--border-color)",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                  fontSize: "1.05rem",
+                  fontWeight: 800,
+                  outline: "none"
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Denominations Grid (if toggled) */}
+        {/* Currency Denominations Collapsible Grid */}
         {showDenominations && (
           <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-            gap: "10px",
-            background: "var(--bg-card)",
-            padding: "14px",
-            borderRadius: "10px",
-            border: "1px solid var(--border-color)",
-            marginBottom: "16px"
+            marginTop: "16px",
+            paddingTop: "14px",
+            borderTop: "1px dashed var(--border-divider)"
           }}>
-            {[5000, 1000, 500, 100, 50, 20, 10].map(denom => (
-              <div key={denom}>
-                <label style={{ display: "block", fontSize: "0.72rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "4px" }}>
-                  Rs. {denom} x
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="0"
-                  value={notes[denom]}
-                  onChange={e => handleNoteChange(denom, e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "6px 8px",
-                    borderRadius: "6px",
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-primary)",
-                    color: "var(--text-primary)",
-                    fontSize: "0.82rem",
-                    fontWeight: 700
-                  }}
-                />
-              </div>
-            ))}
+            <span style={{ display: "block", fontSize: "0.76rem", fontWeight: 800, color: "var(--text-secondary)", marginBottom: "10px" }}>
+              {language === 'ur' ? "پاکستانی کرنسی نوٹ کاؤنٹر (تعداد درج کریں):" : "Pakistani Currency Denominations Counter (Enter Quantities):"}
+            </span>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+              gap: "8px"
+            }}>
+              {[5000, 1000, 500, 100, 50, 20, 10].map(denom => {
+                const count = Number(notes[denom]) || 0;
+                const noteTotal = denom * count;
+
+                return (
+                  <div
+                    key={denom}
+                    style={{
+                      background: "var(--bg-card)",
+                      padding: "8px 10px",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)"
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                      <span style={{ fontSize: "0.74rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                        Rs. {denom}
+                      </span>
+                      <span style={{ fontSize: "0.70rem", color: "var(--text-muted)", fontWeight: 700 }}>
+                        {noteTotal > 0 ? `Rs. ${noteTotal.toLocaleString()}` : ''}
+                      </span>
+                    </div>
+
+                    <input
+                      type="number"
+                      min="0"
+                      value={notes[denom]}
+                      onChange={e => handleNoteChange(denom, e.target.value)}
+                      placeholder="0 pcs"
+                      style={{
+                        width: "100%",
+                        padding: "5px 8px",
+                        borderRadius: "6px",
+                        border: "1px solid var(--border-color)",
+                        background: "var(--bg-primary)",
+                        color: "var(--text-primary)",
+                        fontSize: "0.78rem",
+                        fontWeight: 700,
+                        outline: "none"
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
+      </div>
 
-        {/* Actual Cash Input and Difference Status */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 200px", maxWidth: "260px" }}>
-            <input
-              type="number"
-              placeholder={language === 'ur' ? "گنتی شدہ رقم..." : "Actual Counted Cash..."}
-              value={actualPhysicalCash}
-              onChange={e => setActualPhysicalCash(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                border: "2px solid var(--border-color)",
-                background: "var(--bg-card)",
-                color: "var(--text-primary)",
-                fontSize: "1.05rem",
+      {/* Reconciliation Outcome Status Banner */}
+      {countedNum !== null && (
+        <div style={{
+          padding: "14px 18px",
+          borderRadius: "12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "10px",
+          background: difference === 0
+            ? "rgba(16, 185, 129, 0.1)"
+            : difference > 0
+              ? "rgba(37, 99, 235, 0.1)"
+              : "rgba(239, 68, 68, 0.1)",
+          border: `1.5px solid ${
+            difference === 0 ? "#10b981" : difference > 0 ? "var(--accent-primary, #2563eb)" : "#ef4444"
+          }`
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {difference === 0 ? (
+              <CheckCircle2 size={22} style={{ color: "#10b981" }} />
+            ) : difference > 0 ? (
+              <DollarSign size={22} style={{ color: "var(--accent-primary, #2563eb)" }} />
+            ) : (
+              <AlertTriangle size={22} style={{ color: "#ef4444" }} />
+            )}
+
+            <div>
+              <div style={{
                 fontWeight: 800,
-                outline: "none"
-              }}
-            />
+                fontSize: "0.88rem",
+                color: difference === 0 ? "#059669" : difference > 0 ? "var(--accent-primary, #2563eb)" : "#ef4444"
+              }}>
+                {difference === 0
+                  ? (language === 'ur' ? "دراز کیش بالکل برابر و درست ہے (Perfect Match)" : "Drawer is Perfectly Balanced (Zero Variance)")
+                  : difference > 0
+                    ? (language === 'ur' ? "دراز میں اضافی کیش موجود ہے (Cash Surplus / بیشی)" : "Cash Surplus in Drawer (More than expected)")
+                    : (language === 'ur' ? "دراز میں کیش کی کمی ہے (Cash Shortage / شارٹ)" : "Cash Shortage in Drawer (Deficit)")}
+              </div>
+              <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", marginTop: "2px" }}>
+                {difference === 0
+                  ? (language === 'ur' ? "سسٹم اور دراز کے نوٹ بالکل ایک جتنے ہیں۔" : "System record exactly matches physical cash count.")
+                  : difference > 0
+                    ? (language === 'ur' ? `دراز میں سسٹم سے زیادہ رقم موجود ہے۔` : `Counted amount is greater than recorded receipts.`)
+                    : (language === 'ur' ? `دراز میں سسٹم سے کم رقم ہے۔ فوری چیک کریں۔` : `Physical cash is lower than expected. Please verify unrecorded expenses.`)}
+              </div>
+            </div>
           </div>
 
-          {countedNum !== null && (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.9rem", fontWeight: 700 }}>
-              {difference === 0 ? (
-                <span style={{ color: "#10b981", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <CheckCircle2 size={20} />
-                  {language === 'ur' ? "کیش بالکل برابر ہے (Matched!)" : "Drawer Cash is 100% Balanced!"}
-                </span>
-              ) : difference > 0 ? (
-                <span style={{ color: "#3b82f6", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <ArrowUpRight size={20} />
-                  {language === 'ur' ? `زائد کیش (Surplus): +Rs. ${difference.toLocaleString()}` : `Surplus Cash: +Rs. ${difference.toLocaleString()}`}
-                </span>
-              ) : (
-                <span style={{ color: "#ef4444", display: "flex", alignItems: "center", gap: "6px" }}>
-                  <AlertTriangle size={20} />
-                  {language === 'ur' ? `کیش کمی (Shortage): Rs. ${difference.toLocaleString()}` : `Cash Shortage: Rs. ${difference.toLocaleString()}`}
-                </span>
-              )}
-            </div>
-          )}
+          <div style={{
+            fontSize: "1.25rem",
+            fontWeight: 900,
+            color: difference === 0 ? "#059669" : difference > 0 ? "var(--accent-primary, #2563eb)" : "#ef4444"
+          }}>
+            {difference === 0 ? "Rs. 0" : (difference > 0 ? `+ Rs. ${difference.toLocaleString()}` : `- Rs. ${Math.abs(difference).toLocaleString()}`)}
+          </div>
         </div>
-      </div>
-
-      {/* Print Action Buttons */}
-      <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
-        <button
-          type="button"
-          onClick={onPrintThermal}
-          style={{
-            background: "var(--bg-primary)",
-            border: "1px solid var(--border-color)",
-            color: "var(--text-primary)",
-            padding: "12px 22px",
-            borderRadius: "10px",
-            fontWeight: 700,
-            fontSize: "0.9rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            cursor: "pointer",
-            transition: "all 0.15s ease"
-          }}
-        >
-          <Printer size={18} />
-          {language === 'ur' ? "80mm تھرمل پرچی پرنٹ کریں" : "Print 80mm Slip"}
-        </button>
-
-        <button
-          type="button"
-          onClick={onPrintA4}
-          style={{
-            background: "linear-gradient(135deg, var(--accent-primary) 0%, #1e40af 100%)",
-            border: "none",
-            color: "#fff",
-            padding: "12px 24px",
-            borderRadius: "10px",
-            fontWeight: 800,
-            fontSize: "0.9rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.25)",
-            transition: "all 0.15s ease"
-          }}
-        >
-          <FileText size={18} />
-          {language === 'ur' ? "مکمل ڈے کلوزنگ رپورٹ (A4 Roznamcha)" : "Print Full Roznamcha (A4)"}
-        </button>
-      </div>
+      )}
     </div>
   );
 }

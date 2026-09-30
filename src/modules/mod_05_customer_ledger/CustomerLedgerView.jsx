@@ -9,8 +9,11 @@ import {
   CheckCircle2,
   AlertCircle,
   Building2,
-  Wallet
+  Wallet,
+  AlertTriangle,
+  Trash2
 } from "lucide-react";
+import Modal from "../../shared/components/Modal";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../../db";
 import { useLanguage } from "../../context/LanguageContext";
@@ -54,6 +57,8 @@ export default function CustomerLedgerView() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
 
   // Active Selected Customer Object
@@ -146,13 +151,21 @@ export default function CustomerLedgerView() {
     }
   };
 
-  const handleDeleteCustomer = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this customer account?")) return;
+  const handleDeleteCustomer = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDeleteCustomer = async () => {
+    if (!selectedCustomer) return;
+    setIsDeleting(true);
     try {
-      await deleteCustomer(id);
+      await deleteCustomer(selectedCustomer.id, true);
+      setIsDeleteModalOpen(false);
       setSelectedCustomerId(null);
     } catch (err) {
-      alert(err.message);
+      alert("Failed to delete customer: " + err.message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -334,6 +347,134 @@ export default function CustomerLedgerView() {
           timeline={activeTimeline}
           settings={settings}
         />
+      )}
+
+      {/* ── CAUTION DELETE CUSTOMER MODAL ── */}
+      {isDeleteModalOpen && selectedCustomer && (
+        <Modal
+          isOpen={isDeleteModalOpen}
+          onClose={() => !isDeleting && setIsDeleteModalOpen(false)}
+          title={language === 'ur' ? "گاہک کھاتہ حذف کرنے کی وارننگ" : "Caution: Delete Customer Account"}
+          icon={AlertTriangle}
+          size="sm"
+          footerActions={
+            <div style={{ display: "flex", gap: "10px", width: "100%", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setIsDeleteModalOpen(false)}
+                disabled={isDeleting}
+                style={{ fontWeight: 600 }}
+              >
+                {language === 'ur' ? "منسوخ کریں" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleConfirmDeleteCustomer}
+                disabled={isDeleting}
+                style={{
+                  background: "#dc2626",
+                  borderColor: "#dc2626",
+                  color: "#ffffff",
+                  fontWeight: 800,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  boxShadow: "0 2px 8px rgba(220, 38, 38, 0.3)"
+                }}
+              >
+                <Trash2 size={15} />
+                <span>{isDeleting ? (language === 'ur' ? "حذف ہو رہا ہے..." : "Deleting...") : (language === 'ur' ? "ہاں، کھاتہ حذف کریں" : "Yes, Delete Customer")}</span>
+              </button>
+            </div>
+          }
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "14px", padding: "4px 0" }}>
+            <div style={{
+              background: "rgba(239, 68, 68, 0.08)",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+              borderRadius: "12px",
+              padding: "14px",
+              display: "flex",
+              gap: "12px",
+              alignItems: "flex-start"
+            }}>
+              <div style={{
+                width: "36px",
+                height: "36px",
+                borderRadius: "50%",
+                background: "rgba(239, 68, 68, 0.15)",
+                color: "#dc2626",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
+              }}>
+                <AlertTriangle size={20} />
+              </div>
+              <div style={{ fontSize: "0.85rem", lineHeight: 1.5, color: "var(--text-primary)" }}>
+                <div style={{ fontWeight: 800, color: "#dc2626", marginBottom: "4px", fontSize: "0.92rem" }}>
+                  {language === 'ur' ? "کیا آپ واقعی یہ کھاتہ حذف کرنا چاہتے ہیں؟" : "Are you sure you want to delete this customer?"}
+                </div>
+                <div>
+                  {language === 'ur' ? (
+                    <>
+                      آپ <strong>{selectedCustomer.name}</strong> کا کھاتہ مستقل طور پر حذف کرنے لگے ہیں۔ یہ عمل واپس نہیں کیا جا سکتا۔
+                    </>
+                  ) : (
+                    <>
+                      You are about to permanently delete <strong>{selectedCustomer.name}</strong> ({selectedCustomer.customerType || 'Customer'}). This action cannot be undone.
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Account Summary Warning Details */}
+            <div style={{
+              background: "var(--bg-primary)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "10px",
+              padding: "12px 14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              fontSize: "0.82rem"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>
+                  {language === 'ur' ? "موجودہ بقایا ادھار:" : "Outstanding Udhar Due:"}
+                </span>
+                <span style={{ fontWeight: 800, color: Number(selectedCustomer.balanceDue || 0) > 0 ? "#dc2626" : "#059669" }}>
+                  Rs. {Number(selectedCustomer.balanceDue || 0).toLocaleString()}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>
+                  {language === 'ur' ? "فون نمبر:" : "Phone:"}
+                </span>
+                <span style={{ fontWeight: 600, color: "var(--text-primary)", fontFamily: "monospace" }}>
+                  {selectedCustomer.phone || "-"}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>
+                  {language === 'ur' ? "شہر / پتہ:" : "City / Location:"}
+                </span>
+                <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                  {selectedCustomer.city || selectedCustomer.address || "-"}
+                </span>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-muted)", fontStyle: "italic" }}>
+              {language === 'ur'
+                ? "نوٹ: گاہک حذف ہونے سے پرانے بل محفوظ رہیں گے لیکن گاہک کھاتہ لسٹ سے ختم ہو جائے گا۔"
+                : "Note: Associated sales invoices will remain in your sales records, but the customer profile and khata ledger will be permanently removed."}
+            </p>
+          </div>
+        </Modal>
       )}
     </div>
   );

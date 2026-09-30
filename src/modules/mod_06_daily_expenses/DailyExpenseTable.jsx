@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Trash2, Search, Filter, AlertCircle, Check, X, Tag } from "lucide-react";
+import { Trash2, Search, Filter, AlertCircle, Check, X, Tag, Clock, Receipt, User, ArrowDown } from "lucide-react";
 import { EXPENSE_CATEGORIES } from "./dailyExpenseService";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -34,27 +34,27 @@ export default function DailyExpenseTable({ expenses, onDeleteExpense }) {
   return (
     <div style={{
       background: "var(--bg-card)",
-      borderRadius: "14px",
+      borderRadius: "16px",
       border: "1px solid var(--border-color)",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.04)",
+      boxShadow: "0 2px 10px rgba(15, 23, 42, 0.04)",
       overflow: "hidden",
       display: "flex",
       flexDirection: "column"
     }}>
       {/* Search & Filter Header Bar */}
       <div style={{
-        padding: "16px 20px",
+        padding: "14px 18px",
         borderBottom: "1px solid var(--border-divider)",
-        background: "var(--bg-primary)",
+        background: "var(--bg-card)",
         display: "flex",
         flexWrap: "wrap",
-        gap: "12px",
+        gap: "10px",
         justifyContent: "space-between",
         alignItems: "center"
       }}>
         {/* Search Input */}
-        <div style={{ position: "relative", flex: "1 1 200px", maxWidth: "320px" }}>
-          <Search size={15} style={{ position: "absolute", left: "10px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+        <div style={{ position: "relative", flex: "1 1 200px", maxWidth: "340px" }}>
+          <Search size={14} style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
           <input
             type="text"
             value={searchTerm}
@@ -63,76 +63,126 @@ export default function DailyExpenseTable({ expenses, onDeleteExpense }) {
             style={{
               width: "100%",
               padding: "7px 10px 7px 32px",
-              borderRadius: "7px",
+              borderRadius: "8px",
               border: "1px solid var(--border-color)",
-              background: "var(--bg-card)",
+              background: "var(--bg-primary)",
               color: "var(--text-primary)",
-              fontSize: "0.82rem",
+              fontSize: "0.80rem",
               outline: "none"
             }}
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              style={{
+                position: "absolute",
+                right: "8px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--text-muted)"
+              }}
+            >
+              <X size={13} />
+            </button>
+          )}
         </div>
 
-        {/* Category Filter */}
+        {/* Category Filter & Count Badge */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Filter size={14} style={{ color: "var(--text-muted)" }} />
-          <select
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-            style={{
-              padding: "7px 10px",
-              borderRadius: "7px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-card)",
-              color: "var(--text-primary)",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              outline: "none"
-            }}
-          >
-            <option value="ALL">{language === 'ur' ? "تمام کیٹیگریز (All)" : "All Categories"}</option>
-            {EXPENSE_CATEGORIES.map(c => (
-              <option key={c.id} value={c.id}>
-                {language === 'ur' ? c.ur : c.en}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Filter size={13} style={{ color: "var(--text-muted)" }} />
+            <select
+              value={categoryFilter}
+              onChange={e => setCategoryFilter(e.target.value)}
+              style={{
+                padding: "6px 10px",
+                borderRadius: "8px",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-primary)",
+                color: "var(--text-primary)",
+                fontSize: "0.80rem",
+                fontWeight: 600,
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              <option value="ALL">{language === 'ur' ? "تمام کیٹیگریز (All)" : "All Categories"}</option>
+              {EXPENSE_CATEGORIES.map(c => (
+                <option key={c.id} value={c.id}>
+                  {language === 'ur' ? c.ur : c.en}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <span style={{
+            fontSize: "0.72rem",
+            fontWeight: 800,
+            padding: "4px 8px",
+            borderRadius: "6px",
+            background: "var(--bg-primary)",
+            color: "var(--text-secondary)",
+            border: "1px solid var(--border-color)"
+          }}>
+            {filteredExpenses.length} {language === 'ur' ? "اندراجات" : "items"}
+          </span>
         </div>
       </div>
 
       {/* Table Content */}
       {filteredExpenses.length === 0 ? (
-        <div style={{ padding: "48px 20px", textAlign: "center" }}>
-          <Tag size={36} style={{ color: "var(--text-muted)", opacity: 0.5, marginBottom: "12px" }} />
-          <p style={{ margin: 0, fontWeight: 700, color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-            {language === 'ur' ? "اس تاریخ کے لیے کوئی خرچ ریکارڈ نہیں ہوا۔" : "No expenses recorded for this selection."}
-          </p>
-          <p style={{ margin: "6px 0 0 0", color: "var(--text-muted)", fontSize: "0.82rem" }}>
-            {language === 'ur' ? "بائیں طرف موجود فارم سے نیا خرچ درج کریں۔" : "Add a new expense using the form on the left."}
+        <div style={{ padding: "50px 20px", textAlign: "center" }}>
+          <div style={{
+            width: "52px",
+            height: "52px",
+            borderRadius: "50%",
+            background: "var(--bg-primary)",
+            color: "var(--text-muted)",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: "12px"
+          }}>
+            <Receipt size={26} />
+          </div>
+          <h4 style={{ margin: 0, fontWeight: 800, color: "var(--text-primary)", fontSize: "0.95rem" }}>
+            {language === 'ur' ? "اس تاریخ کے لیے کوئی خرچ ریکارڈ نہیں ہوا۔" : "No expenses recorded for this date"}
+          </h4>
+          <p style={{ margin: "5px 0 0 0", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+            {language === 'ur' ? "بائیں طرف موجود فارم سے نیا خرچ درج کریں۔" : "Use the form on the left to record daily factory cash expenses."}
           </p>
         </div>
       ) : (
-        <div style={{ maxHeight: "460px", overflowY: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.84rem", textAlign: "left" }}>
+        <div style={{ maxHeight: "430px", overflowY: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem", textAlign: "left" }}>
             <thead>
-              <tr style={{ background: "var(--bg-primary)", position: "sticky", top: 0, zIndex: 5, borderBottom: "1px solid var(--border-divider)" }}>
-                <th style={{ padding: "10px 16px", color: "var(--text-secondary)", fontWeight: 700, width: "10%" }}>
+              <tr style={{
+                background: "var(--bg-primary)",
+                position: "sticky",
+                top: 0,
+                zIndex: 5,
+                borderBottom: "1px solid var(--border-divider)"
+              }}>
+                <th style={{ padding: "10px 14px", color: "var(--text-secondary)", fontWeight: 700, width: "11%", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   {language === 'ur' ? "وقت" : "Time"}
                 </th>
-                <th style={{ padding: "10px 16px", color: "var(--text-secondary)", fontWeight: 700, width: "24%" }}>
+                <th style={{ padding: "10px 14px", color: "var(--text-secondary)", fontWeight: 700, width: "23%", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   {language === 'ur' ? "کیٹیگری" : "Category"}
                 </th>
-                <th style={{ padding: "10px 16px", color: "var(--text-secondary)", fontWeight: 700, width: "20%" }}>
+                <th style={{ padding: "10px 14px", color: "var(--text-secondary)", fontWeight: 700, width: "20%", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   {language === 'ur' ? "وصول کنندہ" : "Paid To"}
                 </th>
-                <th style={{ padding: "10px 16px", color: "var(--text-secondary)", fontWeight: 700, width: "24%" }}>
-                  {language === 'ur' ? "تفصیل / وجہ" : "Remarks"}
+                <th style={{ padding: "10px 14px", color: "var(--text-secondary)", fontWeight: 700, width: "24%", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  {language === 'ur' ? "تفصیل" : "Remarks"}
                 </th>
-                <th style={{ padding: "10px 16px", color: "var(--text-secondary)", fontWeight: 700, width: "14%", textAlign: "right" }}>
+                <th style={{ padding: "10px 14px", color: "var(--text-secondary)", fontWeight: 700, width: "14%", textAlign: "right", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   {language === 'ur' ? "رقم" : "Amount"}
                 </th>
-                <th style={{ padding: "10px 16px", color: "var(--text-secondary)", fontWeight: 700, width: "8%", textAlign: "center" }}>
-                  {language === 'ur' ? "ایکشن" : "Action"}
+                <th style={{ padding: "10px 14px", color: "var(--text-secondary)", fontWeight: 700, width: "8%", textAlign: "center", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  {language === 'ur' ? "عمل" : "Action"}
                 </th>
               </tr>
             </thead>
@@ -150,97 +200,127 @@ export default function DailyExpenseTable({ expenses, onDeleteExpense }) {
                       background: isConfirming ? "rgba(239, 68, 68, 0.08)" : "transparent",
                       transition: "background 0.15s ease"
                     }}
+                    onMouseOver={(e) => {
+                      if (!isConfirming) e.currentTarget.style.background = "var(--bg-primary)";
+                    }}
+                    onMouseOut={(e) => {
+                      if (!isConfirming) e.currentTarget.style.background = "transparent";
+                    }}
                   >
                     {/* Time */}
-                    <td style={{ padding: "12px 16px", color: "var(--text-secondary)", fontFamily: "monospace", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
-                      {timeStr}
+                    <td style={{ padding: "10px 14px", color: "var(--text-muted)", fontSize: "0.75rem", whiteSpace: "nowrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Clock size={11} style={{ opacity: 0.6 }} />
+                        <span>{timeStr}</span>
+                      </div>
                     </td>
 
-                    {/* Category Badge */}
-                    <td style={{ padding: "12px 16px" }}>
+                    {/* Category Pill */}
+                    <td style={{ padding: "10px 14px" }}>
                       <span style={{
-                        display: "inline-block",
-                        padding: "3px 9px",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        padding: "3px 8px",
                         borderRadius: "6px",
-                        fontSize: "0.76rem",
-                        fontWeight: 700,
-                        background: `${meta.color}18`,
+                        background: `${meta.color}15`,
                         color: meta.color,
-                        border: `1px solid ${meta.color}33`,
-                        whiteSpace: "nowrap"
+                        fontWeight: 700,
+                        fontSize: "0.74rem",
+                        border: `1px solid ${meta.color}33`
                       }}>
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: meta.color }}></span>
                         {language === 'ur' ? meta.ur : meta.en}
                       </span>
                     </td>
 
                     {/* Paid To */}
-                    <td style={{ padding: "12px 16px", fontWeight: 600, color: "var(--text-primary)" }}>
-                      {exp.paidTo || "-"}
+                    <td style={{ padding: "10px 14px", color: "var(--text-primary)", fontWeight: 600 }}>
+                      {exp.paidTo ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                          <User size={12} style={{ color: "var(--text-muted)" }} />
+                          <span>{exp.paidTo}</span>
+                        </div>
+                      ) : (
+                        <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>-</span>
+                      )}
                     </td>
 
                     {/* Remarks */}
-                    <td style={{ padding: "12px 16px", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                      {exp.remarks || "-"}
+                    <td style={{ padding: "10px 14px", color: "var(--text-secondary)", maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {exp.remarks || <span style={{ color: "var(--text-muted)", fontStyle: "italic" }}>-</span>}
                     </td>
 
                     {/* Amount */}
-                    <td style={{ padding: "12px 16px", textAlign: "right", fontWeight: 800, color: "#ef4444", fontSize: "0.92rem", fontFamily: "monospace" }}>
-                      Rs. {Number(exp.amount || 0).toLocaleString()}
+                    <td style={{ padding: "10px 14px", textAlign: "right", fontWeight: 800, color: "#ef4444", fontSize: "0.86rem", whiteSpace: "nowrap" }}>
+                      - Rs. {Number(exp.amount || 0).toLocaleString()}
                     </td>
 
                     {/* Action */}
-                    <td style={{ padding: "12px 16px", textAlign: "center" }}>
+                    <td style={{ padding: "10px 14px", textAlign: "center" }}>
                       {isConfirming ? (
-                        <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
                           <button
-                            onClick={() => { onDeleteExpense(exp.id); setConfirmId(null); }}
+                            type="button"
+                            onClick={() => {
+                              onDeleteExpense(exp.id);
+                              setConfirmId(null);
+                            }}
                             title="Confirm Delete"
                             style={{
-                              background: "#ef4444",
                               border: "none",
+                              background: "#ef4444",
                               color: "#fff",
                               borderRadius: "4px",
-                              padding: "4px 8px",
+                              padding: "3px 6px",
                               cursor: "pointer",
-                              fontSize: "0.72rem",
+                              fontSize: "0.70rem",
                               fontWeight: 700
                             }}
                           >
-                            Delete
+                            <Check size={11} />
                           </button>
                           <button
+                            type="button"
                             onClick={() => setConfirmId(null)}
                             title="Cancel"
                             style={{
-                              background: "transparent",
                               border: "1px solid var(--border-color)",
+                              background: "var(--bg-card)",
                               color: "var(--text-secondary)",
                               borderRadius: "4px",
-                              padding: "4px 6px",
+                              padding: "3px 6px",
                               cursor: "pointer",
-                              fontSize: "0.72rem"
+                              fontSize: "0.70rem"
                             }}
                           >
-                            <X size={12} />
+                            <X size={11} />
                           </button>
                         </div>
                       ) : (
                         <button
+                          type="button"
                           onClick={() => setConfirmId(exp.id)}
-                          title={language === 'ur' ? "خرچ حذف کریں" : "Delete Expense"}
+                          title={language === 'ur' ? "حذف کریں" : "Delete Expense"}
                           style={{
-                            background: "transparent",
                             border: "none",
+                            background: "transparent",
                             color: "var(--text-muted)",
                             cursor: "pointer",
-                            padding: "4px 6px",
-                            borderRadius: "4px",
+                            padding: "4px",
+                            borderRadius: "6px",
                             transition: "all 0.15s ease"
                           }}
-                          onMouseEnter={e => e.currentTarget.style.color = "#ef4444"}
-                          onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+                          onMouseOver={(e) => {
+                            e.currentTarget.style.color = "#ef4444";
+                            e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
+                          }}
+                          onMouseOut={(e) => {
+                            e.currentTarget.style.color = "var(--text-muted)";
+                            e.currentTarget.style.background = "transparent";
+                          }}
                         >
-                          <Trash2 size={15} />
+                          <Trash2 size={14} />
                         </button>
                       )}
                     </td>
@@ -252,22 +332,25 @@ export default function DailyExpenseTable({ expenses, onDeleteExpense }) {
         </div>
       )}
 
-      {/* Footer Total Bar */}
-      <div style={{
-        padding: "12px 20px",
-        background: "var(--bg-primary)",
-        borderTop: "2px solid var(--border-divider)",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center"
-      }}>
-        <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-          {language === 'ur' ? `کل اندراج شدہ اخراجات (${filteredExpenses.length}):` : `Total Recorded Expenses (${filteredExpenses.length}):`}
-        </span>
-        <span style={{ fontSize: "1.05rem", fontWeight: 800, color: "#ef4444", fontFamily: "monospace" }}>
-          Rs. {totalFilteredAmount.toLocaleString()}
-        </span>
-      </div>
+      {/* Summary Footer */}
+      {filteredExpenses.length > 0 && (
+        <div style={{
+          padding: "12px 18px",
+          borderTop: "1px solid var(--border-divider)",
+          background: "var(--bg-primary)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontSize: "0.82rem"
+        }}>
+          <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>
+            {language === 'ur' ? `کل اخراجات (${filteredExpenses.length} اندراجات):` : `Total Filtered (${filteredExpenses.length} entries):`}
+          </span>
+          <span style={{ fontWeight: 900, color: "#ef4444", fontSize: "1.02rem" }}>
+            Rs. {totalFilteredAmount.toLocaleString()}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

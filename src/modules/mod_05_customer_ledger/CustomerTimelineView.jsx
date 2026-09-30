@@ -80,59 +80,62 @@ export default function CustomerTimelineView({
       }}>
         {/* Row 1: Name, Type & Quick Action Buttons */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-              {onBack && (
-                <button
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBack(); }}
-                  className="btn btn-ghost btn-sm"
-                  style={{ padding: "6px 8px", marginRight: "4px", color: "var(--text-secondary)", zIndex: 10 }}
-                  title="Back to Customers"
-                >
-                  <ArrowLeft size={20} />
-                </button>
-              )}
-              <h1 style={{
-                fontSize: "1.45rem",
-                fontWeight: 900,
-                margin: 0,
-                color: "var(--text-primary)",
-                letterSpacing: "-0.02em"
-              }}>
-                {customer.name}
-              </h1>
-              {customer.customerType && (
-                <span style={{
-                  fontSize: "0.74rem",
-                  background: "rgba(37, 99, 235, 0.1)",
-                  color: "var(--accent-blue)",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                  fontWeight: 800,
-                  textTransform: "uppercase"
-                }}>
-                  {customer.customerType}
-                </span>
-              )}
-            </div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+            {onBack && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBack(); }}
+                className="btn btn-ghost btn-sm"
+                style={{ padding: "6px 8px", color: "var(--text-secondary)", marginTop: "2px", zIndex: 10 }}
+                title="Back to Customers"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            )}
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "4px", fontSize: "0.82rem", color: "var(--text-secondary)", flexWrap: "wrap" }}>
-              {customer.phone && (
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <Phone size={13} style={{ color: "var(--text-muted)" }} />
-                  <span className="font-mono">{customer.phone}</span>
-                </span>
-              )}
-              {customer.city && (
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <MapPin size={13} style={{ color: "var(--text-muted)" }} />
-                  <span>{customer.city}</span>
-                </span>
-              )}
-              {customer.address && (
-                <span style={{ color: "var(--text-muted)" }}>• {customer.address}</span>
-              )}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <h1 style={{
+                  fontSize: "1.45rem",
+                  fontWeight: 900,
+                  margin: 0,
+                  color: "var(--text-primary)",
+                  letterSpacing: "-0.02em"
+                }}>
+                  {customer.name}
+                </h1>
+                {customer.customerType && (
+                  <span style={{
+                    fontSize: "0.74rem",
+                    background: "rgba(37, 99, 235, 0.1)",
+                    color: "var(--accent-blue)",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    fontWeight: 800,
+                    textTransform: "uppercase"
+                  }}>
+                    {customer.customerType}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "4px", fontSize: "0.82rem", color: "var(--text-secondary)", flexWrap: "wrap" }}>
+                {customer.phone && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <Phone size={13} style={{ color: "var(--text-muted)" }} />
+                    <span className="font-mono">{customer.phone}</span>
+                  </span>
+                )}
+                {customer.city && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <MapPin size={13} style={{ color: "var(--text-muted)" }} />
+                    <span>{customer.city}</span>
+                  </span>
+                )}
+                {customer.address && (
+                  <span style={{ color: "var(--text-muted)" }}>• {customer.address}</span>
+                )}
+              </div>
             </div>
           </div>
 

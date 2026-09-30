@@ -1530,9 +1530,9 @@ select.form-control option {
 
 /* KPI Stat Card (Matching Reference Compact Proportions) */
 .kpi-stat-card {
-  background: #ffffff;
+  background: var(--bg-card, #ffffff);
   border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--border-color, #e2e8f0);
   padding: 16px 18px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
   position: relative;
