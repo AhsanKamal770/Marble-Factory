@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import {
   Plus, Search, AlertTriangle, Check, X, MoreVertical,
   Layers, Gem, Flower2, Ruler, Grid3X3, Wrench, ChevronRight,
@@ -412,7 +413,7 @@ function ItemDetailsDrawer({ item, onClose, onEdit, onAdjust }) {
 
 // ── Main view ──────────────────────────────────────────────────────────────
 export default function StockManagementView() {
-  const [items, setItems] = useState([]);
+  const items = useLiveQuery(() => db.items.orderBy("name").toArray(), []) || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -425,13 +426,6 @@ export default function StockManagementView() {
   const [adjustNote, setAdjustNote] = useState("");
   // CONCEPT: Progressive Disclosure — drawer state
   const [drawerItem, setDrawerItem] = useState(null);
-
-  useEffect(() => { loadItems(); }, []);
-
-  const loadItems = async () => {
-    const all = await db.items.orderBy("name").toArray();
-    setItems(all);
-  };
 
   const activeCatConfig = CATEGORIES.find(c => c.key === formData.category) || CATEGORIES[0];
 
@@ -472,13 +466,14 @@ export default function StockManagementView() {
         const addedId = await db.items.add({ ...payload, createdAt: new Date().toISOString() });
         await logStockMovement({ itemId: addedId, itemName: formData.name, category: formData.category, movementType: "Initial", changeSqFt: payload.stockSqFt, changeBoxes: payload.stockBoxes, changePieces: payload.stockPieces, previousSqFt: 0, newSqFt: payload.stockSqFt, refDocNo: "MANUAL-ENTRY", note: "New item added to catalog" });
       }
-      setIsModalOpen(false); loadItems();
+      setIsModalOpen(false);
     } catch (err) { alert("Error saving item: " + err.message); }
   };
 
   const handleDeleteItem = async (item) => {
     if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
-    await db.items.delete(item.id); loadItems();
+    await db.items.delete(item.id);
+    if (drawerItem?.id === item.id) setDrawerItem(null);
   };
 
   const handleOpenAdjust = (item) => { setAdjustingItem(item); setAdjustQty(""); setAdjustNote(""); setAdjustType("Adjustment"); setIsAdjustModalOpen(true); };
@@ -493,7 +488,7 @@ export default function StockManagementView() {
     const deltaPieces = unit === "Pieces" ? delta : 0;
     try {
       await adjustItemStock(adjustingItem.id, deltaSqFt, deltaBoxes, deltaPieces, adjustType, "MANUAL-ADJUST", adjustNote || "Manual stock correction");
-      setIsAdjustModalOpen(false); loadItems();
+      setIsAdjustModalOpen(false);
     } catch (err) { alert("Error adjusting stock: " + err.message); }
   };
 

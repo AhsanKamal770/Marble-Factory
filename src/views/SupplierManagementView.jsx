@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import {
   Truck,
   Plus,
@@ -18,9 +19,12 @@ import { db, adjustItemStock } from '../db/index';
 import Badge from '../components/Badge';
 
 export default function SupplierManagementView() {
-  const [suppliers, setSuppliers] = useState([]);
-  const [purchases, setPurchases] = useState([]);
-  const [items, setItems] = useState([]);
+  const suppliers = useLiveQuery(() => db.suppliers.toArray(), []) || [];
+  const purchases = useLiveQuery(async () => {
+    const all = await db.supplier_purchases.toArray();
+    return all.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+  }, []) || [];
+  const items = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
 
   const [activeTab, setActiveTab] = useState('purchases'); // 'purchases' | 'suppliers'
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,20 +59,6 @@ export default function SupplierManagementView() {
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('Bank Transfer');
   const [payRef, setPayRef] = useState('');
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    const allSuppliers = await db.suppliers.toArray();
-    const allPurchases = await db.supplier_purchases.toArray();
-    const allItems = await db.items.toArray();
-
-    setSuppliers(allSuppliers);
-    setPurchases(allPurchases.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)));
-    setItems(allItems);
-  };
 
   const handleOpenNewPurchase = () => {
     if (suppliers.length === 0) {
@@ -231,7 +221,6 @@ export default function SupplierManagementView() {
       });
 
       setIsPurchaseModalOpen(false);
-      loadData();
     } catch (err) {
       alert('Error recording purchase: ' + err.message);
     }
@@ -249,7 +238,6 @@ export default function SupplierManagementView() {
         updatedAt: new Date().toISOString()
       });
       setIsAddSupplierModalOpen(false);
-      loadData();
     } catch (err) {
       alert('Error saving supplier: ' + err.message);
     }
@@ -285,7 +273,6 @@ export default function SupplierManagementView() {
       });
 
       setIsPaymentModalOpen(false);
-      loadData();
     } catch (err) {
       alert('Error recording payment: ' + err.message);
     }

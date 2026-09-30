@@ -1,13 +1,33 @@
-import React, { useState } from 'react';
-import { Layers, Lock, User, Eye, EyeOff, ArrowRight, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Lock,
+  User,
+  Eye,
+  EyeOff,
+  LogIn,
+  AlertCircle,
+  Globe,
+  Sun,
+  Moon,
+  ShieldCheck,
+  Sparkles
+} from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import Logo from '../components/Logo';
 
-export default function LoginView({ onLoginSuccess, settings }) {
+export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme }) {
+  const { language, toggleLanguage } = useLanguage();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -24,10 +44,14 @@ export default function LoginView({ onLoginSuccess, settings }) {
         }
         onLoginSuccess({ user: 'admin', role: 'Administrator' });
       } else {
-        setError('Invalid credentials! Username aur Password dono "admin" enter karein.');
+        setError(
+          language === 'ur'
+            ? 'غلط یوزر نام یا پاس ورڈ! برائے مہربانی "admin" لکھیں۔'
+            : 'Invalid credentials! Enter username "admin" and password "admin".'
+        );
         setLoading(false);
       }
-    }, 400);
+    }, 300);
   };
 
   const handleFillDemo = () => {
@@ -36,272 +60,467 @@ export default function LoginView({ onLoginSuccess, settings }) {
     setError('');
   };
 
+  const companyName = settings?.companyName || 'Rana Shahab Marble';
+
   return (
     <div style={{
       minHeight: '100vh',
       width: '100vw',
-      background: 'radial-gradient(ellipse at top right, rgba(37, 99, 235, 0.08), transparent 50%), radial-gradient(ellipse at bottom left, rgba(59, 130, 246, 0.06), transparent 50%), var(--bg-primary)',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px',
       position: 'relative',
-      overflow: 'hidden'
+      backgroundImage: `url('/login-bg.jpg')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      fontFamily: "'Segoe UI', Roboto, Inter, -apple-system, sans-serif",
+      padding: '24px 16px',
+      boxSizing: 'border-box',
+      overflowX: 'hidden'
     }}>
-      {/* Background ambient accents */}
+      {/* Top Corner Quick Language & Theme Controls */}
       <div style={{
         position: 'absolute',
-        top: '-100px',
-        right: '-100px',
-        width: '350px',
-        height: '350px',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(37, 99, 235, 0.12) 0%, transparent 70%)',
-        filter: 'blur(40px)',
-        pointerEvents: 'none'
-      }} />
-
-      <div style={{
-        position: 'absolute',
-        bottom: '-100px',
-        left: '-100px',
-        width: '350px',
-        height: '350px',
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(14, 165, 233, 0.1) 0%, transparent 70%)',
-        filter: 'blur(40px)',
-        pointerEvents: 'none'
-      }} />
-
-      {/* Main Login Card */}
-      <div style={{
-        width: '100%',
-        maxWidth: '440px',
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-color)',
-        borderRadius: '20px',
-        boxShadow: 'var(--shadow-lg)',
-        padding: '36px 32px',
-        position: 'relative',
-        zIndex: 10,
-        backdropFilter: 'blur(10px)'
+        top: '18px',
+        right: '24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        zIndex: 20
       }}>
-        {/* Header Branding */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            margin: '0 auto 16px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
-            boxShadow: '0 8px 20px rgba(37, 99, 235, 0.35)'
-          }}>
-            <Layers size={28} />
-          </div>
-
-          <h1 style={{
-            fontSize: '1.45rem',
-            fontWeight: 800,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.02em',
-            lineHeight: 1.2
-          }}>
-            {settings?.companyName || 'Marble & Tiles Factory'}
-          </h1>
-          <p style={{
-            fontSize: '0.84rem',
-            color: 'var(--text-secondary)',
-            marginTop: '6px'
-          }}>
-            Factory Management & POS Billing System
-          </p>
-        </div>
-
-        {/* Demo Credentials Quick Pill */}
-        <div
-          onClick={handleFillDemo}
+        <button
+          type="button"
+          onClick={toggleLanguage}
           style={{
-            background: 'rgba(37, 99, 235, 0.08)',
-            border: '1px dashed rgba(37, 99, 235, 0.35)',
-            borderRadius: '10px',
-            padding: '10px 14px',
-            marginBottom: '20px',
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(203, 213, 225, 0.8)',
+            borderRadius: '20px',
+            padding: '6px 14px',
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            color: '#1e293b',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            gap: '6px',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
             transition: 'all 0.2s ease'
           }}
-          title="Click to auto-fill admin credentials"
+          onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+          onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+          title={language === 'en' ? 'اردو میں تبدیل کریں' : 'Switch to English'}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={16} className="text-accent" />
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>
-              <strong>Demo Login:</strong> User: <span className="font-mono text-accent" style={{ fontWeight: 700 }}>admin</span> | Pass: <span className="font-mono text-accent" style={{ fontWeight: 700 }}>admin</span>
-            </div>
-          </div>
-          <span style={{ fontSize: '0.72rem', background: 'var(--accent-blue)', color: '#fff', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
-            Auto-fill
-          </span>
-        </div>
+          <Globe size={15} style={{ color: '#0f3b73' }} />
+          <span>{language === 'en' ? 'اردو' : 'English'}</span>
+        </button>
 
-        {/* Error Message */}
-        {error && (
+        {toggleTheme && (
+          <button
+            type="button"
+            onClick={toggleTheme}
+            style={{
+              background: 'rgba(255, 255, 255, 0.85)',
+              backdropFilter: 'blur(8px)',
+              border: '1px solid rgba(203, 213, 225, 0.8)',
+              borderRadius: '50%',
+              width: '34px',
+              height: '34px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#1e293b',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            title={theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+          >
+            {theme === 'light' ? <Moon size={16} /> : <Sun size={16} style={{ color: '#d97706' }} />}
+          </button>
+        )}
+      </div>
+
+      {/* Main Container */}
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: '460px',
+        zIndex: 10,
+        opacity: mounted ? 1 : 0,
+        transform: mounted ? 'translateY(0)' : 'translateY(16px)',
+        transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+      }}>
+
+        {/* 1. TOP BRANDING (OUTSIDE AND ABOVE THE FORM CARD) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          marginBottom: '20px'
+        }}>
+          {/* Mountain Logo */}
           <div style={{
-            padding: '12px 14px',
-            background: 'rgba(225, 29, 72, 0.12)',
-            border: '1px solid rgba(225, 29, 72, 0.25)',
-            borderRadius: '10px',
-            color: '#e11d48',
-            marginBottom: '20px',
+            marginBottom: '4px',
+            filter: 'drop-shadow(0 4px 10px rgba(15, 42, 69, 0.12))'
+          }}>
+            <Logo width={120} height={60} />
+          </div>
+
+          {/* Main Factory Name */}
+          <h1 style={{
+            fontSize: '1.85rem',
+            fontWeight: 800,
+            color: '#0f2a4a',
+            margin: '6px 0 3px',
+            letterSpacing: '-0.01em',
+            lineHeight: 1.15
+          }}>
+            {companyName}
+          </h1>
+
+          {/* Subtitle */}
+          <h2 style={{
+            fontSize: '0.82rem',
+            fontWeight: 700,
+            color: '#475569',
+            margin: '0 0 5px',
+            letterSpacing: '2px',
+            textTransform: 'uppercase'
+          }}>
+            FACTORY MANAGEMENT SYSTEM
+          </h2>
+
+          {/* Tagline */}
+          <p style={{
+            fontSize: '0.78rem',
+            fontWeight: 500,
+            color: '#64748b',
+            margin: 0,
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            fontSize: '0.85rem'
+            letterSpacing: '0.2px'
           }}>
-            <AlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{error}</span>
-          </div>
-        )}
+            <span>Better Management</span>
+            <span style={{ color: '#cbd5e1' }}>|</span>
+            <span>Smarter Operations</span>
+            <span style={{ color: '#cbd5e1' }}>|</span>
+            <span>Higher Growth</span>
+          </p>
+        </div>
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit}>
-          {/* Username Field */}
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <User size={14} /> Username
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                required
-                className="form-control"
-                placeholder="Enter username (e.g. admin)"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                style={{ paddingLeft: '38px', fontSize: '0.95rem' }}
-                autoFocus
-              />
-              <User
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)'
-                }}
-              />
+        {/* 2. LOGIN FORM CARD (WHITE FLOATING MODERN BOX) */}
+        <div style={{
+          width: '100%',
+          background: '#ffffff',
+          borderRadius: '24px',
+          padding: '34px 32px 28px',
+          boxShadow: '0 20px 45px rgba(15, 35, 60, 0.12), 0 4px 12px rgba(15, 35, 60, 0.05)',
+          border: '1px solid rgba(226, 232, 240, 0.9)',
+          boxSizing: 'border-box'
+        }}>
+          {/* Card Heading */}
+          <div style={{ textAlign: 'center', marginBottom: '22px' }}>
+            <h3 style={{
+              fontSize: '1.45rem',
+              fontWeight: 700,
+              color: '#0f172a',
+              margin: '0 0 5px',
+              letterSpacing: '-0.01em'
+            }}>
+              {language === 'ur' ? 'خوش آمدید' : 'Welcome Back'}
+            </h3>
+            <p style={{
+              fontSize: '0.84rem',
+              color: '#64748b',
+              margin: 0
+            }}>
+              {language === 'ur' ? 'جاری رکھنے کے لیے لاگ ان کریں' : 'Please sign in to your account to continue'}
+            </p>
+          </div>
+
+          {/* Auto-Fill Quick Chip (For Fast Testing) */}
+          <div
+            onClick={handleFillDemo}
+            style={{
+              background: '#f1f5f9',
+              border: '1px dashed #cbd5e1',
+              borderRadius: '10px',
+              padding: '6px 12px',
+              marginBottom: '16px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              transition: 'all 0.15s ease'
+            }}
+            title="Click to auto-fill admin credentials"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Sparkles size={13} style={{ color: '#0f3b73' }} />
+              <span style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 600 }}>
+                Demo: <strong style={{ color: '#0f3b73' }}>admin</strong> / <strong style={{ color: '#0f3b73' }}>admin</strong>
+              </span>
             </div>
+            <span style={{
+              fontSize: '0.68rem',
+              background: '#0f3b73',
+              color: '#ffffff',
+              padding: '2px 7px',
+              borderRadius: '5px',
+              fontWeight: 700
+            }}>
+              {language === 'ur' ? 'آٹو فل' : 'Auto Fill'}
+            </span>
           </div>
 
-          {/* Password Field */}
-          <div className="form-group" style={{ marginBottom: '18px' }}>
-            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Lock size={14} /> Password
-            </label>
-            <div style={{ position: 'relative' }}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                className="form-control"
-                placeholder="Enter password (e.g. admin)"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ paddingLeft: '38px', paddingRight: '40px', fontSize: '0.95rem' }}
-              />
-              <Lock
-                size={16}
+          {/* Error Message */}
+          {error && (
+            <div style={{
+              padding: '10px 12px',
+              background: '#fff1f2',
+              border: '1px solid #fecdd3',
+              borderRadius: '10px',
+              color: '#be123c',
+              marginBottom: '16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '0.82rem',
+              fontWeight: 500
+            }}>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit}>
+            {/* Username Input */}
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <User
+                  size={18}
+                  style={{
+                    position: 'absolute',
+                    left: '14px',
+                    color: '#64748b',
+                    pointerEvents: 'none'
+                  }}
+                />
+                <input
+                  type="text"
+                  required
+                  placeholder={language === 'ur' ? 'یوزر نام درج کریں (e.g. admin)' : 'Enter username (e.g. admin)'}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    paddingLeft: '44px',
+                    paddingRight: '14px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    fontSize: '0.92rem',
+                    color: '#0f172a',
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#0f3b73';
+                    e.target.style.backgroundColor = '#ffffff';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(15, 59, 115, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.backgroundColor = '#f8fafc';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Password Input */}
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <Lock
+                  size={18}
+                  style={{
+                    position: 'absolute',
+                    left: '14px',
+                    color: '#64748b',
+                    pointerEvents: 'none'
+                  }}
+                />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder={language === 'ur' ? 'پاس ورڈ درج کریں (e.g. admin)' : 'Enter password (e.g. admin)'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    paddingLeft: '44px',
+                    paddingRight: '44px',
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '10px',
+                    fontSize: '0.92rem',
+                    color: '#0f172a',
+                    outline: 'none',
+                    transition: 'all 0.2s ease',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#0f3b73';
+                    e.target.style.backgroundColor = '#ffffff';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(15, 59, 115, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                    e.target.style.backgroundColor = '#f8fafc';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748b',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                  title={showPassword ? 'Hide Password' : 'Show Password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Me & Forgot Password Row */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '22px',
+              fontSize: '0.84rem'
+            }}>
+              <label style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                color: '#334155',
+                fontWeight: 500
+              }}>
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    accentColor: '#0f3b73',
+                    cursor: 'pointer',
+                    borderRadius: '4px'
+                  }}
+                />
+                <span>{language === 'ur' ? 'لاگ ان یاد رکھیں' : 'Remember login'}</span>
+              </label>
+
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
                 style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--text-muted)'
+                  color: '#2563eb',
+                  textDecoration: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.82rem'
                 }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-muted)',
-                  cursor: 'pointer',
-                  padding: '4px',
-                  display: 'flex',
-                  alignItems: 'center'
-                }}
-                title={showPassword ? 'Hide Password' : 'Show Password'}
               >
-                {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
+                {language === 'ur' ? 'پاس ورڈ بھول گئے؟' : 'Forgot password?'}
+              </a>
             </div>
-          </div>
 
-          {/* Remember Me Checkbox */}
+            {/* Sign In Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                height: '46px',
+                background: loading ? '#64748b' : '#0f3b73',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '10px',
+                fontSize: '0.98rem',
+                fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 14px rgba(15, 59, 115, 0.35)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseOver={(e) => !loading && (e.currentTarget.style.background = '#09254c')}
+              onMouseOut={(e) => !loading && (e.currentTarget.style.background = '#0f3b73')}
+            >
+              {loading ? (
+                <span>{language === 'ur' ? 'لاگ ان ہو رہا ہے...' : 'Signing in...'}</span>
+              ) : (
+                <>
+                  <LogIn size={18} />
+                  <span>{language === 'ur' ? 'لاگ ان کریں' : 'Sign In'}</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Secure Access Footer inside Card */}
           <div style={{
+            marginTop: '22px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '24px',
-            fontSize: '0.86rem',
-            color: 'var(--text-secondary)'
+            justifyContent: 'center',
+            gap: '6px',
+            fontSize: '0.74rem',
+            color: '#64748b',
+            fontWeight: 500
           }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                style={{ accentColor: 'var(--accent-blue)', width: '16px', height: '16px', cursor: 'pointer' }}
-              />
-              <span>Remember login</span>
-            </label>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Default: admin / admin</span>
+            <ShieldCheck size={14} style={{ color: '#0f3b73' }} />
+            <span>Secure Access &bull; Marble Factory Management System</span>
           </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary btn-lg"
-            style={{ width: '100%', justifyContent: 'center', padding: '12px' }}
-          >
-            {loading ? (
-              <span>Logging in...</span>
-            ) : (
-              <>
-                <span>Sign In to Dashboard</span>
-                <ArrowRight size={17} />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Security & Offline Footer Note */}
-        <div style={{
-          marginTop: '28px',
-          paddingTop: '18px',
-          borderTop: '1px solid var(--border-color)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px',
-          color: 'var(--text-muted)',
-          fontSize: '0.78rem'
-        }}>
-          <ShieldCheck size={15} style={{ color: '#059669' }} />
-          <span>Local Offline Database • Secure Desktop Mode</span>
         </div>
       </div>
     </div>
   );
 }
+

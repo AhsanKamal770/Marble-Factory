@@ -9,7 +9,6 @@ import {
   Truck,
   RotateCcw,
   Settings,
-  Layers,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -21,6 +20,7 @@ import {
   HandHeart
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import Logo from './Logo';
 
 export default function Sidebar({
   activeView,
@@ -90,9 +90,9 @@ export default function Sidebar({
             className="sidebar-logo-icon"
             onClick={toggleCollapse}
             title={isCollapsed ? 'Expand Sidebar' : 'Rana Marble & Tiles'}
-            style={{ cursor: 'pointer', flexShrink: 0, width: '32px', height: '32px', borderRadius: '6px' }}
+            style={{ cursor: 'pointer', flexShrink: 0, width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <Layers size={17} />
+            <Logo width={28} height={20} />
           </div>
           {!isCollapsed && (
             <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>

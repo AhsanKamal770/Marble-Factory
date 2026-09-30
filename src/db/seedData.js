@@ -1,5 +1,6 @@
-import { db, logStockMovement } from './index';
+import { db, logStockMovement } from './index.js';
 
+// 1. Default Official Factory Settings
 export const defaultSettings = {
   companyName: "Rana Shahab Marble Factory",
   tagline: "نام ہی کافی ہے - دوسرے شہروں سے مناسب ریٹ اور اعلیٰ معیار کی گارنٹی",
@@ -16,8 +17,89 @@ export const defaultSettings = {
   receiptFooter: "مال موقع پر چیک کریں۔ بعد میں کٹوتی یا شکایت قابل قبول نہ ہوگی۔",
   thermalWidthMm: 80,
   defaultTaxPercent: 0,
-  openingCashBalance: 35000
+  openingCashBalance: 0
 };
+
+// 2. Default System Users
+export const defaultUsers = [
+  {
+    username: "admin",
+    passwordHash: "admin",
+    fullName: "Master Administrator",
+    role: "Admin",
+    isActive: true,
+    createdAt: new Date().toISOString()
+  }
+];
+
+/**
+ * Clean Production Database Initializer:
+ * Only creates factory settings and admin user if they don't exist.
+ * Leaves all transaction and inventory tables 100% clean and empty for real factory operations.
+ */
+export async function initializeDatabaseWithSeedData() {
+  const settingsList = await db.settings.toArray();
+  if (settingsList.length === 0) {
+    await db.settings.add(defaultSettings);
+  } else if (settingsList[0].openingCashBalance === 35000 || settingsList[0].openingCashBalance === 25000) {
+    await db.settings.update(settingsList[0].id, { openingCashBalance: 0 });
+  }
+
+  // Initialize admin user if missing
+  const usersCount = await db.users.count();
+  if (usersCount === 0) {
+    for (const u of defaultUsers) {
+      await db.users.add(u);
+    }
+  }
+}
+
+/**
+ * Wipe all transaction and inventory data for a completely clean slate
+ */
+export async function wipeAllData() {
+  await db.transaction('rw', [
+    db.items,
+    db.customers,
+    db.suppliers,
+    db.invoices,
+    db.customer_payments,
+    db.supplier_purchases,
+    db.supplier_payments,
+    db.returns,
+    db.stock_movements,
+    db.gate_passes,
+    db.daily_expenses,
+    db.wastage_logs,
+    db.employees,
+    db.employee_advances,
+    db.zakat_records,
+    db.zakat_beneficiaries,
+    db.payroll_records
+  ], async () => {
+    await db.items.clear();
+    await db.customers.clear();
+    await db.suppliers.clear();
+    await db.invoices.clear();
+    await db.customer_payments.clear();
+    await db.supplier_purchases.clear();
+    await db.supplier_payments.clear();
+    await db.returns.clear();
+    await db.stock_movements.clear();
+    await db.gate_passes.clear();
+    await db.daily_expenses.clear();
+    await db.wastage_logs.clear();
+    await db.employees.clear();
+    await db.employee_advances.clear();
+    await db.zakat_records.clear();
+    await db.zakat_beneficiaries.clear();
+    await db.payroll_records.clear();
+  });
+}
+
+// ==========================================
+// Optional Sample Test Data (For Demo Only)
+// ==========================================
 
 export const sampleItems = [
   {
@@ -25,6 +107,7 @@ export const sampleItems = [
     name: "Ziarat White Super Slab",
     category: "Marble Slabs",
     subCategory: "Ziarat Marble",
+    sutarThickness: 6,
     finish: "Polished",
     grade: "Grade A (Super)",
     thicknessMm: 18,
@@ -45,6 +128,7 @@ export const sampleItems = [
     name: "Sunny Grey Classic Slab",
     category: "Marble Slabs",
     subCategory: "Sunny Grey",
+    sutarThickness: 4,
     finish: "Polished",
     grade: "Commercial Standard",
     thicknessMm: 16,
@@ -61,50 +145,11 @@ export const sampleItems = [
     notes: "Durable grey marble, ideal for stairs and flooring"
   },
   {
-    code: "MB-BG-03",
-    name: "Badal Grey Polished Slabs",
-    category: "Marble Slabs",
-    subCategory: "Badal",
-    finish: "Polished",
-    grade: "Grade A",
-    thicknessMm: 16,
-    standardSize: "Random Slabs",
-    unit: "Sq. Ft.",
-    ratePerSqFt: 210,
-    costPerSqFt: 155,
-    stockSqFt: 3800,
-    stockBoxes: 0,
-    stockPieces: 140,
-    minStockAlert: 600,
-    lotNo: "LOT-2026-BG",
-    location: "Shed 2 - Bay C",
-    notes: "Smoky cloud pattern, high gloss finish"
-  },
-  {
-    code: "MB-VR-04",
-    name: "Verona Beige Marble Tile (12x12)",
-    category: "Marble Tiles",
-    subCategory: "Verona",
-    finish: "Polished",
-    grade: "Grade A",
-    thicknessMm: 12,
-    standardSize: "12 x 12 Inches (1 Sq Ft)",
-    unit: "Sq. Ft.",
-    ratePerSqFt: 160,
-    costPerSqFt: 110,
-    stockSqFt: 2400,
-    stockBoxes: 240,
-    stockPieces: 2400,
-    minStockAlert: 500,
-    lotNo: "LOT-2026-VR",
-    location: "Warehouse A - Rack 3",
-    notes: "Pre-cut 12x12 tiles packed 10 pcs per box"
-  },
-  {
     code: "GR-JB-05",
     name: "Jet Black Granite Slab",
     category: "Granite",
     subCategory: "Black Granite",
+    sutarThickness: 6,
     finish: "Mirror Polish",
     grade: "Premium Export",
     thicknessMm: 20,
@@ -125,11 +170,13 @@ export const sampleItems = [
     name: "Royal Onyx White Porcelain Tile (60x60)",
     category: "Porcelain Tiles",
     subCategory: "Floor Tiles",
+    sutarThickness: 4,
     finish: "Nano Polished Glazed",
     grade: "AAA Master Grade",
     thicknessMm: 9.5,
     standardSize: "60 x 60 cm (24x24 in)",
     unit: "Boxes",
+    sqFtPerBox: 14.4,
     ratePerSqFt: 195,
     ratePerBox: 2808,
     costPerSqFt: 140,
@@ -140,90 +187,6 @@ export const sampleItems = [
     lotNo: "LOT-TL-6060-A",
     location: "Tile Showroom Stock Room",
     notes: "14.4 Sq Ft per box (4 pcs/box)"
-  },
-  {
-    code: "TL-PL-07",
-    name: "Statuario Gold Porcelain Slabs (60x120)",
-    category: "Porcelain Tiles",
-    subCategory: "Large Format Slabs",
-    finish: "High Gloss Glazed",
-    grade: "AAA Premium",
-    thicknessMm: 10,
-    standardSize: "60 x 120 cm (24x48 in)",
-    unit: "Boxes",
-    ratePerSqFt: 260,
-    ratePerBox: 4004,
-    costPerSqFt: 190,
-    stockSqFt: 3696,
-    stockBoxes: 240,
-    stockPieces: 480,
-    minStockAlert: 50,
-    lotNo: "LOT-TL-60120-SG",
-    location: "Tile Showroom Bay 2",
-    notes: "15.4 Sq Ft per box (2 pcs/box)"
-  },
-  {
-    code: "TL-WC-08",
-    name: "Classic Beige Ceramic Wall Tile (30x60)",
-    category: "Ceramic Tiles",
-    subCategory: "Wall Tiles",
-    finish: "Glossy Water-Resistant",
-    grade: "Grade A",
-    thicknessMm: 8,
-    standardSize: "30 x 60 cm (12x24 in)",
-    unit: "Boxes",
-    ratePerSqFt: 140,
-    ratePerBox: 1612.8,
-    costPerSqFt: 95,
-    stockSqFt: 3225.6,
-    stockBoxes: 280,
-    stockPieces: 1680,
-    minStockAlert: 60,
-    lotNo: "LOT-WC-3060",
-    location: "Warehouse B",
-    notes: "11.52 Sq Ft per box (6 pcs/box) for bathroom and kitchen walls"
-  },
-  {
-    code: "MB-BP-09",
-    name: "Golden Crema Marble Patti / Border (3x12)",
-    category: "Borders & Patti",
-    subCategory: "Decorative",
-    finish: "Polished Beveled",
-    grade: "Handcrafted",
-    thicknessMm: 12,
-    standardSize: "3 x 12 Inches (0.25 Sq Ft)",
-    unit: "Pieces",
-    ratePerSqFt: 300,
-    ratePerPiece: 75,
-    costPerSqFt: 40,
-    stockSqFt: 450,
-    stockBoxes: 45,
-    stockPieces: 1800,
-    minStockAlert: 200,
-    lotNo: "LOT-PATTI-01",
-    location: "Rack 5 - Box Zone",
-    notes: "Floral engraved borderline marble patti"
-  },
-  {
-    code: "MB-ST-10",
-    name: "Tavera Marble Step & Riser Set (4ft)",
-    category: "Steps & Risers",
-    subCategory: "Staircase",
-    finish: "Bullnose Edge Polished",
-    grade: "Standard Heavy",
-    thicknessMm: 20,
-    standardSize: "Step 4ft x 1ft + Riser 4ft x 0.5ft (6 Sq Ft/Set)",
-    unit: "Pieces",
-    ratePerSqFt: 240,
-    ratePerPiece: 1440,
-    costPerSqFt: 160,
-    stockSqFt: 720,
-    stockBoxes: 0,
-    stockPieces: 120,
-    minStockAlert: 25,
-    lotNo: "LOT-STEPS-04",
-    location: "Shed 1 - Edge",
-    notes: "Complete stair step with round bullnose edge"
   }
 ];
 
@@ -237,52 +200,24 @@ export const sampleCustomers = [
     city: "Karachi",
     customerType: "Builder",
     creditLimit: 500000,
-    totalBilled: 385000,
-    totalPaid: 260000,
-    balanceDue: 125000,
-    notes: "Regular builder for 300 sq. yard bungalows in Scheme 33"
+    totalBilled: 0,
+    totalPaid: 0,
+    balanceDue: 0,
+    notes: "Regular builder for 300 sq. yard bungalows"
   },
   {
     name: "Engr. Salman Raza (Contractor)",
     phone: "0321-4567890",
     email: "salman.raza.contracting@example.com",
     cnic: "42201-1234567-5",
-    address: "DHA Phase 6, Khayaban-e-Shahbaz",
+    address: "DHA Phase 6",
     city: "Karachi",
     customerType: "Contractor",
     creditLimit: 1000000,
-    totalBilled: 840000,
-    totalPaid: 840000,
+    totalBilled: 0,
+    totalPaid: 0,
     balanceDue: 0,
-    notes: "Pays via online bank transfer within 15 days of delivery"
-  },
-  {
-    name: "Haji Abdul Ghaffar",
-    phone: "0333-2198745",
-    email: "abdul.ghaffar@example.com",
-    cnic: "42301-7654321-9",
-    address: "North Nazimabad Block H",
-    city: "Karachi",
-    customerType: "Retail",
-    creditLimit: 100000,
-    totalBilled: 145000,
-    totalPaid: 100000,
-    balanceDue: 45000,
-    notes: "House renovation flooring work"
-  },
-  {
-    name: "Architect Zeeshan & Associates",
-    phone: "0345-3322110",
-    email: "design@zeeshanarch.com",
-    cnic: "42101-5544332-7",
-    address: "Clifton Block 4",
-    city: "Karachi",
-    customerType: "Architect",
-    creditLimit: 800000,
-    totalBilled: 520000,
-    totalPaid: 450000,
-    balanceDue: 70000,
-    notes: "Specifies premium Ziarat White & Onyx slabs"
+    notes: "Pays via online bank transfer"
   }
 ];
 
@@ -295,270 +230,54 @@ export const sampleSuppliers = [
     company: "BMQ Balochistan",
     address: "Hub Industrial Estate / Khuzdar Quarry",
     city: "Hub / Khuzdar",
-    totalPurchased: 1450000,
-    totalPaid: 1100000,
-    balancePayable: 350000,
-    notes: "Main supplier for Ziarat White and Badal blocks"
-  },
-  {
-    name: "KPK Granite & Marble Traders",
-    contactPerson: "Haji Gul Rehman",
-    phone: "0313-9988776",
-    email: "gul.granite@example.com",
-    company: "KPK Minerals Swat",
-    address: "Industrial Estate Hayatabad",
-    city: "Peshawar",
-    totalPurchased: 890000,
-    totalPaid: 890000,
+    totalPurchased: 0,
+    totalPaid: 0,
     balancePayable: 0,
-    notes: "Supplier of Jet Black Granite and Sunny Grey raw blocks"
-  },
-  {
-    name: "Master Ceramic & Porcelain Distributors",
-    contactPerson: "Mr. Farhan Sheikh",
-    phone: "0322-6655443",
-    email: "orders@mastertilesdist.com",
-    company: "Master Ceramics Hub",
-    address: "GT Road Gujranwala / Karachi Depot",
-    city: "Gujranwala",
-    totalPurchased: 2100000,
-    totalPaid: 1750000,
-    balancePayable: 350000,
-    notes: "Authorized importer and dealer of glazed porcelain tiles"
+    notes: "Main supplier for Ziarat White and Badal blocks"
   }
 ];
 
-export const sampleInvoices = [
-  {
-    invoiceNo: "INV-2026-001",
-    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    customerId: 1,
-    customerName: "Chaudhry Tariq (Builder)",
-    customerPhone: "0300-8456123",
-    items: [
-      {
-        itemId: 1,
-        code: "MB-ZW-01",
-        name: "Ziarat White Super Slab",
-        category: "Marble Slabs",
-        dimensions: "5.5ft x 3.0ft (40 Pcs)",
-        length: 5.5,
-        width: 3.0,
-        pieces: 40,
-        totalSqFt: 660,
-        ratePerSqFt: 380,
-        amount: 250800
-      },
-      {
-        itemId: 2,
-        code: "MB-SG-02",
-        name: "Sunny Grey Classic Slab",
-        category: "Marble Slabs",
-        dimensions: "4.0ft x 2.5ft (50 Pcs)",
-        length: 4.0,
-        width: 2.5,
-        pieces: 50,
-        totalSqFt: 500,
-        ratePerSqFt: 180,
-        amount: 90000
-      }
-    ],
-    subtotal: 340800,
-    discountPercent: 0,
-    discountAmount: 5800,
-    carriageCharges: 6000,
-    labourCharges: 4000,
-    polishCharges: 0,
-    taxAmount: 0,
-    grandTotal: 345000,
-    paidAmount: 220000,
-    balanceDue: 125000,
-    paymentStatus: "Half Paid",
-    paymentMethod: "Bank Transfer",
-    notes: "Delivered to Scheme 33 Site. Vehicle # JU-4581.",
-    thermalPrinted: true,
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-  },
-  {
-    invoiceNo: "INV-2026-002",
-    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    customerId: 3,
-    customerName: "Haji Abdul Ghaffar",
-    customerPhone: "0333-2198745",
-    items: [
-      {
-        itemId: 6,
-        code: "TL-PF-06",
-        name: "Royal Onyx White Porcelain Tile (60x60)",
-        category: "Porcelain Tiles",
-        dimensions: "50 Boxes (14.4 Sq Ft/Box)",
-        boxes: 50,
-        sqFtPerBox: 14.4,
-        totalSqFt: 720,
-        ratePerSqFt: 195,
-        amount: 140400
-      },
-      {
-        itemId: 9,
-        code: "MB-BP-09",
-        name: "Golden Crema Marble Patti / Border (3x12)",
-        category: "Borders & Patti",
-        dimensions: "60 Pieces",
-        pieces: 60,
-        ratePerPiece: 75,
-        totalSqFt: 15,
-        amount: 4500
-      }
-    ],
-    subtotal: 144900,
-    discountPercent: 0,
-    discountAmount: 1900,
-    carriageCharges: 2000,
-    labourCharges: 0,
-    polishCharges: 0,
-    taxAmount: 0,
-    grandTotal: 145000,
-    paidAmount: 100000,
-    balanceDue: 45000,
-    paymentStatus: "Half Paid",
-    paymentMethod: "Cash",
-    notes: "Self pickup by customer via Suzuki pickup.",
-    thermalPrinted: true,
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
+/**
+ * Optional: Populate sample demo data for training or testing
+ */
+export async function populateSampleTestData() {
+  await wipeAllData();
 
-export const samplePurchases = [
-  {
-    purchaseNo: "PUR-2026-001",
-    challanNo: "CH-8842",
-    vehicleNo: "TK-9022 (Bedford Truck)",
-    date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    supplierId: 1,
-    supplierName: "Balochistan Mining & Quarries Ltd",
-    items: [
-      {
-        itemId: 1,
-        name: "Ziarat White Raw Slabs Unpolished",
-        totalSqFt: 2500,
-        ratePerSqFt: 270,
-        amount: 675000
-      },
-      {
-        itemId: 3,
-        name: "Badal Grey Slabs",
-        totalSqFt: 3000,
-        ratePerSqFt: 145,
-        amount: 435000
-      }
-    ],
-    subtotal: 1110000,
-    freightCharges: 40000,
-    grandTotal: 1150000,
-    paidAmount: 800000,
-    balanceDue: 350000,
-    paymentStatus: "Half Paid",
-    paymentMethod: "Bank Transfer",
-    notes: "Direct quarry dispatch from Khuzdar mine site.",
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-  }
-];
-
-export async function initializeDatabaseWithSeedData() {
-  const settingsCount = await db.settings.count();
-  if (settingsCount === 0) {
-    await db.settings.add(defaultSettings);
+  for (const item of sampleItems) {
+    const addedId = await db.items.add({
+      ...item,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+    await logStockMovement({
+      itemId: addedId,
+      itemName: item.name,
+      category: item.category,
+      movementType: "Initial",
+      changeSqFt: item.stockSqFt,
+      changeBoxes: item.stockBoxes,
+      changePieces: item.stockPieces,
+      previousSqFt: 0,
+      newSqFt: item.stockSqFt,
+      refDocNo: "INITIAL-STOCK",
+      note: "Initial opening stock recorded"
+    });
   }
 
-  const itemsCount = await db.items.count();
-  if (itemsCount === 0) {
-    for (const item of sampleItems) {
-      const addedId = await db.items.add({
-        ...item,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-      await logStockMovement({
-        itemId: addedId,
-        itemName: item.name,
-        category: item.category,
-        movementType: "Initial",
-        changeSqFt: item.stockSqFt,
-        changeBoxes: item.stockBoxes,
-        changePieces: item.stockPieces,
-        previousSqFt: 0,
-        newSqFt: item.stockSqFt,
-        refDocNo: "INITIAL-STOCK",
-        note: "Initial opening stock recorded"
-      });
-    }
+  for (const customer of sampleCustomers) {
+    await db.customers.add({
+      ...customer,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
   }
 
-  const customersCount = await db.customers.count();
-  if (customersCount === 0) {
-    for (const customer of sampleCustomers) {
-      await db.customers.add({
-        ...customer,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    }
-  }
-
-  const suppliersCount = await db.suppliers.count();
-  if (suppliersCount === 0) {
-    for (const supplier of sampleSuppliers) {
-      await db.suppliers.add({
-        ...supplier,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    }
-  }
-
-  const invoicesCount = await db.invoices.count();
-  if (invoicesCount === 0) {
-    for (const inv of sampleInvoices) {
-      await db.invoices.add(inv);
-    }
-  }
-
-  const purchasesCount = await db.supplier_purchases.count();
-  if (purchasesCount === 0) {
-    for (const pur of samplePurchases) {
-      await db.supplier_purchases.add(pur);
-    }
-  }
-
-  const expensesCount = await db.daily_expenses.count();
-  if (expensesCount === 0) {
-    const today = new Date().toISOString().slice(0, 10);
-    await db.daily_expenses.bulkAdd([
-      {
-        date: today,
-        category: "Food / Mess (کھانا چائے)",
-        amount: 1450,
-        paidTo: "Bismillah Hotel & Tea Stall",
-        remarks: "Factory cutter & polish staff lunch + tea",
-        createdAt: new Date().toISOString()
-      },
-      {
-        date: today,
-        category: "Petrol / Fuel (پٹرول ڈیزل)",
-        amount: 3800,
-        paidTo: "PSO Petrol Pump Faisalabad Road",
-        remarks: "15 Litres diesel for factory power generator",
-        createdAt: new Date().toISOString()
-      },
-      {
-        date: today,
-        category: "Customer Udhar / Cash Advance (گاہک ادھار)",
-        amount: 2500,
-        paidTo: "Tariq Mehmood Contractor",
-        remarks: "Emergency loader rickshaw carriage cash advance",
-        createdAt: new Date().toISOString()
-      }
-    ]);
+  for (const supplier of sampleSuppliers) {
+    await db.suppliers.add({
+      ...supplier,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
   }
 
   const returnsCount = await db.returns.count();

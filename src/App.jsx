@@ -27,12 +27,8 @@ export default function App() {
     return localStorage.getItem('app-theme') || 'light';
   });
 
-  // Authentication State (Username & Password: admin / admin)
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    const savedLocal = localStorage.getItem('marble_auth');
-    const savedSession = sessionStorage.getItem('marble_auth');
-    return !!(savedLocal || savedSession);
-  });
+  // Authentication State - Always start at Login screen on app launch
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Collapsible Sidebar State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
@@ -108,10 +104,14 @@ export default function App() {
   // If not logged in, show the Login Page first!
   if (!isAuthenticated) {
     return (
-      <LoginView
-        onLoginSuccess={handleLoginSuccess}
-        settings={settings}
-      />
+      <LanguageProvider>
+        <LoginView
+          onLoginSuccess={handleLoginSuccess}
+          settings={settings}
+          theme={theme}
+          toggleTheme={toggleTheme}
+        />
+      </LanguageProvider>
     );
   }
 
