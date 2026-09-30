@@ -121,9 +121,9 @@ export default function CustomerList({
                       {c.name}
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                      <span className="font-mono">{c.phone || 'No phone'}</span>
-                      {c.city && <span>• {c.city}</span>}
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px", fontSize: "0.75rem", color: "var(--text-muted)", flexWrap: "wrap" }}>
+                      <span className="font-mono" style={{ whiteSpace: "nowrap" }}>{c.phone || 'No phone'}</span>
+                      {c.city && <span style={{ whiteSpace: "nowrap" }}>• {c.city}</span>}
                       {c.customerType && (
                         <span style={{ fontSize: "0.68rem", background: "var(--bg-primary)", padding: "1px 5px", borderRadius: "4px", border: "1px solid var(--border-color)", fontWeight: 600 }}>
                           {c.customerType}

@@ -71,7 +71,7 @@ export default function CustomerTimelineView({
       {/* ── SELECTED CUSTOMER HEADER ── */}
       <div style={{
         padding: "20px 26px",
-        borderBottom: "1px solid var(--border-divider)",
+        borderBottom: "1px solid rgba(0,0,0,0.06)",
         display: "flex",
         flexDirection: "column",
         gap: "14px"
@@ -182,39 +182,59 @@ export default function CustomerTimelineView({
         {/* Row 2: Customer Account Metric Strip */}
         <div className="kpi-cards-grid" style={{ marginTop: "10px" }}>
           <div className="kpi-stat-card">
-            <div className="kpi-header">
-              <span className="kpi-title">Total Purchases (خریداری)</span>
+            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <FileText size={18} />
             </div>
-            <div className="kpi-value font-mono">
-              Rs. {totalBilled.toLocaleString()}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                Total Purchases (خریداری)
+              </span>
+              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                Rs. {totalBilled.toLocaleString()}
+              </span>
             </div>
           </div>
 
           <div className="kpi-stat-card">
-            <div className="kpi-header">
-              <span className="kpi-title">Total Wasooli (وصولی)</span>
+            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <CheckCircle2 size={18} />
             </div>
-            <div className="kpi-value font-mono" style={{ color: "var(--accent-green)" }}>
-              Rs. {totalPaid.toLocaleString()}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                Total Wasooli (وصولی)
+              </span>
+              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                Rs. {totalPaid.toLocaleString()}
+              </span>
             </div>
           </div>
 
-          <div className="kpi-stat-card" style={{ background: hasDue ? "rgba(220, 38, 38, 0.05)" : "var(--bg-card)" }}>
-            <div className="kpi-header">
-              <span className="kpi-title">Balance Due (بقایا کھاتہ)</span>
+          <div className="kpi-stat-card" style={{ background: hasDue ? "rgba(220, 38, 38, 0.05)" : "rgba(255, 255, 255, 0.7)" }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: hasDue ? '#ef4444' : '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <AlertCircle size={18} />
             </div>
-            <div className="kpi-value font-mono" style={{ color: hasDue ? "var(--accent-red)" : "var(--accent-green)" }}>
-              Rs. {balanceDue.toLocaleString()}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                Balance Due (بقایا کھاتہ)
+              </span>
+              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: hasDue ? '#dc2626' : '#059669', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                Rs. {balanceDue.toLocaleString()}
+              </span>
             </div>
           </div>
 
           {customer.creditLimit > 0 && (
             <div className="kpi-stat-card">
-              <div className="kpi-header">
-                <span className="kpi-title">Credit Limit</span>
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#8b5cf6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CreditCard size={18} />
               </div>
-              <div className="kpi-value font-mono" style={{ color: "var(--text-muted)", fontSize: "1.1rem" }}>
-                Rs. {Number(customer.creditLimit).toLocaleString()}
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                  Credit Limit
+                </span>
+                <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                  Rs. {Number(customer.creditLimit).toLocaleString()}
+                </span>
               </div>
             </div>
           )}
