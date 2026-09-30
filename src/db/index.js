@@ -102,6 +102,55 @@ db.version(5).stores({
   payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date'
 });
 
+// Version 6: Add payrolls for EmployeesPayrollModule
+db.version(6).stores({
+  users: '++id, username, role, fullName, isActive, createdAt',
+  items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
+  stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
+  customers: '++id, name, phone, city, customerType, balanceDue, totalBilled, totalPaid, createdAt',
+  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
+  customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
+  suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',
+  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, supplierName, paymentStatus, balanceDue, grandTotal, createdAt',
+  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date, paymentMethod, createdAt',
+  gate_passes: '++id, gatePassNo, invoiceId, customerName, vehicleNo, driverName, date, status, dispatchTime, createdAt',
+  daily_expenses: '++id, date, category, amount, paidTo, remarks, createdAt',
+  wastage_logs: '++id, logNo, docNo, date, type, itemId, itemName, sqFt, pieces, reason, source, createdAt',
+  employees: '++id, name, role, basicSalary, advanceDrawn, joiningDate, isActive',
+  employee_advances: '++id, employeeId, employeeName, amount, date, notes',
+  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, monthKey, status, date',
+  returns: '++id, returnNo, type, refDocNo, partyId, partyName, date, createdAt, status',
+  settings: '++id, companyName',
+  zakat_beneficiaries: '++id, name, monthlyAmount',
+  payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date',
+  payrolls: '++id, employeeId, employeeName, month, date, createdAt'
+});
+
+// Version 7: Add zakat_welfare for ZakatWelfareModule
+db.version(7).stores({
+  users: '++id, username, role, fullName, isActive, createdAt',
+  items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
+  stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
+  customers: '++id, name, phone, city, customerType, balanceDue, totalBilled, totalPaid, createdAt',
+  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
+  customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
+  suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',
+  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, supplierName, paymentStatus, balanceDue, grandTotal, createdAt',
+  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date, paymentMethod, createdAt',
+  gate_passes: '++id, gatePassNo, invoiceId, customerName, vehicleNo, driverName, date, status, dispatchTime, createdAt',
+  daily_expenses: '++id, date, category, amount, paidTo, remarks, createdAt',
+  wastage_logs: '++id, logNo, docNo, date, type, itemId, itemName, sqFt, pieces, reason, source, createdAt',
+  employees: '++id, name, role, basicSalary, advanceDrawn, joiningDate, isActive',
+  employee_advances: '++id, employeeId, employeeName, amount, date, notes',
+  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, monthKey, status, date',
+  returns: '++id, returnNo, type, refDocNo, partyId, partyName, date, createdAt, status',
+  settings: '++id, companyName',
+  zakat_beneficiaries: '++id, name, monthlyAmount',
+  payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date',
+  payrolls: '++id, employeeId, employeeName, month, date, createdAt',
+  zakat_welfare: '++id, recipientName, category, amount, paymentMode, date, createdAt'
+});
+
 // Helper: Calculate live cash drawer / Roznamcha for any date
 export async function getLiveCashInDrawer(customDate = null) {
   try {

@@ -1,0 +1,77 @@
+import { db } from '../../db/index';
+
+export const employeesPayrollService = {
+  // Employee Operations
+  async getAllEmployees() {
+    try {
+      if (db.employees) {
+        return await db.employees.toArray();
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      throw error;
+    }
+  },
+
+  async addEmployee(employeeData) {
+    try {
+      if (db.employees) {
+        return await db.employees.add(employeeData);
+      }
+      throw new Error('employees store is not defined');
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      throw error;
+    }
+  },
+
+  async updateEmployee(id, employeeData) {
+    try {
+      if (db.employees) {
+        return await db.employees.update(id, employeeData);
+      }
+      throw new Error('employees store is not defined');
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      throw error;
+    }
+  },
+
+  async deleteEmployee(id) {
+    try {
+      if (db.employees) {
+        return await db.employees.delete(id);
+      }
+      throw new Error('employees store is not defined');
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      throw error;
+    }
+  },
+
+  // Payroll Operations
+  async getAllPayrolls() {
+    try {
+      if (db.payrolls) {
+        return await db.payrolls.toArray();
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching payrolls:', error);
+      throw error;
+    }
+  },
+
+  async addPayroll(payrollData) {
+    try {
+      if (db.payrolls) {
+        return await db.payrolls.add(payrollData);
+      }
+      throw new Error('payrolls store is not defined');
+    } catch (error) {
+      console.error('Error adding payroll:', error);
+      throw error;
+    }
+  }
+};

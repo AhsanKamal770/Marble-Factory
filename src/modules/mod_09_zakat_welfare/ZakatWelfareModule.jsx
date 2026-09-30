@@ -11,8 +11,8 @@ import {
   CheckCircle,
   Users
 } from "lucide-react";
-import { db } from "../../db/index";
 import { useLanguage } from "../../context/LanguageContext";
+import { zakatWelfareService } from "./zakatWelfareService";
 
 
 export default function ZakatWelfareModule() {
@@ -34,7 +34,7 @@ export default function ZakatWelfareModule() {
 
   const loadData = async () => {
     try {
-      const allZakat = await db.zakat_welfare?.toArray() || [];
+      const allZakat = await zakatWelfareService.getAllRecords();
       setZakatRecords(
         allZakat.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
       );
@@ -51,17 +51,15 @@ export default function ZakatWelfareModule() {
     }
 
     try {
-      if (db.zakat_welfare) {
-        await db.zakat_welfare.add({
-          recipientName,
-          category,
-          amount: parseFloat(amount) || 0,
-          paymentMode,
-          reason,
-          date: new Date().toISOString(),
-          createdAt: new Date().toISOString()
-        });
-      }
+      await zakatWelfareService.addRecord({
+        recipientName,
+        category,
+        amount: parseFloat(amount) || 0,
+        paymentMode,
+        reason,
+        date: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      });
       setIsModalOpen(false);
       setRecipientName("");
       setAmount("");

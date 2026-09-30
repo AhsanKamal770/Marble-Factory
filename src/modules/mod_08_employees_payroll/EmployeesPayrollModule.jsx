@@ -13,8 +13,8 @@ import {
   User,
   Briefcase
 } from "lucide-react";
-import { db } from "../../db/index";
 import { useLanguage } from "../../context/LanguageContext";
+import { employeesPayrollService } from "./employeesPayrollService";
 
 export default function EmployeesPayrollModule() {
   const [employees, setEmployees] = useState([]);
@@ -46,8 +46,8 @@ export default function EmployeesPayrollModule() {
 
   const loadData = async () => {
     try {
-      const allEmployees = await db.employees?.toArray() || [];
-      const allPayrolls = await db.payrolls?.toArray() || [];
+      const allEmployees = await employeesPayrollService.getAllEmployees();
+      const allPayrolls = await employeesPayrollService.getAllPayrolls();
       
       setEmployees(allEmployees);
       setPayrolls(
@@ -66,17 +66,15 @@ export default function EmployeesPayrollModule() {
     }
 
     try {
-      if (db.employees) {
-        await db.employees.add({
-          name: empName,
-          role: empRole,
-          phone: empPhone,
-          salaryType,
-          baseSalary: parseFloat(baseSalary) || 0,
-          status: "Active",
-          createdAt: new Date().toISOString()
-        });
-      }
+      await employeesPayrollService.addEmployee({
+        name: empName,
+        role: empRole,
+        phone: empPhone,
+        salaryType,
+        baseSalary: parseFloat(baseSalary) || 0,
+        status: "Active",
+        createdAt: new Date().toISOString()
+      });
       setIsEmpModalOpen(false);
       setEmpName("");
       setEmpPhone("");
@@ -97,18 +95,16 @@ export default function EmployeesPayrollModule() {
     const emp = employees.find((e) => e.id === parseInt(selectedEmpId, 10));
 
     try {
-      if (db.payrolls) {
-        await db.payrolls.add({
-          employeeId: parseInt(selectedEmpId, 10),
-          employeeName: emp ? emp.name : "Unknown",
-          month: payMonth,
-          amount: parseFloat(paidAmount) || 0,
-          paymentMode,
-          notes,
-          date: new Date().toISOString(),
-          createdAt: new Date().toISOString()
-        });
-      }
+      await employeesPayrollService.addPayroll({
+        employeeId: parseInt(selectedEmpId, 10),
+        employeeName: emp ? emp.name : "Unknown",
+        month: payMonth,
+        amount: parseFloat(paidAmount) || 0,
+        paymentMode,
+        notes,
+        date: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      });
       setIsPayrollModalOpen(false);
       setPaidAmount("");
       loadData();
