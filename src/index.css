@@ -1440,3 +1440,113 @@ select.form-control option {
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
+/* ========================================================================= */
+/* Responsive Executive Dashboard Grid System                                */
+/* ========================================================================= */
+
+.dashboard-hero-container {
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (max-width: 992px) {
+  .dashboard-hero-container {
+    flex-direction: column;
+  }
+  .dashboard-hero-right {
+    border-left: none !important;
+    border-top: 1px solid #f1f5f9;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+}
+
+.dashboard-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 1200px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-analytics-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1.15fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 1250px) {
+  .dashboard-analytics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .dashboard-analytics-sales {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 800px) {
+  .dashboard-analytics-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-analytics-sales {
+    grid-column: span 1;
+  }
+}
+
+.dashboard-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 992px) {
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* KPI Card & Shaded Area Sparkline */
+.kpi-stat-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  padding: 20px 22px;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justifyContent: space-between;
+  min-height: 120px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kpi-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+.kpi-area-sparkline {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 135px;
+  height: 52px;
+  pointer-events: none;
+}
+
