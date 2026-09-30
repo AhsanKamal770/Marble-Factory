@@ -15,7 +15,8 @@ import {
   LogOut,
   FileText,
   RotateCcw,
-  Wallet
+  Wallet,
+  User
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import Logo from './Logo';
@@ -253,26 +254,27 @@ export default function Sidebar({
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {/* User Pill */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <div style={{
-                width: '32px',
-                height: '32px',
+                width: '34px',
+                height: '34px',
                 borderRadius: '50%',
-                background: '#2563eb',
-                color: '#ffffff',
+                background: '#ffffff',
+                color: '#2563eb',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-                position: 'relative'
+                position: 'relative',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                flexShrink: 0
               }}>
-                A
+                <User size={18} style={{ color: '#2563eb' }} />
                 <span style={{
                   position: 'absolute',
-                  bottom: '0',
-                  right: '0',
+                  bottom: '1px',
+                  right: '1px',
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
@@ -281,11 +283,12 @@ export default function Sidebar({
                 }} />
               </div>
               <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f8fafc' }}>Offline Active</div>
-                <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>User: admin</div>
+                <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#f8fafc' }}>Hamza Nawaz</div>
+                <div style={{ fontSize: '0.70rem', color: '#94a3b8' }}>Admin</div>
               </div>
             </div>
 
+            {/* Red Logout Button */}
             <button
               type="button"
               onClick={onLogout}
@@ -293,25 +296,21 @@ export default function Sidebar({
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#94a3b8',
+                color: '#ef4444',
                 cursor: 'pointer',
-                padding: '6px',
+                padding: '2px 0',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: '6px',
+                gap: '8px',
+                fontSize: '0.80rem',
+                fontWeight: 600,
                 transition: 'all 0.15s ease'
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.color = '#fb7185';
-                e.currentTarget.style.background = 'rgba(251, 113, 133, 0.1)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.color = '#94a3b8';
-                e.currentTarget.style.background = 'transparent';
-              }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#f87171'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#ef4444'}
             >
-              <LogOut size={16} />
+              <LogOut size={15} style={{ color: '#ef4444' }} />
+              <span>Logout</span>
             </button>
           </div>
         )}

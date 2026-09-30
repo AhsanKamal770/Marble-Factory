@@ -131,25 +131,8 @@ export default function Header({
         </div>
       </div>
 
-      {/* Right: Date/Time + Notification + Theme + Profile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-        {/* Date and Time Widget */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          color: '#64748b',
-          fontSize: '0.82rem',
-          fontWeight: 500,
-          borderRight: '1px solid #e2e8f0',
-          paddingRight: '18px'
-        }}>
-          <Calendar size={15} style={{ color: '#2563eb' }} />
-          <span>{formattedDate}</span>
-          <span style={{ color: '#cbd5e1' }}>|</span>
-          <span style={{ fontWeight: 700, color: '#0f172a' }}>{formattedTime}</span>
-        </div>
-
+      {/* Right: Notifications + Theme + Language + Profile */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         {/* Notifications Icon with Red Badge */}
         <div style={{ position: 'relative' }}>
           <button
@@ -258,29 +241,36 @@ export default function Header({
             onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
           >
             <div style={{
-              width: '32px',
-              height: '32px',
+              width: '34px',
+              height: '34px',
               borderRadius: '50%',
-              background: '#0f172a',
+              background: '#0e2646',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontWeight: 800,
-              fontSize: '0.85rem'
+              fontSize: '0.78rem',
+              letterSpacing: '0.5px',
+              flexShrink: 0
             }}>
-              R
+              HN
             </div>
-            <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#0f172a' }}>
-              Rana Shahab
-            </span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1.15 }}>
+              <span style={{ fontSize: '0.84rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>
+                Hamza Nawaz
+              </span>
+              <span style={{ fontSize: '0.70rem', color: '#64748b', fontWeight: 500 }}>
+                Admin
+              </span>
+            </div>
             <ChevronDown size={14} style={{ color: '#64748b' }} />
           </button>
 
           {profileDropdownOpen && (
             <div style={{
               position: 'absolute',
-              top: '44px',
+              top: '46px',
               right: '0',
               width: '180px',
               background: '#ffffff',
@@ -291,8 +281,8 @@ export default function Header({
               zIndex: 30
             }}>
               <div style={{ padding: '8px 10px', borderBottom: '1px solid #f1f5f9' }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>Rana Shahab</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Master Administrator</div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a' }}>Hamza Nawaz</div>
+                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Admin</div>
               </div>
               <button
                 type="button"

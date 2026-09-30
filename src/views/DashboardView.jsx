@@ -21,6 +21,7 @@ import {
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getLiveCashInDrawer } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
+import heroBannerBg from '../assets/hero-marble-yard-full.jpg';
 
 export default function DashboardView({ setActiveView, settings }) {
   const { language } = useLanguage();
@@ -142,35 +143,21 @@ export default function DashboardView({ setActiveView, settings }) {
       {/* 1. TOP HERO BANNER (WITH VIBRANT FACTORY MARBLE YARD BACKGROUND)          */}
       {/* ========================================================================= */}
       <div className="dashboard-hero-container" style={{
-        background: '#ffffff',
         borderRadius: '18px',
         border: '1px solid #e2e8f0',
         boxShadow: '0 4px 20px rgba(15, 23, 42, 0.04)',
         display: 'flex',
         position: 'relative',
         overflow: 'hidden',
-        minHeight: '190px'
+        minHeight: '190px',
+        backgroundImage: `url(${heroBannerBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
       }}>
-        {/* Real Factory Marble Slabs Photograph Background on Right Half */}
+        {/* Left Side: Welcome Text + 3 Feature Navigation Shortcuts */}
         <div style={{
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '58%',
-          height: '100%',
-          backgroundImage: "url('/hero-marble-yard.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center right',
-          backgroundRepeat: 'no-repeat',
-          maskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, black 35%, black 100%)',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, rgba(0,0,0,0.3) 12%, black 35%, black 100%)',
-          pointerEvents: 'none',
-          zIndex: 1
-        }} />
-
-        {/* Left Side: Welcome Text + 3 Feature Shortcut Cards */}
-        <div style={{
-          flex: '1 1 500px',
+          flex: '1 1 520px',
           padding: '24px 28px',
           zIndex: 2,
           display: 'flex',
@@ -200,43 +187,30 @@ export default function DashboardView({ setActiveView, settings }) {
           <p style={{
             fontSize: '0.86rem',
             color: '#64748b',
-            margin: '0 0 20px'
+            margin: '0 0 18px'
           }}>
             Manage your factory operations efficiently
           </p>
 
-          {/* 3 Feature Mini Cards (Matching Reference) */}
+          {/* 3 Navigation Shortcuts directly on background with subtle dividers */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-            gap: '14px',
-            maxWidth: '560px'
+            display: 'flex',
+            alignItems: 'center',
+            gap: '18px',
+            flexWrap: 'wrap'
           }}>
-            {/* Sales Card */}
+            {/* Sales */}
             <div
               onClick={() => setActiveView('billing')}
               style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '12px 14px',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                transition: 'all 0.18s ease'
+                gap: '11px',
+                cursor: 'pointer',
+                transition: 'transform 0.15s ease'
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = '#2563eb';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 14px rgba(37, 99, 235, 0.08)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
-              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <div style={{
                 width: '36px',
@@ -247,41 +221,31 @@ export default function DashboardView({ setActiveView, settings }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
                 flexShrink: 0
               }}>
                 <Receipt size={18} />
               </div>
               <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a' }}>Sales</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Track Orders & Invoices</div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>Sales</div>
+                <div style={{ fontSize: '0.71rem', color: '#64748b' }}>Track Orders & Invoices</div>
               </div>
             </div>
 
-            {/* Inventory Card */}
+            <div style={{ width: '1px', height: '28px', background: 'rgba(203, 213, 225, 0.8)' }} />
+
+            {/* Inventory */}
             <div
               onClick={() => setActiveView('stock')}
               style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '12px 14px',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                transition: 'all 0.18s ease'
+                gap: '11px',
+                cursor: 'pointer',
+                transition: 'transform 0.15s ease'
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = '#10b981';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 14px rgba(16, 185, 129, 0.08)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
-              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <div style={{
                 width: '36px',
@@ -292,41 +256,31 @@ export default function DashboardView({ setActiveView, settings }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
                 flexShrink: 0
               }}>
                 <Boxes size={18} />
               </div>
               <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a' }}>Inventory</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Manage Stock & Materials</div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>Inventory</div>
+                <div style={{ fontSize: '0.71rem', color: '#64748b' }}>Manage Stock & Materials</div>
               </div>
             </div>
 
-            {/* Reports Card */}
+            <div style={{ width: '1px', height: '28px', background: 'rgba(203, 213, 225, 0.8)' }} />
+
+            {/* Reports */}
             <div
               onClick={() => setActiveView('sales-reports')}
               style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '12px 14px',
-                cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                transition: 'all 0.18s ease'
+                gap: '11px',
+                cursor: 'pointer',
+                transition: 'transform 0.15s ease'
               }}
-              onMouseOver={(e) => {
-                e.currentTarget.style.borderColor = '#2563eb';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-                e.currentTarget.style.boxShadow = '0 6px 14px rgba(37, 99, 235, 0.08)';
-              }}
-              onMouseOut={(e) => {
-                e.currentTarget.style.borderColor = '#e2e8f0';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 6px rgba(0,0,0,0.02)';
-              }}
+              onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
+              onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <div style={{
                 width: '36px',
@@ -337,13 +291,14 @@ export default function DashboardView({ setActiveView, settings }) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
                 flexShrink: 0
               }}>
                 <BarChart3 size={18} />
               </div>
               <div>
-                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a' }}>Reports</div>
-                <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Make Better Decisions</div>
+                <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#0f172a', lineHeight: 1.2 }}>Reports</div>
+                <div style={{ fontSize: '0.71rem', color: '#64748b' }}>Make Better Decisions</div>
               </div>
             </div>
           </div>
@@ -395,183 +350,163 @@ export default function DashboardView({ setActiveView, settings }) {
       </div>
 
       {/* ========================================================================= */}
-      {/* 2. ROW 1: 4 KEY KPI STAT CARDS (WITH PROPER SHADED AREA GRAPHS)          */}
+      {/* 2. ROW 1: 4 KEY KPI STAT CARDS (COMPACT & BALANCED PROPORTIONS)          */}
       {/* ========================================================================= */}
       <div className="dashboard-kpi-grid">
         {/* KPI 1: Total Sales */}
         <div className="kpi-stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 2 }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: '#2563eb',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <FileText size={22} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Total Sales</div>
-              <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>
-                Rs. {totalSalesAmount.toLocaleString()}
-              </div>
-            </div>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#2563eb',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <FileText size={18} />
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', zIndex: 2, marginTop: '12px' }}>
-            <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>&uarr; 12%</span>
-              <span style={{ color: '#64748b', fontWeight: 500 }}>This Month</span>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              Total Sales
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              Rs. {totalSalesAmount.toLocaleString()}
+            </span>
+            <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, lineHeight: 1.2 }}>
+              &uarr; 12%
+            </span>
+            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
+              This Month
             </span>
           </div>
-
-          {/* Shaded Area Sparkline Wave */}
-          <svg className="kpi-area-sparkline" viewBox="0 0 135 52" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="blueAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#2563eb" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#2563eb" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            <path d="M0,46 C30,48 55,22 80,34 C105,42 118,12 135,10 L135,52 L0,52 Z" fill="url(#blueAreaGrad)" />
-            <path d="M0,46 C30,48 55,22 80,34 C105,42 118,12 135,10" fill="none" stroke="#2563eb" strokeWidth="2.4" strokeLinecap="round" />
-          </svg>
         </div>
 
         {/* KPI 2: Cash & Bank */}
         <div className="kpi-stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 2 }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: '#10b981',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <Wallet size={22} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Cash & Bank</div>
-              <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>
-                Rs. {liveCashAmount.toLocaleString()}
-              </div>
-            </div>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#10b981',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Wallet size={18} />
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', zIndex: 2, marginTop: '12px' }}>
-            <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>&uarr; 8%</span>
-              <span style={{ color: '#64748b', fontWeight: 500 }}>This Month</span>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              Cash & Bank
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              Rs. {liveCashAmount.toLocaleString()}
+            </span>
+            <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, lineHeight: 1.2 }}>
+              &uarr; 8%
+            </span>
+            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
+              This Month
             </span>
           </div>
-
-          {/* Shaded Area Sparkline Wave */}
-          <svg className="kpi-area-sparkline" viewBox="0 0 135 52" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="greenAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            <path d="M0,42 C35,44 60,20 85,32 C105,38 120,10 135,8 L135,52 L0,52 Z" fill="url(#greenAreaGrad)" />
-            <path d="M0,42 C35,44 60,20 85,32 C105,38 120,10 135,8" fill="none" stroke="#10b981" strokeWidth="2.4" strokeLinecap="round" />
-          </svg>
         </div>
 
         {/* KPI 3: Customer Dues */}
         <div className="kpi-stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 2 }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: '#ef4444',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <AlertCircle size={22} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Customer Dues</div>
-              <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>
-                Rs. {customerDuesAmount.toLocaleString()}
-              </div>
-            </div>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#ef4444',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <AlertCircle size={18} />
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', zIndex: 2, marginTop: '12px' }}>
-            <span style={{ fontSize: '0.78rem', color: '#ef4444', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>&darr; 5%</span>
-              <span style={{ color: '#64748b', fontWeight: 500 }}>Pending</span>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              Customer Dues
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              Rs. {customerDuesAmount.toLocaleString()}
+            </span>
+            <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 700, lineHeight: 1.2 }}>
+              &darr; 5%
+            </span>
+            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
+              Pending
             </span>
           </div>
-
-          {/* Shaded Area Sparkline Wave */}
-          <svg className="kpi-area-sparkline" viewBox="0 0 135 52" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="redAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            <path d="M0,16 C30,14 60,38 85,28 C105,20 118,44 135,46 L135,52 L0,52 Z" fill="url(#redAreaGrad)" />
-            <path d="M0,16 C30,14 60,38 85,28 C105,20 118,44 135,46" fill="none" stroke="#ef4444" strokeWidth="2.4" strokeLinecap="round" />
-          </svg>
         </div>
 
         {/* KPI 4: Stock Value */}
         <div className="kpi-stat-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', zIndex: 2 }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '12px',
-              background: '#8b5cf6',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <Boxes size={22} />
-            </div>
-            <div>
-              <div style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>Stock Value</div>
-              <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>
-                Rs. {stockValuationAmount.toLocaleString()}
-              </div>
-            </div>
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#8b5cf6',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Boxes size={18} />
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', zIndex: 2, marginTop: '12px' }}>
-            <span style={{ fontSize: '0.78rem', color: '#16a34a', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span>&uarr; 15%</span>
-              <span style={{ color: '#64748b', fontWeight: 500 }}>Total Inventory</span>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              Stock Value
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              Rs. {stockValuationAmount.toLocaleString()}
+            </span>
+            <span style={{ fontSize: '0.72rem', color: '#16a34a', fontWeight: 700, lineHeight: 1.2 }}>
+              &uarr; 15%
+            </span>
+            <span style={{ fontSize: '0.66rem', color: '#94a3b8', fontWeight: 500, lineHeight: 1.2 }}>
+              Total Inventory
             </span>
           </div>
-
-          {/* Shaded Area Sparkline Wave */}
-          <svg className="kpi-area-sparkline" viewBox="0 0 135 52" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="purpleAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.22" />
-                <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-            <path d="M0,45 C35,48 55,24 80,34 C105,40 118,12 135,10 L135,52 L0,52 Z" fill="url(#purpleAreaGrad)" />
-            <path d="M0,45 C35,48 55,24 80,34 C105,40 118,12 135,10" fill="none" stroke="#8b5cf6" strokeWidth="2.4" strokeLinecap="round" />
-          </svg>
         </div>
       </div>
 
@@ -731,18 +666,19 @@ export default function DashboardView({ setActiveView, settings }) {
         </div>
 
         {/* Col 2: Payment Status (Donut Chart - Refactored Proportional Geometry) */}
+        {/* Col 2: Payment Status (Donut Chart - Refactored Proportional Geometry) */}
         <div style={{
           background: '#ffffff',
           borderRadius: '16px',
           border: '1px solid #e2e8f0',
-          padding: '20px 22px',
+          padding: '20px 18px',
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.03)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
         }}>
           {/* Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <CheckSquare size={18} style={{ color: '#2563eb' }} />
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
               Payment Status
@@ -754,31 +690,31 @@ export default function DashboardView({ setActiveView, settings }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '16px',
+            gap: '14px',
             margin: 'auto 0',
-            padding: '8px 0'
+            padding: '6px 0'
           }}>
             {/* SVG Donut Container with Perfectly Centered Geometry */}
             <div style={{
               position: 'relative',
-              width: '144px',
-              height: '144px',
+              width: '130px',
+              height: '130px',
               flexShrink: 0,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <svg width="144" height="144" viewBox="0 0 140 140" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
-                {/* Background Ring (r=50 -> circumference = 314.16) */}
-                <circle cx="70" cy="70" r="50" stroke="#f1f5f9" strokeWidth="14" fill="none" />
-                {/* Paid: 18/28 = 64.3% -> 201.96 */}
-                <circle cx="70" cy="70" r="50" stroke="#10b981" strokeWidth="14" strokeDasharray="201.96 314.16" strokeDashoffset="0" fill="none" strokeLinecap="round" />
-                {/* Partial: 5/28 = 17.9% -> 56.10 */}
-                <circle cx="70" cy="70" r="50" stroke="#f59e0b" strokeWidth="14" strokeDasharray="56.10 314.16" strokeDashoffset="-201.96" fill="none" />
-                {/* Due: 4/28 = 14.3% -> 44.88 */}
-                <circle cx="70" cy="70" r="50" stroke="#ef4444" strokeWidth="14" strokeDasharray="44.88 314.16" strokeDashoffset="-258.06" fill="none" />
-                {/* Overdue: 1/28 = 3.6% -> 11.22 */}
-                <circle cx="70" cy="70" r="50" stroke="#8b5cf6" strokeWidth="14" strokeDasharray="11.22 314.16" strokeDashoffset="-302.94" fill="none" />
+              <svg width="130" height="130" viewBox="0 0 130 130" style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+                {/* Background Ring (r=47 -> circumference = 295.31) */}
+                <circle cx="65" cy="65" r="47" stroke="#f1f5f9" strokeWidth="13" fill="none" />
+                {/* Paid: 18/28 = 64.3% -> 189.84 */}
+                <circle cx="65" cy="65" r="47" stroke="#10b981" strokeWidth="13" strokeDasharray="189.84 295.31" strokeDashoffset="0" fill="none" strokeLinecap="round" />
+                {/* Partial: 5/28 = 17.9% -> 52.73 */}
+                <circle cx="65" cy="65" r="47" stroke="#f59e0b" strokeWidth="13" strokeDasharray="52.73 295.31" strokeDashoffset="-189.84" fill="none" />
+                {/* Due: 4/28 = 14.3% -> 42.19 */}
+                <circle cx="65" cy="65" r="47" stroke="#ef4444" strokeWidth="13" strokeDasharray="42.19 295.31" strokeDashoffset="-242.57" fill="none" />
+                {/* Overdue: 1/28 = 3.6% -> 10.55 */}
+                <circle cx="65" cy="65" r="47" stroke="#8b5cf6" strokeWidth="13" strokeDasharray="10.55 295.31" strokeDashoffset="-284.76" fill="none" />
               </svg>
 
               {/* Exact Mathematically Centered Label Inside Hole (Cleanly Cleared of Edges) */}
@@ -793,50 +729,50 @@ export default function DashboardView({ setActiveView, settings }) {
                 justifyContent: 'center',
                 pointerEvents: 'none',
                 textAlign: 'center',
-                width: '80px',
+                width: '78px',
                 lineHeight: 1.15
               }}>
                 <span style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   Total Invoices
                 </span>
-                <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
+                <span style={{ fontSize: '1.45rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
                   28
                 </span>
               </div>
             </div>
 
-            {/* Legend List - Evenly Spaced */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, minWidth: '105px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600 }}>
+            {/* Legend List - Evenly Spaced with Guaranteed No-Wrap */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '11px', flex: 1, minWidth: '110px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', flexShrink: 0 }} />
                   Paid
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>18 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(64%)</span></span>
+                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>18 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(64%)</span></span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
                   Partial
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>5 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(18%)</span></span>
+                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>5 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(18%)</span></span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', flexShrink: 0 }} />
                   Due
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>4 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(14%)</span></span>
+                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>4 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(14%)</span></span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#334155', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8b5cf6', flexShrink: 0 }} />
                   Overdue
                 </span>
-                <span style={{ fontWeight: 700, color: '#0f172a' }}>1 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(4%)</span></span>
+                <span style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>1 <span style={{ color: '#94a3b8', fontWeight: 500 }}>(4%)</span></span>
               </div>
             </div>
           </div>
