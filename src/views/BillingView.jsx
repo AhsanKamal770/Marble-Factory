@@ -24,6 +24,7 @@ import { db, adjustItemStock, getLiveCashInDrawer } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import DimensionCalculator from '../components/DimensionCalculator';
 import BillPrintModal from '../components/BillPrintModal';
+import Modal from '../shared/components/Modal';
 
 export default function BillingView({ setActiveView, settings }) {
   const { language } = useLanguage();
@@ -618,6 +619,29 @@ export default function BillingView({ setActiveView, settings }) {
               <span style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {isUrdu ? 'گاہک' : 'Customer'}
               </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCustomerDropdownOpen(false);
+                  setIsNewCustomerModalOpen(true);
+                }}
+                style={{
+                  background: 'rgba(37, 99, 235, 0.08)',
+                  color: 'var(--accent-blue)',
+                  border: 'none',
+                  padding: '6px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                <UserPlus size={13} />
+                <span>+ {isUrdu ? 'نیا گاہک رجسٹر کریں' : 'Create New Customer'}</span>
+              </button>
             </div>
 
             {/* Selected Customer Card OR Primary Search Selector */}
@@ -635,10 +659,6 @@ export default function BillingView({ setActiveView, settings }) {
                   <div>
                     <div style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
                       {selectedCustomer.name}
-                    </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'flex', gap: '12px', marginTop: '2px' }}>
-                      <span>📞 {selectedCustomer.phone || (isUrdu ? 'فون درج نہیں' : 'No phone')}</span>
-                      <span>📍 {selectedCustomer.city || 'Faisalabad'}</span>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -743,11 +763,7 @@ export default function BillingView({ setActiveView, settings }) {
                           <strong style={{ fontSize: '0.84rem', color: 'var(--accent-blue)' }}>
                             {isUrdu ? 'عام خریدار (نقد سیل)' : 'Walk-in Cash Sale'}
                           </strong>
-                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                            {isUrdu ? 'فوری کاؤنٹر ادائیگی' : 'Immediate counter cash sale'}
-                          </div>
                         </div>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>{isUrdu ? 'منتخب کریں' : 'Select'}</span>
                       </div>
 
                       {/* Filtered Customer List */}
@@ -775,9 +791,6 @@ export default function BillingView({ setActiveView, settings }) {
                               <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                                 {cust.name}
                               </div>
-                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                {cust.phone || 'No phone'} • {cust.city || 'Faisalabad'}
-                              </div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                               <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 700, color: Number(cust.balanceDue) > 0 ? '#dc2626' : 'var(--text-muted)' }}>
@@ -787,31 +800,6 @@ export default function BillingView({ setActiveView, settings }) {
                           </div>
                         ))
                       )}
-
-                      {/* Integrated "Create New Customer" Option in Dropdown */}
-                      <div
-                        onClick={() => {
-                          setIsCustomerDropdownOpen(false);
-                          setIsNewCustomerModalOpen(true);
-                        }}
-                        style={{
-                          padding: '10px 14px',
-                          background: 'var(--bg-primary, #F8FAFC)',
-                          borderTop: '1px solid var(--border-divider, #E5EAF0)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          fontSize: '0.78rem',
-                          fontWeight: 700,
-                          color: 'var(--accent-blue)',
-                          cursor: 'pointer'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.08)'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-primary, #F8FAFC)'}
-                      >
-                        <UserPlus size={14} />
-                        <span>+ {isUrdu ? 'نیا گاہک رجسٹر کریں' : 'Create New Customer'}</span>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -1331,15 +1319,19 @@ export default function BillingView({ setActiveView, settings }) {
                   <div className="pos-segmented-control">
                     <button
                       type="button"
+                      disabled={grandTotal === 0}
                       className={`pos-segment-btn ${isFull ? 'active' : ''}`}
                       onClick={() => handleQuickPayment(1.0)}
+                      style={{ opacity: grandTotal === 0 ? 0.5 : 1, cursor: grandTotal === 0 ? 'not-allowed' : 'pointer' }}
                     >
                       {isUrdu ? 'مکمل نقد' : 'Full'}
                     </button>
                     <button
                       type="button"
+                      disabled={grandTotal === 0}
                       className={`pos-segment-btn ${isHalf ? 'active' : ''}`}
                       onClick={() => handleQuickPayment(0.5)}
+                      style={{ opacity: grandTotal === 0 ? 0.5 : 1, cursor: grandTotal === 0 ? 'not-allowed' : 'pointer' }}
                     >
                       50%
                     </button>
@@ -1491,19 +1483,24 @@ export default function BillingView({ setActiveView, settings }) {
       {/* ------------------------------------------------------------- */}
 
       {/* MODAL 1: ADD / EDIT ITEM MODAL */}
-      {isItemModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsItemModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.98rem', fontWeight: 800 }}>
-                {editingItemIndex !== null ? (isUrdu ? 'آئٹم میں ترمیم' : 'Edit Marble / Tile Item') : (isUrdu ? 'آئٹم شامل کریں' : 'Add Marble / Tile Item')}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsItemModalOpen(false)} style={{ padding: '3px' }}>
-                <X size={15} />
-              </button>
-            </div>
-
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <Modal
+        isOpen={isItemModalOpen}
+        onClose={() => setIsItemModalOpen(false)}
+        title={editingItemIndex !== null ? (isUrdu ? 'آئٹم میں ترمیم' : 'Edit Marble / Tile Item') : (isUrdu ? 'آئٹم شامل کریں' : 'Add Marble / Tile Item')}
+        icon={Layers}
+        size="md"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsItemModalOpen(false)}>
+              {isUrdu ? 'منسوخ' : 'Cancel'}
+            </button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={handleSaveItemModal} style={{ fontWeight: 700 }}>
+              {editingItemIndex !== null ? (isUrdu ? 'محفوظ کریں' : 'Update Item') : (isUrdu ? 'آئٹم شامل کریں' : 'Add Item')}
+            </button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               
               {/* Stone Selection */}
               <div>
@@ -1521,7 +1518,7 @@ export default function BillingView({ setActiveView, settings }) {
                 >
                   {items.map(it => (
                     <option key={it.id} value={it.id}>
-                      {it.name} ({it.category}) • Stock: {it.stockSqFt} Sq.Ft • Rs.{it.ratePerSqFt}/Sq.Ft
+                      {it.name}
                     </option>
                   ))}
                 </select>
@@ -1698,69 +1695,67 @@ export default function BillingView({ setActiveView, settings }) {
                 </div>
               )}
 
-            </div>
-
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsItemModalOpen(false)}>
-                {isUrdu ? 'منسوخ' : 'Cancel'}
-              </button>
-              <button type="button" className="btn btn-primary btn-sm" onClick={handleSaveItemModal} style={{ fontWeight: 700 }}>
-                {editingItemIndex !== null ? (isUrdu ? 'محفوظ کریں' : 'Update Item') : (isUrdu ? 'آئٹم شامل کریں' : 'Add Item')}
-              </button>
-            </div>
-          </div>
         </div>
-      )}
+      </Modal>
 
       {/* MODAL 2: REGISTER NEW CUSTOMER */}
-      {isNewCustomerModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsNewCustomerModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.96rem', fontWeight: 800 }}>
-                {isUrdu ? 'نیا گاہک رجسٹر کریں' : 'New Customer'}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsNewCustomerModalOpen(false)} style={{ padding: '3px' }}>
-                <X size={15} />
-              </button>
-            </div>
-            <form onSubmit={handleCreateNewCustomer}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Name *</label>
+      <Modal
+        isOpen={isNewCustomerModalOpen}
+        onClose={() => setIsNewCustomerModalOpen(false)}
+        title={isUrdu ? 'نیا گاہک رجسٹر کریں' : 'New Customer'}
+        icon={UserPlus}
+        size="sm"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsNewCustomerModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" form="newCustomerForm" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
+              Save Customer
+            </button>
+          </>
+        }
+      >
+        <form id="newCustomerForm" onSubmit={handleCreateNewCustomer}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+              <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>{isUrdu ? 'گاہک کی تفصیلات' : 'Customer Details'}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'نام' : 'Name'} *</label>
                   <input
                     type="text"
                     required
-                    className="form-control form-control-sm"
+                    className="form-control"
                     value={newCustomerForm.name}
                     onChange={(e) => setNewCustomerForm({ ...newCustomerForm, name: e.target.value })}
                     placeholder="e.g. Mian Rashid Builder"
                   />
                 </div>
-                <div>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Phone</label>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'فون نمبر' : 'Phone'}</label>
                   <input
                     type="text"
-                    className="form-control form-control-sm"
+                    className="form-control font-mono"
                     value={newCustomerForm.phone}
                     onChange={(e) => setNewCustomerForm({ ...newCustomerForm, phone: e.target.value })}
                     placeholder="0300-1234567"
                   />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div>
-                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>City</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">{isUrdu ? 'شہر' : 'City'}</label>
                     <input
                       type="text"
-                      className="form-control form-control-sm"
+                      className="form-control"
                       value={newCustomerForm.city}
                       onChange={(e) => setNewCustomerForm({ ...newCustomerForm, city: e.target.value })}
                     />
                   </div>
-                  <div>
-                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Type</label>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">{isUrdu ? 'قسم' : 'Type'}</label>
                     <select
-                      className="form-control form-control-sm"
+                      className="form-control"
                       value={newCustomerForm.customerType}
                       onChange={(e) => setNewCustomerForm({ ...newCustomerForm, customerType: e.target.value })}
                     >
@@ -1771,114 +1766,115 @@ export default function BillingView({ setActiveView, settings }) {
                   </div>
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsNewCustomerModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
-                  Save Customer
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* MODAL 3: DELIVERY DETAILS */}
-      {isDeliveryModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsDeliveryModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.96rem', fontWeight: 800 }}>
-                {isUrdu ? 'ڈیلیوری تفصیلات' : 'Delivery Details'}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsDeliveryModalOpen(false)} style={{ padding: '3px' }}>
-                <X size={15} />
-              </button>
-            </div>
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Method</label>
-                <select
-                  className="form-control form-control-sm"
-                  value={deliveryForm.method}
-                  onChange={(e) => setDeliveryForm({ ...deliveryForm, method: e.target.value })}
-                >
-                  <option value="Rickshaw (رکشہ)">Rickshaw (رکشہ)</option>
-                  <option value="Pickup">Pickup (Factory Gate)</option>
-                  <option value="Truck / Shahzor">Truck / Shahzor (ڈالہ)</option>
-                  <option value="Other">Other</option>
-                </select>
+      <Modal
+        isOpen={isDeliveryModalOpen}
+        onClose={() => setIsDeliveryModalOpen(false)}
+        title={isUrdu ? 'ڈیلیوری تفصیلات' : 'Delivery Details'}
+        icon={Truck}
+        size="sm"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsDeliveryModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => {
+              setCarrierDetails({ ...deliveryForm });
+              setIsDeliveryModalOpen(false);
+            }} style={{ fontWeight: 700 }}>
+              Save Delivery
+            </button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+            <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>{isUrdu ? 'ڈرائیور کی معلومات' : 'Driver & Vehicle Info'}</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'گاڑی کی قسم' : 'Method / Carrier'}</label>
+                  <select
+                    className="form-control"
+                    value={deliveryForm.method}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, method: e.target.value })}
+                  >
+                    <option value="Rickshaw (رکشہ)">Rickshaw (رکشہ)</option>
+                    <option value="Pickup">Pickup (Factory Gate)</option>
+                    <option value="Truck / Shahzor">Truck / Shahzor (ڈالہ)</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'ڈرائیور کا نام' : 'Carrier / Driver Name'}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={deliveryForm.driverName}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, driverName: e.target.value })}
+                    placeholder="e.g. Aslam"
+                  />
+                </div>
               </div>
-              <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Carrier / Driver</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={deliveryForm.driverName}
-                  onChange={(e) => setDeliveryForm({ ...deliveryForm, driverName: e.target.value })}
-                  placeholder="e.g. Aslam"
-                />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'گاڑی کا نمبر' : 'Vehicle Number'}</label>
+                  <input
+                    type="text"
+                    className="form-control font-mono"
+                    value={deliveryForm.vehicleNo}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, vehicleNo: e.target.value })}
+                    placeholder="e.g. FSD-4821"
+                  />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'منزل مقصود' : 'Destination / Notes'}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={deliveryForm.notes}
+                    onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
+                    placeholder="e.g. Site near Jhumra canal"
+                  />
+                </div>
               </div>
-              <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Vehicle #</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={deliveryForm.vehicleNo}
-                  onChange={(e) => setDeliveryForm({ ...deliveryForm, vehicleNo: e.target.value })}
-                  placeholder="e.g. FSD-4821"
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Destination / Notes</label>
-                <input
-                  type="text"
-                  className="form-control form-control-sm"
-                  value={deliveryForm.notes}
-                  onChange={(e) => setDeliveryForm({ ...deliveryForm, notes: e.target.value })}
-                  placeholder="e.g. Site near Jhumra canal"
-                />
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsDeliveryModalOpen(false)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => {
-                  setCarrierDetails({ ...deliveryForm });
-                  setIsDeliveryModalOpen(false);
-                }}
-                style={{ fontWeight: 700 }}
-              >
-                Save Delivery
-              </button>
             </div>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* MODAL 4: ADD CHARGE */}
-      {isChargeModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsChargeModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.94rem', fontWeight: 800 }}>
-                {isUrdu ? 'اضافی خرچہ' : 'Add Charge'}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsChargeModalOpen(false)} style={{ padding: '3px' }}>
-                <X size={15} />
-              </button>
-            </div>
-            <form onSubmit={handleApplyCharge}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Type</label>
+      <Modal
+        isOpen={isChargeModalOpen}
+        onClose={() => setIsChargeModalOpen(false)}
+        title={isUrdu ? 'اضافی خرچہ' : 'Add Charge'}
+        icon={Plus}
+        size="sm"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsChargeModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" form="addChargeForm" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
+              Add Charge
+            </button>
+          </>
+        }
+      >
+        <form id="addChargeForm" onSubmit={handleApplyCharge}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+              <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>{isUrdu ? 'اخراجات کی تفصیل' : 'Charge Details'}</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">{isUrdu ? 'قسم' : 'Type'}</label>
                   <select
-                    className="form-control form-control-sm"
+                    className="form-control"
                     value={chargeForm.type}
                     onChange={(e) => setChargeForm({ ...chargeForm, type: e.target.value })}
                   >
@@ -1888,317 +1884,284 @@ export default function BillingView({ setActiveView, settings }) {
                     <option value="Other">Other</option>
                   </select>
                 </div>
-                <div>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Amount (Rs.) *</label>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label" style={{ color: "#059669" }}>{isUrdu ? 'رقم' : 'Amount (Rs.)'} *</label>
                   <input
                     type="number"
                     required
                     min="1"
-                    className="form-control form-control-sm font-mono"
+                    className="form-control font-mono"
+                    style={{ fontSize: "1.05rem", fontWeight: 700, color: "#059669", borderColor: "rgba(5, 150, 105, 0.3)" }}
                     value={chargeForm.amount}
                     onChange={(e) => setChargeForm({ ...chargeForm, amount: e.target.value })}
                     placeholder="e.g. 2000"
                   />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsChargeModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
-                  Add Charge
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
       {/* MODAL 5: ADD DISCOUNT */}
-      {isDiscountModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsDiscountModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.94rem', fontWeight: 800 }}>
-                {isUrdu ? 'رعایت' : 'Discount'}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsDiscountModalOpen(false)} style={{ padding: '3px' }}>
-                <X size={15} />
-              </button>
-            </div>
-            <form onSubmit={handleApplyDiscount}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setDiscountForm({ ...discountForm, type: 'fixed' })}
-                    style={{
-                      padding: '6px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: discountForm.type === 'fixed' ? '2px solid var(--accent-blue)' : '1px solid var(--border-color)',
-                      background: discountForm.type === 'fixed' ? 'rgba(37, 99, 235, 0.08)' : 'var(--bg-primary)',
-                      fontSize: '0.74rem',
-                      fontWeight: 700
-                    }}
-                  >
-                    Amount (Rs.)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDiscountForm({ ...discountForm, type: 'percentage' })}
-                    style={{
-                      padding: '6px',
-                      borderRadius: 'var(--radius-sm)',
-                      border: discountForm.type === 'percentage' ? '2px solid var(--accent-blue)' : '1px solid var(--border-color)',
-                      background: discountForm.type === 'percentage' ? 'rgba(37, 99, 235, 0.08)' : 'var(--bg-primary)',
-                      fontSize: '0.74rem',
-                      fontWeight: 700
-                    }}
-                  >
-                    Percentage (%)
-                  </button>
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                    {discountForm.type === 'fixed' ? 'Amount (Rs.)' : 'Percentage (%)'}
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    className="form-control form-control-sm font-mono"
-                    value={discountForm.value}
-                    onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
-                    placeholder={discountForm.type === 'fixed' ? 'e.g. 1500' : 'e.g. 5'}
-                  />
-                </div>
-                <div>
-                  <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>Reason (Optional)</label>
-                  <input
-                    type="text"
-                    className="form-control form-control-sm"
-                    value={discountForm.reason}
-                    onChange={(e) => setDiscountForm({ ...discountForm, reason: e.target.value })}
-                    placeholder="e.g. Concession"
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsDiscountModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
-                  Apply Discount
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={isDiscountModalOpen}
+        onClose={() => setIsDiscountModalOpen(false)}
+        title={isUrdu ? 'رعایت' : 'Discount'}
+        icon={Percent}
+        size="sm"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsDiscountModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" form="discountForm" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
+              Apply Discount
+            </button>
+          </>
+        }
+      >
+        <form id="discountForm" onSubmit={handleApplyDiscount} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => setDiscountForm({ ...discountForm, type: 'fixed' })}
+              style={{
+                padding: '8px',
+                borderRadius: '8px',
+                border: discountForm.type === 'fixed' ? '2px solid var(--accent-blue)' : '1px solid var(--border-color)',
+                background: discountForm.type === 'fixed' ? 'rgba(37, 99, 235, 0.08)' : 'var(--bg-primary)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: discountForm.type === 'fixed' ? 'var(--accent-blue)' : 'var(--text-primary)'
+              }}
+            >
+              Amount (Rs.)
+            </button>
+            <button
+              type="button"
+              onClick={() => setDiscountForm({ ...discountForm, type: 'percentage' })}
+              style={{
+                padding: '8px',
+                borderRadius: '8px',
+                border: discountForm.type === 'percentage' ? '2px solid var(--accent-blue)' : '1px solid var(--border-color)',
+                background: discountForm.type === 'percentage' ? 'rgba(37, 99, 235, 0.08)' : 'var(--bg-primary)',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: discountForm.type === 'percentage' ? 'var(--accent-blue)' : 'var(--text-primary)'
+              }}
+            >
+              Percentage (%)
+            </button>
           </div>
-        </div>
-      )}
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>
+              {discountForm.type === 'fixed' ? 'Amount (Rs.)' : 'Percentage (%)'}
+            </label>
+            <input
+              type="number"
+              required
+              min="1"
+              className="form-control form-control-sm font-mono"
+              value={discountForm.value}
+              onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
+              placeholder={discountForm.type === 'fixed' ? 'e.g. 1500' : 'e.g. 5'}
+              style={{ padding: '10px 12px', borderRadius: '8px' }}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px', display: 'block' }}>Reason (Optional)</label>
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              value={discountForm.reason}
+              onChange={(e) => setDiscountForm({ ...discountForm, reason: e.target.value })}
+              placeholder="e.g. Concession"
+              style={{ padding: '10px 12px', borderRadius: '8px' }}
+            />
+          </div>
+        </form>
+      </Modal>
 
       {/* MODAL 6: BILL NOTE */}
-      {isNoteModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsNoteModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.94rem', fontWeight: 800 }}>
-                {isUrdu ? 'بل پر نوٹ' : 'Bill Note'}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsNoteModalOpen(false)} style={{ padding: '3px' }}>
-                <X size={15} />
-              </button>
-            </div>
-            <form onSubmit={handleApplyNote}>
-              <div className="modal-body">
-                <textarea
-                  className="form-control"
-                  rows={3}
-                  value={noteForm}
-                  onChange={(e) => setNoteForm(e.target.value)}
-                  placeholder="e.g. Deliver to site near Jhumra canal bridge..."
-                  style={{ fontSize: '0.82rem' }}
-                />
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsNoteModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
-                  Save Note
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <Modal
+        isOpen={isNoteModalOpen}
+        onClose={() => setIsNoteModalOpen(false)}
+        title={isUrdu ? 'بل پر نوٹ' : 'Bill Note'}
+        icon={FileText}
+        size="sm"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsNoteModalOpen(false)}>
+              Cancel
+            </button>
+            <button type="submit" form="billNoteForm" className="btn btn-primary btn-sm" style={{ fontWeight: 700 }}>
+              Save Note
+            </button>
+          </>
+        }
+      >
+        <form id="billNoteForm" onSubmit={handleApplyNote}>
+          <textarea
+            className="form-control"
+            rows={3}
+            value={noteForm}
+            onChange={(e) => setNoteForm(e.target.value)}
+            placeholder="e.g. Deliver to site near Jhumra canal bridge..."
+            style={{ fontSize: '0.85rem', padding: '10px 12px', borderRadius: '8px' }}
+          />
+        </form>
+      </Modal>
 
       {/* MODAL 7: DELETE ITEM CONFIRMATION */}
-      {itemToDeleteIndex !== null && (
-        <div className="modal-overlay" onClick={() => setItemToDeleteIndex(null)}>
-          <div className="modal-card" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header" style={{ borderBottom: 'none', paddingBottom: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#dc2626' }}>
-                <AlertTriangle size={18} />
-                <h3 className="modal-title" style={{ fontSize: '0.96rem', fontWeight: 800, color: '#dc2626' }}>
-                  {isUrdu ? 'آئٹم حذف کریں؟' : 'Remove Item?'}
-                </h3>
-              </div>
-            </div>
-            <div className="modal-body" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              Are you sure you want to remove <strong>{lineItems[itemToDeleteIndex]?.name}</strong> ({lineItems[itemToDeleteIndex]?.totalSqFt} Sq.Ft) from this bill?
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setItemToDeleteIndex(null)}>
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={handleConfirmDeleteItem}
-                style={{ background: '#dc2626', color: '#ffffff', fontWeight: 700 }}
-              >
-                Remove
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={itemToDeleteIndex !== null}
+        onClose={() => setItemToDeleteIndex(null)}
+        title={isUrdu ? 'آئٹم حذف کریں؟' : 'Remove Item?'}
+        icon={AlertTriangle}
+        size="sm"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setItemToDeleteIndex(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={handleConfirmDeleteItem}
+              style={{ background: '#dc2626', color: '#ffffff', fontWeight: 700 }}
+            >
+              Remove
+            </button>
+          </>
+        }
+      >
+        <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.5' }}>
+          Are you sure you want to remove <strong>{lineItems[itemToDeleteIndex]?.name}</strong> ({lineItems[itemToDeleteIndex]?.totalSqFt} Sq.Ft) from this bill?
         </div>
-      )}
+      </Modal>
 
       {/* MODAL 8: BILL READY REVIEW & CONFIRMATION */}
-      {isReviewModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsReviewModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '460px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <div>
-                <h3 className="modal-title" style={{ fontSize: '1rem', fontWeight: 800 }}>
-                  {isUrdu ? 'بل جائزہ و تصدیق' : 'Bill Review'}
-                </h3>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                  {invoiceNo} • {selectedCustomer ? selectedCustomer.name : 'Walk-in Cash Sale'}
-                </div>
-              </div>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsReviewModalOpen(false)} style={{ padding: '3px' }}>
-                <X size={15} />
-              </button>
+      <Modal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        title={isUrdu ? 'بل جائزہ و تصدیق' : 'Bill Review'}
+        icon={ShieldCheck}
+        size="md"
+        footerActions={
+          <>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsReviewModalOpen(false)}>
+              ← Back
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              disabled={isSaving}
+              onClick={handleExecuteSaveInvoice}
+              style={{ fontWeight: 800, padding: '7px 16px' }}
+            >
+              {isSaving ? 'Saving...' : (isUrdu ? 'محفوظ کریں' : 'Confirm & Save')}
+            </button>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+            Invoice: <strong>{invoiceNo}</strong> • Customer: <strong>{selectedCustomer ? selectedCustomer.name : 'Walk-in Cash Sale'}</strong>
+          </div>
+          
+          {/* Financial Summary Box */}
+          <div style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            padding: '16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            fontSize: '0.85rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: '#64748b' }}>Items:</span>
+              <strong>{lineItems.length} items ({lineItems.reduce((acc, i) => acc + (parseFloat(i.totalSqFt) || 0), 0)} Sq.Ft)</strong>
             </div>
-
-            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              
-              {/* Financial Summary Box */}
-              <div style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-md)',
-                padding: '12px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-                fontSize: '0.82rem'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Items:</span>
-                  <strong>{lineItems.length} items ({lineItems.reduce((acc, i) => acc + (parseFloat(i.totalSqFt) || 0), 0)} Sq.Ft)</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Total:</span>
-                  <strong className="font-mono">Rs. {grandTotal.toLocaleString()}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669' }}>
-                  <span>Amount Paid ({paymentMethod}):</span>
-                  <strong className="font-mono">Rs. {numPaid.toLocaleString()}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: balanceDue > 0 ? '#dc2626' : 'var(--text-muted)' }}>
-                  <span>Remaining Due:</span>
-                  <strong className="font-mono">Rs. {balanceDue.toLocaleString()}</strong>
-                </div>
-              </div>
-
-              {/* Inventory & Cash Impacts */}
-              <div style={{
-                padding: '10px 12px',
-                borderRadius: '6px',
-                background: 'rgba(37, 99, 235, 0.05)',
-                border: '1px solid rgba(37, 99, 235, 0.15)',
-                fontSize: '0.74rem',
-                color: 'var(--text-primary)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '4px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <ShieldCheck size={14} style={{ color: 'var(--accent-blue)' }} />
-                  <span><strong>Inventory:</strong> Automatic stock deduction across {lineItems.length} items.</span>
-                </div>
-                {paymentMethod === 'Cash' && numPaid > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Wallet size={14} style={{ color: '#059669' }} />
-                    <span><strong>Cash Drawer:</strong> +Rs. {numPaid.toLocaleString()} added to live drawer.</span>
-                  </div>
-                )}
-              </div>
-
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: '#64748b' }}>Total:</span>
+              <strong className="font-mono">Rs. {grandTotal.toLocaleString()}</strong>
             </div>
-
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsReviewModalOpen(false)}>
-                ← Back
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                disabled={isSaving}
-                onClick={handleExecuteSaveInvoice}
-                style={{ fontWeight: 800, padding: '7px 16px' }}
-              >
-                {isSaving ? 'Saving...' : (isUrdu ? 'محفوظ کریں' : 'Confirm & Save')}
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#059669' }}>
+              <span>Amount Paid ({paymentMethod}):</span>
+              <strong className="font-mono">Rs. {numPaid.toLocaleString()}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: balanceDue > 0 ? '#dc2626' : '#94a3b8', paddingTop: '8px', borderTop: '1px solid #e2e8f0', marginTop: '4px' }}>
+              <span>Remaining Due:</span>
+              <strong className="font-mono" style={{ fontSize: '1rem' }}>Rs. {balanceDue.toLocaleString()}</strong>
             </div>
           </div>
+
+          {/* Inventory & Cash Impacts */}
+          <div style={{
+            padding: '12px 14px',
+            borderRadius: '12px',
+            background: 'rgba(37, 99, 235, 0.05)',
+            border: '1px solid rgba(37, 99, 235, 0.15)',
+            fontSize: '0.8rem',
+            color: '#0f172a',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldCheck size={16} style={{ color: '#2563eb' }} />
+              <span><strong>Inventory:</strong> Automatic stock deduction across {lineItems.length} items.</span>
+            </div>
+            {paymentMethod === 'Cash' && numPaid > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Wallet size={16} style={{ color: '#059669' }} />
+                <span><strong>Cash Drawer:</strong> +Rs. {numPaid.toLocaleString()} added to live drawer.</span>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* MODAL 9: UNSAVED CHANGES / DISCARD WARNING */}
-      {isDiscardModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsDiscardModalOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '380px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.96rem', fontWeight: 800 }}>
-                {isUrdu ? 'غیر محفوظ بل' : 'Unsaved Bill'}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsDiscardModalOpen(false)}>
-                <X size={15} />
-              </button>
-            </div>
-            <div className="modal-body" style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              {isUrdu
-                ? 'اس بل میں آئٹمز موجود ہیں۔ کیا آپ چھوڑ کر جانا چاہتے ہیں؟'
-                : 'You have unfinished items in this bill. Do you want to leave?'}
-            </div>
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm"
-                onClick={() => {
-                  setIsDiscardModalOpen(false);
-                  setActiveView('dashboard');
-                }}
-                style={{ color: '#dc2626' }}
-              >
-                Leave
-              </button>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => {
-                  setIsDiscardModalOpen(false);
-                }}
-              >
-                Continue Editing
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={isDiscardModalOpen}
+        onClose={() => setIsDiscardModalOpen(false)}
+        title={isUrdu ? 'غیر محفوظ بل' : 'Unsaved Bill'}
+        icon={AlertCircle}
+        size="sm"
+        footerActions={
+          <>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={() => {
+                setIsDiscardModalOpen(false);
+                setActiveView('dashboard');
+              }}
+              style={{ color: '#dc2626', fontWeight: 600 }}
+            >
+              Leave
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => setIsDiscardModalOpen(false)}
+              style={{ fontWeight: 700 }}
+            >
+              Continue Editing
+            </button>
+          </>
+        }
+      >
+        <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.5' }}>
+          {isUrdu
+            ? 'اس بل میں آئٹمز موجود ہیں۔ کیا آپ چھوڑ کر جانا چاہتے ہیں؟'
+            : 'You have unfinished items in this bill. Do you want to leave?'}
         </div>
-      )}
+      </Modal>
 
       {/* DIMENSION CALCULATOR COMPONENT */}
       <DimensionCalculator

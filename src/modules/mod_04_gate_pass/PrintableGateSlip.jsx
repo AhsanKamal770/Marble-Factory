@@ -119,17 +119,19 @@ export default function PrintableGateSlip({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            background: "var(--bg-primary)"
+            background: "var(--bg-primary)",
+            flexWrap: "wrap",
+            gap: "12px"
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-            <span style={{ fontSize: "0.98rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px" }}>
-              <Truck size={18} style={{ color: "var(--accent-blue)" }} />
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap", flex: 1 }}>
+            <span style={{ fontSize: "0.98rem", fontWeight: 800, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: "8px", whiteSpace: "nowrap" }}>
+              <Truck size={18} style={{ color: "var(--accent-blue)", flexShrink: 0 }} />
               {language === "ur" ? "رکشہ گیٹ پاس پرچی پرنٹ" : "Print Gate Out Pass"}
             </span>
 
             {/* Format Switcher Tabs */}
-            <div style={{ display: "flex", background: "var(--bg-card)", padding: "2px", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+            <div style={{ display: "flex", background: "var(--bg-card)", padding: "2px", borderRadius: "6px", border: "1px solid var(--border-color)", whiteSpace: "nowrap" }}>
               <button
                 type="button"
                 onClick={() => setPrintFormat("a4")}
@@ -147,7 +149,7 @@ export default function PrintableGateSlip({
                   color: printFormat === "a4" ? "#ffffff" : "var(--text-secondary)"
                 }}
               >
-                <FileText size={13} />
+                <FileText size={13} style={{ flexShrink: 0 }} />
                 <span>A4 / A5 Gate Slip</span>
               </button>
 
@@ -168,13 +170,13 @@ export default function PrintableGateSlip({
                   color: printFormat === "thermal" ? "#ffffff" : "var(--text-secondary)"
                 }}
               >
-                <Receipt size={13} />
+                <Receipt size={13} style={{ flexShrink: 0 }} />
                 <span>80mm Driver Slip</span>
               </button>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", flexShrink: 0 }}>
             <button
               type="button"
               onClick={handleCopyWhatsApp}
@@ -245,7 +247,7 @@ export default function PrintableGateSlip({
                 #gatepass-print-area {
                   display: block !important;
                   position: absolute;
-                  left: 0;
+                  right: 0;
                   top: 0;
                   width: ${printFormat === 'a4' ? '100%' : '78mm'};
                   margin: 0;
@@ -266,6 +268,7 @@ export default function PrintableGateSlip({
             {/* ------------------------------------------------------------- */}
             {printFormat === "a4" && (
               <div
+                dir="rtl"
                 style={{
                   background: "#ffffff",
                   color: "#0f172a",
@@ -273,10 +276,10 @@ export default function PrintableGateSlip({
                   borderRadius: "6px",
                   boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
                   border: "2px solid #0f172a",
-                  fontFamily: "var(--font-main)",
+                  fontFamily: "var(--font-urdu)",
                   maxWidth: "800px",
                   margin: "0 auto",
-                  lineHeight: 1.3
+                  lineHeight: 1.5
                 }}
               >
                 {/* Traditional Bill Book Top Header */}
@@ -287,27 +290,27 @@ export default function PrintableGateSlip({
                       <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
                       <h1
                         style={{
-                          fontSize: "1.45rem",
+                          fontSize: "1.7rem",
                           fontWeight: 900,
                           color: "#1e3a8a",
                           margin: "2px 0 0 0",
-                          letterSpacing: "-0.02em"
+                          letterSpacing: "0.02em"
                         }}
                       >
                         {companyName}
                       </h1>
-                      <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-urdu)", marginTop: "2px" }}>
-                        نام ہی کافی ہے — رانا شہاب
+                      <div style={{ fontSize: "1rem", fontWeight: 800, color: "#0f172a", marginTop: "2px" }}>
+                        {tagline}
                       </div>
-                      <div style={{ fontSize: "0.74rem", color: "#475569", marginTop: "3px" }}>
-                        {address} | فون: {phone}
+                      <div style={{ fontSize: "0.85rem", color: "#475569", marginTop: "3px" }}>
+                        {address} | فون: <span style={{ direction: "ltr", display: "inline-block" }}>{phone}</span>
                       </div>
                     </div>
 
                     {/* Gate Pass Meta Stamp */}
                     <div
                       style={{
-                        textAlign: "right",
+                        textAlign: "left",
                         background: "#f8fafc",
                         border: "1px solid #cbd5e1",
                         padding: "8px 12px",
@@ -315,19 +318,19 @@ export default function PrintableGateSlip({
                         minWidth: "185px"
                       }}
                     >
-                      <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 700 }}>GATE OUT PASS / گیٹ پاس</div>
-                      <div className="font-mono" style={{ fontSize: "1rem", fontWeight: 900, color: "#1e3a8a" }}>
+                      <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 700 }}>گیٹ پاس پرچی</div>
+                      <div className="font-mono" style={{ fontSize: "1.1rem", fontWeight: 900, color: "#1e3a8a", direction: "ltr" }}>
                         {gatePass.gatePassNo}
                       </div>
                       {gatePass.invoiceNo && (
-                        <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#0284c7", marginTop: "2px", fontFamily: "monospace" }}>
-                          بل نمبر: {gatePass.invoiceNo}
+                        <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0284c7", marginTop: "2px" }}>
+                          بل حوالہ: {gatePass.invoiceNo}
                         </div>
                       )}
-                      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", marginTop: "3px" }}>
+                      <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginTop: "3px" }}>
                         تاریخ: {dispatchDate}
                       </div>
-                      <div style={{ fontSize: "0.68rem", color: "#64748b", marginTop: "1px" }}>
+                      <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "1px" }}>
                         وقت روانگی: {dispatchTime}
                       </div>
                     </div>
@@ -345,13 +348,13 @@ export default function PrintableGateSlip({
                     padding: "10px 14px",
                     borderRadius: "6px",
                     marginBottom: "14px",
-                    fontSize: "0.8rem"
+                    fontSize: "0.9rem"
                   }}
                 >
-                  {/* Left: Customer & Destination */}
+                  {/* Right (In RTL, first is Right): Customer & Destination */}
                   <div>
-                    <div style={{ fontWeight: 800, color: "#1e3a8a", fontSize: "0.82rem", borderBottom: "1px solid #cbd5e1", paddingBottom: "3px", marginBottom: "5px" }}>
-                      جناب خریدار و ترسیل مقام (Customer & Destination)
+                    <div style={{ fontWeight: 800, color: "#1e3a8a", fontSize: "0.95rem", borderBottom: "1px solid #cbd5e1", paddingBottom: "3px", marginBottom: "5px" }}>
+                      تفصیل خریدار و ترسیل مقام
                     </div>
                     <div style={{ marginBottom: "3px" }}>
                       <span style={{ color: "#64748b" }}>خریدار / پارٹی: </span>
@@ -360,7 +363,7 @@ export default function PrintableGateSlip({
                     {gatePass.customerPhone && (
                       <div style={{ marginBottom: "3px" }}>
                         <span style={{ color: "#64748b" }}>موبائل نمبر: </span>
-                        <span className="font-mono">{gatePass.customerPhone}</span>
+                        <span className="font-mono" style={{ direction: "ltr", display: "inline-block" }}>{gatePass.customerPhone}</span>
                       </div>
                     )}
                     <div>
@@ -369,23 +372,23 @@ export default function PrintableGateSlip({
                     </div>
                   </div>
 
-                  {/* Right: Vehicle, Driver & Kiraya */}
+                  {/* Left (In RTL, second is Left): Vehicle & Driver */}
                   <div>
-                    <div style={{ fontWeight: 800, color: "#1e3a8a", fontSize: "0.82rem", borderBottom: "1px solid #cbd5e1", paddingBottom: "3px", marginBottom: "5px" }}>
-                      گاڑی و ڈرائیور معلومات (Vehicle & Driver)
+                    <div style={{ fontWeight: 800, color: "#1e3a8a", fontSize: "0.95rem", borderBottom: "1px solid #cbd5e1", paddingBottom: "3px", marginBottom: "5px" }}>
+                      تفصیل گاڑی و ڈرائیور
                     </div>
                     <div style={{ marginBottom: "3px" }}>
                       <span style={{ color: "#64748b" }}>گاڑی / رکشہ: </span>
-                      <strong>{gatePass.vehicleType}</strong> {gatePass.vehicleRegNo ? <span className="font-mono">({gatePass.vehicleRegNo})</span> : ''}
+                      <strong>{gatePass.vehicleType === "Qingqi Rickshaw" ? "چنگ چی رکشہ" : gatePass.vehicleType}</strong> {gatePass.vehicleRegNo ? <span className="font-mono" style={{ direction: "ltr", display: "inline-block" }}>({gatePass.vehicleRegNo})</span> : ''}
                     </div>
                     <div style={{ marginBottom: "3px" }}>
                       <span style={{ color: "#64748b" }}>ڈرائیور نام: </span>
-                      <strong>{gatePass.driverName || "—"}</strong> {gatePass.driverPhone ? <span className="font-mono">({gatePass.driverPhone})</span> : ''}
+                      <strong>{gatePass.driverName || "—"}</strong> {gatePass.driverPhone ? <span className="font-mono" style={{ direction: "ltr", display: "inline-block" }}>({gatePass.driverPhone})</span> : ''}
                     </div>
                     <div>
                       <span style={{ color: "#64748b" }}>کرایہ باربرداری: </span>
-                      <strong className="font-mono">Rs. {Number(gatePass.carriageCharges || 0).toLocaleString()}</strong>
-                      <span style={{ color: "#475569", fontSize: "0.72rem", marginLeft: "4px" }}>({gatePass.carriagePaidBy || 'Paid'})</span>
+                      <strong className="font-mono" style={{ direction: "ltr", display: "inline-block" }}>Rs. {Number(gatePass.carriageCharges || 0).toLocaleString()}</strong>
+                      <span style={{ color: "#475569", fontSize: "0.8rem", marginRight: "6px" }}>({gatePass.carriagePaidBy === "Customer (موقع پر ادا کرے گا)" ? "موقع پر وصولی" : gatePass.carriagePaidBy})</span>
                     </div>
                   </div>
                 </div>
@@ -401,32 +404,32 @@ export default function PrintableGateSlip({
                 >
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderTop: "2px solid #0f172a", borderBottom: "2px solid #0f172a" }}>
-                      <th style={{ padding: "6px 8px", textAlign: "center", width: "36px", borderRight: "1px solid #cbd5e1" }}>#</th>
-                      <th style={{ padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>تفصیل پتھر و ماربل (Description / Variety)</th>
-                      <th style={{ padding: "6px 8px", textAlign: "center", width: "85px", borderRight: "1px solid #cbd5e1" }}>سوتر موٹائی</th>
-                      <th style={{ padding: "6px 8px", textAlign: "left", width: "130px", borderRight: "1px solid #cbd5e1" }}>پیمائش (Size)</th>
-                      <th style={{ padding: "6px 8px", textAlign: "right", width: "85px", borderRight: "1px solid #cbd5e1" }}>تھان / پیس (Pcs)</th>
-                      <th style={{ padding: "6px 8px", textAlign: "right", width: "95px" }}>اسکوائر فٹ (Sq.Ft)</th>
+                      <th style={{ padding: "6px 8px", textAlign: "center", width: "36px", borderLeft: "1px solid #cbd5e1" }}>#</th>
+                      <th style={{ padding: "6px 8px", textAlign: "right", borderLeft: "1px solid #cbd5e1" }}>تفصیل پتھر و ماربل / قسم</th>
+                      <th style={{ padding: "6px 8px", textAlign: "center", width: "85px", borderLeft: "1px solid #cbd5e1" }}>سوتر موٹائی</th>
+                      <th style={{ padding: "6px 8px", textAlign: "right", width: "130px", borderLeft: "1px solid #cbd5e1" }}>پیمائش (سائز)</th>
+                      <th style={{ padding: "6px 8px", textAlign: "left", width: "85px", borderLeft: "1px solid #cbd5e1" }}>تھان / پیس</th>
+                      <th style={{ padding: "6px 8px", textAlign: "left", width: "95px" }}>اسکوائر فٹ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {manifestItems && manifestItems.length > 0 ? (
                       manifestItems.map((item, idx) => (
                         <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                          <td style={{ padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>{idx + 1}</td>
-                          <td style={{ padding: "6px 8px", fontWeight: 700, borderRight: "1px solid #cbd5e1", color: "#0f172a" }}>
+                          <td style={{ padding: "6px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1" }}>{idx + 1}</td>
+                          <td style={{ padding: "6px 8px", fontWeight: 700, borderLeft: "1px solid #cbd5e1", color: "#0f172a" }}>
                             {item.name}
                           </td>
-                          <td style={{ padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1", fontSize: "0.74rem", fontWeight: 700, color: "#1e3a8a" }}>
+                          <td style={{ padding: "6px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1", fontSize: "0.85rem", fontWeight: 700, color: "#1e3a8a" }}>
                             {item.thicknessSutar ? `${item.thicknessSutar} سوتر` : "4 سوتر"}
                           </td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #cbd5e1", color: "#475569" }}>
+                          <td style={{ padding: "6px 8px", borderLeft: "1px solid #cbd5e1", color: "#475569" }}>
                             {item.size || "—"}
                           </td>
-                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "right", borderRight: "1px solid #cbd5e1", fontWeight: 700 }}>
+                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "left", borderLeft: "1px solid #cbd5e1", fontWeight: 700, direction: "ltr" }}>
                             {item.pieces || "—"}
                           </td>
-                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "right", fontWeight: 800, color: "#0f172a" }}>
+                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "left", fontWeight: 800, color: "#0f172a", direction: "ltr" }}>
                             {item.sqFt ? Number(item.sqFt).toFixed(2) : "—"}
                           </td>
                         </tr>
@@ -441,13 +444,13 @@ export default function PrintableGateSlip({
                   </tbody>
                   <tfoot>
                     <tr style={{ background: "#f8fafc", borderTop: "2px solid #0f172a", borderBottom: "2px solid #0f172a", fontWeight: 900 }}>
-                      <td colSpan="4" style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
-                        میزان روانگی (TOTAL DISPATCH):
+                      <td colSpan="4" style={{ padding: "8px", textAlign: "left", borderLeft: "1px solid #cbd5e1", fontSize: "0.95rem" }}>
+                        میزان روانگی کل مال:
                       </td>
-                      <td className="font-mono" style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1", fontSize: "0.85rem" }}>
+                      <td className="font-mono" style={{ padding: "8px", textAlign: "left", borderLeft: "1px solid #cbd5e1", fontSize: "0.95rem", direction: "ltr" }}>
                         {gatePass.totalPieces || manifestItems.reduce((s, i) => s + (Number(i.pieces) || 0), 0)} Pcs
                       </td>
-                      <td className="font-mono" style={{ padding: "8px", textAlign: "right", fontSize: "0.92rem", color: "#1e3a8a" }}>
+                      <td className="font-mono" style={{ padding: "8px", textAlign: "left", fontSize: "0.95rem", color: "#1e3a8a", direction: "ltr" }}>
                         {gatePass.totalSqFt || manifestItems.reduce((s, i) => s + (Number(i.sqFt) || 0), 0)} Sq.Ft
                       </td>
                     </tr>
@@ -492,32 +495,29 @@ export default function PrintableGateSlip({
                 </div>
 
                 {/* 3 Signature Blocks */}
-                <div style={{ marginTop: "36px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", fontSize: "0.75rem", padding: "0 10px" }}>
+                <div style={{ marginTop: "36px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px", fontSize: "0.85rem", padding: "0 10px" }}>
                   <div style={{ textAlign: "center" }}>
                     <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", fontWeight: 800, color: "#0f172a" }}>
-                      دستخط گیٹ کیپر / منشی
+                      دستخط خریدار / وصول کنندہ
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#64748b" }}>Munshi / Gate In-charge</div>
                   </div>
 
                   <div style={{ textAlign: "center" }}>
                     <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", fontWeight: 800, color: "#0f172a" }}>
                       دستخط ڈرائیور / کیریئر
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#64748b" }}>Driver / Carrier Signature</div>
                   </div>
 
                   <div style={{ textAlign: "center" }}>
                     <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", fontWeight: 800, color: "#0f172a" }}>
-                      دستخط خریدار / وصول کنندہ
+                      دستخط گیٹ کیپر / منشی
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#64748b" }}>Customer Receiving Signature</div>
                   </div>
                 </div>
 
                 {/* Footer Brand Line */}
-                <div style={{ textAlign: "center", marginTop: "18px", borderTop: "1px solid #e2e8f0", paddingTop: "6px", fontSize: "0.68rem", color: "#94a3b8" }}>
-                  {companyName} — Dispatch Logistics ERP System • جھمرہ سٹی
+                <div style={{ textAlign: "center", marginTop: "18px", borderTop: "1px solid #e2e8f0", paddingTop: "6px", fontSize: "0.75rem", color: "#94a3b8" }}>
+                  {companyName} — ڈسپیچ و لاجسٹکس سسٹم • جھمرہ سٹی
                 </div>
               </div>
             )}
@@ -527,87 +527,88 @@ export default function PrintableGateSlip({
             {/* ------------------------------------------------------------- */}
             {printFormat === "thermal" && (
               <div
+                dir="rtl"
                 style={{
                   background: "#ffffff",
                   color: "#000000",
                   padding: "16px 14px",
                   borderRadius: "8px",
                   border: "1px dashed #cbd5e1",
-                  fontFamily: "monospace",
-                  fontSize: "11px",
+                  fontFamily: "var(--font-urdu)",
+                  fontSize: "12px",
                   maxWidth: "380px",
                   margin: "0 auto",
-                  lineHeight: 1.35
+                  lineHeight: 1.45
                 }}
               >
                 {/* Thermal Header */}
                 <div style={{ textAlign: "center", borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontSize: "14px", fontWeight: "bold" }}>{companyName}</div>
-                  <div style={{ fontSize: "10px" }}>{address}</div>
-                  <div style={{ fontSize: "10px" }}>Tel: {phone}</div>
-                  <div style={{ fontSize: "12px", fontWeight: "bold", margin: "4px 0 2px 0", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "2px 0" }}>
-                    GATE OUT PASS — RICKSHAW SLIP
+                  <div style={{ fontSize: "16px", fontWeight: "bold" }}>{companyName}</div>
+                  <div style={{ fontSize: "11px" }}>{address}</div>
+                  <div style={{ fontSize: "11px" }}>فون: <span style={{ direction: "ltr", display: "inline-block" }}>{phone}</span></div>
+                  <div style={{ fontSize: "13px", fontWeight: "bold", margin: "4px 0 2px 0", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
+                    رکشہ گیٹ پاس پرچی
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", marginTop: "4px" }}>
-                    <span>GP #: {gatePass.gatePassNo}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", marginTop: "4px" }}>
+                    <span>گیٹ پاس #: {gatePass.gatePassNo}</span>
                     <span>{dispatchDate}</span>
                   </div>
                   {gatePass.invoiceNo && (
-                    <div style={{ textAlign: "left", fontSize: "10px", fontWeight: "bold", marginTop: "2px" }}>
-                      Bill #: {gatePass.invoiceNo}
+                    <div style={{ textAlign: "right", fontSize: "11px", fontWeight: "bold", marginTop: "2px" }}>
+                      بل حوالہ: {gatePass.invoiceNo}
                     </div>
                   )}
                 </div>
 
                 {/* Customer & Vehicle Details */}
                 <div style={{ borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div><strong>Customer:</strong> {gatePass.customerName}</div>
-                  {gatePass.customerPhone && <div><strong>Phone:</strong> {gatePass.customerPhone}</div>}
-                  <div><strong>Dest:</strong> {gatePass.destination || "Factory Delivery"}</div>
+                  <div><strong>خریدار:</strong> {gatePass.customerName}</div>
+                  {gatePass.customerPhone && <div><strong>فون:</strong> <span style={{ direction: "ltr", display: "inline-block" }}>{gatePass.customerPhone}</span></div>}
+                  <div><strong>پتہ:</strong> {gatePass.destination || "فیکٹری سائیڈ ڈلیوری"}</div>
                   <div style={{ borderTop: "1px dotted #888", marginTop: "4px", paddingTop: "4px" }}>
-                    <strong>Vehicle:</strong> {gatePass.vehicleType} {gatePass.vehicleRegNo ? `(${gatePass.vehicleRegNo})` : ''}
+                    <strong>رکشہ/گاڑی:</strong> {gatePass.vehicleType === "Qingqi Rickshaw" ? "چنگ چی رکشہ" : gatePass.vehicleType} {gatePass.vehicleRegNo ? `(${gatePass.vehicleRegNo})` : ''}
                   </div>
-                  <div><strong>Driver:</strong> {gatePass.driverName || '-'} {gatePass.driverPhone ? `• ${gatePass.driverPhone}` : ''}</div>
+                  <div><strong>ڈرائیور:</strong> {gatePass.driverName || '-'} {gatePass.driverPhone ? <><span style={{ margin: "0 4px" }}>•</span><span style={{ direction: "ltr", display: "inline-block" }}>{gatePass.driverPhone}</span></> : ''}</div>
                   {gatePass.carriageCharges > 0 && (
-                    <div><strong>Carriage:</strong> Rs. {Number(gatePass.carriageCharges).toLocaleString()} ({gatePass.carriagePaidBy || 'Paid'})</div>
+                    <div><strong>کرایہ:</strong> <span style={{ direction: "ltr", display: "inline-block" }}>Rs. {Number(gatePass.carriageCharges).toLocaleString()}</span> ({gatePass.carriagePaidBy === "Customer (موقع پر ادا کرے گا)" ? "موقع پر وصولی" : gatePass.carriagePaidBy})</div>
                   )}
                 </div>
 
                 {/* Manifest Table */}
                 <div style={{ borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontWeight: "bold", marginBottom: "4px" }}>ITEMS DISPATCHED:</div>
+                  <div style={{ fontWeight: "bold", marginBottom: "4px" }}>تفصیل مال:</div>
                   {manifestItems.map((item, idx) => (
-                    <div key={idx} style={{ marginBottom: "3px", fontSize: "10px" }}>
+                    <div key={idx} style={{ marginBottom: "3px", fontSize: "11px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <span>{idx + 1}. {item.name}</span>
-                        <span style={{ fontWeight: "bold" }}>{item.sqFt ? `${item.sqFt} SqFt` : ''}</span>
+                        <span style={{ fontWeight: "bold", direction: "ltr" }}>{item.sqFt ? `${item.sqFt} SqFt` : ''}</span>
                       </div>
-                      <div style={{ color: "#444", fontSize: "9px", paddingLeft: "10px" }}>
-                        {item.thicknessSutar ? `${item.thicknessSutar} Sutar` : ''} {item.size ? `• ${item.size}` : ''} {item.pieces ? `• ${item.pieces} Pcs` : ''}
+                      <div style={{ color: "#444", fontSize: "10px", paddingRight: "10px" }}>
+                        {item.thicknessSutar ? `${item.thicknessSutar} سوتر` : ''} {item.size ? `• ${item.size}` : ''} {item.pieces ? `• ${item.pieces} Pcs` : ''}
                       </div>
                     </div>
                   ))}
                   <div style={{ borderTop: "1px dotted #000", marginTop: "4px", paddingTop: "4px", display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                    <span>Total:</span>
-                    <span>{gatePass.totalPieces || 0} Pcs • {gatePass.totalSqFt || 0} SqFt</span>
+                    <span>میزان کل مال:</span>
+                    <span style={{ direction: "ltr" }}>{gatePass.totalPieces || 0} Pcs • {gatePass.totalSqFt || 0} SqFt</span>
                   </div>
                 </div>
 
                 {/* Signatures */}
-                <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", fontSize: "9px" }}>
+                <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", fontSize: "11px", fontWeight: "bold" }}>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #000", width: "70px", paddingTop: "2px" }}>Munshi Sign</div>
+                    <div style={{ borderTop: "1px solid #000", width: "70px", paddingTop: "2px" }}>خریدار</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #000", width: "70px", paddingTop: "2px" }}>Driver Sign</div>
+                    <div style={{ borderTop: "1px solid #000", width: "70px", paddingTop: "2px" }}>ڈرائیور</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #000", width: "70px", paddingTop: "2px" }}>Customer Sign</div>
+                    <div style={{ borderTop: "1px solid #000", width: "70px", paddingTop: "2px" }}>منشی</div>
                   </div>
                 </div>
 
-                <div style={{ textAlign: "center", fontSize: "9px", marginTop: "12px", borderTop: "1px dotted #888", paddingTop: "4px" }}>
-                  Factory Gate Logistics System
+                <div style={{ textAlign: "center", fontSize: "10px", marginTop: "12px", borderTop: "1px dotted #888", paddingTop: "4px" }}>
+                  فیکٹری گیٹ لاجسٹکس سسٹم
                 </div>
               </div>
             )}

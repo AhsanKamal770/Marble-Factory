@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PlusCircle, DollarSign, User, FileText, Calendar, Check, Tag } from "lucide-react";
+import { PlusCircle, DollarSign, User, FileText, Calendar, Check, Tag, Wallet, Building2 } from "lucide-react";
 import { EXPENSE_CATEGORIES } from "./dailyExpenseService";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -47,33 +47,55 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
     }
   };
 
-  const selectedCatObj = EXPENSE_CATEGORIES.find(c => c.id === category) || EXPENSE_CATEGORIES[0];
-
   return (
     <div style={{
       background: "var(--bg-card)",
-      padding: "24px",
-      borderRadius: "14px",
+      padding: "22px",
+      borderRadius: "16px",
       border: "1px solid var(--border-color)",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.04)"
+      boxShadow: "0 2px 10px rgba(15, 23, 42, 0.04)"
     }}>
-      {/* Title */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
-        <div>
-          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
-            {language === 'ur' ? "نیا روزانہ خرچ درج کریں" : "Record Daily Expense"}
-          </h3>
-          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
-            {language === 'ur' ? "دراز سے نکالی گئی رقم کا فوری اندراج" : "Log factory expense & deduct from drawer"}
-          </p>
+      {/* Form Header */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "18px",
+        paddingBottom: "14px",
+        borderBottom: "1px solid var(--border-divider)"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{
+            width: "36px",
+            height: "36px",
+            borderRadius: "10px",
+            background: "rgba(239, 68, 68, 0.1)",
+            color: "#ef4444",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0
+          }}>
+            <PlusCircle size={20} />
+          </div>
+          <div>
+            <h3 style={{ fontSize: "1.02rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+              {language === 'ur' ? "نیا روزانہ خرچ درج کریں" : "Record Daily Expense"}
+            </h3>
+            <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
+              {language === 'ur' ? "دراز سے نکالی گئی رقم کا فوری اندراج" : "Log factory expense & deduct from drawer"}
+            </p>
+          </div>
         </div>
+
         <span style={{
-          fontSize: "0.72rem",
-          fontWeight: 700,
+          fontSize: "0.70rem",
+          fontWeight: 800,
           padding: "4px 8px",
           borderRadius: "6px",
           background: "rgba(239, 68, 68, 0.1)",
-          color: "#ef4444"
+          color: "#ef4444",
+          border: "1px solid rgba(239, 68, 68, 0.2)"
         }}>
           Cash Out (-)
         </span>
@@ -81,13 +103,13 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
       {successMsg && (
         <div style={{
-          background: "rgba(16, 185, 129, 0.12)",
+          background: "rgba(16, 185, 129, 0.1)",
           border: "1px solid #10b981",
           color: "#059669",
           padding: "10px 14px",
-          borderRadius: "8px",
-          fontSize: "0.85rem",
-          fontWeight: 600,
+          borderRadius: "10px",
+          fontSize: "0.82rem",
+          fontWeight: 700,
           marginBottom: "16px",
           display: "flex",
           alignItems: "center",
@@ -101,22 +123,24 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
         
         {/* Expense Category */}
         <div>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-            <Tag size={14} /> {language === 'ur' ? "خرچے کی کیٹیگری (شعبہ) *" : "Expense Category *"}
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.80rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+            <Tag size={13} style={{ color: "var(--accent-primary, #2563eb)" }} />
+            <span>{language === 'ur' ? "خرچے کی کیٹیگری (شعبہ) *" : "Expense Category *"}</span>
           </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             style={{
               width: "100%",
-              padding: "10px 12px",
-              borderRadius: "8px",
+              padding: "9px 12px",
+              borderRadius: "10px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-primary)",
               color: "var(--text-primary)",
-              fontSize: "0.88rem",
+              fontSize: "0.85rem",
               fontWeight: 600,
-              outline: "none"
+              outline: "none",
+              cursor: "pointer"
             }}
           >
             {EXPENSE_CATEGORIES.map(cat => (
@@ -129,8 +153,9 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
         {/* Amount with Quick Presets */}
         <div>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-            <DollarSign size={14} /> {language === 'ur' ? "رقم (روپے) *" : "Expense Amount (Rs.) *"}
+          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.80rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+            <DollarSign size={13} style={{ color: "#ef4444" }} />
+            <span>{language === 'ur' ? "رقم (روپے) *" : "Expense Amount (Rs.) *"}</span>
           </label>
           <div style={{ position: "relative" }}>
             <span style={{
@@ -154,9 +179,9 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
               required
               style={{
                 width: "100%",
-                padding: "10px 12px 10px 42px",
-                borderRadius: "8px",
-                border: "2px solid #ef444433",
+                padding: "10px 12px 10px 46px",
+                borderRadius: "10px",
+                border: "1.5px solid rgba(239, 68, 68, 0.3)",
                 background: "var(--bg-primary)",
                 color: "var(--text-primary)",
                 fontSize: "1.1rem",
@@ -166,7 +191,7 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
             />
           </div>
 
-          {/* Quick Click Preset Buttons */}
+          {/* Quick Preset Buttons */}
           <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
             {quickAmounts.map(val => (
               <button
@@ -174,12 +199,12 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
                 type="button"
                 onClick={() => setAmount(val.toString())}
                 style={{
-                  background: amount === val.toString() ? "var(--accent-primary)" : "var(--bg-primary)",
-                  color: amount === val.toString() ? "#fff" : "var(--text-secondary)",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "6px",
-                  padding: "4px 8px",
-                  fontSize: "0.75rem",
+                  background: amount === val.toString() ? "#ef4444" : "var(--bg-primary)",
+                  color: amount === val.toString() ? "#ffffff" : "var(--text-secondary)",
+                  border: `1px solid ${amount === val.toString() ? "#ef4444" : "var(--border-color)"}`,
+                  borderRadius: "7px",
+                  padding: "4px 9px",
+                  fontSize: "0.74rem",
                   fontWeight: 700,
                   cursor: "pointer",
                   transition: "all 0.15s ease"
@@ -191,33 +216,35 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
           </div>
         </div>
 
-        {/* Paid To & Date Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        {/* Paid To & Date in 2 Columns */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-              <User size={13} /> {language === 'ur' ? "کس کو ادا کیا (نام)" : "Paid To"}
+            <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+              <User size={13} style={{ color: "var(--text-secondary)" }} />
+              <span>{language === 'ur' ? "کس کو ادا کیا" : "Paid To"}</span>
             </label>
             <input
               type="text"
               value={paidTo}
               onChange={e => setPaidTo(e.target.value)}
-              placeholder={language === 'ur' ? "مثلاً علی ڈرائیور / استاد اسلم" : "e.g. Ali Driver"}
+              placeholder={language === 'ur' ? "مثلاً علی ڈرائیور" : "e.g. Ali Driver"}
               style={{
                 width: "100%",
-                padding: "9px 11px",
+                padding: "8px 11px",
                 borderRadius: "8px",
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-primary)",
                 color: "var(--text-primary)",
-                fontSize: "0.85rem",
+                fontSize: "0.82rem",
                 outline: "none"
               }}
             />
           </div>
 
           <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-              <Calendar size={13} /> {language === 'ur' ? "تاریخ (تاریخ خرچ)" : "Expense Date"}
+            <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+              <Calendar size={13} style={{ color: "var(--text-secondary)" }} />
+              <span>{language === 'ur' ? "تاریخ خرچ" : "Date"}</span>
             </label>
             <input
               type="date"
@@ -230,7 +257,8 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-primary)",
                 color: "var(--text-primary)",
-                fontSize: "0.85rem",
+                fontSize: "0.82rem",
+                fontWeight: 600,
                 outline: "none"
               }}
             />
@@ -239,44 +267,84 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
         {/* Remarks */}
         <div>
-          <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-            <FileText size={13} /> {language === 'ur' ? "تفصیل / وجہ (اختیاری)" : "Remarks / Details"}
+          <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+            <FileText size={13} style={{ color: "var(--text-secondary)" }} />
+            <span>{language === 'ur' ? "تفصیل / وجہ (اختیاری)" : "Remarks / Details"}</span>
           </label>
           <input
             type="text"
             value={remarks}
             onChange={e => setRemarks(e.target.value)}
-            placeholder={language === 'ur' ? "مثلاً جنریٹر ڈیزل 20 لٹر یا ٹریکٹر ٹرالی ان لوڈنگ" : "e.g. 20L Diesel for Generator"}
+            placeholder={language === 'ur' ? "مثلاً جنریٹر ڈیزل 20 لٹر" : "e.g. 20L Diesel for Generator"}
             style={{
               width: "100%",
-              padding: "9px 11px",
+              padding: "8px 11px",
               borderRadius: "8px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-primary)",
               color: "var(--text-primary)",
-              fontSize: "0.85rem",
+              fontSize: "0.82rem",
               outline: "none"
             }}
           />
         </div>
 
-        {/* Payment Method Selector */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "2px" }}>
-          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-            {language === 'ur' ? "ادائیگی کا طریقہ:" : "Payment:"}
-          </span>
-          {["Cash", "Bank"].map(method => (
-            <label key={method} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={method}
-                checked={paymentMethod === method}
-                onChange={() => setPaymentMethod(method)}
-              />
-              {method === "Cash" ? (language === 'ur' ? "دراز کیش (Cash)" : "Cash Drawer") : (language === 'ur' ? "بینک آن لائن" : "Bank Transfer")}
-            </label>
-          ))}
+        {/* Payment Method Segmented Buttons */}
+        <div>
+          <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+            {language === 'ur' ? "ادائیگی کا طریقہ:" : "Payment Source:"}
+          </label>
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: "8px"
+          }}>
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("Cash")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "8px 10px",
+                borderRadius: "8px",
+                border: `1.5px solid ${paymentMethod === "Cash" ? "#10b981" : "var(--border-color)"}`,
+                background: paymentMethod === "Cash" ? "rgba(16, 185, 129, 0.08)" : "var(--bg-primary)",
+                color: paymentMethod === "Cash" ? "#059669" : "var(--text-secondary)",
+                fontWeight: 700,
+                fontSize: "0.78rem",
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+            >
+              <Wallet size={14} />
+              <span>{language === 'ur' ? "دراز کیش (Cash)" : "Cash Drawer"}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setPaymentMethod("Bank")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "8px 10px",
+                borderRadius: "8px",
+                border: `1.5px solid ${paymentMethod === "Bank" ? "var(--accent-primary, #2563eb)" : "var(--border-color)"}`,
+                background: paymentMethod === "Bank" ? "rgba(37, 99, 235, 0.08)" : "var(--bg-primary)",
+                color: paymentMethod === "Bank" ? "var(--accent-primary, #2563eb)" : "var(--text-secondary)",
+                fontWeight: 700,
+                fontSize: "0.78rem",
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+            >
+              <Building2 size={14} />
+              <span>{language === 'ur' ? "بینک آن لائن" : "Bank Transfer"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Submit Button */}
@@ -284,15 +352,15 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
           type="submit"
           disabled={isSubmitting}
           style={{
-            marginTop: "10px",
+            marginTop: "6px",
             width: "100%",
-            padding: "12px",
-            borderRadius: "9px",
+            padding: "11px",
+            borderRadius: "10px",
             border: "none",
             background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-            color: "#fff",
+            color: "#ffffff",
             fontWeight: 800,
-            fontSize: "0.95rem",
+            fontSize: "0.90rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -301,9 +369,19 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
             boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
             transition: "all 0.15s ease"
           }}
+          onMouseOver={(e) => {
+            if (!isSubmitting) e.currentTarget.style.transform = "translateY(-1px)";
+          }}
+          onMouseOut={(e) => {
+            if (!isSubmitting) e.currentTarget.style.transform = "translateY(0)";
+          }}
         >
-          <PlusCircle size={18} />
-          {isSubmitting ? (language === 'ur' ? "محفوظ ہو رہا ہے..." : "Saving...") : (language === 'ur' ? "خرچ دراز میں درج کریں" : "Record Expense (Cash Out)")}
+          <PlusCircle size={16} />
+          <span>
+            {isSubmitting
+              ? (language === 'ur' ? "محفوظ ہو رہا ہے..." : "Saving...")
+              : (language === 'ur' ? "خرچ دراز میں درج کریں" : "Record Expense (Cash Out)")}
+          </span>
         </button>
 
       </form>

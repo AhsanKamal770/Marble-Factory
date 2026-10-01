@@ -7,6 +7,8 @@ import {
   ArrowUpDown, Edit2, Trash2, SlidersHorizontal,
 } from "lucide-react";
 import { db, adjustItemStock, logStockMovement } from "../db/index";
+import Modal from "../shared/components/Modal";
+import SutarBadge from "../components/SutarBadge";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONCEPT: Domain-Driven Category Configuration
@@ -662,26 +664,12 @@ export default function StockManagementView() {
                       onMouseLeave={e => e.currentTarget.style.background = "transparent"}
                     >
                       {/* ── Product ─────────────────────────────────────── */}
-                      {/* CONCEPT: Visual Hierarchy — product name is the anchor.
-                          Variety is secondary. Item code is tertiary/monospace.   */}
                       <td style={rowTD}>
                         <div style={{
                           fontWeight: 700, fontSize: "0.92rem",
                           color: "var(--text-primary)", lineHeight: 1.35,
                         }}>
                           {item.name}
-                        </div>
-                        {item.subCategory && (
-                          <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {item.subCategory}
-                          </div>
-                        )}
-                        <div style={{
-                          fontSize: "0.7rem", fontWeight: 600,
-                          color: "var(--accent-blue)", fontFamily: "monospace",
-                          marginTop: "4px", letterSpacing: "0.03em",
-                        }}>
-                          {item.code}
                         </div>
                       </td>
 
@@ -690,35 +678,20 @@ export default function StockManagementView() {
                         <div style={{ fontSize: "0.84rem", color: "var(--text-primary)", fontWeight: 500 }}>
                           {item.category}
                         </div>
-                        <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                          {item.unit || "Sq. Ft."}
-                        </div>
                       </td>
 
                       {/* ── Thickness ───────────────────────────────────── */}
                       <td style={rowTD}>
                         {item.sutarThickness ? (
-                          <>
-                            <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                              {item.sutarThickness} Sutar
-                            </div>
-                            {item.thicknessMm > 0 && (
-                              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "1px" }}>
-                                {item.thicknessMm} mm
-                              </div>
-                            )}
-                          </>
+                          <div style={{ marginBottom: "2px" }}>
+                            <SutarBadge sutar={item.sutarThickness} size="sm" />
+                          </div>
                         ) : item.thicknessMm > 0 ? (
                           <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>
                             {item.thicknessMm} mm
                           </div>
                         ) : (
                           <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>—</span>
-                        )}
-                        {item.grade && (
-                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {item.grade}
-                          </div>
                         )}
                       </td>
 
@@ -731,15 +704,9 @@ export default function StockManagementView() {
                         }}>
                           {item.standardSize || "—"}
                         </div>
-                        {item.finish && (
-                          <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {item.finish}
-                          </div>
-                        )}
                       </td>
 
                       {/* ── Rate ────────────────────────────────────────── */}
-                      {/* Selling price is the primary business metric.       */}
                       <td style={{ ...rowTD, textAlign: "right" }}>
                         <div style={{
                           fontSize: "0.95rem", fontWeight: 700,
@@ -747,14 +714,6 @@ export default function StockManagementView() {
                         }}>
                           {Number(item.ratePerSqFt || 0).toLocaleString()}
                         </div>
-                        {item.costPerSqFt > 0 && (
-                          <div style={{
-                            fontSize: "0.71rem", color: "var(--text-muted)",
-                            marginTop: "2px", fontFamily: "monospace",
-                          }}>
-                            Cost {Number(item.costPerSqFt).toLocaleString()}
-                          </div>
-                        )}
                       </td>
 
                       {/* ── Stock ───────────────────────────────────────── */}
@@ -793,14 +752,6 @@ export default function StockManagementView() {
                         <div style={{ fontSize: "0.84rem", color: "var(--text-primary)" }}>
                           {item.location || "Yard"}
                         </div>
-                        {item.lotNo && (
-                          <div style={{
-                            fontSize: "0.7rem", color: "var(--text-muted)",
-                            fontFamily: "monospace", marginTop: "2px",
-                          }}>
-                            {item.lotNo}
-                          </div>
-                        )}
                       </td>
 
                       {/* ── Actions: single ⋮ overflow menu ─────────────── */}
@@ -855,197 +806,226 @@ export default function StockManagementView() {
           ADD / EDIT MODAL
       ══════════════════════════════════════════════════════════════════ */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: "720px", width: "95vw" }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#fff" }}>
-                {editingItem ? `Edit: ${editingItem.name}` : "Add New Catalog Item"}
-              </h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsModalOpen(false)}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveItem}>
-              <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Item Code *</label>
-                    <input type="text" required className="form-control font-mono" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Variety / Product Name *</label>
-                    <input type="text" required className="form-control" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Ziarat White Super Slab" />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 140px", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Category *</label>
-                    <select className="form-control" value={formData.category} onChange={e => handleCategoryChange(e.target.value)}>
-                      {CATEGORIES.filter(c => c.key !== "ALL").map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Sub-Category</label>
-                    <input type="text" className="form-control" value={formData.subCategory} onChange={e => setFormData({ ...formData, subCategory: e.target.value })} placeholder="e.g. Ziarat Marble" />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Stock Unit</label>
-                    <select className="form-control" value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })}>
-                      <option>Sq. Ft.</option><option>Running Feet</option><option>Pieces</option><option>Boxes</option>
-                    </select>
-                  </div>
-                </div>
-
-                {activeCatConfig.hasSutar && (
-                  <div>
-                    <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Sutar Thickness Classification</label>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      {SUTAR_OPTIONS.map(opt => {
-                        const isSel = formData.sutarThickness === opt.value;
-                        return (
-                          <button key={opt.value} type="button"
-                            onClick={() => setFormData({ ...formData, sutarThickness: opt.value })}
-                            style={{ padding: "8px 16px", borderRadius: "8px", border: `2px solid ${isSel ? "var(--accent-blue)" : "var(--border-color)"}`, background: isSel ? "rgba(37,99,235,0.08)" : "transparent", color: isSel ? "var(--accent-blue)" : "var(--text-secondary)", cursor: "pointer", textAlign: "left", transition: "all 0.12s ease" }}>
-                            <div style={{ fontWeight: 700, fontSize: "0.82rem" }}>{opt.label}</div>
-                            <div style={{ fontSize: "0.68rem", opacity: 0.75, marginTop: "1px" }}>{opt.desc}</div>
-                          </button>
-                        );
-                      })}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={editingItem ? `Edit: ${editingItem.name}` : "Add New Catalog Item"}
+          icon={PackagePlus}
+          size="lg"
+          footerActions={
+            <>
+              <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
+              <button type="button" className="btn btn-primary" onClick={handleSaveItem}>
+                <Check size={16} /> {editingItem ? "Save Changes" : "Add to Catalog"}
+              </button>
+            </>
+          }
+        >
+            <form id="catalog-form" onSubmit={handleSaveItem}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                {/* ── SECTION: Basic Details ── */}
+                <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+                  <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>Basic Identity</h4>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "12px" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Item Code *</label>
+                        <input type="text" required className="form-control font-mono" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Variety / Product Name *</label>
+                        <input type="text" required className="form-control" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Ziarat White Super Slab" />
+                      </div>
                     </div>
-                  </div>
-                )}
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Standard Size</label>
-                    {activeCatConfig.defaultSizes ? (
-                      <select className="form-control" value={formData.standardSize} onChange={e => setFormData({ ...formData, standardSize: e.target.value })}>
-                        <option value="">- Select -</option>
-                        {activeCatConfig.defaultSizes.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                    ) : (
-                      <input type="text" className="form-control" value={formData.standardSize} onChange={e => setFormData({ ...formData, standardSize: e.target.value })} placeholder="e.g. 12x24 in" />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px", gap: "12px" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Category *</label>
+                        <select className="form-control" value={formData.category} onChange={e => handleCategoryChange(e.target.value)}>
+                          {CATEGORIES.filter(c => c.key !== "ALL").map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Sub-Category</label>
+                        <input type="text" className="form-control" value={formData.subCategory} onChange={e => setFormData({ ...formData, subCategory: e.target.value })} placeholder="e.g. Ziarat Marble" />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Stock Unit</label>
+                        <select className="form-control" value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })}>
+                          <option>Sq. Ft.</option><option>Running Feet</option><option>Pieces</option><option>Boxes</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {activeCatConfig.hasSutar && (
+                      <div style={{ marginTop: "4px" }}>
+                        <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Sutar Thickness</label>
+                        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                          {SUTAR_OPTIONS.map(opt => {
+                            const isSel = formData.sutarThickness === opt.value;
+                            return (
+                              <button key={opt.value} type="button"
+                                onClick={() => setFormData({ ...formData, sutarThickness: opt.value })}
+                                style={{ padding: "8px 16px", borderRadius: "8px", border: `2px solid ${isSel ? "var(--accent-blue)" : "var(--border-color)"}`, background: isSel ? "#ffffff" : "transparent", color: isSel ? "var(--accent-blue)" : "var(--text-secondary)", cursor: "pointer", textAlign: "left", transition: "all 0.12s ease", boxShadow: isSel ? "0 2px 8px rgba(37,99,235,0.15)" : "none" }}>
+                                <div style={{ fontWeight: 700, fontSize: "0.82rem" }}>{opt.label}</div>
+                                <div style={{ fontSize: "0.68rem", opacity: 0.75, marginTop: "1px" }}>{opt.desc}</div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Finish</label>
-                    <input type="text" className="form-control" value={formData.finish} onChange={e => setFormData({ ...formData, finish: e.target.value })} placeholder="e.g. Mirror Polished" />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Grade / Quality</label>
-                    <input type="text" className="form-control" value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} placeholder="e.g. Grade A (Super)" />
+                </div>
+
+                {/* ── SECTION: Attributes & Pricing ── */}
+                <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+                  <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>Attributes & Pricing</h4>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Standard Size</label>
+                        {activeCatConfig.defaultSizes ? (
+                          <select className="form-control" value={formData.standardSize} onChange={e => setFormData({ ...formData, standardSize: e.target.value })}>
+                            <option value="">- Select -</option>
+                            {activeCatConfig.defaultSizes.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                        ) : (
+                          <input type="text" className="form-control" value={formData.standardSize} onChange={e => setFormData({ ...formData, standardSize: e.target.value })} placeholder="e.g. 12x24 in" />
+                        )}
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Finish</label>
+                        <input type="text" className="form-control" value={formData.finish} onChange={e => setFormData({ ...formData, finish: e.target.value })} placeholder="e.g. Mirror Polished" />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Grade</label>
+                        <input type="text" className="form-control" value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} placeholder="e.g. Grade A" />
+                      </div>
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ color: "#059669" }}>Sale Rate / Sq.Ft (Rs.) *</label>
+                        <input type="number" required className="form-control font-mono" style={{ fontSize: "1.05rem", fontWeight: 700, color: "#059669", borderColor: "rgba(5, 150, 105, 0.3)" }} value={formData.ratePerSqFt} onChange={e => setFormData({ ...formData, ratePerSqFt: e.target.value })} />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Cost / Sq.Ft (Rs.)</label>
+                        <input type="number" className="form-control font-mono" value={formData.costPerSqFt} onChange={e => setFormData({ ...formData, costPerSqFt: e.target.value })} />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Sale Rate / Sq.Ft (Rs.) *</label>
-                    <input type="number" required className="form-control font-mono" value={formData.ratePerSqFt} onChange={e => setFormData({ ...formData, ratePerSqFt: e.target.value })} />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Cost / Sq.Ft (Rs.)</label>
-                    <input type="number" className="form-control font-mono" value={formData.costPerSqFt} onChange={e => setFormData({ ...formData, costPerSqFt: e.target.value })} />
-                  </div>
-                </div>
+                {/* ── SECTION: Inventory & Tracking ── */}
+                <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+                  <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>Inventory & Location</h4>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: "0.72rem" }}>Sq.Ft/RFT</label>
+                        <input type="number" step="0.1" className="form-control font-mono" style={{ color: "#2563eb", fontWeight: 700, borderColor: "rgba(37, 99, 235, 0.3)" }} value={formData.stockSqFt} onChange={e => setFormData({ ...formData, stockSqFt: e.target.value })} />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: "0.72rem" }}>Boxes</label>
+                        <input type="number" className="form-control" value={formData.stockBoxes} onChange={e => setFormData({ ...formData, stockBoxes: e.target.value })} />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: "0.72rem" }}>Pieces</label>
+                        <input type="number" className="form-control" value={formData.stockPieces} onChange={e => setFormData({ ...formData, stockPieces: e.target.value })} />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontSize: "0.72rem", color: "#f59e0b" }}>Min Alert</label>
+                        <input type="number" className="form-control" style={{ borderColor: "rgba(245, 158, 11, 0.3)" }} value={formData.minStockAlert} onChange={e => setFormData({ ...formData, minStockAlert: e.target.value })} />
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Opening Stock &amp; Alert Threshold</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px" }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Sq.Ft / RFT</label>
-                      <input type="number" step="0.1" className="form-control font-mono" style={{ color: "#10b981", fontWeight: 700 }} value={formData.stockSqFt} onChange={e => setFormData({ ...formData, stockSqFt: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Boxes</label>
-                      <input type="number" className="form-control" value={formData.stockBoxes} onChange={e => setFormData({ ...formData, stockBoxes: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Pieces</label>
-                      <input type="number" className="form-control" value={formData.stockPieces} onChange={e => setFormData({ ...formData, stockPieces: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Min Alert</label>
-                      <input type="number" className="form-control" value={formData.minStockAlert} onChange={e => setFormData({ ...formData, minStockAlert: e.target.value })} />
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Yard / Shed Location</label>
+                        <input type="text" className="form-control" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. Shed 1 - Bay A" />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Lot / Batch No.</label>
+                        <input type="text" className="form-control font-mono" value={formData.lotNo} onChange={e => setFormData({ ...formData, lotNo: e.target.value })} />
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Yard / Shed Location</label>
-                    <input type="text" className="form-control" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. Shed 1 - Bay A" />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Lot / Batch Number</label>
-                    <input type="text" className="form-control font-mono" value={formData.lotNo} onChange={e => setFormData({ ...formData, lotNo: e.target.value })} />
-                  </div>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Notes</label>
-                  <input type="text" className="form-control" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Additional notes about this variety..." />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary"><Check size={15} /> {editingItem ? "Save Changes" : "Add to Catalog"}</button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════
           STOCK ADJUSTMENT MODAL — unit-aware label
       ══════════════════════════════════════════════════════════════════ */}
       {isAdjustModalOpen && adjustingItem && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: "440px" }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#fff" }}>Stock Adjustment</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsAdjustModalOpen(false)}><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSaveAdjustment}>
-              <div className="modal-body">
-                <div style={{ padding: "12px 14px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", marginBottom: "16px" }}>
-                  <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>{adjustingItem.name}</div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "2px" }}>{adjustingItem.category}</div>
-                  <div style={{ marginTop: "8px" }}>
+        <Modal
+          isOpen={isAdjustModalOpen}
+          onClose={() => setIsAdjustModalOpen(false)}
+          title="Stock Adjustment"
+          icon={ArrowUpDown}
+          size="sm"
+          footerActions={
+            <>
+              <button type="button" className="btn btn-secondary" onClick={() => setIsAdjustModalOpen(false)}>Cancel</button>
+              <button type="button" className="btn btn-primary" onClick={handleSaveAdjustment}>
+                <Check size={16} /> Apply Adjustment
+              </button>
+            </>
+          }
+        >
+            <form id="adjust-form" onSubmit={handleSaveAdjustment}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                
+                {/* ── SECTION: Target Item ── */}
+                <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+                  <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "12px" }}>Target Item</h4>
+                  <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.95rem" }}>{adjustingItem.name}</div>
+                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px" }}>{adjustingItem.category}</div>
+                  <div style={{ marginTop: "12px", display: "inline-block", padding: "6px 12px", background: "rgba(16, 185, 129, 0.1)", borderRadius: "6px" }}>
                     {(() => {
                       const d = getStockDisplay(adjustingItem);
-                      return <span style={{ fontSize: "0.82rem" }}>Current: <strong style={{ color: "#10b981", fontFamily: "monospace" }}>{d.qty.toLocaleString()} {d.unit}</strong></span>;
+                      return <span style={{ fontSize: "0.82rem", color: "var(--text-secondary)" }}>Current Stock: <strong style={{ color: "#059669", fontFamily: "monospace", fontSize: "0.9rem", marginLeft: "4px" }}>{d.qty.toLocaleString()} {d.unit}</strong></span>;
                     })()}
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Adjustment Quantity ({adjustingItem.unit || "Sq. Ft."}) *</label>
-                  <input type="number" step="0.1" required autoFocus className="form-control font-mono" value={adjustQty} onChange={e => setAdjustQty(e.target.value)} placeholder="e.g. +200 to add, -50 to reduce" />
-                  <span style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>Positive = add | Negative = reduce</span>
+                {/* ── SECTION: Adjustment Details ── */}
+                <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+                  <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>Adjustment Details</h4>
+                  
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ color: "#2563eb" }}>Qty ({adjustingItem.unit || "Sq. Ft."}) *</label>
+                        <input type="number" step="0.1" required autoFocus className="form-control font-mono" style={{ fontSize: "1.05rem", fontWeight: 700, color: "#2563eb", borderColor: "rgba(37, 99, 235, 0.3)" }} value={adjustQty} onChange={e => setAdjustQty(e.target.value)} placeholder="+200 or -50" />
+                      </div>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Reason</label>
+                        <select className="form-control" value={adjustType} onChange={e => setAdjustType(e.target.value)}>
+                          <option value="Adjustment">Yard Physical Audit Count</option>
+                          <option value="Initial">Additional Loading / Purchase</option>
+                          <option value="Damaged/Wastage">Damaged / Broken Scrap</option>
+                          <option value="Return">Customer Return</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Reference Note</label>
+                      <input type="text" className="form-control" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} placeholder="e.g. Monthly yard count" />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Reason</label>
-                  <select className="form-control" value={adjustType} onChange={e => setAdjustType(e.target.value)}>
-                    <option value="Adjustment">Yard Physical Audit Count</option>
-                    <option value="Initial">Additional Loading / Purchase Received</option>
-                    <option value="Damaged/Wastage">Damaged / Broken Scrap</option>
-                    <option value="Return">Customer Return - Restocked</option>
-                  </select>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Reference Note</label>
-                  <input type="text" className="form-control" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} placeholder="e.g. Monthly yard count - Sep 2026" />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsAdjustModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary"><Check size={15} /> Apply Adjustment</button>
               </div>
             </form>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

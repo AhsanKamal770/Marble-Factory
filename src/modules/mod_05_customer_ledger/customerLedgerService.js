@@ -54,13 +54,17 @@ export async function saveCustomer(customerData) {
   }
 }
 
-export async function deleteCustomer(id) {
+export async function deleteCustomer(id, force = false) {
   const custId = Number(id);
   return await db.transaction('rw', [db.customers, db.invoices, db.customer_payments], async () => {
     // Check if customer has linked invoices
     const invCount = await db.invoices.where('customerId').equals(custId).count();
-    if (invCount > 0) {
+    if (invCount > 0 && !force) {
       throw new Error(`Cannot delete customer: ${invCount} invoice(s) exist for this customer in Bill Book.`);
+    }
+    // If forced, unlink customer from invoices so invoice sales records are not broken
+    if (invCount > 0 && force) {
+      await db.invoices.where('customerId').equals(custId).modify({ customerId: null });
     }
     // Delete payments and customer record
     await db.customer_payments.where('customerId').equals(custId).delete();

@@ -14,7 +14,8 @@ import {
   AlertCircle,
   Clock,
   ArrowUpRight,
-  ArrowDownLeft
+  ArrowDownLeft,
+  ArrowLeft
 } from "lucide-react";
 
 export default function CustomerTimelineView({
@@ -23,7 +24,8 @@ export default function CustomerTimelineView({
   onOpenEditProfile,
   onOpenReceivePayment,
   onOpenPrintKhata,
-  onDeleteCustomer
+  onDeleteCustomer,
+  onBack
 }) {
   if (!customer) {
     return (
@@ -33,7 +35,7 @@ export default function CustomerTimelineView({
         alignItems: "center",
         justifyContent: "center",
         height: "100%",
-        background: "var(--bg-card)",
+        background: "transparent",
         color: "var(--text-muted)",
         padding: "40px",
         textAlign: "center"
@@ -67,59 +69,73 @@ export default function CustomerTimelineView({
   const balanceDue = Number(customer.balanceDue || 0);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "var(--bg-card)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "transparent" }}>
       {/* ── SELECTED CUSTOMER HEADER ── */}
       <div style={{
         padding: "20px 26px",
-        borderBottom: "1px solid var(--border-divider)",
+        borderBottom: "1px solid rgba(0,0,0,0.06)",
         display: "flex",
         flexDirection: "column",
         gap: "14px"
       }}>
         {/* Row 1: Name, Type & Quick Action Buttons */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "16px", flexWrap: "wrap" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-              <h1 style={{
-                fontSize: "1.45rem",
-                fontWeight: 900,
-                margin: 0,
-                color: "var(--text-primary)",
-                letterSpacing: "-0.02em"
-              }}>
-                {customer.name}
-              </h1>
-              {customer.customerType && (
-                <span style={{
-                  fontSize: "0.74rem",
-                  background: "rgba(37, 99, 235, 0.1)",
-                  color: "var(--accent-blue)",
-                  padding: "2px 8px",
-                  borderRadius: "6px",
-                  fontWeight: 800,
-                  textTransform: "uppercase"
-                }}>
-                  {customer.customerType}
-                </span>
-              )}
-            </div>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+            {onBack && (
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onBack(); }}
+                className="btn btn-ghost btn-sm"
+                style={{ padding: "6px 8px", color: "var(--text-secondary)", marginTop: "2px", zIndex: 10 }}
+                title="Back to Customers"
+              >
+                <ArrowLeft size={20} />
+              </button>
+            )}
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "4px", fontSize: "0.82rem", color: "var(--text-secondary)", flexWrap: "wrap" }}>
-              {customer.phone && (
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <Phone size={13} style={{ color: "var(--text-muted)" }} />
-                  <span className="font-mono">{customer.phone}</span>
-                </span>
-              )}
-              {customer.city && (
-                <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <MapPin size={13} style={{ color: "var(--text-muted)" }} />
-                  <span>{customer.city}</span>
-                </span>
-              )}
-              {customer.address && (
-                <span style={{ color: "var(--text-muted)" }}>• {customer.address}</span>
-              )}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <h1 style={{
+                  fontSize: "1.45rem",
+                  fontWeight: 900,
+                  margin: 0,
+                  color: "var(--text-primary)",
+                  letterSpacing: "-0.02em"
+                }}>
+                  {customer.name}
+                </h1>
+                {customer.customerType && (
+                  <span style={{
+                    fontSize: "0.74rem",
+                    background: "rgba(37, 99, 235, 0.1)",
+                    color: "var(--accent-blue)",
+                    padding: "2px 8px",
+                    borderRadius: "6px",
+                    fontWeight: 800,
+                    textTransform: "uppercase"
+                  }}>
+                    {customer.customerType}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "4px", fontSize: "0.82rem", color: "var(--text-secondary)", flexWrap: "wrap" }}>
+                {customer.phone && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <Phone size={13} style={{ color: "var(--text-muted)" }} />
+                    <span className="font-mono">{customer.phone}</span>
+                  </span>
+                )}
+                {customer.city && (
+                  <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                    <MapPin size={13} style={{ color: "var(--text-muted)" }} />
+                    <span>{customer.city}</span>
+                  </span>
+                )}
+                {customer.address && (
+                  <span style={{ color: "var(--text-muted)" }}>• {customer.address}</span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -180,49 +196,61 @@ export default function CustomerTimelineView({
         </div>
 
         {/* Row 2: Customer Account Metric Strip */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-          gap: "10px",
-          background: "var(--bg-primary)",
-          padding: "10px 14px",
-          borderRadius: "10px",
-          border: "1px solid var(--border-divider)"
-        }}>
-          <div>
-            <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Total Purchases (خریداری)
+        <div className="kpi-cards-grid" style={{ marginTop: "10px" }}>
+          <div className="kpi-stat-card">
+            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#3b82f6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <FileText size={18} />
             </div>
-            <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
-              Rs. {totalBilled.toLocaleString()}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                Total Purchases (خریداری)
+              </span>
+              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                Rs. {totalBilled.toLocaleString()}
+              </span>
             </div>
           </div>
 
-          <div>
-            <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Total Wasooli (وصولی)
+          <div className="kpi-stat-card">
+            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <CheckCircle2 size={18} />
             </div>
-            <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 800, color: "#059669" }}>
-              Rs. {totalPaid.toLocaleString()}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                Total Wasooli (وصولی)
+              </span>
+              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                Rs. {totalPaid.toLocaleString()}
+              </span>
             </div>
           </div>
 
-          <div>
-            <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Balance Due (بقایا کھاتہ)
+          <div className="kpi-stat-card" style={{ background: hasDue ? "rgba(220, 38, 38, 0.05)" : "rgba(255, 255, 255, 0.7)" }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: hasDue ? '#ef4444' : '#10b981', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <AlertCircle size={18} />
             </div>
-            <div className="font-mono" style={{ fontSize: "1.05rem", fontWeight: 900, color: hasDue ? "#dc2626" : "#059669" }}>
-              Rs. {balanceDue.toLocaleString()}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+              <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                Balance Due (بقایا کھاتہ)
+              </span>
+              <span style={{ fontSize: '1.20rem', fontWeight: 800, color: hasDue ? '#dc2626' : '#059669', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                Rs. {balanceDue.toLocaleString()}
+              </span>
             </div>
           </div>
 
           {customer.creditLimit > 0 && (
-            <div>
-              <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-                Credit Limit
+            <div className="kpi-stat-card">
+              <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#8b5cf6', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CreditCard size={18} />
               </div>
-              <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-                Rs. {Number(customer.creditLimit).toLocaleString()}
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+                  Credit Limit
+                </span>
+                <span style={{ fontSize: '1.20rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', margin: '2px 0', lineHeight: 1.2, letterSpacing: '-0.02em' }}>
+                  Rs. {Number(customer.creditLimit).toLocaleString()}
+                </span>
               </div>
             </div>
           )}
@@ -253,11 +281,11 @@ export default function CustomerTimelineView({
           <div style={{ padding: "0 26px 26px 26px" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.84rem" }}>
               <thead>
-                <tr style={{ background: "var(--bg-primary)" }}>
-                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Date</th>
-                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Document / Description</th>
-                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Debit (+خریداری)</th>
-                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Credit (-وصولی)</th>
+                <tr style={{ background: "rgba(255, 255, 255, 0.4)" }}>
+                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Date</th>
+                  <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Document / Description</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Debit (+خریداری)</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid rgba(0,0,0,0.06)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Credit (-وصولی)</th>
                   <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Balance (بقایا)</th>
                 </tr>
               </thead>

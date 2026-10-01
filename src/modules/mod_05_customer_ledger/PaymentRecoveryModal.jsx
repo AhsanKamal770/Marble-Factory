@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { X, CheckCircle, Wallet, CreditCard, FileText } from "lucide-react";
+import { Wallet, CheckCircle } from "lucide-react";
+import Modal from "../../shared/components/Modal";
 
 export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -21,57 +22,36 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px'
-    }}>
-      <div className="modal-card" style={{
-        maxWidth: "460px",
-        width: "100%",
-        background: "var(--bg-card)",
-        borderRadius: "16px",
-        boxShadow: "var(--shadow-lg)",
-        border: "1px solid var(--border-color)",
-        overflow: "hidden"
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: "18px 22px",
-          borderBottom: "1px solid var(--border-color)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Wallet size={18} style={{ color: '#059669' }} />
-            <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>
-              Receive Customer Payment (ادھار وصولی)
-            </h3>
-          </div>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title="Receive Customer Payment (ادھار وصولی)"
+      icon={Wallet}
+      size="md"
+      footerActions={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
           <button
             type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-sm"
-            style={{ padding: "4px", color: "var(--text-muted)" }}
+            className="btn btn-primary"
+            onClick={() => {
+              const form = document.getElementById("payment-recovery-form");
+              if (form && form.reportValidity()) {
+                if (!payAmount || payAmount <= 0) return;
+                onSave(formData);
+              }
+            }}
+            style={{ display: "flex", alignItems: "center", gap: "6px", background: "#059669", borderColor: "#059669" }}
           >
-            <X size={18} />
+            <CheckCircle size={16} /> Confirm Wasooli
           </button>
-        </div>
-        
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" }}>
-            
+        </>
+      }
+    >
+      <form id="payment-recovery-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
             {/* Customer Info Pill */}
             <div style={{
               padding: "14px",
@@ -145,7 +125,7 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
                 value={formData.paymentMethod}
                 onChange={e => setFormData(p => ({ ...p, paymentMethod: e.target.value }))}
                 className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.9rem" }}
+                style={{ width: "100%" }}
               >
                 <option value="Cash">Cash in Drawer (نقد دراز کیش)</option>
                 <option value="Bank Transfer">Bank Transfer (بینک آن لائن)</option>
@@ -164,7 +144,7 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
                 value={formData.notes}
                 onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
                 className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.88rem" }}
+                style={{ width: "100%" }}
                 placeholder="e.g. HBL Online Slip #9921, Cheque #5582"
               />
             </div>
@@ -188,42 +168,7 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
               </strong>
             </div>
 
-          </div>
-          
-          {/* Footer */}
-          <div style={{
-            padding: "14px 22px",
-            borderTop: "1px solid var(--border-color)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "var(--bg-primary)",
-            borderRadius: "0 0 16px 16px"
-          }}>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-secondary btn-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-              style={{
-                background: "#059669",
-                borderColor: "#059669",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px"
-              }}
-            >
-              <CheckCircle size={16} />
-              <span>Confirm Wasooli</span>
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

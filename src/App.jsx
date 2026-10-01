@@ -27,8 +27,10 @@ export default function App() {
     return localStorage.getItem('app-theme') || 'light';
   });
 
-  // Authentication State - Always start at Login screen on app launch
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  // Authentication State - respects "Remember login"
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return !!localStorage.getItem('marble_auth') || !!sessionStorage.getItem('marble_auth');
+  });
 
   // Collapsible Sidebar State
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {

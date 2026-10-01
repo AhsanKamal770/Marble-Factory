@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Check, X, Layers, Box } from 'lucide-react';
+import Modal from '../shared/components/Modal';
 
 export default function DimensionCalculator({ isOpen, onClose, onApply, initialItem = null }) {
   const [calcMode, setCalcMode] = useState('dimension'); // 'dimension' | 'boxes' | 'pieces'
@@ -80,28 +81,33 @@ export default function DimensionCalculator({ isOpen, onClose, onApply, initialI
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-card" style={{ maxWidth: '540px' }}>
-        <div className="modal-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ padding: '8px', background: 'rgba(37, 99, 235, 0.12)', borderRadius: '8px', color: 'var(--accent-blue)' }}>
-              <Calculator size={20} />
-            </div>
-            <div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>Marble Area & Dimension Calculator</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                {initialItem ? initialItem.name : 'Calculate Square Feet & Pricing'}
-              </p>
-            </div>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            <X size={18} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          <span>Marble Area & Dimension Calculator</span>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 500, letterSpacing: 'normal' }}>
+            {initialItem ? initialItem.name : 'Calculate Square Feet & Pricing'}
+          </span>
         </div>
-
-        <div className="modal-body">
+      }
+      icon={Calculator}
+      size="md"
+      footerActions={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-primary" onClick={handleApply}>
+            <Check size={16} /> Apply to Line Item
+          </button>
+        </>
+      }
+    >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Mode Selector */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <button
               type="button"
               className={`btn ${calcMode === 'dimension' ? 'btn-primary' : 'btn-secondary'}`}
@@ -118,127 +124,135 @@ export default function DimensionCalculator({ isOpen, onClose, onApply, initialI
             </button>
           </div>
 
-          {calcMode === 'dimension' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Length */}
-              <div>
-                <label className="form-label">Slab Length</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="form-control"
-                      value={lengthFt}
-                      onChange={(e) => setLengthFt(e.target.value)}
-                      placeholder="Feet (e.g. 5)"
-                    />
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Feet (ft)</span>
-                  </div>
-                  <div>
-                    <input
-                      type="number"
-                      step="1"
-                      className="form-control"
-                      value={lengthIn}
-                      onChange={(e) => setLengthIn(e.target.value)}
-                      placeholder="Inches (0-11)"
-                    />
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Inches (in)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Width */}
-              <div>
-                <label className="form-label">Slab Width / Height</label>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <input
-                      type="number"
-                      step="0.1"
-                      className="form-control"
-                      value={widthFt}
-                      onChange={(e) => setWidthFt(e.target.value)}
-                      placeholder="Feet (e.g. 2.5)"
-                    />
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Feet (ft)</span>
-                  </div>
-                  <div>
-                    <input
-                      type="number"
-                      step="1"
-                      className="form-control"
-                      value={widthIn}
-                      onChange={(e) => setWidthIn(e.target.value)}
-                      placeholder="Inches (0-11)"
-                    />
-                    <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Inches (in)</span>
+          {/* ── SECTION: Measurement Details ── */}
+          <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+            <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "16px" }}>Measurement Details</h4>
+            
+            {calcMode === 'dimension' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* Length */}
+                <div>
+                  <label className="form-label">Slab Length</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="form-control"
+                        value={lengthFt}
+                        onChange={(e) => setLengthFt(e.target.value)}
+                        placeholder="Feet (e.g. 5)"
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>Feet (ft)</span>
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        step="1"
+                        className="form-control"
+                        value={lengthIn}
+                        onChange={(e) => setLengthIn(e.target.value)}
+                        placeholder="Inches (0-11)"
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>Inches (in)</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Pieces */}
-              <div>
-                <label className="form-label">Total Slabs / Pieces</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="form-control"
-                  value={pieces}
-                  onChange={(e) => setPieces(e.target.value)}
-                  placeholder="Number of pieces"
-                />
-              </div>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label className="form-label">Number of Tile Boxes</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="form-control"
-                  value={boxCount}
-                  onChange={(e) => setBoxCount(e.target.value)}
-                  placeholder="e.g. 25"
-                />
-              </div>
-              <div>
-                <label className="form-label">Sq. Ft. Coverage per Box</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  className="form-control"
-                  value={sqFtPerBox}
-                  onChange={(e) => setSqFtPerBox(e.target.value)}
-                  placeholder="e.g. 14.4 (for 60x60 tiles)"
-                />
-                <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                  Common: 60x60cm = 14.4 sqft | 60x120cm = 15.4 sqft | 30x60cm = 11.52 sqft
-                </span>
-              </div>
-            </div>
-          )}
+                {/* Width */}
+                <div>
+                  <label className="form-label">Slab Width / Height</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <input
+                        type="number"
+                        step="0.1"
+                        className="form-control"
+                        value={widthFt}
+                        onChange={(e) => setWidthFt(e.target.value)}
+                        placeholder="Feet (e.g. 2.5)"
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>Feet (ft)</span>
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        step="1"
+                        className="form-control"
+                        value={widthIn}
+                        onChange={(e) => setWidthIn(e.target.value)}
+                        placeholder="Inches (0-11)"
+                      />
+                      <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginTop: '4px' }}>Inches (in)</span>
+                    </div>
+                  </div>
+                </div>
 
-          {/* Rate per Sq Ft */}
-          <div style={{ marginTop: '16px' }}>
-            <label className="form-label">Rate per Sq. Ft. (Rs.)</label>
-            <input
-              type="number"
-              step="1"
-              className="form-control"
-              value={ratePerSqFt}
-              onChange={(e) => setRatePerSqFt(e.target.value)}
-              placeholder="e.g. 380"
-            />
+                {/* Pieces */}
+                <div>
+                  <label className="form-label">Total Slabs / Pieces</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-control"
+                    value={pieces}
+                    onChange={(e) => setPieces(e.target.value)}
+                    placeholder="Number of pieces"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label className="form-label">Number of Tile Boxes</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-control"
+                    value={boxCount}
+                    onChange={(e) => setBoxCount(e.target.value)}
+                    placeholder="e.g. 25"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Sq. Ft. Coverage per Box</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="form-control"
+                    value={sqFtPerBox}
+                    onChange={(e) => setSqFtPerBox(e.target.value)}
+                    placeholder="e.g. 14.4 (for 60x60 tiles)"
+                  />
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginTop: '6px' }}>
+                    Common: 60x60cm = 14.4 sqft | 60x120cm = 15.4 sqft
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Calculated Output Display */}
+          {/* ── SECTION: Pricing ── */}
+          <div style={{ padding: "16px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "10px" }}>
+            <h4 style={{ fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted)", marginBottom: "12px" }}>Pricing</h4>
+            <div>
+              <label className="form-label" style={{ color: "#059669" }}>Rate per Sq. Ft. (Rs.)</label>
+              <input
+                type="number"
+                step="1"
+                className="form-control font-mono"
+                style={{ fontSize: "1.05rem", fontWeight: 700, color: "#059669", borderColor: "rgba(5, 150, 105, 0.3)" }}
+                value={ratePerSqFt}
+                onChange={(e) => setRatePerSqFt(e.target.value)}
+                placeholder="e.g. 380"
+              />
+            </div>
+          </div>
+
+          {/* ── SECTION: Calculated Output ── */}
           <div style={{
-            marginTop: '20px',
             padding: '16px',
-            background: 'var(--bg-primary)',
+            background: 'linear-gradient(to right, rgba(37, 99, 235, 0.05), rgba(5, 150, 105, 0.05))',
             border: '1px solid var(--border-color)',
             borderRadius: '10px',
             display: 'grid',
@@ -246,32 +260,22 @@ export default function DimensionCalculator({ isOpen, onClose, onApply, initialI
             gap: '12px'
           }}>
             <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Total Area</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Total Area</span>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-blue)' }} className="font-mono">
                 {totalSqFt.toLocaleString()} <span style={{ fontSize: '0.85rem' }}>Sq.Ft</span>
               </div>
             </div>
             <div>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Calculated Amount</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>Calculated Amount</span>
               <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#059669' }} className="font-mono">
                 Rs. {totalAmount.toLocaleString()}
               </div>
             </div>
-            <div style={{ gridColumn: '1 / -1', borderTop: '1px solid var(--border-color)', paddingTop: '8px', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+            <div style={{ gridColumn: '1 / -1', borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '10px', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
               <strong>Breakdown:</strong> {summaryText} @ Rs. {ratePerSqFt}/sqft
             </div>
           </div>
         </div>
-
-        <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="button" className="btn btn-primary" onClick={handleApply}>
-            <Check size={16} /> Apply to Line Item
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 }

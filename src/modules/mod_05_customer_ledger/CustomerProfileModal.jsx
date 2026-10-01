@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { X, Save, User, Phone, MapPin, CreditCard, Building2 } from "lucide-react";
+import { User, Phone, MapPin, CreditCard, Building2, Check } from "lucide-react";
+import Modal from "../../shared/components/Modal";
 
 export default function CustomerProfileModal({ customer, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -31,58 +32,35 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px'
-    }}>
-      <div className="modal-card" style={{
-        maxWidth: "520px",
-        width: "100%",
-        background: "var(--bg-card)",
-        borderRadius: "16px",
-        boxShadow: "var(--shadow-lg)",
-        border: "1px solid var(--border-color)",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column"
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: "18px 24px",
-          borderBottom: "1px solid var(--border-color)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <User size={18} style={{ color: 'var(--accent-blue)' }} />
-            <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>
-              {customer ? "Edit Customer Khata Profile" : "Register New Customer Khata"}
-            </h3>
-          </div>
+    <Modal
+      isOpen={true}
+      onClose={onClose}
+      title={customer ? "Edit Customer Khata Profile" : "Register New Customer Khata"}
+      icon={User}
+      size="md"
+      footerActions={
+        <>
+          <button type="button" className="btn btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
           <button
             type="button"
-            onClick={onClose}
-            className="btn btn-ghost btn-sm"
-            style={{ padding: "4px", color: "var(--text-muted)" }}
+            className="btn btn-primary"
+            onClick={() => {
+              const form = document.getElementById("customer-profile-form");
+              if (form && form.reportValidity()) {
+                if (!formData.name.trim()) return;
+                onSave(formData);
+              }
+            }}
+            style={{ display: "flex", alignItems: "center", gap: "6px" }}
           >
-            <X size={18} />
+            <Check size={16} /> Save Customer
           </button>
-        </div>
-        
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px", maxHeight: '72vh', overflowY: 'auto' }}>
+        </>
+      }
+    >
+      <form id="customer-profile-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {/* Customer Name */}
             <div>
               <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
@@ -94,7 +72,7 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                 value={formData.name}
                 onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
                 className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.9rem" }}
+                style={{ width: "100%" }}
                 placeholder="e.g. Chaudhry Tariq (Builder)"
                 autoFocus
               />
@@ -230,36 +208,7 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                 placeholder="Payment terms, bank details, etc."
               />
             </div>
-          </div>
-          
-          {/* Footer */}
-          <div style={{
-            padding: "16px 24px",
-            borderTop: "1px solid var(--border-color)",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "10px",
-            background: "var(--bg-primary)",
-            borderRadius: "0 0 16px 16px"
-          }}>
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn btn-secondary btn-sm"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary btn-sm"
-              style={{ display: "flex", alignItems: "center", gap: "6px" }}
-            >
-              <Save size={15} />
-              <span>Save Customer Khata</span>
-            </button>
-          </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 }

@@ -15,6 +15,7 @@ import {
 import PrintableGateSlip from "./PrintableGateSlip";
 import { db } from "../../db/index";
 import { useLanguage } from "../../context/LanguageContext";
+import Modal from "../../shared/components/Modal";
 
 // ── Status config ──────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -354,7 +355,18 @@ export default function GatePassView() {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
+
+    if (!formData.customerName.trim()) {
+      alert(language === "ur" ? "براہ کرم خریدار کا نام درج کریں۔" : "Please enter the Customer Name.");
+      return;
+    }
+
+    if (!formData.destination.trim()) {
+      alert(language === "ur" ? "براہ کرم ترسیل کا پتہ درج کریں۔" : "Please enter the Delivery Destination.");
+      return;
+    }
+
     try {
       const manifest = formData.manifestItems.filter(r => r.name.trim());
       if (manifest.length === 0) {
@@ -443,37 +455,14 @@ export default function GatePassView() {
             <h1 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
               {language === "ur" ? "رکشہ گیٹ پاس و ترسیل لاجسٹکس" : "Rickshaw Gate Pass & Yard Logistics"}
             </h1>
-            <span style={{
-              background: "rgba(37, 99, 235, 0.12)",
-              color: "var(--accent-blue)",
-              fontSize: "0.75rem",
-              fontWeight: 800,
-              padding: "4px 8px",
-              borderRadius: "6px"
-            }}>
-              Dispatch Control
-            </span>
           </div>
-          <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
-            {language === "ur"
-              ? "فیکٹری سے رکشہ و لوڈر گاڑیوں کی باحفاظت ترسیل، ڈرائیور ریکارڈ اور گیٹ آؤٹ پرچی کا انتظام"
-              : "Track every delivery vehicle, driver, marble manifest, and printable gate pass slip leaving the yard."}
-          </p>
         </div>
 
         <button
           className="btn btn-primary"
           onClick={handleOpenModal}
           id="add-gate-pass-btn"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "0.9rem",
-            fontWeight: 800,
-            boxShadow: "0 4px 12px rgba(37,99,235,0.25)"
-          }}
+          style={{ display: "flex", alignItems: "center", gap: "8px" }}
         >
           <Plus size={16} /> {language === "ur" ? "نیا گیٹ پاس جاری کریں" : "Issue Gate Pass"}
         </button>
@@ -490,82 +479,134 @@ export default function GatePassView() {
         }}
       >
         {/* KPI 1: Today Dispatches */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "var(--text-muted)", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === "ur" ? "آج کی کل ڈسپیچ" : "Today's Dispatches"}</span>
-            <Truck size={16} style={{ color: "var(--accent-blue)" }} />
+        <div className="kpi-stat-card">
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#2563eb',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Truck size={18} />
           </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "6px", fontFamily: "monospace" }}>
-            {todayDispatches} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>vehicles</span>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {language === "ur" ? "آج فیکٹری گیٹ سے روانہ" : "Dispatched from yard today"}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              {language === "ur" ? "آج کی کل ڈسپیچ" : "Today's Dispatches"}
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              {todayDispatches} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>vehicles</span>
+            </span>
           </div>
         </div>
 
         {/* KPI 2: In Transit */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#f59e0b", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === "ur" ? "راستے میں مال (In Transit)" : "In Transit"}</span>
-            <RefreshCw size={16} />
+        <div className="kpi-stat-card">
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#f59e0b',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <RefreshCw size={18} />
           </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 800, color: "#f59e0b", marginTop: "6px", fontFamily: "monospace" }}>
-            {inTransitCount} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>on the road</span>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {language === "ur" ? "خریدار تک پہنچنا باقی ہے" : "Awaiting delivery confirmation"}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              {language === "ur" ? "راستے میں مال (In Transit)" : "In Transit"}
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              {inTransitCount} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>on the road</span>
+            </span>
           </div>
         </div>
 
         {/* KPI 3: Delivered Today */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#10b981", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === "ur" ? "پہنچ گیا (Delivered Today)" : "Delivered Today"}</span>
-            <Check size={16} />
+        <div className="kpi-stat-card">
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#10b981',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Check size={18} />
           </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 800, color: "#10b981", marginTop: "6px", fontFamily: "monospace" }}>
-            {deliveredToday} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>completed</span>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {language === "ur" ? "گاہک وصولی مکمل" : "Verified received by customer"}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              {language === "ur" ? "پہنچ گیا (Delivered Today)" : "Delivered Today"}
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              {deliveredToday} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>completed</span>
+            </span>
           </div>
         </div>
 
         {/* KPI 4: Total Sq.Ft Dispatched */}
-        <div style={{
-          background: "linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(30,64,175,0.03) 100%)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "2px solid var(--accent-blue)",
-          boxShadow: "0 4px 12px rgba(37,99,235,0.08)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "var(--accent-blue)", fontSize: "0.8rem", fontWeight: 800 }}>
-            <span>{language === "ur" ? "آج کا روانہ کردہ مال" : "DISPATCHED TODAY"}</span>
-            <Layers size={16} />
+        <div className="kpi-stat-card">
+          <div style={{
+            width: '38px',
+            height: '38px',
+            borderRadius: '50%',
+            background: '#8b5cf6',
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <Layers size={18} />
           </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 900, color: "var(--accent-blue)", marginTop: "6px", fontFamily: "monospace" }}>
-            {totalSqFtToday.toLocaleString()} <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Sq.Ft</span>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "4px", fontWeight: 600 }}>
-            {language === "ur" ? "ماربل و ٹائلز حجم" : "Total volume dispatched today"}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: 1 }}>
+            <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600, lineHeight: 1.2 }}>
+              {language === "ur" ? "آج کا روانہ کردہ مال" : "DISPATCHED TODAY"}
+            </span>
+            <span style={{
+              fontSize: '1.20rem',
+              fontWeight: 800,
+              color: '#0f172a',
+              whiteSpace: 'nowrap',
+              margin: '2px 0',
+              lineHeight: 1.2,
+              letterSpacing: '-0.02em'
+            }}>
+              {totalSqFtToday.toLocaleString()} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>Sq.Ft</span>
+            </span>
           </div>
         </div>
       </div>
@@ -610,17 +651,15 @@ export default function GatePassView() {
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <SlidersHorizontal size={14} style={{ color: "var(--text-muted)" }} />
           <select
+            className="form-control"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
             style={{
-              padding: "8px 12px",
+              width: "auto",
+              padding: "8px 36px 8px 12px",
               fontSize: "0.82rem",
               fontWeight: 600,
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              color: "var(--text-primary)",
-              outline: "none"
+              minWidth: "150px"
             }}
           >
             <option value="All">{language === "ur" ? "تمام اسٹیٹس (All Status)" : "All Status"}</option>
@@ -633,17 +672,15 @@ export default function GatePassView() {
         {/* Vehicle Filter */}
         <div>
           <select
+            className="form-control"
             value={vehicleFilter}
             onChange={e => setVehicleFilter(e.target.value)}
             style={{
-              padding: "8px 12px",
+              width: "auto",
+              padding: "8px 36px 8px 12px",
               fontSize: "0.82rem",
               fontWeight: 600,
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              color: "var(--text-primary)",
-              outline: "none"
+              minWidth: "150px"
             }}
           >
             <option value="All">{language === "ur" ? "تمام گاڑیاں (All Vehicles)" : "All Vehicles"}</option>
@@ -738,24 +775,13 @@ export default function GatePassView() {
                       {/* Customer & Destination */}
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>{gp.customerName}</div>
-                        <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
-                          <MapPin size={11} style={{ flexShrink: 0 }} />
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "180px" }}>
-                            {gp.destination || "Factory Yard Delivery"}
-                          </span>
-                        </div>
                       </td>
 
                       {/* Vehicle & Driver */}
                       <td style={{ padding: "14px 16px" }}>
                         <div style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.82rem" }}>
-                          {gp.vehicleType} {gp.vehicleRegNo ? <span style={{ fontFamily: "monospace", color: "var(--text-muted)" }}>({gp.vehicleRegNo})</span> : ''}
+                          {gp.vehicleType}
                         </div>
-                        {gp.driverName && (
-                          <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {gp.driverName} {gp.driverPhone ? `• ${gp.driverPhone}` : ''}
-                          </div>
-                        )}
                       </td>
 
                       {/* Manifest Quantity */}
@@ -763,9 +789,7 @@ export default function GatePassView() {
                         <div style={{ fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace" }}>
                           {gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Sq.Ft</span>
                         </div>
-                        <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                          {gp.totalPieces || (gp.manifest || []).length} Pcs • {(gp.manifest || []).length} items
-                        </div>
+
                       </td>
 
                       {/* Date & Time */}
@@ -853,84 +877,51 @@ export default function GatePassView() {
       {/* ══════════════════════════════════════════════════════════════════
           NEW GATE PASS MODAL FORM (FULL BUSINESS LOGISTICS WORKFLOW)
       ═════════════════════════════════════════════════════════════════= */}
-      {isModalOpen && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(15, 23, 42, 0.75)",
-            backdropFilter: "blur(6px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: "20px"
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
-          <div
-            className="modal-card"
-            style={{
-              background: "var(--bg-card)",
-              borderRadius: "14px",
-              width: "100%",
-              maxWidth: "920px",
-              maxHeight: "92vh",
-              display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
-              overflow: "hidden",
-              border: "1px solid var(--border-color)"
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-divider)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-primary)" }}>
-              <div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-                  {language === "ur" ? "نیا رکشہ گیٹ پاس جاری کریں" : "Issue New Rickshaw Gate Pass"}
-                </h2>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
-                  {language === "ur" ? "بل بک سے لنک کریں یا دستی ڈسپیچ پرچی بنائیں" : "Link with Invoice Bill or record manual dispatch manifest"}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "4px" }}
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", overflow: "hidden", flex: 1 }}>
-              <div style={{ padding: "24px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "20px" }}>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={language === "ur" ? "نیا رکشہ گیٹ پاس جاری کریں" : "Issue New Rickshaw Gate Pass"}
+        icon={Truck}
+        size="lg"
+        footerActions={
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => {
+                const form = document.getElementById("gate-pass-form");
+                if (form && form.reportValidity()) {
+                  handleSave();
+                }
+              }}
+              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              <Check size={16} /> {language === "ur" ? "گیٹ پاس جاری کریں اور پرنٹ کریں" : "Issue & Print Gate Pass"}
+            </button>
+          </>
+        }
+      >
+        <form id="gate-pass-form" onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
 
                 {/* 1. Invoice Reference Picker */}
-                <div style={{ background: "var(--bg-primary)", padding: "14px 16px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
-                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
                     {language === "ur" ? "بل بک انوائس سے لنک کریں (اختیاری)" : "Link with Invoice Bill (Optional)"}
                   </label>
                   <select
+                    className="form-control"
                     value={formData.invoiceId}
                     onChange={e => handleInvoiceSelect(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "9px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-color)",
-                      background: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                      fontSize: "0.88rem",
-                      fontWeight: 600,
-                      outline: "none"
-                    }}
+                    style={{ width: "100%", fontSize: "0.85rem", fontWeight: 600 }}
                   >
-                    <option value="">{language === "ur" ? "— بل منتخب کریں یا نیچے دستی درج کریں —" : "— Select Invoice ▼ (or fill manually below) —"}</option>
+                    <option value="">{language === "ur" ? "بل منتخب کریں یا نیچے دستی درج کریں" : "Select Invoice (or fill manually below)"}</option>
                     {invoices.map(inv => (
                       <option key={inv.id} value={inv.id}>
                         {inv.invoiceNo} — {inv.customerName} ({inv.items.length} items • Rs. {Number(inv.totalAmount).toLocaleString()})
@@ -1026,19 +1017,10 @@ export default function GatePassView() {
                         {language === "ur" ? "گاڑی کی قسم *" : "Vehicle Type *"}
                       </label>
                       <select
+                        className="form-control"
                         value={formData.vehicleType}
                         onChange={e => setFormData(p => ({ ...p, vehicleType: e.target.value }))}
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          fontWeight: 600,
-                          outline: "none"
-                        }}
+                        style={{ width: "100%", fontSize: "0.85rem", fontWeight: 600 }}
                       >
                         {VEHICLE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
                       </select>
@@ -1140,19 +1122,10 @@ export default function GatePassView() {
                         {language === "ur" ? "کرایہ کون دے گا؟" : "Carriage Paid By"}
                       </label>
                       <select
+                        className="form-control"
                         value={formData.carriagePaidBy}
                         onChange={e => setFormData(p => ({ ...p, carriagePaidBy: e.target.value }))}
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.82rem",
-                          fontWeight: 600,
-                          outline: "none"
-                        }}
+                        style={{ width: "100%", fontSize: "0.82rem", fontWeight: 600 }}
                       >
                         {CARRIAGE_PAID_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                       </select>
@@ -1338,51 +1311,9 @@ export default function GatePassView() {
                   />
                 </div>
 
-              </div>
 
-              {/* Modal Submit Footer */}
-              <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-divider)", background: "var(--bg-primary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--border-color)",
-                    padding: "8px 16px",
-                    borderRadius: "7px",
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    color: "var(--text-secondary)",
-                    cursor: "pointer"
-                  }}
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  style={{
-                    background: "linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)",
-                    border: "none",
-                    color: "#fff",
-                    padding: "9px 22px",
-                    borderRadius: "7px",
-                    fontSize: "0.9rem",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    boxShadow: "0 2px 8px rgba(30, 64, 175, 0.25)"
-                  }}
-                >
-                  <Check size={16} /> {language === "ur" ? "گیٹ پاس جاری کریں اور پرنٹ کریں" : "Issue & Print Gate Pass"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+        </form>
+      </Modal>
 
     </div>
   );
