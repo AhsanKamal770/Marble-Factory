@@ -571,8 +571,8 @@ export default function SupplierManagementView({ settings }) {
                 }}
               >
                 {language === 'ur'
-                  ? 'کانوں اور ڈسٹری بیوٹرز سے ماربل بلاکس، سلیبز اور ٹائلوں کی خریداری کا مکمل کھاتہ'
-                  : 'Manage inward quarry shipments, marble stock intake, supplier ledgers & payment accounts'}
+                  ? 'سپلائر خریداری اور کھاتہ جات کا انتظام'
+                  : 'Manage quarry shipments and supplier ledgers'}
               </p>
             </div>
           </div>

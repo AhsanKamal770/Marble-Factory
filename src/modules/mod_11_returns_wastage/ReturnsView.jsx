@@ -462,7 +462,7 @@ export default function ReturnsView({ settings }) {
               display: 'inline-block'
             }}
           >
-            {tr('Returns & Factory Wastage Management', 'واپسی مال و فیکٹری کٹائی نقصان')}
+            {tr('Returns & Waste', 'واپسی اور فیکٹری نقصان')}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -494,7 +494,7 @@ export default function ReturnsView({ settings }) {
                   lineHeight: 1.2
                 }}
               >
-                Returns & Factory Wastage Management{' '}
+                Returns & Waste{' '}
                 <span
                   style={{
                     fontSize: '1.15rem',
@@ -515,8 +515,8 @@ export default function ReturnsView({ settings }) {
                 }}
               >
                 {tr(
-                  'Manage customer returns, bridge-cutter wastage logs, and automatic Dexie inventory reconciliation.',
-                  'گاہک واپسی مال، برج کٹر کٹائی نقصان، یارڈ اسٹاک ایڈجسٹمنٹ اور خودکار کھاتہ درستگی'
+                  'Manage customer returns and factory wastage',
+                  'واپسی مال اور کٹائی نقصان کا انتظام'
                 )}
               </p>
             </div>

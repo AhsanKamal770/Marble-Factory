@@ -96,321 +96,302 @@ export default function DailyExpensesView() {
   const categoryStats = cashData?.categoryTotals || {};
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "50px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px", maxWidth: "1440px", margin: "0 auto", paddingBottom: "30px" }}>
       
-      {/* ── 1. TOP HEADER (Open layout, Card Border Removed, Image smoothly merged into background) ── */}
+      {/* ── 1. SEAMLESS HERO HEADER (Matching Dashboard Template) ── */}
       <div
         className="no-print"
         style={{
           position: "relative",
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          flexWrap: "wrap",
-          gap: "16px",
-          minHeight: "85px",
-          padding: "10px 4px 10px 4px",
+          justifyContent: "space-between",
+          padding: "6px 4px 10px 4px",
+          minHeight: "84px",
           overflow: "hidden"
         }}
       >
-        {/* Top Right daily_background.png image smoothly merged into page background */}
+        {/* Left: Overview Breadcrumb + Title + Subtitle */}
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "#2563eb",
+              marginBottom: "4px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+          >
+            <span>{language === "ur" ? "روزانہ اخراجات و روزنامچہ" : "Cash Flow & Daily Expenses"}</span>
+            <span
+              style={{
+                fontSize: "0.68rem",
+                fontWeight: 800,
+                padding: "1px 6px",
+                borderRadius: "4px",
+                background: "rgba(37,99,235,0.12)",
+                color: "#2563eb"
+              }}
+            >
+              MOD-06
+            </span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div
+              style={{
+                width: "46px",
+                height: "46px",
+                borderRadius: "13px",
+                background: "#2563eb",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#ffffff",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+                flexShrink: 0
+              }}
+            >
+              <Wallet size={24} />
+            </div>
+
+            <div>
+              <h1
+                style={{
+                  fontSize: "1.7rem",
+                  fontWeight: 800,
+                  color: "var(--text-primary, #0f172a)",
+                  margin: 0,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.2
+                }}
+              >
+                {language === "ur" ? "روزانہ اخراجات و روزنامچہ" : "Daily Expenses & Cash Drawer"}{" "}
+                <span
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    color: "var(--text-secondary, #64748b)",
+                    fontFamily: "var(--font-urdu, inherit)"
+                  }}
+                >
+                  {language === "ur" ? "" : "(روزنامچہ کیش)"}
+                </span>
+              </h1>
+              <p
+                style={{
+                  fontSize: "0.86rem",
+                  color: "var(--text-secondary, #64748b)",
+                  margin: "2px 0 0 0",
+                  fontWeight: 500
+                }}
+              >
+                {language === "ur"
+                  ? "فیکٹری کے روزمرہ اخراجات، نقد وصولیاں اور دراز کیش کا مکمل انتظام"
+                  : "Manage factory petty expenses, cash recoveries, and live drawer reconciliation"}
+              </p>
+
+              {/* Date Controls placed directly under subtitle */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  flexWrap: "wrap",
+                  marginTop: "12px"
+                }}
+              >
+                {/* Today / Yesterday Quick Toggle */}
+                <div
+                  style={{
+                    display: "flex",
+                    background: "var(--bg-card, #ffffff)",
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                    borderRadius: "9px",
+                    padding: "3px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate("today")}
+                    style={{
+                      border: "none",
+                      background: selectedDate === todayStr ? "#2563eb" : "transparent",
+                      color: selectedDate === todayStr ? "#ffffff" : "var(--text-secondary, #64748b)",
+                      padding: "5px 14px",
+                      borderRadius: "7px",
+                      fontSize: "0.8rem",
+                      fontWeight: selectedDate === todayStr ? 800 : 600,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease"
+                    }}
+                  >
+                    {tr("Today", "آج")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuickDate("yesterday")}
+                    style={{
+                      border: "none",
+                      background: selectedDate !== todayStr ? "#2563eb" : "transparent",
+                      color: selectedDate !== todayStr ? "#ffffff" : "var(--text-secondary, #64748b)",
+                      padding: "5px 14px",
+                      borderRadius: "7px",
+                      fontSize: "0.8rem",
+                      fontWeight: selectedDate !== todayStr ? 800 : 600,
+                      cursor: "pointer",
+                      transition: "all 0.15s ease"
+                    }}
+                  >
+                    {tr("Yesterday", "گزشتہ کل")}
+                  </button>
+                </div>
+
+                {/* Date Picker Input */}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    background: "var(--bg-card, #ffffff)",
+                    border: "1px solid var(--border-color, #e2e8f0)",
+                    borderRadius: "9px",
+                    padding: "5px 12px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
+                  }}
+                >
+                  <Calendar size={15} style={{ color: "#2563eb" }} />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      color: "var(--text-primary, #0f172a)",
+                      fontSize: "0.84rem",
+                      fontWeight: 700,
+                      outline: "none",
+                      cursor: "pointer"
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Print Roznamcha Action Button (Blue) */}
+        <div className="no-print" style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", gap: "10px" }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => handleOpenPrintModal("a4")}
+            style={{
+              background: "#2563eb",
+              borderColor: "#2563eb",
+              fontWeight: 700,
+              fontSize: "0.86rem",
+              padding: "10px 18px",
+              borderRadius: "9px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+              color: "#ffffff",
+              cursor: "pointer"
+            }}
+          >
+            <Printer size={16} />
+            <span>{tr("Print Report", "پرنٹ رپورٹ")}</span>
+          </button>
+        </div>
+
+        {/* Seamless Background Image on Header Right using general_background.jpg */}
         <div
           style={{
             position: "absolute",
-            right: "-20px",
-            top: "-10px",
-            bottom: "-10px",
-            width: "520px",
-            backgroundImage: "url('./daily_background.png')",
+            right: 0,
+            top: "-15px",
+            bottom: "-15px",
+            width: "50%",
+            maxWidth: "520px",
+            backgroundImage: `url('./general_background.jpg'), url('/general_background.jpg'), url('./daily_background.png'), url('/daily_background.png')`,
             backgroundSize: "cover",
-            backgroundPosition: "center right",
-            opacity: 0.85,
-            maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.8) 60%, black 100%)",
-            WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.8) 60%, black 100%)",
+            backgroundPosition: "right center",
+            maskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
+            WebkitMaskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
             pointerEvents: "none",
-            zIndex: 1
+            opacity: 0.95,
+            borderRadius: "14px"
           }}
         />
-
-        {/* Left: Blue Icon Box + Title + Subtitle */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", zIndex: 2, position: "relative" }}>
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              background: "#2563eb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
-              flexShrink: 0
-            }}
-          >
-            <Wallet size={24} />
-          </div>
-
-          <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-              {tr("Daily Expenses & Cash Drawer", "روزانہ اخراجات و دراز کیش (روزنامچہ)")}
-            </h1>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
-              {tr("Manage factory petty expenses, cash recoveries, and live drawer reconciliation.", "فیکٹری کے روزمرہ اخراجات، نقد وصولیاں اور دراز کیش کا مکمل انتظام")}
-            </p>
-          </div>
-        </div>
-
-        {/* Right: Date Picker Controls & Print Action */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", zIndex: 2, position: "relative" }}>
-          {/* Today / Yesterday Quick Toggle */}
-          <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "3px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-            <button
-              type="button"
-              onClick={() => setQuickDate("today")}
-              style={{
-                border: "none",
-                background: selectedDate === todayStr ? "#2563eb" : "transparent",
-                color: selectedDate === todayStr ? "#fff" : "var(--text-secondary)",
-                padding: "6px 12px",
-                borderRadius: "6px",
-                fontSize: "0.8rem",
-                fontWeight: 700,
-                cursor: "pointer",
-                transition: "all 0.15s ease"
-              }}
-            >
-              {tr("Today", "آج")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setQuickDate("yesterday")}
-              style={{
-                border: "none",
-                background: selectedDate !== todayStr ? "#2563eb" : "transparent",
-                color: selectedDate !== todayStr ? "#fff" : "var(--text-secondary)",
-                padding: "6px 12px",
-                borderRadius: "6px",
-                fontSize: "0.8rem",
-                fontWeight: 600,
-                cursor: "pointer",
-                transition: "all 0.15s ease"
-              }}
-            >
-              {tr("Yesterday", "گزشتہ کل")}
-            </button>
-          </div>
-
-          {/* Date Picker Input */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "6px 12px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
-            <Calendar size={15} style={{ color: "var(--accent-blue)" }} />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              style={{
-                border: "none",
-                background: "transparent",
-                color: "var(--text-primary)",
-                fontSize: "0.85rem",
-                fontWeight: 700,
-                outline: "none",
-                cursor: "pointer"
-              }}
-            />
-          </div>
-
-          {/* Print Roznamcha Button */}
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => handleOpenPrintModal("a4")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "8px 14px",
-              borderRadius: "8px",
-              fontSize: "0.85rem",
-              fontWeight: 700,
-              background: "var(--bg-card)",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.03)"
-            }}
-          >
-            <Printer size={15} style={{ color: "var(--accent-blue)" }} />
-            {tr("Print Report", "پرنٹ رپورٹ")}
-          </button>
-        </div>
       </div>
 
-      {/* ── 2. 4 METRIC KPI CARDS (Clean English-Only Labels, Perfectly Aligned) ── */}
-      <div
-        className="no-print"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px"
-        }}
-      >
+      {/* ── 2. TOP 4 KPI CARDS (Dashboard .kpi-card-grid & .kpi-metric-card) ── */}
+      <div className="kpi-card-grid no-print">
         {/* KPI 1: Opening Cash */}
-        <div
-          style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#2563eb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon blue">
             <Wallet size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Opening Cash
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Opening Cash</span>
+              <span className="kpi-metric-label-ur">(ابتدائی کیش)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+            <div className="kpi-metric-value font-mono">
               Rs. {Number(cashData?.openingCash || 0).toLocaleString()}
             </div>
           </div>
         </div>
 
         {/* KPI 2: Total Cash Inflow */}
-        <div
-          style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#10b981",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon green">
             <ArrowUpRight size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Total Inflow (+)
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Total Inflow (+)</span>
+              <span className="kpi-metric-label-ur">(کل وصولی)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+            <div className="kpi-metric-value font-mono" style={{ color: "#059669" }}>
               + Rs. {Number((cashData?.totalCashInflow || 0) - (cashData?.openingCash || 0)).toLocaleString()}
             </div>
           </div>
         </div>
 
         {/* KPI 3: Total Expenses Today */}
-        <div
-          style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#ef4444",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon red">
             <TrendingDown size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Total Expenses (-)
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Daily Expenses (-)</span>
+              <span className="kpi-metric-label-ur">(فیکٹری اخراجات)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#ef4444", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
-              - Rs. {Number(totalExpenseAmount).toLocaleString()}
+            <div className="kpi-metric-value font-mono" style={{ color: "#dc2626" }}>
+              - Rs. {Number(cashData?.expensesToday || totalExpenseAmount || 0).toLocaleString()}
             </div>
           </div>
         </div>
 
         {/* KPI 4: Net Live Drawer Cash */}
-        <div
-          style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#059669",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon purple">
             <DollarSign size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Net Drawer Cash
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Live Cash in Drawer</span>
+              <span className="kpi-metric-label-ur">(دراز کیش)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+            <div className="kpi-metric-value font-mono" style={{ color: "#059669" }}>
               Rs. {Number(cashData?.liveCash || 0).toLocaleString()}
             </div>
           </div>

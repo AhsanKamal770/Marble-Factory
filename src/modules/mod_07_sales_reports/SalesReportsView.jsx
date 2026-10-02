@@ -1,10 +1,34 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import {
-  BarChart3, Printer, Download, TrendingUp, TrendingDown,
-  Wallet, Calendar, Filter, Users, Layers, Award,
-  DollarSign, ArrowUpRight, ArrowDownRight, RefreshCw,
-  PieChart, SlidersHorizontal, CheckCircle2, FileSpreadsheet
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
+  Calendar,
+  Filter,
+  Users,
+  Layers,
+  Award,
+  DollarSign,
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
+  SlidersHorizontal,
+  FileSpreadsheet,
+  Download,
+  Printer,
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Clock,
+  ChevronRight,
+  Sparkles,
+  PieChart,
+  ArrowRight,
+  Boxes,
+  HelpCircle,
+  X
 } from 'lucide-react';
 import { db } from '../../db/index';
 import { useLanguage } from '../../context/LanguageContext';
@@ -17,7 +41,13 @@ import {
 
 const rs = (n) => 'Rs. ' + Number(n || 0).toLocaleString();
 const todayStr = () => new Date().toISOString().slice(0, 10);
-const HORIZONS = ['Daily', 'Weekly', 'Monthly', 'Yearly', 'Custom'];
+const HORIZONS = [
+  { key: 'Daily', labelEn: 'Daily', labelUr: 'آج' },
+  { key: 'Weekly', labelEn: 'Weekly', labelUr: 'اس ہفتے' },
+  { key: 'Monthly', labelEn: 'Monthly', labelUr: 'اس ماہ' },
+  { key: 'Yearly', labelEn: 'Yearly', labelUr: 'اس سال' },
+  { key: 'Custom', labelEn: 'Custom', labelUr: 'مخصوص تاریخ' }
+];
 
 export default function SalesReportsView() {
   const { language } = useLanguage();
@@ -59,7 +89,7 @@ export default function SalesReportsView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Rana-Shahab-Sales-Report-${horizon.toLowerCase()}-${todayStr()}.csv`;
+    a.download = `Marble-Factory-Sales-Report-${horizon.toLowerCase()}-${todayStr()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     setExportModalOpen(false);
@@ -72,37 +102,61 @@ export default function SalesReportsView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Rana-Shahab-Sales-Report-${horizon.toLowerCase()}-${todayStr()}.json`;
+    a.download = `Marble-Factory-Sales-Report-${horizon.toLowerCase()}-${todayStr()}.json`;
     a.click();
     URL.revokeObjectURL(url);
     setExportModalOpen(false);
   };
 
   const TH = {
-    padding: '10px 8px',
-    fontSize: '0.72rem',
+    padding: '12px 14px',
+    fontSize: '0.74rem',
     fontWeight: 700,
     textTransform: 'uppercase',
     letterSpacing: '0.04em',
-    color: 'var(--text-muted)',
-    background: 'var(--bg-primary)',
-    borderBottom: '1px solid var(--border-color)',
+    color: 'var(--text-muted, #64748b)',
+    background: 'var(--bg-primary, #f8fafc)',
+    borderBottom: '1px solid var(--border-color, #e2e8f0)',
     whiteSpace: 'nowrap',
     textAlign: 'left'
   };
 
   const TD = {
-    padding: '9px 8px',
+    padding: '12px 14px',
     verticalAlign: 'middle',
-    fontSize: '0.82rem',
-    borderBottom: '1px solid var(--border-divider, rgba(0,0,0,0.05))'
+    fontSize: '0.84rem',
+    borderBottom: '1px solid var(--border-divider, #f1f5f9)',
+    color: 'var(--text-primary, #0f172a)'
   };
 
   if (!report && loading) {
     return (
-      <div style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <RefreshCw size={32} style={{ animation: 'spin 1s linear infinite', margin: '0 auto 16px' }} />
-        <p style={{ fontWeight: 600 }}>{tr('Calculating Sales & P&L Analytics...', 'سیلز رپورٹس و منافع تجزیہ لوڈ ہو رہا ہے...')}</p>
+      <div style={{
+        padding: '80px 20px',
+        textAlign: 'center',
+        color: 'var(--text-muted, #64748b)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '400px'
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          border: '3px solid #2563eb',
+          borderTopColor: 'transparent',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+          marginBottom: '16px'
+        }} />
+        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary, #0f172a)', margin: '0 0 6px 0' }}>
+          {tr('Calculating Sales & P&L Analytics...', 'سیلز رپورٹس و منافع تجزیہ لوڈ ہو رہا ہے...')}
+        </h3>
+        <p style={{ fontSize: '0.84rem', margin: 0 }}>
+          {tr('Aggregating Dexie.js offline records, inventory costs & collections', 'آف لائن ریکارڈز، اسٹاک لاگت اور وصولی کا گوشوارہ تیار کیا جا رہا ہے')}
+        </p>
+        <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
@@ -117,123 +171,345 @@ export default function SalesReportsView() {
   };
 
   return (
-    <div className="sales-report-printable-area" style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-      {/* Dynamic Print Styles Fix */}
+    <div
+      className="sales-report-printable-area"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '18px',
+        maxWidth: '1440px',
+        margin: '0 auto',
+        paddingBottom: '30px'
+      }}
+    >
+      {/* ── Dynamic Print Styles Fix ────────────────────────────────────── */}
       <style>{`
         @media print {
           body * { visibility: hidden !important; }
           .sales-report-printable-area, .sales-report-printable-area * { visibility: visible !important; }
           .sales-report-printable-area {
-            position: absolute !important; left: 0 !important; top: 0 !important;
-            width: 100% !important; padding: 10px !important; margin: 0 !important;
-            background: #ffffff !important; color: #000000 !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 15px !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
           }
           .no-print { display: none !important; }
           h1, h2, h3, p, span, td, th, div {
-            color: #000000 !important; background: transparent !important; box-shadow: none !important;
+            color: #000000 !important;
+            background: transparent !important;
+            box-shadow: none !important;
           }
-          table { border: 1px solid #ccc !important; width: 100% !important; }
-          th, td { border-bottom: 1px solid #ddd !important; }
+          table { border: 1px solid #ccc !important; width: 100% !important; border-collapse: collapse !important; }
+          th, td { border-bottom: 1px solid #ddd !important; padding: 6px 8px !important; }
         }
       `}</style>
 
-      {/* ── HEADER & CONTROLS ────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>
-              {tr('Sales Reports & P&L Analytics', 'سیلز رپورٹس و منافع تجزیہ')}
-            </h1>
-            <span style={{
-              fontSize: '0.72rem',
+      {/* ------------------------------------------------------------------------- */}
+      {/* 1. SEAMLESS HERO HEADER (Matching Dashboard & general_background.jpg)       */}
+      {/* ------------------------------------------------------------------------- */}
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 4px 10px 4px',
+          minHeight: '84px',
+          overflow: 'hidden'
+        }}
+      >
+        {/* Left: Overview Breadcrumb + Title + Subtitle */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div
+            style={{
+              fontSize: '0.8rem',
               fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: '6px',
-              background: 'rgba(37,99,235,0.1)',
-              color: '#2563eb'
-            }}>
+              color: '#2563eb',
+              marginBottom: '4px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span>{language === 'ur' ? 'مالی تجزیہ و سیلز رپورٹس' : 'Financial Insights & Analytics'}</span>
+            <span
+              style={{
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                padding: '1px 6px',
+                borderRadius: '4px',
+                background: 'rgba(37,99,235,0.12)',
+                color: '#2563eb'
+              }}
+            >
               MOD-07
             </span>
           </div>
-          <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            {tr('Verified Dexie.js offline sales, stone inventory costs, and net profit margins', 'آف لائن مصدقہ سیلز، اسٹاک لاگت اور خالص منافع کا گوشوارہ')}
-            {summary.invoicesCount > 0 && (
-              <span style={{ marginLeft: '10px', opacity: 0.8 }}>
-                · {summary.invoicesCount} {tr('bills processed', 'بلز پروسیس ہوئے')}
-              </span>
-            )}
-          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div
+              style={{
+                width: '46px',
+                height: '46px',
+                borderRadius: '13px',
+                background: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+                flexShrink: 0
+              }}
+            >
+              <BarChart3 size={24} />
+            </div>
+
+            <div>
+              <h1
+                style={{
+                  fontSize: '1.7rem',
+                  fontWeight: 800,
+                  color: 'var(--text-primary, #0f172a)',
+                  margin: 0,
+                  letterSpacing: '-0.02em',
+                  lineHeight: 1.2
+                }}
+              >
+                {language === 'ur' ? 'سیلز رپورٹس و منافع تجزیہ' : 'Sales Reports & Profit Analysis'}{' '}
+                <span
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 700,
+                    color: 'var(--text-secondary, #64748b)',
+                    fontFamily: 'var(--font-urdu, inherit)'
+                  }}
+                >
+                  {language === 'ur' ? '' : '(سیلز و منافع)'}
+                </span>
+              </h1>
+              <p
+                style={{
+                  fontSize: '0.86rem',
+                  color: 'var(--text-secondary, #64748b)',
+                  margin: '2px 0 0 0',
+                  fontWeight: 500
+                }}
+              >
+                {language === 'ur'
+                  ? 'مصدقہ آف لائن سیلز، اسٹاک لاگت (COGS) اور خالص منافع کا جامع مالیاتی گوشوارہ'
+                  : 'Verified offline sales audits, stone inventory costs (COGS), margins & net profit analytics'}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="no-print" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        {/* Right: Action Buttons (Export & Print) */}
+        <div className="no-print" style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
             onClick={() => setExportModalOpen(true)}
+            className="btn btn-secondary"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '0 14px', height: '38px',
-              background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
-              fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer'
+              fontWeight: 700,
+              fontSize: '0.84rem',
+              padding: '9px 16px',
+              borderRadius: '9px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer'
             }}
           >
-            <Download size={14} /> {tr('Export', 'ایکسپورٹ')}
+            <Download size={15} />
+            <span>{tr('Export Data', 'ایکسپورٹ ڈیٹا')}</span>
           </button>
+
           <button
             type="button"
             onClick={() => window.print()}
+            className="btn btn-primary"
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '0 14px', height: '38px',
-              background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-              borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
-              fontSize: '0.83rem', fontWeight: 600, cursor: 'pointer'
+              background: '#2563eb',
+              borderColor: '#2563eb',
+              fontWeight: 700,
+              fontSize: '0.86rem',
+              padding: '9px 18px',
+              borderRadius: '9px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+              color: '#ffffff',
+              cursor: 'pointer'
             }}
           >
-            <Printer size={14} /> {tr('Print', 'پرنٹ')}
+            <Printer size={16} />
+            <span>{tr('Print Audit', 'پرنٹ رپورٹ')}</span>
           </button>
+        </div>
+
+        {/* Right: Background Marble Image with seamless fade mask using general_background */}
+        <div
+          style={{
+            position: 'absolute',
+            right: '0',
+            top: '-15px',
+            bottom: '-15px',
+            width: '50%',
+            maxWidth: '520px',
+            backgroundImage: `url('./general_background.jpg'), url('/general_background.jpg'), url('./invoice_background.jpg'), url('/invoice_background.jpg')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'right center',
+            maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+            WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+            pointerEvents: 'none',
+            opacity: 0.95,
+            borderRadius: '14px'
+          }}
+        />
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 2. PRIMARY 4 KPI CARDS (Dashboard .kpi-card-grid & .kpi-metric-card)      */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="kpi-card-grid">
+        {/* KPI 1: TOTAL GROSS SALES */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon blue">
+            <TrendingUp size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">{tr('Total Sales', 'Total Sales')}</span>
+              <span className="kpi-metric-label-ur">(کل سیلز بلنگ)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">{rs(summary.grossSales)}</div>
+          </div>
+        </div>
+
+        {/* KPI 2: NET PROFIT (خالص منافع) */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon green">
+            <DollarSign size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">{tr('Net Profit', 'Net Profit')}</span>
+              <span className="kpi-metric-label-ur">(خالص منافع P&L)</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: summary.netProfit >= 0 ? '#059669' : '#dc2626' }}>
+              {rs(summary.netProfit)}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: CASH & RECOVERIES */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon indigo">
+            <Wallet size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">{tr('Cash Inflow', 'Cash Inflow')}</span>
+              <span className="kpi-metric-label-ur">(کل وصول شدہ رقم)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">{rs(summary.totalCashInflow)}</div>
+          </div>
+        </div>
+
+        {/* KPI 4: FACTORY EXPENSES & DEDUCTIONS */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon red">
+            <TrendingDown size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">{tr('Expenses', 'Expenses')}</span>
+              <span className="kpi-metric-label-ur">(اخراجات و کٹوتیاں)</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: '#dc2626' }}>
+              {rs(summary.factoryExpenses)}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* ── TIME HORIZON BAR ────────────────────────────────────────────── */}
-      <div className="no-print" style={{
-        display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap',
-        background: 'var(--bg-card)', padding: '12px 16px', borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-color)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Calendar size={16} style={{ color: 'var(--text-muted)' }} />
-          <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-            {tr('Horizon', 'مدت')}:
-          </span>
-        </div>
-
-        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-          {HORIZONS.map((h) => (
-            <button
-              key={h}
-              type="button"
-              onClick={() => setHorizon(h)}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 3. TIME HORIZON FILTER BAR (Placed directly below Cards)                  */}
+      {/* ------------------------------------------------------------------------- */}
+      <div
+        className="no-print"
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          background: 'var(--bg-card, #ffffff)',
+          padding: '12px 18px',
+          borderRadius: '14px',
+          border: '1px solid var(--border-color, #e2e8f0)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Calendar size={17} style={{ color: '#2563eb' }} />
+            <span
               style={{
-                display: 'inline-flex', alignItems: 'center',
-                padding: '0 14px', height: '34px',
-                background: horizon === h ? '#2563eb' : 'transparent',
-                border: '1px solid ' + (horizon === h ? '#2563eb' : 'var(--border-color)'),
-                borderRadius: 'var(--radius-md)',
-                color: horizon === h ? '#ffffff' : 'var(--text-primary)',
-                fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
-                transition: 'all 0.15s ease'
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                color: 'var(--text-secondary, #475569)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em'
               }}
             >
-              {h === 'Daily' ? tr('Daily (آج)', 'روزانہ') :
-               h === 'Weekly' ? tr('Weekly (ہفتہ وار)', 'ہفتہ وار') :
-               h === 'Monthly' ? tr('Monthly (ماہانہ)', 'ماہانہ') :
-               h === 'Yearly' ? tr('Yearly (سالانہ)', 'سالانہ') :
-               tr('Custom (تاریخ انتخاب)', 'مخصوص تاریخ')}
-            </button>
-          ))}
+              {tr('Report Horizon', 'مدت انتخاب')}:
+            </span>
+          </div>
 
+          {/* Horizon Pills */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: 'var(--bg-primary, #f8fafc)',
+              padding: '3px',
+              borderRadius: '10px',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              fontSize: '0.78rem'
+            }}
+          >
+            {HORIZONS.map((h) => {
+              const active = horizon === h.key;
+              return (
+                <button
+                  key={h.key}
+                  type="button"
+                  onClick={() => setHorizon(h.key)}
+                  style={{
+                    background: active ? 'var(--bg-card, #ffffff)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '7px',
+                    padding: '6px 14px',
+                    fontWeight: active ? 800 : 600,
+                    color: active ? '#2563eb' : 'var(--text-secondary, #64748b)',
+                    cursor: 'pointer',
+                    boxShadow: active ? '0 1px 4px rgba(15,23,42,0.08)' : 'none',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {language === 'ur' ? h.labelUr : h.labelEn}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Custom Date Range Picker Inputs */}
           {horizon === 'Custom' && (
             <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: '6px' }}>
               <input
@@ -241,260 +517,481 @@ export default function SalesReportsView() {
                 value={custom.from}
                 onChange={(e) => setCustom({ ...custom, from: e.target.value })}
                 style={{
-                  height: '34px', padding: '0 10px', fontSize: '0.82rem',
-                  background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none'
+                  height: '34px',
+                  padding: '0 10px',
+                  fontSize: '0.82rem',
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '8px',
+                  color: 'var(--text-primary, #0f172a)',
+                  outline: 'none',
+                  fontWeight: 600
                 }}
               />
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{tr('to', 'تا')}</span>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 600 }}>
+                {tr('to', 'تا')}
+              </span>
               <input
                 type="date"
                 value={custom.to}
                 onChange={(e) => setCustom({ ...custom, to: e.target.value })}
                 style={{
-                  height: '34px', padding: '0 10px', fontSize: '0.82rem',
-                  background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', outline: 'none'
+                  height: '34px',
+                  padding: '0 10px',
+                  fontSize: '0.82rem',
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '8px',
+                  color: 'var(--text-primary, #0f172a)',
+                  outline: 'none',
+                  fontWeight: 600
                 }}
               />
             </div>
           )}
         </div>
 
-        <div style={{ marginLeft: 'auto', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-          {tr('Reporting Horizon', 'رپورٹ کی مدت')}: <strong style={{ color: 'var(--text-primary)' }}>{report?.label}</strong>
+        {/* Live Filter Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--text-muted, #64748b)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <Clock size={14} />
+            <span>
+              {tr('Active Period', 'فعال دورانیہ')}:{' '}
+              <strong style={{ color: 'var(--text-primary, #0f172a)' }}>{report?.label}</strong>
+            </span>
+          </div>
+
+          <span
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              padding: '4px 10px',
+              borderRadius: '20px',
+              background: 'rgba(16, 185, 129, 0.1)',
+              color: '#059669',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <CheckCircle2 size={12} />
+            {summary.invoicesCount || 0} {tr('Bills Processed', 'بلز تجزیہ شدہ')}
+          </span>
         </div>
       </div>
 
-      {/* ── 4-CARD PRIMARY KPI STRIP ────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '14px' }}>
-        
-        {/* Card 1: Gross Sales */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)', padding: '16px 18px', position: 'relative'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {tr('Total Gross Sales', 'کل سیلز بلنگ')}
-            </span>
-            <BarChart3 size={18} style={{ color: '#2563eb' }} />
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-            {rs(summary.grossSales)}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-            <span>{summary.invoicesCount} {tr('bills', 'بلز')}</span>
-            <span>·</span>
-            <span>{summary.totalSqFtSold} {tr('Sq. Ft.', 'مربع فٹ')}</span>
-            {summary.salesGrowthPct !== 0 && (
-              <span style={{
-                marginLeft: 'auto', display: 'flex', alignItems: 'center',
-                color: summary.salesGrowthPct > 0 ? '#10b981' : '#ef4444', fontWeight: 700
-              }}>
-                {summary.salesGrowthPct > 0 ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                {Math.abs(summary.salesGrowthPct)}%
+      {/* ------------------------------------------------------------------------- */}
+      {/* 4. REAL OPERATIONAL ALERT BANNER (Directly below Report Horizon)          */}
+      {/* ------------------------------------------------------------------------- */}
+      {(() => {
+        const isLoss = summary.netProfit < 0;
+        const isLowMargin = summary.netMarginPct < 10 && summary.grossSales > 0;
+        const isHighCredit = summary.creditRatio > 60 && summary.grossSales > 0;
+        const hasReturns = (summary.salesReturnsAmount || 0) > 0;
+
+        if (!isLoss && !isLowMargin && !isHighCredit && !hasReturns) {
+          return (
+            <div
+              className="dash-alert-strip"
+              style={{
+                background: 'rgba(16, 185, 129, 0.08)',
+                borderColor: 'rgba(16, 185, 129, 0.3)',
+                color: '#059669'
+              }}
+            >
+              <div className="dash-alert-message" style={{ color: '#059669' }}>
+                <CheckCircle2 size={18} style={{ color: '#10b981', flexShrink: 0 }} />
+                <span>
+                  {language === 'ur'
+                    ? `تمام مالی اشارے مثبت ہیں — خالص منافع مارجن ${summary.netMarginPct}% ہے اور کیش فلو تسلی بخش ہے`
+                    : `Strong Financial Health — Net profit margin is healthy at ${summary.netMarginPct}% with balanced cash flow`}
+                </span>
+              </div>
+              <span
+                style={{
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  color: '#059669',
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  padding: '4px 12px',
+                  borderRadius: '20px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <CheckCircle2 size={13} />
+                {tr('Healthy Operations', 'مثالی کارکردگی')}
               </span>
+            </div>
+          );
+        }
+
+        return (
+          <div className="dash-alert-strip dash-alert-multi">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '2px' }}>
+              <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#991b1b', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <AlertTriangle size={16} style={{ color: '#dc2626' }} />
+                <span>{language === 'ur' ? 'مالیاتی احتیاطی الرٹس' : 'Financial Insights & Alerts'}</span>
+              </div>
+              <span style={{ fontSize: '0.72rem', color: '#991b1b', fontWeight: 700 }}>
+                {tr('Active Observations', 'ضروری توجہ')}
+              </span>
+            </div>
+
+            {isLoss && (
+              <div className="dash-alert-row" style={{ paddingTop: '6px', borderTop: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                <div className="dash-alert-message">
+                  <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                  <span>
+                    {language === 'ur'
+                      ? `اس مدت میں اخراجات خام منافع سے زیادہ ہیں (خالص نقصان: ${rs(Math.abs(summary.netProfit))})`
+                      : `Operating expenses exceeded gross profit for this period (Net Loss: ${rs(Math.abs(summary.netProfit))})`}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#dc2626' }}>
+                  {tr('Review Expenses', 'اخراجات چیک کریں')}
+                </span>
+              </div>
+            )}
+
+            {isHighCredit && (
+              <div className="dash-alert-row" style={{ paddingTop: '6px', borderTop: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                <div className="dash-alert-message" style={{ color: '#b45309' }}>
+                  <Wallet size={15} style={{ color: '#d97706', flexShrink: 0 }} />
+                  <span>
+                    {language === 'ur'
+                      ? `کل سیلز کا ${summary.creditRatio}% ادھار کھاتوں پر ہے (${rs(summary.creditSalesDirect)}) — وصولی مہم تیز کریں`
+                      : `${summary.creditRatio}% of sales are on credit accounts (${rs(summary.creditSalesDirect)}) — Prioritize recovery`}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309' }}>
+                  {tr('Credit Exposure', 'ادھار دباؤ')}
+                </span>
+              </div>
+            )}
+
+            {hasReturns && (
+              <div className="dash-alert-row" style={{ paddingTop: '6px', borderTop: '1px solid rgba(239, 68, 68, 0.15)' }}>
+                <div className="dash-alert-message" style={{ color: '#b45309' }}>
+                  <Boxes size={15} style={{ color: '#d97706', flexShrink: 0 }} />
+                  <span>
+                    {language === 'ur'
+                      ? `سیلز واپسی کی مد میں ${rs(summary.salesReturnsAmount)} کی کٹوتی ہوئی ہے`
+                      : `Sales returns resulted in ${rs(summary.salesReturnsAmount)} revenue deduction`}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#b45309' }}>
+                  {tr('Returns Tracked', 'واپسی ریکارڈ')}
+                </span>
+              </div>
             )}
           </div>
-        </div>
+        );
+      })()}
 
-        {/* Card 2: True Net Profit (خالص منافع) */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)', padding: '16px 18px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {tr('Net Profit (خالص منافع)', 'خالص منافع (P&L)')}
-            </span>
-            <TrendingUp size={18} style={{ color: '#10b981' }} />
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981', fontFamily: 'monospace' }}>
-            {rs(summary.netProfit)}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            {tr('Net Margin', 'خالص منافع کی شرح')}: <strong style={{ color: '#10b981' }}>{summary.netMarginPct}%</strong>
-            <span style={{ margin: '0 6px' }}>·</span>
-            <span>{tr('Gross Profit', 'خام منافع')}: {rs(summary.grossProfit)}</span>
-          </div>
-        </div>
-
-        {/* Card 3: Recoveries & Cash Collected */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)', padding: '16px 18px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {tr('Cash Collected (وصولی)', 'کل وصولی کیش و بینک')}
-            </span>
-            <Wallet size={18} style={{ color: '#0ea5e9' }} />
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-            {rs(summary.totalCashInflow)}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            <span>{tr('On-Spot Cash', 'فوری نقد')}: {rs(summary.cashSalesDirect)}</span>
-            <span style={{ margin: '0 4px' }}>+</span>
-            <span>{tr('Wasooli', 'کھاتہ وصولی')}: {rs(summary.wasooliCollections)}</span>
-          </div>
-        </div>
-
-        {/* Card 4: Factory Expenses */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)', padding: '16px 18px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              {tr('Daily Expenses (روزانہ خرچ)', 'فیکٹری کے کل اخراجات')}
-            </span>
-            <TrendingDown size={18} style={{ color: '#ef4444' }} />
-          </div>
-          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', fontFamily: 'monospace' }}>
-            {rs(summary.factoryExpenses)}
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '6px' }}>
-            <span>{tr('Returns', 'واپسی مال کٹوتی')}: {rs(summary.salesReturnsAmount)}</span>
-            <span style={{ margin: '0 6px' }}>·</span>
-            <span>{tr('Discounts', 'رعایت')}: {rs(summary.totalDiscount)}</span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── SECONDARY STRIP: CASH VS CREDIT & COGS BREAKDOWN ────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
-        
-        {/* Cash vs Credit Ratio Bar */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)', padding: '16px 18px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {tr('Cash vs Credit Ratio (نقد بمقابلہ ادھار)', 'نقد و ادھار تناسب')}
-            </span>
-            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {summary.cashRatio}% {tr('Cash', 'نقد')} / {summary.creditRatio}% {tr('Credit', 'ادھار')}
-            </span>
-          </div>
-          <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(239,68,68,0.25)', overflow: 'hidden', display: 'flex' }}>
-            <div style={{ height: '100%', width: `${summary.cashRatio}%`, background: '#10b981', transition: 'width 0.4s ease' }} />
-            <div style={{ height: '100%', width: `${summary.creditRatio}%`, background: '#ef4444', transition: 'width 0.4s ease' }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '0.78rem' }}>
-            <span style={{ color: '#10b981', fontWeight: 600 }}>● {tr('Cash Billed', 'نقد سیل')}: {rs(summary.cashSalesDirect)}</span>
-            <span style={{ color: '#ef4444', fontWeight: 600 }}>● {tr('Credit Udhar', 'ادھار کھاتہ')}: {rs(summary.creditSalesDirect)}</span>
-          </div>
-        </div>
-
-        {/* Cost of Goods Sold (COGS) & Margins Card */}
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)', padding: '16px 18px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              {tr('Cost of Goods Sold (COGS - لاگت مال)', 'ماربل خریداری و فیکٹری لاگت')}
-            </span>
-            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6366f1' }}>
-              {summary.grossMarginPct}% {tr('Gross Margin', 'خام مارجن')}
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace' }}>
-              {rs(summary.totalCOGS)}
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-              {tr('Net Sales', 'خالص سیلز')}: <strong>{rs(summary.netSales)}</strong>
-            </div>
-          </div>
-          <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '8px' }}>
-            {tr('Gross Profit', 'خام منافع')}: <strong style={{ color: '#10b981' }}>{rs(summary.grossProfit)}</strong>
-            <span style={{ margin: '0 6px' }}>—</span>
-            {tr('Expenses', 'اخراجات')}: <strong style={{ color: '#ef4444' }}>{rs(summary.factoryExpenses)}</strong>
-            <span style={{ margin: '0 6px' }}>=</span>
-            {tr('Net Profit', 'خالص منافع')}: <strong style={{ color: '#10b981' }}>{rs(summary.netProfit)}</strong>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ── TIME-SERIES VISUAL TREND (PURE SVG DUAL-LINE CHART) ──────────── */}
-      {timelineSeries.length > 1 && (
-        <div style={{
-          background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-          borderRadius: 'var(--radius-md)', padding: '18px 20px'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      {/* ------------------------------------------------------------------------- */}
+      {/* 5. SALES VS WASOOLI VS EXPENSE TRAJECTORY (Graph moved UP above mixes)    */}
+      {/* ------------------------------------------------------------------------- */}
+      {timelineSeries && timelineSeries.length > 1 && (
+        <div className="dash-card" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="dash-card-header">
             <div>
-              <h2 style={{ fontSize: '0.95rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                {tr('Sales vs Wasooli vs Expense Trajectory', 'سیلز بمقابلہ وصولی و خرچ کا رجحان')}
-              </h2>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                {tr('Periodic timeline distribution across current horizon', 'منتخب مدت کے دوران روزانہ و ماہانہ مالیات')}
-              </span>
+              <h3 className="dash-card-title">
+                <BarChart3 size={18} style={{ color: '#2563eb' }} />
+                <span>{language === 'ur' ? 'سیلز بمقابلہ وصولی و اخراجات کا رجحان' : 'Sales vs Wasooli vs Expense Trajectory'}</span>
+              </h3>
+              <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary, #64748b)', marginTop: '2px' }}>
+                {language === 'ur'
+                  ? 'منتخب کردہ دورانیے میں روزانہ / ماہانہ مالیاتی اتار چڑھاؤ'
+                  : 'Daily and periodic timeline distribution across the current reporting horizon'}
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '14px', fontSize: '0.75rem', fontWeight: 600 }}>
-              <span style={{ color: '#2563eb' }}>● {tr('Sales', 'سیلز')}</span>
-              <span style={{ color: '#10b981' }}>● {tr('Wasooli', 'وصولی')}</span>
-              <span style={{ color: '#ef4444' }}>● {tr('Expenses', 'خرچ')}</span>
+
+            {/* Chart Legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.76rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2563eb' }} />
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: 700 }}>{tr('Sales (سیلز)', 'سیلز')}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }} />
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: 700 }}>{tr('Wasooli (وصولی)', 'وصولی')}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#ef4444' }} />
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: 700 }}>{tr('Expenses (خرچ)', 'اخراجات')}</span>
+              </div>
             </div>
           </div>
 
-          {/* Simple Dynamic SVG Spark-area chart */}
+          {/* SVG Multi-Line Chart Canvas */}
           {(() => {
-            const maxVal = Math.max(...timelineSeries.map(p => Math.max(p.sales, p.wasooli, p.expenses)), 1000);
-            const w = 800;
-            const h = 140;
-            const step = w / Math.max(timelineSeries.length - 1, 1);
+            const maxVal = Math.max(...timelineSeries.map((p) => Math.max(p.sales || 0, p.wasooli || 0, p.expenses || 0)), 1000);
+            const w = 780;
+            const h = 160;
+            const step = timelineSeries.length > 1 ? (w - 80) / (timelineSeries.length - 1) : 100;
 
-            const salesPoints = timelineSeries.map((p, i) => `${i * step},${h - (p.sales / maxVal) * (h - 20) - 10}`).join(' ');
-            const wasooliPoints = timelineSeries.map((p, i) => `${i * step},${h - (p.wasooli / maxVal) * (h - 20) - 10}`).join(' ');
-            const expPoints = timelineSeries.map((p, i) => `${i * step},${h - (p.expenses / maxVal) * (h - 20) - 10}`).join(' ');
+            const salesPoints = timelineSeries.map((p, i) => `${40 + i * step},${h - 30 - ((p.sales || 0) / maxVal) * (h - 55)}`).join(' ');
+            const wasooliPoints = timelineSeries.map((p, i) => `${40 + i * step},${h - 30 - ((p.wasooli || 0) / maxVal) * (h - 55)}`).join(' ');
+            const expPoints = timelineSeries.map((p, i) => `${40 + i * step},${h - 30 - ((p.expenses || 0) / maxVal) * (h - 55)}`).join(' ');
 
             return (
-              <div style={{ width: '100%', overflowX: 'auto' }}>
-                <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '140px', overflow: 'visible' }}>
+              <div style={{ width: '100%', overflowX: 'auto', padding: '6px 0' }}>
+                <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: '160px', overflow: 'visible' }}>
                   {/* Grid Lines */}
-                  <line x1="0" y1="10" x2={w} y2="10" stroke="var(--border-color)" strokeDasharray="3 3" opacity="0.4" />
-                  <line x1="0" y1={h / 2} x2={w} y2={h / 2} stroke="var(--border-color)" strokeDasharray="3 3" opacity="0.4" />
-                  <line x1="0" y1={h - 10} x2={w} y2={h - 10} stroke="var(--border-color)" opacity="0.8" />
+                  <line x1="30" y1="25" x2={w - 20} y2="25" stroke="var(--border-color, #e2e8f0)" strokeDasharray="3 3" opacity="0.6" />
+                  <line x1="30" y1={h / 2} x2={w - 20} y2={h / 2} stroke="var(--border-color, #e2e8f0)" strokeDasharray="3 3" opacity="0.6" />
+                  <line x1="30" y1={h - 30} x2={w - 20} y2={h - 30} stroke="var(--border-color, #cbd5e1)" />
 
                   {/* Polylines */}
-                  <polyline fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" points={salesPoints} />
-                  <polyline fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" points={wasooliPoints} />
-                  <polyline fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4 2" strokeLinecap="round" points={expPoints} />
+                  <polyline
+                    fill="none"
+                    stroke="#2563eb"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={salesPoints}
+                  />
+                  <polyline
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={wasooliPoints}
+                  />
+                  <polyline
+                    fill="none"
+                    stroke="#ef4444"
+                    strokeWidth="2"
+                    strokeDasharray="4 3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={expPoints}
+                  />
 
-                  {/* Data Points on Hover / Ends */}
-                  {timelineSeries.map((p, i) => (
-                    <circle key={i} cx={i * step} cy={h - (p.sales / maxVal) * (h - 20) - 10} r="3" fill="#2563eb" />
-                  ))}
+                  {/* Dot Markers & Interactive Points */}
+                  {timelineSeries.map((p, i) => {
+                    const cx = 40 + i * step;
+                    const cySales = h - 30 - ((p.sales || 0) / maxVal) * (h - 55);
+                    const cyWasooli = h - 30 - ((p.wasooli || 0) / maxVal) * (h - 55);
+
+                    return (
+                      <g key={i} style={{ cursor: 'pointer' }}>
+                        <circle cx={cx} cy={cySales} r="4" fill="#2563eb" stroke="#ffffff" strokeWidth="1.5" />
+                        <circle cx={cx} cy={cyWasooli} r="3.5" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
+                        <text
+                          x={cx}
+                          y={h - 12}
+                          textAnchor="middle"
+                          fontSize="10.5"
+                          fill="var(--text-secondary, #64748b)"
+                          fontWeight="700"
+                        >
+                          {p.label}
+                        </text>
+                      </g>
+                    );
+                  })}
                 </svg>
-                {/* Labels */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                  {timelineSeries.filter((_, idx) => idx % Math.ceil(timelineSeries.length / 7) === 0 || idx === timelineSeries.length - 1).map((p, idx) => (
-                    <span key={idx}>{p.label}</span>
-                  ))}
-                </div>
               </div>
             );
           })()}
         </div>
       )}
 
-      {/* ── DETAILED EXPLORATION TABS ───────────────────────────────────── */}
-      <div style={{
-        background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-        borderRadius: 'var(--radius-md)', overflow: 'hidden'
-      }}>
-        {/* Tab Headers */}
-        <div style={{
-          display: 'flex', gap: '2px', borderBottom: '1px solid var(--border-color)',
-          background: 'var(--bg-primary)', padding: '6px 12px 0', flexWrap: 'wrap'
-        }}>
+      {/* ------------------------------------------------------------------------- */}
+      {/* 6. CASH VS CREDIT SALES MIX | COGS & PROFIT STRUCTURE (Dual Panel)        */}
+      {/* ------------------------------------------------------------------------- */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: '16px'
+        }}
+      >
+        {/* Left: Cash vs Credit Sales Breakdown */}
+        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="dash-card-header">
+            <h3 className="dash-card-title">
+              <Wallet size={18} style={{ color: '#059669' }} />
+              <span>{language === 'ur' ? 'نقد بمقابلہ ادھار تناسب' : 'Cash vs Credit Sales Mix'}</span>
+            </h3>
+            <span
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#2563eb',
+                background: 'rgba(37,99,235,0.08)',
+                padding: '3px 8px',
+                borderRadius: '6px'
+              }}
+            >
+              {summary.cashRatio}% {tr('Cash', 'نقد')} / {summary.creditRatio}% {tr('Credit', 'ادھار')}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {/* Visual Bar Track */}
+            <div
+              style={{
+                height: '10px',
+                borderRadius: '5px',
+                background: 'rgba(239,68,68,0.25)',
+                overflow: 'hidden',
+                display: 'flex',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)'
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: `${summary.cashRatio}%`,
+                  background: '#10b981',
+                  transition: 'width 0.4s ease'
+                }}
+                title={`Cash: ${summary.cashRatio}%`}
+              />
+              <div
+                style={{
+                  height: '100%',
+                  width: `${summary.creditRatio}%`,
+                  background: '#ef4444',
+                  transition: 'width 0.4s ease'
+                }}
+                title={`Credit: ${summary.creditRatio}%`}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginTop: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981' }} />
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: 600 }}>
+                  {tr('On-Spot Cash Billed', 'نقد بلنگ')}:
+                </span>
+                <strong style={{ color: '#059669' }} className="font-mono">{rs(summary.cashSalesDirect)}</strong>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444' }} />
+                <span style={{ color: 'var(--text-secondary, #64748b)', fontWeight: 600 }}>
+                  {tr('Credit Udhar Billed', 'ادھار کھاتہ')}:
+                </span>
+                <strong style={{ color: '#dc2626' }} className="font-mono">{rs(summary.creditSalesDirect)}</strong>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: 'var(--bg-primary, #f8fafc)',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '0.78rem'
+              }}
+            >
+              <span style={{ color: 'var(--text-muted, #64748b)' }}>
+                {tr('Recovered Khata Wasooli in Period', 'مدت کے دوران وصول شدہ ادھار')}:
+              </span>
+              <strong style={{ color: '#2563eb' }} className="font-mono">{rs(summary.wasooliCollections)}</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Cost of Goods Sold (COGS) & Margins Structure */}
+        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div className="dash-card-header">
+            <h3 className="dash-card-title">
+              <Layers size={18} style={{ color: '#6366f1' }} />
+              <span>{language === 'ur' ? 'ماربل لاگت و منافع گوشوارہ' : 'COGS & Profit Structure'}</span>
+            </h3>
+            <span
+              style={{
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                color: '#10b981',
+                background: 'rgba(16,185,129,0.1)',
+                padding: '3px 8px',
+                borderRadius: '6px'
+              }}
+            >
+              {summary.grossMarginPct}% {tr('Gross Margin', 'خام مارجن')}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+              <div>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Total Stone Cost (COGS)', 'کل مال خریداری لاگت')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
+                  {rs(summary.totalCOGS)}
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted, #94a3b8)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Net Sales Revenue', 'خالص سیلز آمدن')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.15rem', fontWeight: 800, color: '#2563eb' }}>
+                  {rs(summary.netSales)}
+                </div>
+              </div>
+            </div>
+
+            {/* Step-by-step financial formula banner */}
+            <div
+              style={{
+                background: 'var(--bg-primary, #f8fafc)',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-color, #e2e8f0)',
+                fontSize: '0.76rem',
+                color: 'var(--text-secondary, #64748b)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}
+            >
+              <span>{tr('Gross Profit', 'خام منافع')}: <strong style={{ color: '#059669' }}>{rs(summary.grossProfit)}</strong></span>
+              <span>—</span>
+              <span>{tr('Expenses', 'اخراجات')}: <strong style={{ color: '#dc2626' }}>{rs(summary.factoryExpenses)}</strong></span>
+              <span>=</span>
+              <span>{tr('Net Munafa', 'خالص منافع')}: <strong style={{ color: summary.netProfit >= 0 ? '#059669' : '#dc2626' }}>{rs(summary.netProfit)}</strong></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 7. DRILLDOWN EXPLORATION TABS (Matching Dashboard Flat Table Structure)   */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="dash-card" style={{ padding: 0, overflow: 'hidden' }}>
+        {/* Modern Tab Headers */}
+        <div
+          style={{
+            display: 'flex',
+            gap: '4px',
+            borderBottom: '1px solid var(--border-color, #e2e8f0)',
+            background: 'var(--bg-primary, #f8fafc)',
+            padding: '8px 12px 0 12px',
+            flexWrap: 'wrap'
+          }}
+        >
           {[
             { id: 'OVERVIEW', label: tr('Category Performance', 'اقسام ماربل کارکردگی'), icon: Layers },
             { id: 'SUTARS', label: tr('Sutar Thickness Breakdown', 'سوتر موٹائی تجزیہ'), icon: SlidersHorizontal },
@@ -509,23 +1006,32 @@ export default function SalesReportsView() {
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  padding: '10px 16px', fontSize: '0.82rem', fontWeight: 600,
-                  color: active ? '#2563eb' : 'var(--text-muted)',
-                  borderBottom: active ? '2px solid #2563eb' : '2px solid transparent',
-                  background: active ? 'var(--bg-card)' : 'transparent',
-                  borderTopLeftRadius: '6px', borderTopRightRadius: '6px',
-                  border: 'none', cursor: 'pointer', transition: 'all 0.15s ease'
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '11px 18px',
+                  fontSize: '0.84rem',
+                  fontWeight: active ? 800 : 600,
+                  color: active ? '#2563eb' : 'var(--text-muted, #64748b)',
+                  borderBottom: active ? '3px solid #2563eb' : '3px solid transparent',
+                  background: active ? 'var(--bg-card, #ffffff)' : 'transparent',
+                  borderTopLeftRadius: '8px',
+                  borderTopRightRadius: '8px',
+                  borderLeft: 'none',
+                  borderRight: 'none',
+                  borderTop: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <Icon size={14} />
-                {tab.label}
+                <Icon size={16} />
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
 
-        {/* Tab Content 1: Category Breakdown */}
+        {/* ── TAB 1: CATEGORY BREAKDOWN TABLE ───────────────────────────── */}
         {activeTab === 'OVERVIEW' && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -544,45 +1050,59 @@ export default function SalesReportsView() {
               <tbody>
                 {categoryBreakdown.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '30px' }}>
+                    <td colSpan={8} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '36px' }}>
                       {tr('No category transactions found in this horizon.', 'اس مدت میں کوئی ریکارڈ موجود نہیں۔')}
                     </td>
                   </tr>
                 ) : (
                   categoryBreakdown.map((cat, idx) => (
-                    <tr key={idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)' }}>
-                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {cat.name}
-                      </td>
-                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 700, color: '#2563eb' }}>
+                    <tr
+                      key={idx}
+                      style={{
+                        background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                    >
+                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-primary)' }}>{cat.name}</td>
+                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800, color: '#2563eb' }}>
                         {rs(cat.revenue)}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {cat.sqFt.toLocaleString()} {tr('SqFt', 'فٹ')}
+                        {(cat.sqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
                       </td>
-                      <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {rs(cat.avgRatePerSqFt)}
-                      </td>
-                      <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                        {rs(cat.cogs)}
-                      </td>
-                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 700, color: '#10b981' }}>
+                      <td style={{ ...TD, fontFamily: 'monospace' }}>{rs(cat.avgRatePerSqFt)}</td>
+                      <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{rs(cat.cogs)}</td>
+                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 700, color: '#059669' }}>
                         {rs(cat.profit)}
                       </td>
                       <td style={{ ...TD }}>
-                        <span style={{
-                          padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700,
-                          background: 'rgba(16,185,129,0.1)', color: '#10b981'
-                        }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '5px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            background: 'rgba(16,185,129,0.1)',
+                            color: '#059669'
+                          }}
+                        >
                           {cat.marginPct}%
                         </span>
                       </td>
-                      <td style={{ ...TD }}>
+                      <td style={{ ...TD, minWidth: '130px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ flex: 1, height: '6px', borderRadius: '3px', background: 'var(--border-color)', overflow: 'hidden' }}>
+                          <div
+                            style={{
+                              flex: 1,
+                              height: '6px',
+                              borderRadius: '3px',
+                              background: 'var(--border-color, #e2e8f0)',
+                              overflow: 'hidden'
+                            }}
+                          >
                             <div style={{ height: '100%', width: `${cat.sharePct}%`, background: '#2563eb' }} />
                           </div>
-                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', width: '30px' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', width: '32px' }}>
                             {cat.sharePct}%
                           </span>
                         </div>
@@ -595,37 +1115,57 @@ export default function SalesReportsView() {
           </div>
         )}
 
-        {/* Tab Content 2: Sutar Breakdown */}
+        {/* ── TAB 2: SUTAR THICKNESS BREAKDOWN CARDS ────────────────────── */}
         {activeTab === 'SUTARS' && (
           <div style={{ padding: '20px' }}>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', margin: '0 0 16px 0' }}>
               {tr(
-                'Distribution of marble slabs sold across Rana Shahab standardized Sutar thickness categories:',
-                'رانا شہاب فیکٹری کے معیار کے مطابق مختلف سوتر موٹائیوں میں سیلز کی تفصیل:'
+                'Distribution of marble slabs sold across standardized Sutar thickness categories:',
+                'فیکٹری کے معیار کے مطابق مختلف سوتر موٹائیوں میں سیلز، فٹ اور منافع کی تفصیل:'
               )}
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '14px'
+              }}
+            >
               {sutarBreakdown.map((s, idx) => (
-                <div key={idx} style={{
-                  background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
-                  borderRadius: 'var(--radius-md)', padding: '16px 18px'
-                }}>
+                <div
+                  key={idx}
+                  style={{
+                    background: 'var(--bg-primary, #f8fafc)',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    borderRadius: '12px',
+                    padding: '16px 18px'
+                  }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    <span style={{ fontSize: '0.86rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {s.name}
                     </span>
-                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#2563eb', background: 'rgba(37,99,235,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                    <span
+                      style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        color: '#2563eb',
+                        background: 'rgba(37,99,235,0.1)',
+                        padding: '2px 8px',
+                        borderRadius: '6px'
+                      }}
+                    >
                       {s.sharePct}% {tr('share', 'حصہ')}
                     </span>
                   </div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb', fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 800, color: '#2563eb', fontFamily: 'monospace' }}>
                     {rs(s.revenue)}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                    <span>{tr('Sq. Ft.', 'رقبہ')}: <strong>{s.sqFt.toLocaleString()}</strong></span>
-                    <span>{tr('Profit', 'منافع')}: <strong style={{ color: '#10b981' }}>{rs(s.profit)}</strong></span>
+                    <span>{tr('Sq. Ft.', 'رقبہ')}: <strong>{(s.sqFt || 0).toLocaleString()}</strong></span>
+                    <span>{tr('Profit', 'منافع')}: <strong style={{ color: '#059669' }}>{rs(s.profit)}</strong></span>
                   </div>
-                  <div style={{ height: '5px', borderRadius: '3px', background: 'var(--border-color)', marginTop: '10px', overflow: 'hidden' }}>
+                  <div style={{ height: '6px', borderRadius: '3px', background: 'var(--border-color, #e2e8f0)', marginTop: '10px', overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${s.sharePct}%`, background: '#2563eb' }} />
                   </div>
                 </div>
@@ -634,7 +1174,7 @@ export default function SalesReportsView() {
           </div>
         )}
 
-        {/* Tab Content 3: Top Customers */}
+        {/* ── TAB 3: TOP CUSTOMERS KHATA RANKING ────────────────────────── */}
         {activeTab === 'CUSTOMERS' && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -653,36 +1193,42 @@ export default function SalesReportsView() {
               <tbody>
                 {topCustomers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '30px' }}>
+                    <td colSpan={8} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '36px' }}>
                       {tr('No customer sales recorded in this horizon.', 'اس مدت میں کوئی ریکارڈ نہیں۔')}
                     </td>
                   </tr>
                 ) : (
                   topCustomers.map((cust, idx) => (
-                    <tr key={idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)' }}>
-                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-muted)', width: '30px' }}>
-                        {idx + 1}
-                      </td>
-                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {cust.name}
-                      </td>
-                      <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                        {cust.phone}
-                      </td>
-                      <td style={{ ...TD, color: 'var(--text-muted)' }}>
-                        {cust.city}
-                      </td>
+                    <tr
+                      key={idx}
+                      style={{
+                        background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                    >
+                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-muted)', width: '36px' }}>{idx + 1}</td>
+                      <td style={{ ...TD, fontWeight: 800, color: 'var(--text-primary)' }}>{cust.name}</td>
+                      <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{cust.phone}</td>
+                      <td style={{ ...TD, color: 'var(--text-muted)' }}>{cust.city}</td>
                       <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800, color: '#2563eb' }}>
                         {rs(cust.revenue)}
                       </td>
+                      <td style={{ ...TD, fontFamily: 'monospace' }}>{cust.billsCount}</td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {cust.billsCount}
+                        {(cust.sqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
                       </td>
-                      <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {cust.sqFt.toLocaleString()} {tr('SqFt', 'فٹ')}
-                      </td>
-                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 700, color: cust.balanceDue > 0 ? '#ef4444' : '#10b981' }}>
-                        {rs(cust.balanceDue)}
+                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800 }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '5px',
+                            fontSize: '0.78rem',
+                            background: cust.balanceDue > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                            color: cust.balanceDue > 0 ? '#dc2626' : '#059669'
+                          }}
+                        >
+                          {rs(cust.balanceDue)}
+                        </span>
                       </td>
                     </tr>
                   ))
@@ -692,7 +1238,7 @@ export default function SalesReportsView() {
           </div>
         )}
 
-        {/* Tab Content 4: Top Stone Items */}
+        {/* ── TAB 4: TOP STONE ITEMS MASTER ─────────────────────────────── */}
         {activeTab === 'PRODUCTS' && (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -712,42 +1258,48 @@ export default function SalesReportsView() {
               <tbody>
                 {topProducts.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '30px' }}>
+                    <td colSpan={9} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '36px' }}>
                       {tr('No product items sold in this horizon.', 'اس مدت میں کوئی ریکارڈ نہیں۔')}
                     </td>
                   </tr>
                 ) : (
                   topProducts.map((p, idx) => (
-                    <tr key={idx} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)' }}>
-                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-muted)', width: '30px' }}>
-                        {idx + 1}
-                      </td>
+                    <tr
+                      key={idx}
+                      style={{
+                        background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)',
+                        transition: 'background-color 0.15s ease'
+                      }}
+                    >
+                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-muted)', width: '36px' }}>{idx + 1}</td>
                       <td style={{ ...TD, fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        {p.code}
+                        <span style={{ padding: '2px 6px', borderRadius: '4px', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
+                          {p.code}
+                        </span>
                       </td>
-                      <td style={{ ...TD, fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {p.name}
-                      </td>
-                      <td style={{ ...TD, color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                        {p.category}
-                      </td>
+                      <td style={{ ...TD, fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</td>
+                      <td style={{ ...TD, color: 'var(--text-muted)', fontSize: '0.8rem' }}>{p.category}</td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {p.sqFt.toLocaleString()} {tr('SqFt', 'فٹ')}
+                        {(p.sqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800, color: '#2563eb' }}>
                         {rs(p.revenue)}
                       </td>
-                      <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>
-                        {rs(p.cogs)}
-                      </td>
-                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 700, color: '#10b981' }}>
+                      <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{rs(p.cogs)}</td>
+                      <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800, color: '#059669' }}>
                         {rs(p.profit)}
                       </td>
                       <td style={{ ...TD }}>
-                        <span style={{
-                          padding: '3px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 700,
-                          background: 'rgba(16,185,129,0.1)', color: '#10b981'
-                        }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '5px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            background: 'rgba(16,185,129,0.1)',
+                            color: '#059669'
+                          }}
+                        >
                           {p.marginPct}%
                         </span>
                       </td>
@@ -760,42 +1312,105 @@ export default function SalesReportsView() {
         )}
       </div>
 
-      {/* ── EXPORT MODAL ─────────────────────────────────────────────────── */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 8. EXPORT MODAL (Clean Glassmorphism Modal matching Dashboard)            */}
+      {/* ------------------------------------------------------------------------- */}
       {exportModalOpen && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999,
-          backdropFilter: 'blur(3px)'
-        }}>
-          <div style={{
-            background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-            borderRadius: 'var(--radius-lg)', width: '90%', maxWidth: '440px',
-            padding: '24px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)'
-          }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: '0 0 8px', color: 'var(--text-primary)' }}>
-              {tr('Export Sales & P&L Report', 'سیلز و منافع رپورٹ ایکسپورٹ')}
-            </h3>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            backdropFilter: 'blur(4px)',
+            padding: '16px'
+          }}
+          onClick={() => setExportModalOpen(false)}
+        >
+          <div
+            style={{
+              background: 'var(--bg-card, #ffffff)',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              borderRadius: '16px',
+              width: '100%',
+              maxWidth: '460px',
+              padding: '24px',
+              boxShadow: '0 24px 48px rgba(0,0,0,0.25)',
+              position: 'relative'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setExportModalOpen(false)}
+              style={{
+                position: 'absolute',
+                top: '18px',
+                right: '18px',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-muted, #94a3b8)',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={20} />
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div
+                style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: 'rgba(37,99,235,0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#2563eb'
+                }}
+              >
+                <Download size={20} />
+              </div>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                {tr('Export Financial Reports', 'سیلز و منافع رپورٹ ایکسپورٹ')}
+              </h3>
+            </div>
+
             <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
-              {tr('Download formatted sales audit file for spreadsheet or archival:', 'رپورٹ کو ایکسل یا ڈیٹا فائل کی صورت میں ڈاؤن لوڈ کریں:')}
+              {tr(
+                'Download structured audit files for spreadsheet accounting or offline archival:',
+                'رپورٹ کو ایکسل، سی ایس وی یا ڈیٹا فائل کی صورت میں ڈاؤن لوڈ کریں:'
+              )}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <button
                 type="button"
                 onClick={handleDownloadCSV}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '12px 16px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.88rem',
-                  cursor: 'pointer', textAlign: 'left'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <FileSpreadsheet size={20} style={{ color: '#10b981' }} />
+                <FileSpreadsheet size={24} style={{ color: '#10b981', flexShrink: 0 }} />
                 <div>
-                  <div>{tr('Export as Microsoft Excel / CSV', 'ایکسل یا سی ایس وی فائل')}</div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    {tr('Includes UTF-8 BOM for Urdu font compatibility', 'اردو اور انگریزی کیلئے مکمل سپورٹ')}
+                  <div style={{ fontWeight: 800 }}>{tr('Microsoft Excel / CSV Spreadsheet', 'ایکسل یا CSV فائل')}</div>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    {tr('Formatted tables with UTF-8 BOM Urdu support', 'مکمل ٹیبلز اور اردو فونٹ سپورٹ کے ساتھ')}
                   </span>
                 </div>
               </button>
@@ -804,31 +1419,44 @@ export default function SalesReportsView() {
                 type="button"
                 onClick={handleDownloadJSON}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: '12px 16px', borderRadius: 'var(--radius-md)',
-                  background: 'var(--bg-primary)', border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.88rem',
-                  cursor: 'pointer', textAlign: 'left'
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <Download size={20} style={{ color: '#2563eb' }} />
+                <Download size={24} style={{ color: '#2563eb', flexShrink: 0 }} />
                 <div>
-                  <div>{tr('Export as JSON Raw Data', 'جے سن را ڈیٹا فائل')}</div>
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    {tr('Complete nested aggregations & metrics structure', 'تمام اینالیٹکس کا مکمل ڈیٹا')}
+                  <div style={{ fontWeight: 800 }}>{tr('JSON Raw Financial Dataset', 'JSON را ڈیٹا فائل')}</div>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    {tr('Complete nested aggregations & metrics structure', 'اینالیٹکس و میٹرکس کا مکمل تکنیکی ڈیٹا')}
                   </span>
                 </div>
               </button>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '22px' }}>
               <button
                 type="button"
                 onClick={() => setExportModalOpen(false)}
                 style={{
-                  padding: '8px 18px', borderRadius: 'var(--radius-md)',
-                  background: 'transparent', border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer'
+                  padding: '9px 20px',
+                  borderRadius: '8px',
+                  background: 'transparent',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.85rem',
+                  fontWeight: 700,
+                  cursor: 'pointer'
                 }}
               >
                 {tr('Close', 'بند کریں')}
@@ -837,7 +1465,6 @@ export default function SalesReportsView() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

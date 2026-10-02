@@ -529,266 +529,215 @@ export default function GatePassView() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "50px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px", maxWidth: "1440px", margin: "0 auto", paddingBottom: "30px" }}>
 
-      {/* ── 1. TOP HEADER (With gate_background.jpg Background) ── */}
+      {/* ── 1. SEAMLESS HERO HEADER (Matching Dashboard Template) ── */}
       <div
         className="no-print"
         style={{
           position: "relative",
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          flexWrap: "wrap",
-          gap: "16px",
-          minHeight: "90px",
-          padding: "18px 24px",
-          borderRadius: "14px",
-          background: "var(--bg-card)",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+          justifyContent: "space-between",
+          padding: "6px 4px 10px 4px",
+          minHeight: "84px",
           overflow: "hidden"
         }}
       >
-        {/* Top Right gate_background.jpg image with smooth fade */}
-        <div
-          style={{
-            position: "absolute",
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: "480px",
-            backgroundImage: "url('./gate_background.jpg')",
-            backgroundSize: "cover",
-            backgroundPosition: "center right",
-            opacity: 0.9,
-            maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, black 100%)",
-            WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, black 100%)",
-            pointerEvents: "none",
-            zIndex: 1
-          }}
-        />
-
-        {/* Left: Blue Icon Box + Title + Subtitle */}
-        <div style={{ display: "flex", alignItems: "center", gap: "16px", zIndex: 2, position: "relative" }}>
+        {/* Left: Overview Breadcrumb + Title + Subtitle */}
+        <div style={{ position: "relative", zIndex: 2 }}>
           <div
             style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "12px",
-              background: "#2563eb",
-              display: "flex",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "#2563eb",
+              marginBottom: "4px",
+              display: "inline-flex",
               alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
-              flexShrink: 0
+              gap: "6px"
             }}
           >
-            <Truck size={24} />
+            <span>{language === "ur" ? "رکشہ گیٹ پاس و ترسیل لاجسٹکس" : "Logistics & Gate Pass Operations"}</span>
+            <span
+              style={{
+                fontSize: "0.68rem",
+                fontWeight: 800,
+                padding: "1px 6px",
+                borderRadius: "4px",
+                background: "rgba(37,99,235,0.12)",
+                color: "#2563eb"
+              }}
+            >
+              MOD-04
+            </span>
           </div>
 
-          <div>
-            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-              {tr("Rickshaw Gate Pass & Yard Logistics", "رکشہ گیٹ پاس و ترسیل لاجسٹکس")}
-            </h1>
-            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
-              {tr("Track every delivery vehicle, driver, marble manifest, and printable gate pass slip leaving the yard.", "فیکٹری سے گاڑیوں کی باحفاظت ترسیل، ڈرائیور ریکارڈ اور گیٹ پاس پرچی کا انتظام")}
-            </p>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div
+              style={{
+                width: "46px",
+                height: "46px",
+                borderRadius: "13px",
+                background: "#2563eb",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#ffffff",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+                flexShrink: 0
+              }}
+            >
+              <Truck size={24} />
+            </div>
+
+            <div>
+              <h1
+                style={{
+                  fontSize: "1.7rem",
+                  fontWeight: 800,
+                  color: "var(--text-primary, #0f172a)",
+                  margin: 0,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.2
+                }}
+              >
+                {language === "ur" ? "رکشہ گیٹ پاس و ترسیل" : "Gate Pass & Yard Logistics"}{" "}
+                <span
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    color: "var(--text-secondary, #64748b)",
+                    fontFamily: "var(--font-urdu, inherit)"
+                  }}
+                >
+                  {language === "ur" ? "" : "(گیٹ پاس لاجسٹکس)"}
+                </span>
+              </h1>
+              <p
+                style={{
+                  fontSize: "0.86rem",
+                  color: "var(--text-secondary, #64748b)",
+                  margin: "2px 0 0 0",
+                  fontWeight: 500
+                }}
+              >
+                {language === "ur"
+                  ? "گاڑیوں اور گیٹ پاس پرچی کا انتظام"
+                  : "Track vehicles, drivers, and gate passes"}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Right: + Issue Gate Pass Button */}
-        <div style={{ position: "relative", zIndex: 2 }}>
+        {/* Right: + Issue Gate Pass Action Button */}
+        <div className="no-print" style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", gap: "10px" }}>
           <button
+            type="button"
             className="btn btn-primary"
             onClick={handleOpenModal}
             id="add-gate-pass-btn"
             style={{
+              background: "#2563eb",
+              borderColor: "#2563eb",
+              fontWeight: 700,
+              fontSize: "0.86rem",
+              padding: "10px 18px",
+              borderRadius: "9px",
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              padding: "10px 18px",
-              fontSize: "0.88rem",
-              fontWeight: 800,
-              borderRadius: "8px",
-              boxShadow: "0 4px 14px rgba(37, 99, 235, 0.25)"
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+              color: "#ffffff"
             }}
           >
-            <Plus size={16} /> {tr("Issue Gate Pass", "نیا گیٹ پاس جاری کریں")}
+            <Plus size={16} />
+            <span>{tr("Issue Gate Pass", "نیا گیٹ پاس جاری کریں")}</span>
           </button>
         </div>
-      </div>
 
-      {/* ── 2. 4 METRIC KPI CARDS (All Perfectly Aligned English Labels) ── */}
-      <div
-        className="no-print"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px"
-        }}
-      >
-        {/* KPI 1: Total Gate Passes */}
+        {/* Seamless Background Image extending across header right */}
         <div
           style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
+            position: "absolute",
+            right: 0,
+            top: "-15px",
+            bottom: "-15px",
+            width: "50%",
+            maxWidth: "520px",
+            backgroundImage: "url('./general_background.jpg'), url('/general_background.jpg'), url('./gate_background.jpg'), url('/gate_background.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "right center",
+            maskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
+            WebkitMaskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
+            pointerEvents: "none",
+            opacity: 0.95,
+            borderRadius: "14px"
           }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#2563eb",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        />
+      </div>
+
+      {/* ── 2. TOP 4 KPI METRIC CARDS (Dashboard .kpi-card-grid & .kpi-metric-card) ── */}
+      <div className="kpi-card-grid no-print">
+        {/* KPI 1: Total Gate Passes */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon blue">
             <FileText size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Total Gate Passes
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Total Passes</span>
+              <span className="kpi-metric-label-ur">(کل گیٹ پاس)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+            <div className="kpi-metric-value font-mono">
               {passes.length}
             </div>
           </div>
         </div>
 
         {/* KPI 2: Delivered */}
-        <div
-          style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#10b981",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon green">
             <CheckCircle2 size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Delivered
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Delivered</span>
+              <span className="kpi-metric-label-ur">(پہنچ گیا)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+            <div className="kpi-metric-value font-mono" style={{ color: "#059669" }}>
               {deliveredCount}
             </div>
           </div>
         </div>
 
         {/* KPI 3: In Transit */}
-        <div
-          style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#6366f1",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon amber">
             <Truck size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              In Transit
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">In Transit</span>
+              <span className="kpi-metric-label-ur">(زیر ترسیل)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+            <div className="kpi-metric-value font-mono" style={{ color: "#d97706" }}>
               {inTransitCount}
             </div>
           </div>
         </div>
 
         {/* KPI 4: Dispatched Volume */}
-        <div
-          style={{
-            background: "var(--bg-card)",
-            padding: "16px 20px",
-            borderRadius: "12px",
-            border: "1px solid var(--border-color)",
-            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
-            display: "flex",
-            alignItems: "center",
-            gap: "16px",
-            height: "86px",
-            boxSizing: "border-box"
-          }}
-        >
-          <div
-            style={{
-              width: "46px",
-              height: "46px",
-              minWidth: "46px",
-              borderRadius: "12px",
-              background: "#f59e0b",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#ffffff",
-              flexShrink: 0
-            }}
-          >
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon purple">
             <Layers size={22} />
           </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
-              Dispatched Volume
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Dispatched Volume</span>
+              <span className="kpi-metric-label-ur">(کل رقبہ)</span>
             </div>
-            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
-              {totalSqFtDispatched.toLocaleString()} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>Sq.Ft</span>
+            <div className="kpi-metric-value font-mono">
+              {totalSqFtDispatched.toLocaleString()} <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)" }}>Sq.Ft</span>
             </div>
           </div>
         </div>
