@@ -9,6 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "vite build && electron electron/main.cjs",
+    "electron": "electron electron/main.cjs",
     "start": "vite"
   },
   "dependencies": {

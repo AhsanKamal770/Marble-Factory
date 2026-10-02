@@ -5,6 +5,8 @@ import { useLanguage } from "../../context/LanguageContext";
 
 export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
   const { language } = useLanguage();
+  const tr = (en, ur) => (language === "ur" ? ur : en);
+
   const [category, setCategory] = useState("Food / Mess");
   const [amount, setAmount] = useState("");
   const [paidTo, setPaidTo] = useState("");
@@ -20,7 +22,7 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
     e.preventDefault();
     const numAmt = Number(amount);
     if (!amount || numAmt <= 0) {
-      alert(language === 'ur' ? "براہ کرم درست رقم درج کریں۔" : "Please enter a valid expense amount.");
+      alert(tr("Please enter a valid expense amount.", "براہ کرم درست رقم درج کریں۔"));
       return;
     }
 
@@ -35,11 +37,11 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
         date: expenseDate
       });
 
-      setSuccessMsg(language === 'ur' ? "خرچ کامیابی سے محفوظ ہو گیا!" : "Expense recorded successfully!");
+      setSuccessMsg(tr("Expense recorded successfully!", "خرچ محفوظ ہو گیا!"));
       setAmount("");
       setPaidTo("");
       setRemarks("");
-      setTimeout(() => setSuccessMsg(""), 3000);
+      setTimeout(() => setSuccessMsg(""), 2500);
     } catch (err) {
       alert("Error saving expense: " + err.message);
     } finally {
@@ -47,36 +49,30 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
     }
   };
 
-  const selectedCatObj = EXPENSE_CATEGORIES.find(c => c.id === category) || EXPENSE_CATEGORIES[0];
-
   return (
     <div style={{
       background: "var(--bg-card)",
-      padding: "24px",
+      padding: "16px 18px",
       borderRadius: "14px",
       border: "1px solid var(--border-color)",
-      boxShadow: "0 4px 16px rgba(0,0,0,0.04)"
+      boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+      height: "100%",
+      minHeight: "440px",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      boxSizing: "border-box"
     }}>
       {/* Title */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
         <div>
-          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
-            {language === 'ur' ? "نیا روزانہ خرچ درج کریں" : "Record Daily Expense"}
+          <h3 style={{ fontSize: "0.98rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+            {tr("Record Daily Expense", "نیا روزانہ خرچ درج کریں")}
           </h3>
-          <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
-            {language === 'ur' ? "دراز سے نکالی گئی رقم کا فوری اندراج" : "Log factory expense & deduct from drawer"}
+          <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
+            {tr("Log expense to deduct from live drawer cash", "فیکٹری کا روزمرہ خرچ درج کریں")}
           </p>
         </div>
-        <span style={{
-          fontSize: "0.72rem",
-          fontWeight: 700,
-          padding: "4px 8px",
-          borderRadius: "6px",
-          background: "rgba(239, 68, 68, 0.1)",
-          color: "#ef4444"
-        }}>
-          Cash Out (-)
-        </span>
       </div>
 
       {successMsg && (
@@ -84,44 +80,46 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
           background: "rgba(16, 185, 129, 0.12)",
           border: "1px solid #10b981",
           color: "#059669",
-          padding: "10px 14px",
-          borderRadius: "8px",
-          fontSize: "0.85rem",
+          padding: "6px 10px",
+          borderRadius: "6px",
+          fontSize: "0.8rem",
           fontWeight: 600,
-          marginBottom: "16px",
+          marginBottom: "10px",
           display: "flex",
           alignItems: "center",
-          gap: "8px"
+          gap: "6px"
         }}>
-          <Check size={16} /> {successMsg}
+          <Check size={14} /> {successMsg}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1, justifyContent: "space-between" }}>
         
         {/* Expense Category */}
         <div>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-            <Tag size={14} /> {language === 'ur' ? "خرچے کی کیٹیگری (شعبہ) *" : "Expense Category *"}
+          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+            {tr("Expense Category *", "خرچے کی کیٹیگری *")}
           </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             style={{
               width: "100%",
-              padding: "10px 12px",
-              borderRadius: "8px",
+              height: "34px",
+              padding: "0 10px",
+              borderRadius: "7px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-primary)",
               color: "var(--text-primary)",
-              fontSize: "0.88rem",
+              fontSize: "0.82rem",
               fontWeight: 600,
-              outline: "none"
+              outline: "none",
+              boxSizing: "border-box"
             }}
           >
             {EXPENSE_CATEGORIES.map(cat => (
               <option key={cat.id} value={cat.id}>
-                {language === 'ur' ? `${cat.ur} (${cat.id})` : `${cat.en}`}
+                {language === "ur" ? cat.ur : cat.en}
               </option>
             ))}
           </select>
@@ -129,18 +127,19 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
         {/* Amount with Quick Presets */}
         <div>
-          <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-            <DollarSign size={14} /> {language === 'ur' ? "رقم (روپے) *" : "Expense Amount (Rs.) *"}
+          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+            {tr("Expense Amount (Rs.) *", "رقم (روپے) *")}
           </label>
           <div style={{ position: "relative" }}>
             <span style={{
               position: "absolute",
-              left: "12px",
+              left: "10px",
               top: "50%",
               transform: "translateY(-50%)",
               fontWeight: 800,
               color: "#ef4444",
-              fontSize: "0.95rem"
+              fontSize: "0.85rem",
+              fontFamily: "var(--font-mono)"
             }}>
               Rs.
             </span>
@@ -154,32 +153,35 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
               required
               style={{
                 width: "100%",
-                padding: "10px 12px 10px 42px",
-                borderRadius: "8px",
-                border: "2px solid #ef444433",
+                height: "34px",
+                padding: "0 10px 0 38px",
+                borderRadius: "7px",
+                border: "1px solid var(--border-color)",
                 background: "var(--bg-primary)",
                 color: "var(--text-primary)",
-                fontSize: "1.1rem",
+                fontSize: "0.95rem",
                 fontWeight: 800,
-                outline: "none"
+                fontFamily: "var(--font-mono)",
+                outline: "none",
+                boxSizing: "border-box"
               }}
             />
           </div>
 
           {/* Quick Click Preset Buttons */}
-          <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "5px", marginTop: "6px", flexWrap: "wrap" }}>
             {quickAmounts.map(val => (
               <button
                 key={val}
                 type="button"
                 onClick={() => setAmount(val.toString())}
                 style={{
-                  background: amount === val.toString() ? "var(--accent-primary)" : "var(--bg-primary)",
+                  background: amount === val.toString() ? "#2563eb" : "var(--bg-primary)",
                   color: amount === val.toString() ? "#fff" : "var(--text-secondary)",
                   border: "1px solid var(--border-color)",
-                  borderRadius: "6px",
-                  padding: "4px 8px",
-                  fontSize: "0.75rem",
+                  borderRadius: "5px",
+                  padding: "3px 6px",
+                  fontSize: "0.72rem",
                   fontWeight: 700,
                   cursor: "pointer",
                   transition: "all 0.15s ease"
@@ -192,32 +194,34 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
         </div>
 
         {/* Paid To & Date Row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-              <User size={13} /> {language === 'ur' ? "کس کو ادا کیا (نام)" : "Paid To"}
+            <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+              {tr("Paid To / Person", "وصول کنندہ")}
             </label>
             <input
               type="text"
               value={paidTo}
               onChange={e => setPaidTo(e.target.value)}
-              placeholder={language === 'ur' ? "مثلاً علی ڈرائیور / استاد اسلم" : "e.g. Ali Driver"}
+              placeholder="e.g. Driver"
               style={{
                 width: "100%",
-                padding: "9px 11px",
-                borderRadius: "8px",
+                height: "34px",
+                padding: "0 10px",
+                borderRadius: "7px",
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-primary)",
                 color: "var(--text-primary)",
-                fontSize: "0.85rem",
-                outline: "none"
+                fontSize: "0.82rem",
+                outline: "none",
+                boxSizing: "border-box"
               }}
             />
           </div>
 
           <div>
-            <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-              <Calendar size={13} /> {language === 'ur' ? "تاریخ (تاریخ خرچ)" : "Expense Date"}
+            <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+              {tr("Expense Date", "تاریخ")}
             </label>
             <input
               type="date"
@@ -225,13 +229,15 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
               onChange={e => setExpenseDate(e.target.value)}
               style={{
                 width: "100%",
-                padding: "8px 10px",
-                borderRadius: "8px",
+                height: "34px",
+                padding: "0 8px",
+                borderRadius: "7px",
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-primary)",
                 color: "var(--text-primary)",
-                fontSize: "0.85rem",
-                outline: "none"
+                fontSize: "0.82rem",
+                outline: "none",
+                boxSizing: "border-box"
               }}
             />
           </div>
@@ -239,34 +245,36 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
         {/* Remarks */}
         <div>
-          <label style={{ display: "flex", alignItems: "center", gap: "5px", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-            <FileText size={13} /> {language === 'ur' ? "تفصیل / وجہ (اختیاری)" : "Remarks / Details"}
+          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+            {tr("Remarks / Details", "تفصیل")}
           </label>
           <input
             type="text"
             value={remarks}
             onChange={e => setRemarks(e.target.value)}
-            placeholder={language === 'ur' ? "مثلاً جنریٹر ڈیزل 20 لٹر یا ٹریکٹر ٹرالی ان لوڈنگ" : "e.g. 20L Diesel for Generator"}
+            placeholder="e.g. Generator Diesel"
             style={{
               width: "100%",
-              padding: "9px 11px",
-              borderRadius: "8px",
+              height: "34px",
+              padding: "0 10px",
+              borderRadius: "7px",
               border: "1px solid var(--border-color)",
               background: "var(--bg-primary)",
               color: "var(--text-primary)",
-              fontSize: "0.85rem",
-              outline: "none"
+              fontSize: "0.82rem",
+              outline: "none",
+              boxSizing: "border-box"
             }}
           />
         </div>
 
         {/* Payment Method Selector */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "2px" }}>
-          <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-            {language === 'ur' ? "ادائیگی کا طریقہ:" : "Payment:"}
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+            طریقہ:
           </span>
           {["Cash", "Bank"].map(method => (
-            <label key={method} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
+            <label key={method} style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)" }}>
               <input
                 type="radio"
                 name="paymentMethod"
@@ -274,7 +282,7 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
                 checked={paymentMethod === method}
                 onChange={() => setPaymentMethod(method)}
               />
-              {method === "Cash" ? (language === 'ur' ? "دراز کیش (Cash)" : "Cash Drawer") : (language === 'ur' ? "بینک آن لائن" : "Bank Transfer")}
+              {method === "Cash" ? "Cash Drawer" : "Bank Transfer"}
             </label>
           ))}
         </div>
@@ -283,30 +291,27 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
         <button
           type="submit"
           disabled={isSubmitting}
+          className="btn btn-primary"
           style={{
-            marginTop: "10px",
+            marginTop: "4px",
             width: "100%",
-            padding: "12px",
-            borderRadius: "9px",
-            border: "none",
-            background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-            color: "#fff",
+            padding: "9px",
+            borderRadius: "7px",
             fontWeight: 800,
-            fontSize: "0.95rem",
+            fontSize: "0.88rem",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: "8px",
-            cursor: isSubmitting ? "not-allowed" : "pointer",
-            boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)",
-            transition: "all 0.15s ease"
+            gap: "6px",
+            cursor: isSubmitting ? "not-allowed" : "pointer"
           }}
         >
-          <PlusCircle size={18} />
-          {isSubmitting ? (language === 'ur' ? "محفوظ ہو رہا ہے..." : "Saving...") : (language === 'ur' ? "خرچ دراز میں درج کریں" : "Record Expense (Cash Out)")}
+          <PlusCircle size={15} />
+          {isSubmitting ? tr("Saving...", "محفوظ ہو رہا ہے...") : tr("Record Expense", "خرچ درج کریں")}
         </button>
 
       </form>
     </div>
   );
 }
+

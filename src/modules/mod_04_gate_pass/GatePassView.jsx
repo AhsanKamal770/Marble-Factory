@@ -1,15 +1,18 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
-  Plus, Search, Truck, X, Check, MoreVertical, Printer,
-  ChevronDown, SlidersHorizontal, PackageOpen, MapPin, User,
-  Phone, FileText, ClipboardCheck, ArrowUpRight, TrendingUp,
-  Layers, DollarSign, Calendar, RefreshCw
+  Plus, Search, Truck, X, Check, Printer,
+  ChevronDown, SlidersHorizontal, MapPin, User,
+  Phone, FileText, CheckCircle2, RefreshCw,
+  Layers, RotateCcw, Calendar, Eye, Trash2,
+  PackageCheck, ArrowRight, ExternalLink
 } from "lucide-react";
 import {
   createGatePass,
   updateGatePassStatus,
   deleteGatePass,
+  bulkDeleteGatePasses,
+  bulkUpdateGatePassStatus,
   getInvoicesForLinking
 } from "./gatePassService";
 import PrintableGateSlip from "./PrintableGateSlip";
@@ -18,14 +21,15 @@ import { useLanguage } from "../../context/LanguageContext";
 
 // ── Status config ──────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-  "Dispatched":  { color: "#2563eb", bg: "rgba(37,99,235,0.08)",  dot: "#2563eb", ur: "روانہ شدہ (Dispatched)"  },
-  "In Transit":  { color: "#f59e0b", bg: "rgba(245,158,11,0.08)", dot: "#f59e0b", ur: "راستے میں (In Transit)"  },
-  "Delivered":   { color: "#10b981", bg: "rgba(16,185,129,0.08)", dot: "#10b981", ur: "پہنچ گیا (Delivered)"   },
-  "Cancelled":   { color: "#6b7280", bg: "rgba(107,114,128,0.08)",dot: "#6b7280", ur: "منسوخ (Cancelled)"   },
+  "Dispatched": { color: "#2563eb", bg: "rgba(37,99,235,0.10)", dot: "#2563eb", ur: "روانہ شدہ (Dispatched)" },
+  "In Transit": { color: "#f59e0b", bg: "rgba(245,158,11,0.10)", dot: "#f59e0b", ur: "راستے میں (In Transit)" },
+  "Delivered": { color: "#10b981", bg: "rgba(16,185,129,0.10)", dot: "#10b981", ur: "پہنچ گیا (Delivered)" },
+  "Cancelled": { color: "#64748b", bg: "rgba(100,116,139,0.10)", dot: "#64748b", ur: "منسوخ (Cancelled)" },
 };
 const ALL_STATUSES = ["All", "Dispatched", "In Transit", "Delivered", "Cancelled"];
 
 const VEHICLE_TYPES = [
+  "All Vehicles",
   "Qingqi Rickshaw",
   "Loader Rickshaw",
   "Pickup Truck",
@@ -60,21 +64,22 @@ const INITIAL_FORM = {
   manifestItems: [{ name: "", thicknessSutar: "4", size: "", pieces: "", sqFt: "" }]
 };
 
-// ── Status Dot Component ──────────────────────────────────────────────────
-function StatusDot({ status, language }) {
+// ── Status Badge Component ──────────────────────────────────────────────────
+function StatusBadge({ status, language }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG["Dispatched"];
   return (
     <div style={{
       display: "inline-flex",
       alignItems: "center",
-      gap: "5px",
+      gap: "6px",
       background: cfg.bg,
-      padding: "3px 8px",
-      borderRadius: "6px",
-      border: `1px solid ${cfg.color}33`
+      padding: "4px 10px",
+      borderRadius: "9999px",
+      border: `1px solid ${cfg.color}33`,
+      whiteSpace: "nowrap"
     }}>
       <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
-      <span style={{ fontSize: "0.76rem", color: cfg.color, fontWeight: 700 }}>
+      <span style={{ fontSize: "0.78rem", color: cfg.color, fontWeight: 700 }}>
         {language === "ur" ? cfg.ur : status}
       </span>
     </div>
@@ -87,7 +92,7 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
 
   const dispatchDate = gp.dispatchDate
     ? new Date(gp.dispatchDate).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })
-    : "—";
+    : (gp.date || "—");
   const dispatchTime = gp.dispatchTime || (gp.dispatchDate
     ? new Date(gp.dispatchDate).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", hour12: true })
     : "—");
@@ -100,7 +105,7 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
       <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 500 }}>{label}</span>
       <span style={{
         fontSize: "0.85rem", color: highlight ? "var(--accent-blue)" : "var(--text-primary)", fontWeight: 600,
-        fontFamily: mono ? "monospace" : "inherit", textAlign: "right"
+        fontFamily: mono ? "var(--font-mono)" : "inherit", textAlign: "right"
       }}>{value || "—"}</span>
     </div>
   );
@@ -118,11 +123,11 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
         {/* Header */}
         <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-color)", display: "flex", alignItems: "flex-start", justifyContent: "space-between", background: "var(--bg-primary)" }}>
           <div>
-            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace" }}>
+            <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
               {gp.gatePassNo}
             </div>
             <div style={{ marginTop: "6px" }}>
-              <StatusDot status={gp.status} language={language} />
+              <StatusBadge status={gp.status} language={language} />
             </div>
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", color: "var(--text-muted)" }}>
@@ -132,7 +137,7 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
 
         {/* Content */}
         <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-          
+
           {/* Dispatch Info Card */}
           <div style={{ padding: "14px 16px", background: "var(--bg-primary)", borderRadius: "10px", border: "1px solid var(--border-color)", marginBottom: "18px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
@@ -143,7 +148,7 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
               </div>
               <div>
                 <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>Bill / Invoice #</div>
-                <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--accent-blue)", marginTop: "2px", fontFamily: "monospace" }}>
+                <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--accent-blue)", marginTop: "2px", fontFamily: "var(--font-mono)" }}>
                   {gp.invoiceNo || "Manual Dispatch"}
                 </div>
               </div>
@@ -193,7 +198,7 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
                         <td style={{ padding: "8px 10px", color: "var(--text-primary)", fontWeight: 600 }}>{row.name}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center", color: "var(--accent-blue)", fontWeight: 700 }}>{row.thicknessSutar ? `${row.thicknessSutar}S` : "4S"}</td>
                         <td style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-secondary)" }}>{row.pieces || "—"}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--text-primary)", fontFamily: "monospace", fontWeight: 700 }}>
+                        <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
                           {row.sqFt ? Number(row.sqFt).toFixed(2) : "—"}
                         </td>
                       </tr>
@@ -241,9 +246,20 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
 // ── Main GatePassView Component ───────────────────────────────────────────
 export default function GatePassView() {
   const { language } = useLanguage();
+  const tr = (en, ur) => (language === "ur" ? ur : en);
+
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateRangeFilter, setDateRangeFilter] = useState("All Dates");
+  const [customDates, setCustomDates] = useState({ from: "", to: "" });
   const [statusFilter, setStatusFilter] = useState("All");
-  const [vehicleFilter, setVehicleFilter] = useState("All");
+  const [vehicleFilter, setVehicleFilter] = useState("All Vehicles");
+
+  // Selection & Pagination
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Modal & Drawer states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [drawerPass, setDrawerPass] = useState(null);
@@ -272,22 +288,130 @@ export default function GatePassView() {
   const todayStr = new Date().toISOString().slice(0, 10);
   let todayDispatches = 0;
   let inTransitCount = 0;
-  let deliveredToday = 0;
-  let totalSqFtToday = 0;
+  let deliveredCount = 0;
+  let totalSqFtDispatched = 0;
 
   passes.forEach(gp => {
     const d = (gp.date || gp.dispatchDate || gp.createdAt || "").slice(0, 10);
     if (d === todayStr) {
       todayDispatches += 1;
-      totalSqFtToday += Number(gp.totalSqFt || 0);
-      if (gp.status === "Delivered") {
-        deliveredToday += 1;
-      }
     }
     if (gp.status === "In Transit" || gp.status === "Dispatched") {
       inTransitCount += 1;
     }
+    if (gp.status === "Delivered") {
+      deliveredCount += 1;
+    }
+    totalSqFtDispatched += Number(gp.totalSqFt || 0);
   });
+
+  // Filter Logic
+  const filtered = useMemo(() => {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+
+    return passes.filter(gp => {
+      // 1. Search filter
+      const q = searchTerm.toLowerCase().trim();
+      if (q) {
+        const matches =
+          gp.gatePassNo?.toLowerCase().includes(q) ||
+          gp.customerName?.toLowerCase().includes(q) ||
+          gp.invoiceNo?.toLowerCase().includes(q) ||
+          gp.vehicleRegNo?.toLowerCase().includes(q) ||
+          gp.driverName?.toLowerCase().includes(q) ||
+          gp.driverPhone?.includes(q) ||
+          gp.destination?.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+
+      // 2. Status filter
+      if (statusFilter !== "All" && gp.status !== statusFilter) {
+        return false;
+      }
+
+      // 3. Vehicle filter
+      if (vehicleFilter !== "All Vehicles" && gp.vehicleType !== vehicleFilter) {
+        return false;
+      }
+
+      // 4. Date Range filter
+      const gpDateStr = (gp.date || gp.dispatchDate || gp.createdAt || "").slice(0, 10);
+      if (dateRangeFilter === "Today") {
+        if (gpDateStr !== today) return false;
+      } else if (dateRangeFilter === "Yesterday") {
+        const yest = new Date(now);
+        yest.setDate(now.getDate() - 1);
+        if (gpDateStr !== yest.toISOString().slice(0, 10)) return false;
+      } else if (dateRangeFilter === "This Week") {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        const startStr = startOfWeek.toISOString().slice(0, 10);
+        if (gpDateStr < startStr || gpDateStr > today) return false;
+      } else if (dateRangeFilter === "This Month") {
+        const monthPrefix = now.toISOString().slice(0, 7);
+        if (!gpDateStr.startsWith(monthPrefix)) return false;
+      } else if (dateRangeFilter === "Custom Range" && customDates.from && customDates.to) {
+        if (gpDateStr < customDates.from || gpDateStr > customDates.to) return false;
+      }
+
+      return true;
+    });
+  }, [passes, searchTerm, statusFilter, vehicleFilter, dateRangeFilter, customDates]);
+
+  // Pagination calculation
+  const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+  const startIdx = (currentPage - 1) * pageSize;
+  const paginatedList = useMemo(() => {
+    return filtered.slice(startIdx, startIdx + pageSize);
+  }, [filtered, startIdx, pageSize]);
+
+  // Reset filter handler
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setDateRangeFilter("All Dates");
+    setCustomDates({ from: "", to: "" });
+    setStatusFilter("All");
+    setVehicleFilter("All Vehicles");
+    setCurrentPage(1);
+    setSelectedIds([]);
+  };
+
+  // Selection handlers
+  const toggleSelectAll = () => {
+    if (selectedIds.length === paginatedList.length && paginatedList.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(paginatedList.map(gp => gp.id));
+    }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.length === 0) return;
+    if (!window.confirm(tr(`Are you sure you want to delete ${selectedIds.length} gate passes?`, `کیا آپ واقعی ${selectedIds.length} گیٹ پاس حذف کرنا چاہتے ہیں؟`))) return;
+    try {
+      await bulkDeleteGatePasses(selectedIds);
+      setSelectedIds([]);
+    } catch (err) {
+      alert("Error deleting: " + err.message);
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus) => {
+    if (selectedIds.length === 0) return;
+    try {
+      await bulkUpdateGatePassStatus(selectedIds, newStatus);
+      setSelectedIds([]);
+    } catch (err) {
+      alert("Error updating status: " + err.message);
+    }
+  };
 
   const handleOpenModal = () => {
     setFormData(INITIAL_FORM);
@@ -358,7 +482,7 @@ export default function GatePassView() {
     try {
       const manifest = formData.manifestItems.filter(r => r.name.trim());
       if (manifest.length === 0) {
-        alert(language === "ur" ? "براہ کرم کم از کم ایک آئٹم درج کریں۔" : "Please add at least one item to the manifest.");
+        alert(tr("Please add at least one item to the manifest.", "براہ کرم کم از کم ایک آئٹم درج کریں۔"));
         return;
       }
 
@@ -368,7 +492,6 @@ export default function GatePassView() {
       });
 
       setIsModalOpen(false);
-      // Open print preview modal for the newly created gate pass
       setPrintingPass(created);
       setPrintFormat("a4");
       setIsPrintModalOpen(true);
@@ -389,10 +512,11 @@ export default function GatePassView() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm(language === "ur" ? "کیا آپ واقعی یہ گیٹ پاس حذف کرنا چاہتے ہیں؟" : "Delete this gate pass? This cannot be undone.")) return;
+    if (!window.confirm(tr("Delete this gate pass? This cannot be undone.", "کیا آپ واقعی یہ گیٹ پاس حذف کرنا چاہتے ہیں؟"))) return;
     try {
       await deleteGatePass(id);
       if (drawerPass?.id === id) setDrawerPass(null);
+      setSelectedIds(prev => prev.filter(i => i !== id));
     } catch (err) {
       alert("Failed to delete gate pass: " + err.message);
     }
@@ -404,312 +528,609 @@ export default function GatePassView() {
     setIsPrintModalOpen(true);
   };
 
-  // Filter gate passes
-  const filtered = passes.filter(gp => {
-    const q = searchTerm.toLowerCase();
-    const matches = !q ||
-      gp.gatePassNo?.toLowerCase().includes(q) ||
-      gp.customerName?.toLowerCase().includes(q) ||
-      gp.invoiceNo?.toLowerCase().includes(q) ||
-      gp.vehicleRegNo?.toLowerCase().includes(q) ||
-      gp.driverName?.toLowerCase().includes(q) ||
-      gp.destination?.toLowerCase().includes(q);
-
-    if (!matches) return false;
-    if (statusFilter !== "All" && gp.status !== statusFilter) return false;
-    if (vehicleFilter !== "All" && gp.vehicleType !== vehicleFilter) return false;
-    return true;
-  });
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", paddingBottom: "50px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "50px" }}>
 
-      {/* ── TOP PAGE HEADER ── */}
+      {/* ── 1. TOP HEADER (With gate_background.jpg Background) ── */}
       <div
         className="no-print"
         style={{
+          position: "relative",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "16px",
-          paddingBottom: "20px",
-          borderBottom: "1px solid var(--border-divider)",
-          marginBottom: "24px"
+          minHeight: "90px",
+          padding: "18px 24px",
+          borderRadius: "14px",
+          background: "var(--bg-card)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+          overflow: "hidden"
         }}
       >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <h1 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-              {language === "ur" ? "رکشہ گیٹ پاس و ترسیل لاجسٹکس" : "Rickshaw Gate Pass & Yard Logistics"}
-            </h1>
-            <span style={{
-              background: "rgba(37, 99, 235, 0.12)",
-              color: "var(--accent-blue)",
-              fontSize: "0.75rem",
-              fontWeight: 800,
-              padding: "4px 8px",
-              borderRadius: "6px"
-            }}>
-              Dispatch Control
-            </span>
+        {/* Top Right gate_background.jpg image with smooth fade */}
+        <div
+          style={{
+            position: "absolute",
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: "480px",
+            backgroundImage: "url('./gate_background.jpg')",
+            backgroundSize: "cover",
+            backgroundPosition: "center right",
+            opacity: 0.9,
+            maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, black 100%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.5) 25%, black 100%)",
+            pointerEvents: "none",
+            zIndex: 1
+          }}
+        />
+
+        {/* Left: Blue Icon Box + Title + Subtitle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", zIndex: 2, position: "relative" }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "12px",
+              background: "#2563eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+              flexShrink: 0
+            }}
+          >
+            <Truck size={24} />
           </div>
-          <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
-            {language === "ur"
-              ? "فیکٹری سے رکشہ و لوڈر گاڑیوں کی باحفاظت ترسیل، ڈرائیور ریکارڈ اور گیٹ آؤٹ پرچی کا انتظام"
-              : "Track every delivery vehicle, driver, marble manifest, and printable gate pass slip leaving the yard."}
-          </p>
+
+          <div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+              {tr("Rickshaw Gate Pass & Yard Logistics", "رکشہ گیٹ پاس و ترسیل لاجسٹکس")}
+            </h1>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
+              {tr("Track every delivery vehicle, driver, marble manifest, and printable gate pass slip leaving the yard.", "فیکٹری سے گاڑیوں کی باحفاظت ترسیل، ڈرائیور ریکارڈ اور گیٹ پاس پرچی کا انتظام")}
+            </p>
+          </div>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={handleOpenModal}
-          id="add-gate-pass-btn"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "0.9rem",
-            fontWeight: 800,
-            boxShadow: "0 4px 12px rgba(37,99,235,0.25)"
-          }}
-        >
-          <Plus size={16} /> {language === "ur" ? "نیا گیٹ پاس جاری کریں" : "Issue Gate Pass"}
-        </button>
+        {/* Right: + Issue Gate Pass Button */}
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <button
+            className="btn btn-primary"
+            onClick={handleOpenModal}
+            id="add-gate-pass-btn"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              fontSize: "0.88rem",
+              fontWeight: 800,
+              borderRadius: "8px",
+              boxShadow: "0 4px 14px rgba(37, 99, 235, 0.25)"
+            }}
+          >
+            <Plus size={16} /> {tr("Issue Gate Pass", "نیا گیٹ پاس جاری کریں")}
+          </button>
+        </div>
       </div>
 
-      {/* ── 4 LOGISTICS KPI METRIC CARDS ── */}
+      {/* ── 2. 4 METRIC KPI CARDS (All Perfectly Aligned English Labels) ── */}
       <div
         className="no-print"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px",
-          marginBottom: "24px"
+          gap: "16px"
         }}
       >
-        {/* KPI 1: Today Dispatches */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "var(--text-muted)", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === "ur" ? "آج کی کل ڈسپیچ" : "Today's Dispatches"}</span>
-            <Truck size={16} style={{ color: "var(--accent-blue)" }} />
+        {/* KPI 1: Total Gate Passes */}
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#2563eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <FileText size={22} />
           </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "6px", fontFamily: "monospace" }}>
-            {todayDispatches} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>vehicles</span>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {language === "ur" ? "آج فیکٹری گیٹ سے روانہ" : "Dispatched from yard today"}
-          </div>
-        </div>
-
-        {/* KPI 2: In Transit */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#f59e0b", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === "ur" ? "راستے میں مال (In Transit)" : "In Transit"}</span>
-            <RefreshCw size={16} />
-          </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 800, color: "#f59e0b", marginTop: "6px", fontFamily: "monospace" }}>
-            {inTransitCount} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>on the road</span>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {language === "ur" ? "خریدار تک پہنچنا باقی ہے" : "Awaiting delivery confirmation"}
-          </div>
-        </div>
-
-        {/* KPI 3: Delivered Today */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#10b981", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === "ur" ? "پہنچ گیا (Delivered Today)" : "Delivered Today"}</span>
-            <Check size={16} />
-          </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 800, color: "#10b981", marginTop: "6px", fontFamily: "monospace" }}>
-            {deliveredToday} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>completed</span>
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {language === "ur" ? "گاہک وصولی مکمل" : "Verified received by customer"}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Total Gate Passes
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              {passes.length}
+            </div>
           </div>
         </div>
 
-        {/* KPI 4: Total Sq.Ft Dispatched */}
-        <div style={{
-          background: "linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(30,64,175,0.03) 100%)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "2px solid var(--accent-blue)",
-          boxShadow: "0 4px 12px rgba(37,99,235,0.08)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "var(--accent-blue)", fontSize: "0.8rem", fontWeight: 800 }}>
-            <span>{language === "ur" ? "آج کا روانہ کردہ مال" : "DISPATCHED TODAY"}</span>
-            <Layers size={16} />
+        {/* KPI 2: Delivered */}
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#10b981",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <CheckCircle2 size={22} />
           </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 900, color: "var(--accent-blue)", marginTop: "6px", fontFamily: "monospace" }}>
-            {totalSqFtToday.toLocaleString()} <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>Sq.Ft</span>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Delivered
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              {deliveredCount}
+            </div>
           </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-secondary)", marginTop: "4px", fontWeight: 600 }}>
-            {language === "ur" ? "ماربل و ٹائلز حجم" : "Total volume dispatched today"}
+        </div>
+
+        {/* KPI 3: In Transit */}
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#6366f1",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <Truck size={22} />
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              In Transit
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              {inTransitCount}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Dispatched Volume */}
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#f59e0b",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <Layers size={22} />
+          </div>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Dispatched Volume
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              {totalSqFtDispatched.toLocaleString()} <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-muted)" }}>Sq.Ft</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── SEARCH & FILTER CONTROLS BAR ── */}
+      {/* ── 3. UNIFIED SEARCH & FILTER BAR (Exact Match of Pic 1) ─────────── */}
       <div
         className="no-print"
         style={{
           background: "var(--bg-card)",
-          padding: "14px 18px",
+          padding: "12px 18px",
           borderRadius: "12px",
           border: "1px solid var(--border-color)",
-          marginBottom: "20px",
           display: "flex",
           gap: "12px",
           alignItems: "center",
-          flexWrap: "wrap"
+          flexWrap: "wrap",
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)"
         }}
       >
-        {/* Search Input */}
-        <div style={{ position: "relative", flex: "1 1 240px", minWidth: "200px" }}>
-          <Search size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+        {/* Search Input Box */}
+        <div style={{ position: "relative", flex: "1 1 240px", minWidth: "220px" }}>
+          <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
           <input
             type="text"
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder={language === "ur" ? "تلاش: گیٹ پاس نمبر، بل #، خریدار، ڈرائیور، گاڑی نمبر..." : "Search pass #, invoice, customer, driver, reg #..."}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            placeholder={tr("Search by pass #, invoice, customer, driver, reg #...", "تلاش: گیٹ پاس نمبر، بل #، خریدار، ڈرائیور، گاڑی نمبر...")}
             style={{
               width: "100%",
-              padding: "8px 12px 8px 36px",
-              fontSize: "0.85rem",
+              padding: "9px 12px 9px 36px",
+              fontSize: "0.84rem",
               background: "var(--bg-primary)",
               border: "1px solid var(--border-color)",
               borderRadius: "8px",
               color: "var(--text-primary)",
-              outline: "none"
+              outline: "none",
+              transition: "border-color 0.2s ease"
             }}
           />
         </div>
 
-        {/* Status Filter */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <SlidersHorizontal size={14} style={{ color: "var(--text-muted)" }} />
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              color: "var(--text-primary)",
-              outline: "none"
-            }}
-          >
-            <option value="All">{language === "ur" ? "تمام اسٹیٹس (All Status)" : "All Status"}</option>
-            {ALL_STATUSES.filter(s => s !== "All").map(s => (
-              <option key={s} value={s}>{language === "ur" ? STATUS_CONFIG[s]?.ur : s}</option>
-            ))}
-          </select>
+        {/* Date Range Dropdown Pill */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          background: "var(--bg-primary)",
+          border: "1px solid var(--border-color)",
+          borderRadius: "8px",
+          padding: "5px 10px"
+        }}>
+          <Calendar size={15} style={{ color: "var(--accent-blue)", flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "0.62rem", textTransform: "uppercase", fontWeight: 700, color: "var(--text-muted)", lineHeight: 1 }}>
+              {tr("Date Range", "تاریخ")}
+            </span>
+            <select
+              value={dateRangeFilter}
+              onChange={e => { setDateRangeFilter(e.target.value); setCurrentPage(1); }}
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                padding: 0
+              }}
+            >
+              <option value="All Dates">{tr("All Dates", "تمام تاریخیں")}</option>
+              <option value="Today">{tr("Today", "آج")}</option>
+              <option value="Yesterday">{tr("Yesterday", "گزشتہ کل")}</option>
+              <option value="This Week">{tr("This Week", "اس ہفتے")}</option>
+              <option value="This Month">{tr("This Month", "اس ماہ")}</option>
+              <option value="Custom Range">{tr("Custom Range...", "مخصوص تاریخ...")}</option>
+            </select>
+          </div>
         </div>
 
-        {/* Vehicle Filter */}
-        <div>
-          <select
-            value={vehicleFilter}
-            onChange={e => setVehicleFilter(e.target.value)}
-            style={{
-              padding: "8px 12px",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              background: "var(--bg-primary)",
-              border: "1px solid var(--border-color)",
-              borderRadius: "8px",
-              color: "var(--text-primary)",
-              outline: "none"
-            }}
-          >
-            <option value="All">{language === "ur" ? "تمام گاڑیاں (All Vehicles)" : "All Vehicles"}</option>
-            {VEHICLE_TYPES.map(v => (
-              <option key={v} value={v}>{v}</option>
-            ))}
-          </select>
+        {/* Status Dropdown Pill */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          background: "var(--bg-primary)",
+          border: "1px solid var(--border-color)",
+          borderRadius: "8px",
+          padding: "5px 10px"
+        }}>
+          <Layers size={15} style={{ color: "var(--accent-blue)", flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "0.62rem", textTransform: "uppercase", fontWeight: 700, color: "var(--text-muted)", lineHeight: 1 }}>
+              {tr("Status", "اسٹیٹس")}
+            </span>
+            <select
+              value={statusFilter}
+              onChange={e => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                padding: 0
+              }}
+            >
+              <option value="All">{tr("All", "تمام")}</option>
+              {ALL_STATUSES.filter(s => s !== "All").map(s => (
+                <option key={s} value={s}>{language === "ur" ? STATUS_CONFIG[s]?.ur : s}</option>
+              ))}
+            </select>
+          </div>
         </div>
+
+        {/* Vehicle / Category Dropdown Pill */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          background: "var(--bg-primary)",
+          border: "1px solid var(--border-color)",
+          borderRadius: "8px",
+          padding: "5px 10px"
+        }}>
+          <Truck size={15} style={{ color: "var(--accent-blue)", flexShrink: 0 }} />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "0.62rem", textTransform: "uppercase", fontWeight: 700, color: "var(--text-muted)", lineHeight: 1 }}>
+              {tr("Vehicle Type", "گاڑی کی قسم")}
+            </span>
+            <select
+              value={vehicleFilter}
+              onChange={e => { setVehicleFilter(e.target.value); setCurrentPage(1); }}
+              style={{
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                color: "var(--text-primary)",
+                cursor: "pointer",
+                padding: 0
+              }}
+            >
+              {VEHICLE_TYPES.map(v => (
+                <option key={v} value={v}>{v === "All Vehicles" ? tr("All Vehicles", "تمام گاڑیاں") : v}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Reset Filter Button */}
+        <button
+          className="btn btn-secondary"
+          onClick={handleResetFilters}
+          title={tr("Reset Filters", "فلٹرز ری سیٹ کریں")}
+          style={{
+            width: "38px",
+            height: "38px",
+            padding: 0,
+            borderRadius: "8px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--text-muted)"
+          }}
+        >
+          <RotateCcw size={15} />
+        </button>
       </div>
 
-      {/* ── GATE PASS TABLE ── */}
+      {/* Custom Date Pickers (if Custom Range is selected) */}
+      {dateRangeFilter === "Custom Range" && (
+        <div
+          className="no-print"
+          style={{
+            background: "var(--bg-card)",
+            padding: "10px 16px",
+            borderRadius: "8px",
+            border: "1px solid var(--border-color)",
+            display: "flex",
+            gap: "12px",
+            alignItems: "center",
+            flexWrap: "wrap",
+            fontSize: "0.82rem"
+          }}
+        >
+          <span style={{ fontWeight: 700, color: "var(--text-muted)" }}>From Date:</span>
+          <input
+            type="date"
+            value={customDates.from}
+            onChange={e => setCustomDates(p => ({ ...p, from: e.target.value }))}
+            style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+          />
+          <span style={{ fontWeight: 700, color: "var(--text-muted)" }}>To Date:</span>
+          <input
+            type="date"
+            value={customDates.to}
+            onChange={e => setCustomDates(p => ({ ...p, to: e.target.value }))}
+            style={{ padding: "6px 10px", borderRadius: "6px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
+          />
+        </div>
+      )}
+
+      {/* ── 4. GATE PASS REGISTER DATA TABLE CARD (Exact Style of Pic 1) ── */}
       <div
         className="no-print"
         style={{
           background: "var(--bg-card)",
           borderRadius: "14px",
           border: "1px solid var(--border-color)",
-          overflow: "hidden",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.04)"
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+          overflow: "hidden"
         }}
       >
+        {/* Table Header Row with Title and Page Size Dropdown */}
+        <div
+          style={{
+            padding: "16px 20px",
+            borderBottom: "1px solid var(--border-color)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <FileText size={18} style={{ color: "var(--accent-blue)" }} />
+            <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
+              {tr("Gate Pass Register", "گیٹ پاس رجسٹر")} <span style={{ color: "var(--text-muted)", fontWeight: 700 }}>({filtered.length})</span>
+            </h3>
+          </div>
+
+          {/* Right Controls: Bulk Actions & Show 10/page */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {selectedIds.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  className="btn btn-emerald btn-sm"
+                  onClick={() => handleBulkStatusChange("Delivered")}
+                  style={{ fontSize: "0.75rem", padding: "4px 8px" }}
+                >
+                  <Check size={13} /> Mark Delivered ({selectedIds.length})
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  style={{ color: "#fb7185", fontSize: "0.75rem", padding: "4px 8px" }}
+                  onClick={handleBulkDelete}
+                >
+                  <Trash2 size={13} /> Delete ({selectedIds.length})
+                </button>
+              </div>
+            )}
+
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.82rem", color: "var(--text-muted)" }}>
+              <span>Show:</span>
+              <select
+                value={pageSize}
+                onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                style={{
+                  padding: "5px 8px",
+                  borderRadius: "6px",
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-primary)",
+                  color: "var(--text-primary)",
+                  fontSize: "0.82rem",
+                  fontWeight: 600,
+                  outline: "none"
+                }}
+              >
+                <option value={10}>10 / page</option>
+                <option value={25}>25 / page</option>
+                <option value={50}>50 / page</option>
+                <option value={100}>100 / page</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* The Table */}
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
             <thead>
-              <tr style={{ background: "var(--bg-primary)", borderBottom: "1px solid var(--border-divider)" }}>
-                <th style={{ padding: "12px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 700, width: "14%" }}>
-                  {language === "ur" ? "گیٹ پاس نمبر" : "Gate Pass #"}
+              <tr style={{ background: "var(--bg-primary)", borderBottom: "1px solid var(--border-color)" }}>
+                {/* Select All Checkbox */}
+                <th style={{ padding: "12px 14px", width: "40px", textAlign: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={paginatedList.length > 0 && selectedIds.length === paginatedList.length}
+                    onChange={toggleSelectAll}
+                    style={{ cursor: "pointer", width: "15px", height: "15px" }}
+                  />
                 </th>
-                <th style={{ padding: "12px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 700, width: "20%" }}>
-                  {language === "ur" ? "خریدار و منزل" : "Customer & Dest."}
+                <th style={{ padding: "12px 14px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Gate Pass #", "گیٹ پاس نمبر")}
                 </th>
-                <th style={{ padding: "12px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 700, width: "18%" }}>
-                  {language === "ur" ? "گاڑی و ڈرائیور" : "Vehicle & Driver"}
+                <th style={{ padding: "12px 14px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Date & Time", "تاریخ و وقت")}
                 </th>
-                <th style={{ padding: "12px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 700, width: "14%" }}>
-                  {language === "ur" ? "روانہ کردہ مال" : "Manifest Qty"}
+                <th style={{ padding: "12px 14px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Customer & Dest.", "خریدار و منزل")}
                 </th>
-                <th style={{ padding: "12px 16px", textAlign: "left", color: "var(--text-secondary)", fontWeight: 700, width: "12%" }}>
-                  {language === "ur" ? "تاریخ و وقت" : "Dispatch Time"}
+                <th style={{ padding: "12px 14px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Vehicle & Driver", "گاڑی و ڈرائیور")}
                 </th>
-                <th style={{ padding: "12px 16px", textAlign: "center", color: "var(--text-secondary)", fontWeight: 700, width: "12%" }}>
-                  {language === "ur" ? "اسٹیٹس" : "Status"}
+                <th style={{ padding: "12px 14px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Manifest Qty", "روانہ کردہ مال")}
                 </th>
-                <th style={{ padding: "12px 16px", textAlign: "center", color: "var(--text-secondary)", fontWeight: 700, width: "10%" }}>
-                  {language === "ur" ? "ایکشن" : "Actions"}
+                <th style={{ padding: "12px 14px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Carriage / Kiraya", "کرایہ / اخراجات")}
+                </th>
+                <th style={{ padding: "12px 14px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Status", "اسٹیٹس")}
+                </th>
+                <th style={{ padding: "12px 14px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  {tr("Actions", "ایکشن")}
                 </th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: "center", padding: "60px 20px" }}>
-                    <Truck size={36} style={{ color: "var(--text-muted)", opacity: 0.4, marginBottom: "10px" }} />
-                    <p style={{ margin: 0, fontWeight: 700, color: "var(--text-secondary)" }}>
-                      {language === "ur" ? "کوئی گیٹ پاس ریکارڈ نہیں ملا۔" : "No gate passes found."}
-                    </p>
-                    <p style={{ margin: "4px 0 0 0", color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                      {language === "ur" ? "اوپر موجود 'نیا گیٹ پاس' کے بٹن سے ڈسپیچ پرچی بنائیں۔" : "Click 'Issue Gate Pass' above to record a dispatch."}
-                    </p>
+                  <td colSpan={9} style={{ textAlign: "center", padding: "64px 20px" }}>
+                    <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+                      {tr("No gate passes match your filter criteria.", "کوئی گیٹ پاس ریکارڈ نہیں ملا۔")}
+                    </div>
+                    <div style={{ fontSize: "0.82rem", marginTop: "6px", color: "var(--text-muted)" }}>
+                      {tr("Try clearing filters or creating a new gate pass from Issue Gate Pass.", "فلٹرز تبدیل کریں یا نیا گیٹ پاس بنائیں۔")}
+                    </div>
                   </td>
                 </tr>
               ) : (
-                filtered.map(gp => {
+                paginatedList.map(gp => {
                   const dispatchDateStr = gp.dispatchDate
-                    ? new Date(gp.dispatchDate).toLocaleDateString("en-PK", { day: "2-digit", month: "short" })
-                    : "—";
+                    ? new Date(gp.dispatchDate).toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" })
+                    : (gp.date || "—");
+
+                  const isSelected = selectedIds.includes(gp.id);
 
                   return (
                     <tr
@@ -717,39 +1138,60 @@ export default function GatePassView() {
                       onClick={() => setDrawerPass(gp)}
                       style={{
                         borderBottom: "1px solid var(--border-divider)",
+                        background: isSelected ? "rgba(37,99,235,0.04)" : "transparent",
                         cursor: "pointer",
                         transition: "background 0.15s ease"
                       }}
-                      onMouseEnter={e => e.currentTarget.style.background = "var(--bg-primary)"}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = "var(--bg-primary)"; }}
+                      onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = "transparent"; }}
                     >
+                      {/* Selection Checkbox */}
+                      <td style={{ padding: "14px 14px", textAlign: "center" }} onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(gp.id)}
+                          style={{ cursor: "pointer", width: "15px", height: "15px" }}
+                        />
+                      </td>
+
                       {/* Gate Pass No & Invoice */}
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace", fontSize: "0.92rem" }}>
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ fontWeight: 800, color: "var(--accent-blue)", fontFamily: "var(--font-mono)", fontSize: "0.92rem" }}>
                           {gp.gatePassNo}
                         </div>
                         {gp.invoiceNo && (
-                          <div style={{ fontSize: "0.74rem", color: "var(--accent-blue)", fontFamily: "monospace", fontWeight: 700, marginTop: "2px" }}>
-                            {gp.invoiceNo}
+                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontWeight: 600, marginTop: "2px" }}>
+                            #{gp.invoiceNo}
                           </div>
                         )}
                       </td>
 
+                      {/* Date & Time */}
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
+                          {dispatchDateStr}
+                        </div>
+                        <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
+                          {gp.dispatchTime || "—"}
+                        </div>
+                      </td>
+
                       {/* Customer & Destination */}
-                      <td style={{ padding: "14px 16px" }}>
+                      <td style={{ padding: "14px 14px" }}>
                         <div style={{ fontWeight: 700, color: "var(--text-primary)" }}>{gp.customerName}</div>
                         <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
                           <MapPin size={11} style={{ flexShrink: 0 }} />
-                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "180px" }}>
-                            {gp.destination || "Factory Yard Delivery"}
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "160px" }}>
+                            {gp.destination || "Factory Yard"}
                           </span>
                         </div>
                       </td>
 
                       {/* Vehicle & Driver */}
-                      <td style={{ padding: "14px 16px" }}>
+                      <td style={{ padding: "14px 14px" }}>
                         <div style={{ fontWeight: 600, color: "var(--text-primary)", fontSize: "0.82rem" }}>
-                          {gp.vehicleType} {gp.vehicleRegNo ? <span style={{ fontFamily: "monospace", color: "var(--text-muted)" }}>({gp.vehicleRegNo})</span> : ''}
+                          {gp.vehicleType} {gp.vehicleRegNo ? <span style={{ fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>({gp.vehicleRegNo})</span> : ''}
                         </div>
                         {gp.driverName && (
                           <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
@@ -759,65 +1201,79 @@ export default function GatePassView() {
                       </td>
 
                       {/* Manifest Quantity */}
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace" }}>
-                          {gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600 }}>Sq.Ft</span>
+                      <td style={{ padding: "14px 14px" }}>
+                        <div style={{ fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
+                          {gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)" }}>Sq.Ft</span>
                         </div>
                         <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
                           {gp.totalPieces || (gp.manifest || []).length} Pcs • {(gp.manifest || []).length} items
                         </div>
                       </td>
 
-                      {/* Date & Time */}
-                      <td style={{ padding: "14px 16px" }}>
-                        <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                          {dispatchDateStr}
-                        </div>
-                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "1px" }}>
-                          {gp.dispatchTime || "—"}
-                        </div>
+                      {/* Carriage Charges */}
+                      <td style={{ padding: "14px 14px" }}>
+                        {Number(gp.carriageCharges) > 0 ? (
+                          <>
+                            <div className="font-mono" style={{ fontWeight: 700, color: "var(--text-primary)" }}>
+                              Rs. {Number(gp.carriageCharges).toLocaleString()}
+                            </div>
+                            <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "1px" }}>
+                              {gp.carriagePaidBy?.includes("Customer") ? "Paid by Customer" : "Factory Paid"}
+                            </div>
+                          </>
+                        ) : (
+                          <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>—</span>
+                        )}
                       </td>
 
                       {/* Status */}
-                      <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                        <StatusDot status={gp.status} language={language} />
+                      <td style={{ padding: "14px 14px", textAlign: "center" }}>
+                        <StatusBadge status={gp.status} language={language} />
                       </td>
 
-                      {/* Action Buttons */}
-                      <td style={{ padding: "14px 16px", textAlign: "center" }} onClick={e => e.stopPropagation()}>
+                      {/* Actions */}
+                      <td style={{ padding: "14px 14px", textAlign: "center" }} onClick={e => e.stopPropagation()}>
                         <div style={{ display: "flex", justifyContent: "center", gap: "6px" }}>
+                          {/* View Drawer Button */}
                           <button
-                            onClick={() => handleTriggerPrint(gp, "a4")}
-                            title={language === "ur" ? "پرنٹ گیٹ پرچی" : "Print Gate Slip"}
-                            style={{
-                              background: "var(--bg-card)",
-                              border: "1px solid var(--border-color)",
-                              color: "var(--text-primary)",
-                              borderRadius: "6px",
-                              padding: "6px 8px",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center"
-                            }}
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setDrawerPass(gp)}
+                            title={tr("View Details", "تفصیل دیکھیں")}
+                            style={{ padding: "5px 7px" }}
                           >
-                            <Printer size={14} />
+                            <Eye size={14} style={{ color: "var(--accent-blue)" }} />
                           </button>
 
+                          {/* Print Button */}
                           <button
-                            onClick={() => handleDelete(gp.id)}
-                            title={language === "ur" ? "حذف کریں" : "Delete"}
-                            style={{
-                              background: "transparent",
-                              border: "none",
-                              color: "var(--text-muted)",
-                              borderRadius: "6px",
-                              padding: "6px 8px",
-                              cursor: "pointer"
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.color = "#ef4444"}
-                            onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => handleTriggerPrint(gp, "a4")}
+                            title={tr("Print Slip", "پرنٹ پرچی")}
+                            style={{ padding: "5px 7px" }}
                           >
-                            <X size={15} />
+                            <Printer size={14} style={{ color: "var(--accent-blue)" }} />
+                          </button>
+
+                          {/* Quick Deliver */}
+                          {gp.status !== "Delivered" && (
+                            <button
+                              className="btn btn-emerald btn-sm"
+                              onClick={() => handleStatusChange(gp.id, "Delivered")}
+                              title={tr("Mark Delivered", "مکمل کریں")}
+                              style={{ padding: "5px 7px" }}
+                            >
+                              <Check size={14} />
+                            </button>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: "#fb7185", padding: "5px 7px" }}
+                            onClick={() => handleDelete(gp.id)}
+                            title={tr("Delete Pass", "حذف کریں")}
+                          >
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </td>
@@ -828,9 +1284,109 @@ export default function GatePassView() {
             </tbody>
           </table>
         </div>
+
+        {/* Table Footer with Exact Pic 1 Pagination Buttons */}
+        <div
+          style={{
+            padding: "14px 20px",
+            borderTop: "1px solid var(--border-color)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "12px",
+            background: "var(--bg-card)"
+          }}
+        >
+          <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", fontWeight: 500 }}>
+            {filtered.length === 0
+              ? "Showing 0 records"
+              : `Showing ${startIdx + 1} to ${Math.min(startIdx + pageSize, filtered.length)} of ${filtered.length} records`}
+          </div>
+
+          {/* Pagination Buttons (Matching Bills & Invoices in Pic 1) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <button
+              type="button"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "6px",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-card)",
+                color: currentPage === 1 ? "var(--text-muted)" : "var(--text-primary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: currentPage === 1 ? "not-allowed" : "pointer",
+                opacity: currentPage === 1 ? 0.45 : 1,
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                transition: "all 0.15s ease"
+              }}
+            >
+              &lt;
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => {
+              const isActive = currentPage === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setCurrentPage(p)}
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "6px",
+                    border: isActive ? "1px solid #2563eb" : "1px solid var(--border-color)",
+                    background: isActive ? "#2563eb" : "var(--bg-card)",
+                    color: isActive ? "#ffffff" : "var(--text-primary)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    fontWeight: isActive ? 700 : 500,
+                    boxShadow: isActive ? "0 2px 6px rgba(37,99,235,0.3)" : "none",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  {p}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              disabled={currentPage === totalPages || totalPages === 0}
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "6px",
+                border: "1px solid var(--border-color)",
+                background: "var(--bg-card)",
+                color: (currentPage === totalPages || totalPages === 0) ? "var(--text-muted)" : "var(--text-primary)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                cursor: (currentPage === totalPages || totalPages === 0) ? "not-allowed" : "pointer",
+                opacity: (currentPage === totalPages || totalPages === 0) ? 0.45 : 1,
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                transition: "all 0.15s ease"
+              }}
+            >
+              &gt;
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* ── DETAIL DRAWER ── */}
+      {/* ── DETAIL DRAWER ──────────────────────────────────────────────── */}
       {drawerPass && (
         <GatePassDrawer
           gp={drawerPass}
@@ -841,7 +1397,7 @@ export default function GatePassView() {
         />
       )}
 
-      {/* ── PRINT MODAL (A4 & 80mm THERMAL REPLICA) ── */}
+      {/* ── PRINT MODAL (A4 & 80mm THERMAL REPLICA) ────────────────────── */}
       <PrintableGateSlip
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
@@ -850,9 +1406,7 @@ export default function GatePassView() {
         defaultFormat={printFormat}
       />
 
-      {/* ══════════════════════════════════════════════════════════════════
-          NEW GATE PASS MODAL FORM (FULL BUSINESS LOGISTICS WORKFLOW)
-      ═════════════════════════════════════════════════════════════════= */}
+      {/* ── ISSUE NEW GATE PASS MODAL FORM ─────────────────────────────── */}
       {isModalOpen && (
         <div
           className="modal-overlay"
@@ -892,28 +1446,25 @@ export default function GatePassView() {
             <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-divider)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-primary)" }}>
               <div>
                 <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-                  {language === "ur" ? "نیا رکشہ گیٹ پاس جاری کریں" : "Issue New Rickshaw Gate Pass"}
+                  {tr("Issue New Rickshaw Gate Pass", "نیا رکشہ گیٹ پاس جاری کریں")}
                 </h2>
                 <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
-                  {language === "ur" ? "بل بک سے لنک کریں یا دستی ڈسپیچ پرچی بنائیں" : "Link with Invoice Bill or record manual dispatch manifest"}
+                  {tr("Link with Invoice Bill or record manual dispatch manifest", "بل بک سے لنک کریں یا دستی ڈسپیچ پرچی بنائیں")}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: "4px" }}
-              >
+              <button onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", overflow: "hidden", flex: 1 }}>
-              <div style={{ padding: "24px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "20px" }}>
+            {/* Modal Form Body */}
+            <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+              <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
 
-                {/* 1. Invoice Reference Picker */}
-                <div style={{ background: "var(--bg-primary)", padding: "14px 16px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
-                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-                    {language === "ur" ? "بل بک انوائس سے لنک کریں (اختیاری)" : "Link with Invoice Bill (Optional)"}
+                {/* 1. Link with Invoice */}
+                <div style={{ background: "var(--bg-primary)", padding: "16px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px" }}>
+                    {tr("Link Existing Invoice Bill (Optional)", "بل بک سے انوائس منتخب کریں (اختیاری)")}
                   </label>
                   <select
                     value={formData.invoiceId}
@@ -921,392 +1472,245 @@ export default function GatePassView() {
                     style={{
                       width: "100%",
                       padding: "9px 12px",
-                      borderRadius: "8px",
-                      border: "1px solid var(--border-color)",
-                      background: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                      fontSize: "0.88rem",
+                      fontSize: "0.85rem",
                       fontWeight: 600,
+                      background: "var(--bg-card)",
+                      border: "1px solid var(--border-color)",
+                      borderRadius: "8px",
+                      color: "var(--text-primary)",
                       outline: "none"
                     }}
                   >
-                    <option value="">{language === "ur" ? "— بل منتخب کریں یا نیچے دستی درج کریں —" : "— Select Invoice ▼ (or fill manually below) —"}</option>
+                    <option value="">{tr("-- Manual Dispatch (No Linked Bill) --", "-- دستی ڈسپیچ (بغیر انوائس) --")}</option>
                     {invoices.map(inv => (
                       <option key={inv.id} value={inv.id}>
-                        {inv.invoiceNo} — {inv.customerName} ({inv.items.length} items • Rs. {Number(inv.totalAmount).toLocaleString()})
+                        #{inv.invoiceNo} — {inv.customerName} ({inv.items?.length || 0} items, Rs. {Number(inv.totalAmount || 0).toLocaleString()})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 {/* 2. Customer & Destination */}
-                <div>
-                  <h4 style={{ fontSize: "0.82rem", fontWeight: 800, textTransform: "uppercase", color: "var(--accent-blue)", margin: "0 0 10px 0", borderBottom: "1px solid var(--border-divider)", paddingBottom: "4px" }}>
-                    {language === "ur" ? "1. خریدار و ترسیل مقام" : "1. Customer & Delivery Destination"}
-                  </h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "خریدار کا نام *" : "Customer Name *"}
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        value={formData.customerName}
-                        onChange={e => setFormData(p => ({ ...p, customerName: e.target.value }))}
-                        placeholder="e.g. Haji Aslam / City Builders"
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          outline: "none"
-                        }}
-                      />
-                    </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Customer Name *", "خریدار کا نام *")}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.customerName}
+                      onChange={e => setFormData({ ...formData, customerName: e.target.value })}
+                      placeholder="e.g. Tariq Mehmood"
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    />
+                  </div>
 
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "خریدار رابطہ نمبر" : "Customer Phone"}
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.customerPhone}
-                        onChange={e => setFormData(p => ({ ...p, customerPhone: e.target.value }))}
-                        placeholder="e.g. 0300-1234567"
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          outline: "none"
-                        }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Customer Mobile", "گاہک کا فون")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.customerPhone}
+                      onChange={e => setFormData({ ...formData, customerPhone: e.target.value })}
+                      placeholder="0300-1234567"
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    />
+                  </div>
 
-                    <div style={{ gridColumn: "1 / -1" }}>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "ترسیل کا پتہ / منزل *" : "Delivery Destination / Site Address *"}
-                      </label>
-                      <input
-                        required
-                        type="text"
-                        value={formData.destination}
-                        onChange={e => setFormData(p => ({ ...p, destination: e.target.value }))}
-                        placeholder="e.g. Main Bazar Jhumra / Near Civil Hospital"
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          outline: "none"
-                        }}
-                      />
-                    </div>
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Delivery Destination / Site Address", "منزل کا پتہ")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.destination}
+                      onChange={e => setFormData({ ...formData, destination: e.target.value })}
+                      placeholder="e.g. House #14, Street 5, Eden Gardens, Faisalabad"
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    />
                   </div>
                 </div>
 
-                {/* 3. Vehicle, Driver & Kiraya */}
-                <div>
-                  <h4 style={{ fontSize: "0.82rem", fontWeight: 800, textTransform: "uppercase", color: "var(--accent-blue)", margin: "0 0 10px 0", borderBottom: "1px solid var(--border-divider)", paddingBottom: "4px" }}>
-                    {language === "ur" ? "2. گاڑی، ڈرائیور و کرایہ باربرداری" : "2. Vehicle, Driver & Carriage Logistics"}
-                  </h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "گاڑی کی قسم *" : "Vehicle Type *"}
-                      </label>
-                      <select
-                        value={formData.vehicleType}
-                        onChange={e => setFormData(p => ({ ...p, vehicleType: e.target.value }))}
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          fontWeight: 600,
-                          outline: "none"
-                        }}
-                      >
-                        {VEHICLE_TYPES.map(v => <option key={v} value={v}>{v}</option>)}
-                      </select>
-                    </div>
+                {/* 3. Vehicle & Driver Details */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px", background: "var(--bg-primary)", padding: "16px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Vehicle Type", "گاڑی کی قسم")}
+                    </label>
+                    <select
+                      value={formData.vehicleType}
+                      onChange={e => setFormData({ ...formData, vehicleType: e.target.value })}
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontWeight: 600, background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    >
+                      {VEHICLE_TYPES.filter(v => v !== "All Vehicles").map(v => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
 
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "گاڑی نمبر / نمبر پلیٹ" : "Vehicle Reg #"}
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.vehicleRegNo}
-                        onChange={e => setFormData(p => ({ ...p, vehicleRegNo: e.target.value }))}
-                        placeholder="e.g. FD-4821"
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          fontFamily: "monospace",
-                          outline: "none"
-                        }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Vehicle Reg #", "گاڑی نمبر")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.vehicleRegNo}
+                      onChange={e => setFormData({ ...formData, vehicleRegNo: e.target.value.toUpperCase() })}
+                      placeholder="e.g. FSD-8492"
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontFamily: "var(--font-mono)", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    />
+                  </div>
 
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "ڈرائیور کا نام" : "Driver Name"}
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.driverName}
-                        onChange={e => setFormData(p => ({ ...p, driverName: e.target.value }))}
-                        placeholder="e.g. Karamat Ali"
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          outline: "none"
-                        }}
-                      />
-                    </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Driver Name", "ڈرائیور کا نام")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.driverName}
+                      onChange={e => setFormData({ ...formData, driverName: e.target.value })}
+                      placeholder="e.g. Muhammad Aslam"
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    />
+                  </div>
 
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "ڈرائیور موبائل" : "Driver Mobile"}
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.driverPhone}
-                        onChange={e => setFormData(p => ({ ...p, driverPhone: e.target.value }))}
-                        placeholder="e.g. 0301-7654321"
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          outline: "none"
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "کرایہ رقم (Rs.)" : "Carriage / Kiraya (Rs.)"}
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        value={formData.carriageCharges}
-                        onChange={e => setFormData(p => ({ ...p, carriageCharges: e.target.value }))}
-                        placeholder="0"
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.85rem",
-                          fontWeight: 700,
-                          outline: "none"
-                        }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                        {language === "ur" ? "کرایہ کون دے گا؟" : "Carriage Paid By"}
-                      </label>
-                      <select
-                        value={formData.carriagePaidBy}
-                        onChange={e => setFormData(p => ({ ...p, carriagePaidBy: e.target.value }))}
-                        style={{
-                          width: "100%",
-                          padding: "8px 11px",
-                          borderRadius: "7px",
-                          border: "1px solid var(--border-color)",
-                          background: "var(--bg-primary)",
-                          color: "var(--text-primary)",
-                          fontSize: "0.82rem",
-                          fontWeight: 600,
-                          outline: "none"
-                        }}
-                      >
-                        {CARRIAGE_PAID_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                      </select>
-                    </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Driver Mobile", "ڈرائیور موبائل")}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.driverPhone}
+                      onChange={e => setFormData({ ...formData, driverPhone: e.target.value })}
+                      placeholder="0321-7654321"
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    />
                   </div>
                 </div>
 
-                {/* 4. Dispatch Manifest Item Table */}
+                {/* 4. Carriage Charges & Payment Mode */}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Carriage / Kiraya (Rs.)", "کرایہ رقم")}
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.carriageCharges}
+                      onChange={e => setFormData({ ...formData, carriageCharges: e.target.value })}
+                      placeholder="0"
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontFamily: "var(--font-mono)", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                      {tr("Carriage Paid By", "کرایہ ادائیگی کی ذمہ داری")}
+                    </label>
+                    <select
+                      value={formData.carriagePaidBy}
+                      onChange={e => setFormData({ ...formData, carriagePaidBy: e.target.value })}
+                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontWeight: 600, background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
+                    >
+                      {CARRIAGE_PAID_OPTIONS.map(opt => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* 5. Dispatch Manifest Items */}
                 <div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", borderBottom: "1px solid var(--border-divider)", paddingBottom: "4px" }}>
-                    <h4 style={{ fontSize: "0.82rem", fontWeight: 800, textTransform: "uppercase", color: "var(--accent-blue)", margin: 0 }}>
-                      {language === "ur" ? "3. روانہ کردہ مال کی تفصیل (Dispatch Manifest)" : "3. Dispatch Item Manifest"}
-                    </h4>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+                    <label style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                      {tr("Dispatch Manifest / Marble Items", "روانہ کردہ مال کی فہرست")}
+                    </label>
                     <button
                       type="button"
+                      className="btn btn-secondary btn-sm"
                       onClick={handleAddManifestRow}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--accent-blue)",
-                        fontSize: "0.8rem",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "4px"
-                      }}
+                      style={{ fontSize: "0.75rem", padding: "4px 10px" }}
                     >
-                      <Plus size={14} /> {language === "ur" ? "آئٹم شامل کریں" : "Add Item Row"}
+                      <Plus size={13} /> {tr("Add Row", "نئی لائن شامل کریں")}
                     </button>
                   </div>
 
-                  <div style={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
+                  <div style={{ border: "1px solid var(--border-color)", borderRadius: "10px", overflow: "hidden" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
                       <thead>
-                        <tr style={{ background: "var(--bg-primary)" }}>
-                          <th style={{ padding: "8px 10px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, width: "35%" }}>Item Description</th>
-                          <th style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700, width: "15%" }}>Sutar</th>
-                          <th style={{ padding: "8px 10px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700, width: "20%" }}>Size</th>
-                          <th style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700, width: "12%" }}>Pcs</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", color: "var(--text-muted)", fontWeight: 700, width: "14%" }}>Sq.Ft</th>
-                          <th style={{ padding: "8px 10px", width: "4%" }}></th>
+                        <tr style={{ background: "var(--bg-primary)", borderBottom: "1px solid var(--border-color)" }}>
+                          <th style={{ padding: "8px 10px", textAlign: "left", color: "var(--text-muted)" }}>Item Description</th>
+                          <th style={{ padding: "8px 10px", textAlign: "center", width: "90px", color: "var(--text-muted)" }}>Sutar</th>
+                          <th style={{ padding: "8px 10px", textAlign: "left", width: "130px", color: "var(--text-muted)" }}>Size / Cut</th>
+                          <th style={{ padding: "8px 10px", textAlign: "center", width: "80px", color: "var(--text-muted)" }}>Pcs</th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", width: "90px", color: "var(--text-muted)" }}>Sq.Ft</th>
+                          <th style={{ padding: "8px 10px", width: "40px" }}></th>
                         </tr>
                       </thead>
                       <tbody>
-                        {formData.manifestItems.map((row, i) => (
-                          <tr key={i} style={{ borderTop: "1px solid var(--border-divider)" }}>
-                            <td style={{ padding: "4px 8px" }}>
+                        {formData.manifestItems.map((item, idx) => (
+                          <tr key={idx} style={{ borderBottom: "1px solid var(--border-divider)" }}>
+                            <td style={{ padding: "6px 10px" }}>
                               <input
-                                placeholder="e.g. Sunny Grey 12x12"
-                                value={row.name}
-                                onChange={e => handleManifestChange(i, "name", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  padding: "6px 8px",
-                                  borderRadius: "6px",
-                                  border: "1px solid var(--border-color)",
-                                  background: "var(--bg-card)",
-                                  color: "var(--text-primary)",
-                                  fontSize: "0.82rem",
-                                  fontWeight: 600
-                                }}
+                                type="text"
+                                required
+                                value={item.name}
+                                onChange={e => handleManifestChange(idx, "name", e.target.value)}
+                                placeholder="e.g. Ziarat White Slabs"
+                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
                               />
                             </td>
-                            <td style={{ padding: "4px 8px" }}>
+                            <td style={{ padding: "6px 10px" }}>
                               <select
-                                value={row.thicknessSutar}
-                                onChange={e => handleManifestChange(i, "thicknessSutar", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  padding: "6px 4px",
-                                  borderRadius: "6px",
-                                  border: "1px solid var(--border-color)",
-                                  background: "var(--bg-card)",
-                                  color: "var(--text-primary)",
-                                  fontSize: "0.8rem",
-                                  fontWeight: 700,
-                                  textAlign: "center"
-                                }}
+                                value={item.thicknessSutar}
+                                onChange={e => handleManifestChange(idx, "thicknessSutar", e.target.value)}
+                                style={{ width: "100%", padding: "6px 4px", fontSize: "0.82rem", fontWeight: 700, background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", textAlign: "center", outline: "none" }}
                               >
-                                {SUTAR_OPTIONS.map(s => <option key={s} value={s}>{s} Sutar</option>)}
+                                {SUTAR_OPTIONS.map(s => (
+                                  <option key={s} value={s}>{s} Sutar</option>
+                                ))}
                               </select>
                             </td>
-                            <td style={{ padding: "4px 8px" }}>
+                            <td style={{ padding: "6px 10px" }}>
                               <input
-                                placeholder="e.g. 12x24"
-                                value={row.size}
-                                onChange={e => handleManifestChange(i, "size", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  padding: "6px 8px",
-                                  borderRadius: "6px",
-                                  border: "1px solid var(--border-color)",
-                                  background: "var(--bg-card)",
-                                  color: "var(--text-primary)",
-                                  fontSize: "0.82rem"
-                                }}
+                                type="text"
+                                value={item.size}
+                                onChange={e => handleManifestChange(idx, "size", e.target.value)}
+                                placeholder="12×12 or 2×4"
+                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
                               />
                             </td>
-                            <td style={{ padding: "4px 8px" }}>
+                            <td style={{ padding: "6px 10px" }}>
                               <input
                                 type="number"
+                                value={item.pieces}
+                                onChange={e => handleManifestChange(idx, "pieces", e.target.value)}
                                 placeholder="0"
-                                value={row.pieces}
-                                onChange={e => handleManifestChange(i, "pieces", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  padding: "6px 8px",
-                                  borderRadius: "6px",
-                                  border: "1px solid var(--border-color)",
-                                  background: "var(--bg-card)",
-                                  color: "var(--text-primary)",
-                                  fontSize: "0.82rem",
-                                  textAlign: "center",
-                                  fontWeight: 700
-                                }}
+                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", textAlign: "center", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
                               />
                             </td>
-                            <td style={{ padding: "4px 8px" }}>
+                            <td style={{ padding: "6px 10px" }}>
                               <input
                                 type="number"
                                 step="0.01"
-                                placeholder="0"
-                                value={row.sqFt}
-                                onChange={e => handleManifestChange(i, "sqFt", e.target.value)}
-                                style={{
-                                  width: "100%",
-                                  padding: "6px 8px",
-                                  borderRadius: "6px",
-                                  border: "1px solid var(--border-color)",
-                                  background: "var(--bg-card)",
-                                  color: "var(--text-primary)",
-                                  fontSize: "0.82rem",
-                                  textAlign: "right",
-                                  fontWeight: 800,
-                                  fontFamily: "monospace"
-                                }}
+                                value={item.sqFt}
+                                onChange={e => handleManifestChange(idx, "sqFt", e.target.value)}
+                                placeholder="0.00"
+                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 700, background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
                               />
                             </td>
-                            <td style={{ padding: "4px 6px", textAlign: "center" }}>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveManifestRow(i)}
-                                disabled={formData.manifestItems.length <= 1}
-                                style={{
-                                  background: "transparent",
-                                  border: "none",
-                                  color: formData.manifestItems.length > 1 ? "#ef4444" : "var(--text-muted)",
-                                  cursor: formData.manifestItems.length > 1 ? "pointer" : "default",
-                                  padding: "4px"
-                                }}
-                              >
-                                <X size={15} />
-                              </button>
+                            <td style={{ padding: "6px 10px", textAlign: "center" }}>
+                              {formData.manifestItems.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveManifestRow(idx)}
+                                  style={{ background: "none", border: "none", color: "#fb7185", cursor: "pointer", padding: "4px" }}
+                                >
+                                  <X size={15} />
+                                </button>
+                              )}
                             </td>
                           </tr>
                         ))}
@@ -1315,68 +1719,36 @@ export default function GatePassView() {
                   </div>
                 </div>
 
-                {/* 5. Special Notes */}
+                {/* 6. Notes */}
                 <div>
-                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-                    {language === "ur" ? "خصوصی ہدایات / ریمارکس" : "Delivery Instructions / Notes"}
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                    {tr("Notes / Dispatch Remarks", "خصوصی ہدایات یا ریمارکس")}
                   </label>
-                  <input
-                    type="text"
+                  <textarea
+                    rows={2}
                     value={formData.notes}
-                    onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
-                    placeholder="e.g. Handle with care, deliver before 5 PM"
-                    style={{
-                      width: "100%",
-                      padding: "8px 11px",
-                      borderRadius: "7px",
-                      border: "1px solid var(--border-color)",
-                      background: "var(--bg-primary)",
-                      color: "var(--text-primary)",
-                      fontSize: "0.85rem",
-                      outline: "none"
-                    }}
+                    onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="e.g. Fragile load, handle with care."
+                    style={{ width: "100%", padding: "8px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none", resize: "vertical" }}
                   />
                 </div>
-
               </div>
 
-              {/* Modal Submit Footer */}
-              <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-divider)", background: "var(--bg-primary)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              {/* Modal Footer */}
+              <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-divider)", background: "var(--bg-primary)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
                 <button
                   type="button"
+                  className="btn btn-secondary"
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid var(--border-color)",
-                    padding: "8px 16px",
-                    borderRadius: "7px",
-                    fontSize: "0.85rem",
-                    fontWeight: 600,
-                    color: "var(--text-secondary)",
-                    cursor: "pointer"
-                  }}
                 >
-                  Cancel
+                  {tr("Cancel", "منسوخ")}
                 </button>
-
                 <button
                   type="submit"
-                  style={{
-                    background: "linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)",
-                    border: "none",
-                    color: "#fff",
-                    padding: "9px 22px",
-                    borderRadius: "7px",
-                    fontSize: "0.9rem",
-                    fontWeight: 800,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    boxShadow: "0 2px 8px rgba(30, 64, 175, 0.25)"
-                  }}
+                  className="btn btn-primary"
+                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 20px" }}
                 >
-                  <Check size={16} /> {language === "ur" ? "گیٹ پاس جاری کریں اور پرنٹ کریں" : "Issue & Print Gate Pass"}
+                  <Printer size={15} /> {tr("Save & Print Gate Slip", "محفوظ کریں اور پرنٹ کریں")}
                 </button>
               </div>
             </form>

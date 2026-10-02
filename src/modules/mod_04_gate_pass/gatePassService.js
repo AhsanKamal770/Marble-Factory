@@ -122,6 +122,21 @@ export async function updateGatePassStatus(id, status) {
 }
 
 /**
+ * Bulk update status of multiple gate passes
+ */
+export async function bulkUpdateGatePassStatus(ids, status) {
+  const now = new Date().toISOString();
+  return await db.transaction('rw', db.gate_passes, async () => {
+    for (const id of ids) {
+      await db.gate_passes.update(Number(id), {
+        status,
+        updatedAt: now
+      });
+    }
+  });
+}
+
+/**
  * Update full gate pass record
  */
 export async function updateGatePass(id, updatedData) {
@@ -160,6 +175,17 @@ export async function updateGatePass(id, updatedData) {
  */
 export async function deleteGatePass(id) {
   return await db.gate_passes.delete(Number(id));
+}
+
+/**
+ * Bulk delete Gate Passes
+ */
+export async function bulkDeleteGatePasses(ids) {
+  return await db.transaction('rw', db.gate_passes, async () => {
+    for (const id of ids) {
+      await db.gate_passes.delete(Number(id));
+    }
+  });
 }
 
 /**
@@ -210,8 +236,8 @@ export async function getLogisticsKPIs() {
 
   let todayDispatches = 0;
   let inTransitCount = 0;
-  let deliveredToday = 0;
-  let totalSqFtDispatchedToday = 0;
+  let deliveredCount = 0;
+  let totalSqFtDispatched = 0;
 
   all.forEach(gp => {
     const gpDate = (gp.date || gp.dispatchDate || gp.createdAt || "").slice(0, 10);
@@ -219,13 +245,13 @@ export async function getLogisticsKPIs() {
 
     if (isToday) {
       todayDispatches += 1;
-      totalSqFtDispatchedToday += Number(gp.totalSqFt || 0);
-      if (gp.status === "Delivered") {
-        deliveredToday += 1;
-      }
     }
 
-    if (gp.status === "In Transit" || gp.status === "Dispatched") {
+    totalSqFtDispatched += Number(gp.totalSqFt || 0);
+
+    if (gp.status === "Delivered") {
+      deliveredCount += 1;
+    } else if (gp.status === "In Transit" || gp.status === "Dispatched") {
       inTransitCount += 1;
     }
   });
@@ -234,7 +260,7 @@ export async function getLogisticsKPIs() {
     totalPasses: all.length,
     todayDispatches,
     inTransitCount,
-    deliveredToday,
-    totalSqFtDispatchedToday: Number(totalSqFtDispatchedToday.toFixed(2))
+    deliveredCount,
+    totalSqFtDispatched: Number(totalSqFtDispatched.toFixed(2))
   };
 }

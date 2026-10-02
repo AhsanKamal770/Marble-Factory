@@ -10,7 +10,8 @@ import {
   TrendingDown,
   FileSpreadsheet,
   PieChart,
-  Layers
+  Layers,
+  Plus
 } from "lucide-react";
 import ExpenseEntryForm from "./ExpenseEntryForm";
 import DailyExpenseTable from "./DailyExpenseTable";
@@ -27,6 +28,8 @@ import { useLanguage } from "../../context/LanguageContext";
 
 export default function DailyExpensesView() {
   const { language } = useLanguage();
+  const tr = (en, ur) => (language === "ur" ? ur : en);
+
   const todayStr = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -93,53 +96,81 @@ export default function DailyExpensesView() {
   const categoryStats = cashData?.categoryTotals || {};
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", paddingBottom: "50px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px", paddingBottom: "50px" }}>
       
-      {/* ── TOP HEADER WITH DATE PICKER & ACTIONS ── */}
+      {/* ── 1. TOP HEADER (Open layout, Card Border Removed, Image smoothly merged into background) ── */}
       <div
         className="no-print"
         style={{
+          position: "relative",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           flexWrap: "wrap",
           gap: "16px",
-          paddingBottom: "20px",
-          borderBottom: "1px solid var(--border-divider)",
-          marginBottom: "24px"
+          minHeight: "85px",
+          padding: "10px 4px 10px 4px",
+          overflow: "hidden"
         }}
       >
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <h1 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
-              {language === 'ur' ? "روزانہ اخراجات و دراز کیش (روزنامچہ)" : "Daily Expenses & Cash Drawer (Roznamcha)"}
-            </h1>
-            <span style={{
-              background: "rgba(239, 68, 68, 0.12)",
-              color: "#ef4444",
-              fontSize: "0.75rem",
-              fontWeight: 800,
-              padding: "4px 8px",
-              borderRadius: "6px"
-            }}>
-              Live Roznamcha
-            </span>
+        {/* Top Right daily_background.png image smoothly merged into page background */}
+        <div
+          style={{
+            position: "absolute",
+            right: "-20px",
+            top: "-10px",
+            bottom: "-10px",
+            width: "520px",
+            backgroundImage: "url('./daily_background.png')",
+            backgroundSize: "cover",
+            backgroundPosition: "center right",
+            opacity: 0.85,
+            maskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.8) 60%, black 100%)",
+            WebkitMaskImage: "linear-gradient(to right, transparent 0%, rgba(0,0,0,0.2) 20%, rgba(0,0,0,0.8) 60%, black 100%)",
+            pointerEvents: "none",
+            zIndex: 1
+          }}
+        />
+
+        {/* Left: Blue Icon Box + Title + Subtitle */}
+        <div style={{ display: "flex", alignItems: "center", gap: "16px", zIndex: 2, position: "relative" }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "12px",
+              background: "#2563eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+              flexShrink: 0
+            }}
+          >
+            <Wallet size={24} />
           </div>
-          <p style={{ fontSize: "0.84rem", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
-            {language === 'ur'
-              ? "فیکٹری کے روزمرہ اخراجات، نقد سیلز اور دراز کے لائیو کیش کا مکمل انتظام"
-              : "Manage daily factory petty expenses, cash recoveries, and live drawer reconciliation."}
-          </p>
+
+          <div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", margin: 0, letterSpacing: "-0.02em" }}>
+              {tr("Daily Expenses & Cash Drawer", "روزانہ اخراجات و دراز کیش (روزنامچہ)")}
+            </h1>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: "4px 0 0 0" }}>
+              {tr("Manage factory petty expenses, cash recoveries, and live drawer reconciliation.", "فیکٹری کے روزمرہ اخراجات، نقد وصولیاں اور دراز کیش کا مکمل انتظام")}
+            </p>
+          </div>
         </div>
 
-        {/* Date Selector & Quick Toggles */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "3px" }}>
+        {/* Right: Date Picker Controls & Print Action */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", zIndex: 2, position: "relative" }}>
+          {/* Today / Yesterday Quick Toggle */}
+          <div style={{ display: "flex", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "3px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
             <button
+              type="button"
               onClick={() => setQuickDate("today")}
               style={{
                 border: "none",
-                background: selectedDate === todayStr ? "var(--accent-primary)" : "transparent",
+                background: selectedDate === todayStr ? "#2563eb" : "transparent",
                 color: selectedDate === todayStr ? "#fff" : "var(--text-secondary)",
                 padding: "6px 12px",
                 borderRadius: "6px",
@@ -149,27 +180,30 @@ export default function DailyExpensesView() {
                 transition: "all 0.15s ease"
               }}
             >
-              {language === 'ur' ? "آج (Today)" : "Today"}
+              {tr("Today", "آج")}
             </button>
             <button
+              type="button"
               onClick={() => setQuickDate("yesterday")}
               style={{
                 border: "none",
-                background: "transparent",
-                color: "var(--text-secondary)",
+                background: selectedDate !== todayStr ? "#2563eb" : "transparent",
+                color: selectedDate !== todayStr ? "#fff" : "var(--text-secondary)",
                 padding: "6px 12px",
                 borderRadius: "6px",
                 fontSize: "0.8rem",
                 fontWeight: 600,
-                cursor: "pointer"
+                cursor: "pointer",
+                transition: "all 0.15s ease"
               }}
             >
-              {language === 'ur' ? "گزشتہ کل (Yesterday)" : "Yesterday"}
+              {tr("Yesterday", "گزشتہ کل")}
             </button>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "6px 10px" }}>
-            <Calendar size={15} style={{ color: "var(--text-muted)" }} />
+          {/* Date Picker Input */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", padding: "6px 12px", boxShadow: "0 1px 2px rgba(0,0,0,0.03)" }}>
+            <Calendar size={15} style={{ color: "var(--accent-blue)" }} />
             <input
               type="date"
               value={selectedDate}
@@ -180,143 +214,228 @@ export default function DailyExpensesView() {
                 color: "var(--text-primary)",
                 fontSize: "0.85rem",
                 fontWeight: 700,
-                outline: "none"
+                outline: "none",
+                cursor: "pointer"
               }}
             />
           </div>
 
+          {/* Print Roznamcha Button */}
           <button
+            type="button"
+            className="btn btn-secondary"
             onClick={() => handleOpenPrintModal("a4")}
             style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-color)",
-              color: "var(--text-primary)",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
               padding: "8px 14px",
               borderRadius: "8px",
               fontSize: "0.85rem",
               fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              cursor: "pointer"
+              background: "var(--bg-card)",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.03)"
             }}
           >
-            <Printer size={16} />
-            {language === 'ur' ? "روزنامچہ پرنٹ" : "Print Report"}
+            <Printer size={15} style={{ color: "var(--accent-blue)" }} />
+            {tr("Print Report", "پرنٹ رپورٹ")}
           </button>
         </div>
       </div>
 
-      {/* ── 4 PRIMARY KPI METRIC CARDS ── */}
+      {/* ── 2. 4 METRIC KPI CARDS (Clean English-Only Labels, Perfectly Aligned) ── */}
       <div
         className="no-print"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "16px",
-          marginBottom: "24px"
+          gap: "16px"
         }}
       >
         {/* KPI 1: Opening Cash */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "var(--text-muted)", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === 'ur' ? "صبح کا اوپننگ کیش" : "Opening Cash Balance"}</span>
-            <Wallet size={16} style={{ color: "var(--text-secondary)" }} />
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#2563eb",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <Wallet size={22} />
           </div>
-          <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "6px", fontFamily: "monospace" }}>
-            Rs. {Number(cashData?.openingCash || 0).toLocaleString()}
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {language === 'ur' ? "فیکٹری ترتیبات سے مقرر" : "Base drawer start"}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Opening Cash
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              Rs. {Number(cashData?.openingCash || 0).toLocaleString()}
+            </div>
           </div>
         </div>
 
         {/* KPI 2: Total Cash Inflow */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#10b981", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === 'ur' ? "آج کی کل کیش آمد (+)" : "Cash Inflow (+)"}</span>
-            <ArrowUpRight size={16} />
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#10b981",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <ArrowUpRight size={22} />
           </div>
-          <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981", marginTop: "6px", fontFamily: "monospace" }}>
-            + Rs. {Number(cashData?.totalCashInflow - (cashData?.openingCash || 0) || 0).toLocaleString()}
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            Sales: Rs. {Number(cashData?.cashSalesToday || 0).toLocaleString()} | Wasooli: Rs. {Number(cashData?.wasooliToday || 0).toLocaleString()}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Total Inflow (+)
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#10b981", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              + Rs. {Number((cashData?.totalCashInflow || 0) - (cashData?.openingCash || 0)).toLocaleString()}
+            </div>
           </div>
         </div>
 
         {/* KPI 3: Total Expenses Today */}
-        <div style={{
-          background: "var(--bg-card)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "1px solid var(--border-color)",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.03)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#ef4444", fontSize: "0.8rem", fontWeight: 700 }}>
-            <span>{language === 'ur' ? "آج کے کل اخراجات (-)" : "Daily Expenses (-)"}</span>
-            <TrendingDown size={16} />
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <TrendingDown size={22} />
           </div>
-          <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#ef4444", marginTop: "6px", fontFamily: "monospace" }}>
-            - Rs. {Number(totalExpenseAmount).toLocaleString()}
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-            {expenses.length} {language === 'ur' ? "مدات میں خرچ" : "recorded expense entries"}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Total Expenses (-)
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#ef4444", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              - Rs. {Number(totalExpenseAmount).toLocaleString()}
+            </div>
           </div>
         </div>
 
-        {/* KPI 4: Live Cash in Drawer */}
-        <div style={{
-          background: "linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%)",
-          padding: "16px 20px",
-          borderRadius: "12px",
-          border: "2px solid #10b981",
-          boxShadow: "0 4px 12px rgba(16, 185, 129, 0.1)"
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#065f46", fontSize: "0.8rem", fontWeight: 800 }}>
-            <span>{language === 'ur' ? "دراز میں موجودہ لائیو کیش" : "NET LIVE DRAWER CASH"}</span>
-            <Wallet size={16} style={{ color: "#10b981" }} />
+        {/* KPI 4: Net Live Drawer Cash */}
+        <div
+          style={{
+            background: "var(--bg-card)",
+            padding: "16px 20px",
+            borderRadius: "12px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            height: "86px",
+            boxSizing: "border-box"
+          }}
+        >
+          <div
+            style={{
+              width: "46px",
+              height: "46px",
+              minWidth: "46px",
+              borderRadius: "12px",
+              background: "#059669",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              flexShrink: 0
+            }}
+          >
+            <DollarSign size={22} />
           </div>
-          <div style={{ fontSize: "1.55rem", fontWeight: 900, color: "#059669", marginTop: "6px", fontFamily: "monospace" }}>
-            Rs. {Number(cashData?.liveCash || 0).toLocaleString()}
-          </div>
-          <div style={{ fontSize: "0.72rem", color: "#065f46", marginTop: "4px", fontWeight: 600 }}>
-            {language === 'ur' ? "فوری نقد دراز کیش" : "Expected in hand right now"}
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap" }}>
+              Net Drawer Cash
+            </div>
+            <div style={{ fontSize: "1.45rem", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)", marginTop: "2px", lineHeight: 1.2 }}>
+              Rs. {Number(cashData?.liveCash || 0).toLocaleString()}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── CATEGORY SPENDING BREAKDOWN STRIP ── */}
+      {/* ── 3. CATEGORY SPENDING BREAKDOWN STRIP ── */}
       {Object.keys(categoryStats).length > 0 && (
         <div
           className="no-print"
           style={{
             background: "var(--bg-card)",
-            padding: "14px 18px",
+            padding: "12px 18px",
             borderRadius: "12px",
             border: "1px solid var(--border-color)",
-            marginBottom: "24px",
             display: "flex",
             alignItems: "center",
-            gap: "12px",
-            flexWrap: "wrap"
+            gap: "10px",
+            flexWrap: "wrap",
+            boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)"
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", fontWeight: 800, color: "var(--text-secondary)", marginRight: "6px" }}>
-            <Layers size={15} />
-            {language === 'ur' ? "شعبہ جات تقسیم:" : "Category Breakdown:"}
+            <Layers size={15} style={{ color: "var(--accent-blue)" }} />
+            {tr("Category Breakdown:", "شعبہ جات تقسیم:")}
           </div>
           {Object.entries(categoryStats).map(([catName, amt]) => {
             const meta = EXPENSE_CATEGORIES.find(c => c.id === catName) || { color: "#64748b", ur: catName, en: catName };
@@ -328,7 +447,7 @@ export default function DailyExpensesView() {
                   alignItems: "center",
                   gap: "6px",
                   background: "var(--bg-primary)",
-                  padding: "5px 10px",
+                  padding: "4px 10px",
                   borderRadius: "8px",
                   border: `1px solid ${meta.color}33`,
                   fontSize: "0.78rem"
@@ -336,9 +455,9 @@ export default function DailyExpensesView() {
               >
                 <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: meta.color }}></span>
                 <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                  {language === 'ur' ? meta.ur : meta.en}:
+                  {language === "ur" ? meta.ur : meta.en}:
                 </span>
-                <span style={{ fontWeight: 800, color: "#ef4444", fontFamily: "monospace" }}>
+                <span style={{ fontWeight: 800, color: "#ef4444", fontFamily: "var(--font-mono)" }}>
                   Rs. {Number(amt).toLocaleString()}
                 </span>
               </div>
@@ -347,19 +466,18 @@ export default function DailyExpensesView() {
         </div>
       )}
 
-      {/* ── MAIN WORKSPACE: FORM (LEFT) + TABLE (RIGHT) ── */}
+      {/* ── 4. MAIN WORKSPACE: FORM (LEFT) + TABLE (RIGHT) ── */}
       <div
-        className="no-print"
+        className="no-print daily-expenses-grid"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-          gap: "24px",
-          alignItems: "start",
-          marginBottom: "32px"
+          gridTemplateColumns: "minmax(330px, 370px) 1fr",
+          gap: "20px",
+          alignItems: "stretch"
         }}
       >
         {/* Left Side: Record Expense Form */}
-        <div style={{ flex: "1 1 340px" }}>
+        <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
           <ExpenseEntryForm
             onAddExpense={handleAddExpense}
             selectedDate={selectedDate}
@@ -367,7 +485,7 @@ export default function DailyExpensesView() {
         </div>
 
         {/* Right Side: Expense List Table */}
-        <div style={{ flex: "2 1 500px" }}>
+        <div style={{ minWidth: 0, display: "flex", flexDirection: "column", height: "100%" }}>
           <DailyExpenseTable
             expenses={expenses}
             onDeleteExpense={handleDeleteExpense}
@@ -375,11 +493,10 @@ export default function DailyExpensesView() {
         </div>
       </div>
 
-      {/* ── DAY-END RECONCILIATION & CASH DRAWER AUDIT ── */}
+      {/* ── 5. DAY-END RECONCILIATION & CASH DRAWER AUDIT ── */}
       <div className="no-print">
         <DayEndReconciliationCard
           cashData={cashData}
-          onPrintThermal={() => handleOpenPrintModal("thermal")}
           onPrintA4={() => handleOpenPrintModal("a4")}
         />
       </div>

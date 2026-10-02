@@ -6,6 +6,6 @@ echo ====================================================
 echo.
 
 cd /d "%~dp0"
-call npm.cmd run electron:dev
+call npm.cmd run electron
 
 pause

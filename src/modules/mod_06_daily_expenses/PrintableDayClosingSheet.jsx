@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Printer, X, FileText, Receipt, Share2, Check, Download } from "lucide-react";
+import { Printer, X, FileText, Receipt, Share2, Check } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
 export default function PrintableDayClosingSheet({
@@ -39,7 +39,6 @@ export default function PrintableDayClosingSheet({
   const timeFormatted = new Date().toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", hour12: true });
 
   const companyName = factorySettings?.companyName || "رانا شہاب ماربل فیکٹری اینڈ ٹائلز";
-  const tagline = factorySettings?.tagline || "نام ہی کافی ہے - دوسرے شہروں سے مناسب ریٹ اور اعلیٰ معیار کی گارنٹی";
   const phone = factorySettings?.phone || "0300-7708899 / 0321-6606645";
   const address = factorySettings?.address || "جھمرہ سٹی، بالمقابل ریلوے پھاٹک، فیصل آباد روڈ";
 
@@ -50,25 +49,25 @@ export default function PrintableDayClosingSheet({
   const handleCopyWhatsApp = () => {
     const lines = [
       `*${companyName}*`,
-      `_روزنامہ روزنامچہ و کیش دراز رپورٹ_`,
+      `_روزنامہ روزنامچہ و کیش کلوزنگ رپورٹ_`,
       `---------------------------------`,
-      `*Date:* ${dateFormatted} (${timeFormatted})`,
-      `*Opening Cash:* Rs. ${Number(openingCash).toLocaleString()}`,
-      `*Cash Sales (${todayInvoicesCount}):* +Rs. ${Number(cashSalesToday).toLocaleString()}`,
-      `*Khata Wasooli (${todayPaymentsCount}):* +Rs. ${Number(wasooliToday).toLocaleString()}`,
-      `*Total Inflow:* Rs. ${Number(totalCashInflow).toLocaleString()}`,
+      `*تاریخ:* ${dateFormatted} (${timeFormatted})`,
+      `*صبح کا اوپننگ کیش:* Rs. ${Number(openingCash).toLocaleString()}`,
+      `*نقد بل سیلز (${todayInvoicesCount}):* +Rs. ${Number(cashSalesToday).toLocaleString()}`,
+      `*کھاتہ وصولی (${todayPaymentsCount}):* +Rs. ${Number(wasooliToday).toLocaleString()}`,
+      `*کل آمد:* Rs. ${Number(totalCashInflow).toLocaleString()}`,
       `---------------------------------`,
-      `*Daily Expenses (${todayExpensesCount}):* -Rs. ${Number(expensesToday).toLocaleString()}`,
-      supplierCashToday > 0 ? `*Supplier Cash:* -Rs. ${Number(supplierCashToday).toLocaleString()}` : null,
-      employeeAdvancesToday > 0 ? `*Worker Advances:* -Rs. ${Number(employeeAdvancesToday).toLocaleString()}` : null,
-      `*Total Outflow:* -Rs. ${Number(totalCashOutflow).toLocaleString()}`,
+      `*روزانہ اخراجات (${todayExpensesCount}):* -Rs. ${Number(expensesToday).toLocaleString()}`,
+      supplierCashToday > 0 ? `*سپلائر ادائیگیاں:* -Rs. ${Number(supplierCashToday).toLocaleString()}` : null,
+      employeeAdvancesToday > 0 ? `*ملازمین ایڈوانس:* -Rs. ${Number(employeeAdvancesToday).toLocaleString()}` : null,
+      `*کل اخراجات:* -Rs. ${Number(totalCashOutflow).toLocaleString()}`,
       `---------------------------------`,
-      `*NET DRAWER CASH:* Rs. ${Number(liveCash).toLocaleString()}`,
+      `*دراز میں موجود نیٹ کیش:* Rs. ${Number(liveCash).toLocaleString()}`,
       `---------------------------------`,
-      `*EXPENSES SUMMARY:*`,
-      ...expenses.map((e, idx) => `${idx + 1}. ${e.category} - Rs.${Number(e.amount).toLocaleString()} (${e.paidTo || 'Self'})`),
+      `*تفصیل اخراجات:*`,
+      ...expenses.map((e, idx) => `${idx + 1}. ${e.category} - Rs.${Number(e.amount).toLocaleString()} (${e.paidTo || 'خود خرچ'})`),
       `---------------------------------`,
-      `رپورٹ برائے مالک کارخانہ | جھمرہ روڈ`
+      `رپورٹ برائے ریکارڈ و آڈٹ | جھمرہ سٹی`
     ].filter(Boolean);
 
     navigator.clipboard.writeText(lines.join("\n"));
@@ -98,7 +97,7 @@ export default function PrintableDayClosingSheet({
       <div
         className="modal-card"
         style={{
-          maxWidth: printFormat === "a4" ? "880px" : "480px",
+          maxWidth: printFormat === "a4" ? "880px" : "420px",
           width: "95%",
           maxHeight: "94vh",
           transition: "max-width 0.2s ease",
@@ -126,7 +125,7 @@ export default function PrintableDayClosingSheet({
         >
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
             <span style={{ fontSize: "0.98rem", fontWeight: 800, color: "var(--text-primary)" }}>
-              {language === "ur" ? "روزنامچہ رپورٹ پرنٹ و ریکارڈ" : "Print Roznamcha Closing Report"}
+              {language === "ur" ? "روزنامچہ پرنٹ و ریکارڈ" : "Print Roznamcha Closing Report"}
             </span>
 
             {/* Format Switcher Tabs */}
@@ -149,7 +148,7 @@ export default function PrintableDayClosingSheet({
                 }}
               >
                 <FileText size={13} />
-                <span>A4 Bill Book Format</span>
+                <span>A4 کلوزنگ شیٹ</span>
               </button>
 
               <button
@@ -170,7 +169,7 @@ export default function PrintableDayClosingSheet({
                 }}
               >
                 <Receipt size={13} />
-                <span>80mm Thermal Slip</span>
+                <span>80mm تھرمل پرچی</span>
               </button>
             </div>
           </div>
@@ -195,7 +194,7 @@ export default function PrintableDayClosingSheet({
               }}
             >
               {copied ? <Check size={13} style={{ color: "#059669" }} /> : <Share2 size={13} />}
-              <span>{copied ? "Copied!" : "WhatsApp"}</span>
+              <span>{copied ? "کاپی ہو گیا" : "واٹس ایپ"}</span>
             </button>
 
             <button
@@ -217,7 +216,7 @@ export default function PrintableDayClosingSheet({
               }}
             >
               <Printer size={13} />
-              <span>Print Now</span>
+              <span>پرنٹ کریں</span>
             </button>
 
             <button
@@ -245,25 +244,27 @@ export default function PrintableDayClosingSheet({
                 #roznamcha-print-area, #roznamcha-print-area * { visibility: visible !important; }
                 #roznamcha-print-area {
                   display: block !important;
-                  position: absolute;
-                  left: 0;
-                  top: 0;
-                  width: ${printFormat === 'a4' ? '100%' : '78mm'};
-                  margin: 0;
-                  padding: ${printFormat === 'a4' ? '20px' : '4mm 2mm'};
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: ${printFormat === 'thermal' ? '78mm' : '100%'} !important;
+                  max-width: ${printFormat === 'thermal' ? '78mm' : '210mm'} !important;
+                  margin: 0 auto !important;
+                  padding: ${printFormat === 'thermal' ? '3mm 2mm' : '15mm'} !important;
                   background: #ffffff !important;
                   color: #000000 !important;
+                  box-sizing: border-box !important;
                 }
                 .print-hide { display: none !important; }
                 @page {
-                  size: ${printFormat === 'a4' ? 'A4 portrait' : '80mm auto'};
-                  margin: ${printFormat === 'a4' ? '10mm' : '0'};
+                  size: ${printFormat === 'thermal' ? '80mm auto' : 'A4 portrait'} !important;
+                  margin: ${printFormat === 'thermal' ? '0mm' : '8mm'} !important;
                 }
               }
             `}</style>
 
             {/* ------------------------------------------------------------- */}
-            {/* FORMAT 1: AUTHENTIC A4 BILL BOOK REPLICA ROZNAMCHA SHEET      */}
+            {/* FORMAT 1: AUTHENTIC A4 CLEAN URDU ROZNAMCHA SHEET             */}
             {/* ------------------------------------------------------------- */}
             {printFormat === "a4" && (
               <div
@@ -277,22 +278,23 @@ export default function PrintableDayClosingSheet({
                   fontFamily: "var(--font-main)",
                   maxWidth: "800px",
                   margin: "0 auto",
-                  lineHeight: 1.3
+                  lineHeight: 1.35,
+                  direction: "rtl"
                 }}
               >
                 {/* Traditional Bill Book Top Header */}
                 <div style={{ borderBottom: "2px solid #0f172a", paddingBottom: "12px", marginBottom: "14px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     {/* Urdu Factory Title & Slogan */}
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
+                    <div style={{ flex: 1, textAlign: "right" }}>
+                      <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: 700 }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
                       <h1
                         style={{
-                          fontSize: "1.5rem",
+                          fontSize: "1.45rem",
                           fontWeight: 900,
                           color: "#1e3a8a",
                           margin: "2px 0 0 0",
-                          letterSpacing: "-0.02em"
+                          fontFamily: "var(--font-urdu)"
                         }}
                       >
                         {companyName}
@@ -300,7 +302,7 @@ export default function PrintableDayClosingSheet({
                       <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-urdu)", marginTop: "2px" }}>
                         نام ہی کافی ہے — رانا شہاب
                       </div>
-                      <div style={{ fontSize: "0.74rem", color: "#475569", marginTop: "3px" }}>
+                      <div style={{ fontSize: "0.76rem", color: "#475569", marginTop: "3px" }}>
                         {address} | فون: {phone}
                       </div>
                     </div>
@@ -308,29 +310,31 @@ export default function PrintableDayClosingSheet({
                     {/* Report Meta Stamp */}
                     <div
                       style={{
-                        textAlign: "right",
+                        textAlign: "center",
                         background: "#f8fafc",
                         border: "1px solid #cbd5e1",
-                        padding: "8px 12px",
+                        padding: "8px 14px",
                         borderRadius: "6px",
-                        minWidth: "185px"
+                        minWidth: "175px"
                       }}
                     >
-                      <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 700 }}>DAILY ROZNAMCHA / روزنامچہ</div>
-                      <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 900, color: "#1e3a8a" }}>
+                      <div style={{ fontSize: "0.78rem", color: "#1e3a8a", fontWeight: 800, fontFamily: "var(--font-urdu)" }}>
+                        روزنامچہ و کیش کلوزنگ
+                      </div>
+                      <div className="font-mono" style={{ fontSize: "0.92rem", fontWeight: 900, color: "#0f172a", marginTop: "2px", direction: "ltr" }}>
                         ROZ-{targetDate?.replace(/-/g, '') || 'REPORT'}
                       </div>
-                      <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "#334155", marginTop: "3px" }}>
+                      <div style={{ fontSize: "0.76rem", fontWeight: 700, color: "#334155", marginTop: "3px" }}>
                         تاریخ: {dateFormatted}
                       </div>
-                      <div style={{ fontSize: "0.68rem", color: "#64748b", marginTop: "2px" }}>
-                        وقت کلوزنگ: {timeFormatted}
+                      <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "2px" }}>
+                        وقت: {timeFormatted}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Cash Inflow & Outflow Dual Summary Box (Bill Book Style) */}
+                {/* Cash Inflow & Outflow Dual Summary Box (Pure Clean Urdu) */}
                 <div
                   style={{
                     display: "grid",
@@ -341,61 +345,61 @@ export default function PrintableDayClosingSheet({
                     padding: "12px 14px",
                     borderRadius: "6px",
                     marginBottom: "14px",
-                    fontSize: "0.8rem"
+                    fontSize: "0.82rem"
                   }}
                 >
-                  {/* Left Column: Cash Inflow (+) */}
+                  {/* Right Column (in RTL): نقد آمد (+) */}
                   <div>
-                    <div style={{ fontWeight: 800, color: "#059669", fontSize: "0.85rem", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", marginBottom: "6px" }}>
-                      1. نقد آمد / CASH INFLOW (+)
+                    <div style={{ fontWeight: 800, color: "#059669", fontSize: "0.88rem", borderBottom: "1.5px solid #059669", paddingBottom: "4px", marginBottom: "8px", fontFamily: "var(--font-urdu)" }}>
+                      ۱. کل نقد آمد (+)
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                      <span style={{ color: "#475569" }}>صبح کا اوپننگ کیش (Opening):</span>
-                      <strong className="font-mono">Rs. {Number(openingCash).toLocaleString()}</strong>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <span style={{ color: "#475569" }}>صبح کا اوپننگ کیش:</span>
+                      <strong className="font-mono" style={{ direction: "ltr" }}>Rs. {Number(openingCash).toLocaleString()}</strong>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                       <span style={{ color: "#475569" }}>نقد بل سیلز ({todayInvoicesCount} بل):</span>
-                      <strong className="font-mono" style={{ color: "#059669" }}>+ Rs. {Number(cashSalesToday).toLocaleString()}</strong>
+                      <strong className="font-mono" style={{ color: "#059669", direction: "ltr" }}>+ Rs. {Number(cashSalesToday).toLocaleString()}</strong>
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
-                      <span style={{ color: "#475569" }}>کھاتہ وصولی / Wasooli ({todayPaymentsCount} واؤچر):</span>
-                      <strong className="font-mono" style={{ color: "#059669" }}>+ Rs. {Number(wasooliToday).toLocaleString()}</strong>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <span style={{ color: "#475569" }}>کھاتہ وصولی و ریکوری ({todayPaymentsCount} واؤچر):</span>
+                      <strong className="font-mono" style={{ color: "#059669", direction: "ltr" }}>+ Rs. {Number(wasooliToday).toLocaleString()}</strong>
                     </div>
-                    <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "4px", marginTop: "4px", display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
-                      <span>کل کیش آمد (Total Inflow):</span>
-                      <span className="font-mono" style={{ color: "#059669" }}>Rs. {Number(totalCashInflow).toLocaleString()}</span>
+                    <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "5px", marginTop: "5px", display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
+                      <span style={{ color: "#059669" }}>میزان کل آمد:</span>
+                      <span className="font-mono" style={{ color: "#059669", direction: "ltr" }}>Rs. {Number(totalCashInflow).toLocaleString()}</span>
                     </div>
                   </div>
 
-                  {/* Right Column: Cash Outflow (-) */}
+                  {/* Left Column (in RTL): نقد اخراجات (-) */}
                   <div>
-                    <div style={{ fontWeight: 800, color: "#dc2626", fontSize: "0.85rem", borderBottom: "1px solid #cbd5e1", paddingBottom: "4px", marginBottom: "6px" }}>
-                      2. نقد اخراجات / CASH OUTFLOW (-)
+                    <div style={{ fontWeight: 800, color: "#dc2626", fontSize: "0.88rem", borderBottom: "1.5px solid #dc2626", paddingBottom: "4px", marginBottom: "8px", fontFamily: "var(--font-urdu)" }}>
+                      ۲. کل نقد اخراجات (-)
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                       <span style={{ color: "#475569" }}>روزانہ فیکٹری اخراجات ({todayExpensesCount} مدات):</span>
-                      <strong className="font-mono" style={{ color: "#dc2626" }}>- Rs. {Number(expensesToday).toLocaleString()}</strong>
+                      <strong className="font-mono" style={{ color: "#dc2626", direction: "ltr" }}>- Rs. {Number(expensesToday).toLocaleString()}</strong>
                     </div>
                     {supplierCashToday > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                         <span style={{ color: "#475569" }}>سپلائر نقد ادائیگیاں:</span>
-                        <strong className="font-mono" style={{ color: "#dc2626" }}>- Rs. {Number(supplierCashToday).toLocaleString()}</strong>
+                        <strong className="font-mono" style={{ color: "#dc2626", direction: "ltr" }}>- Rs. {Number(supplierCashToday).toLocaleString()}</strong>
                       </div>
                     )}
                     {employeeAdvancesToday > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
                         <span style={{ color: "#475569" }}>ملازمین کیش ایڈوانس:</span>
-                        <strong className="font-mono" style={{ color: "#dc2626" }}>- Rs. {Number(employeeAdvancesToday).toLocaleString()}</strong>
+                        <strong className="font-mono" style={{ color: "#dc2626", direction: "ltr" }}>- Rs. {Number(employeeAdvancesToday).toLocaleString()}</strong>
                       </div>
                     )}
-                    <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "4px", marginTop: "4px", display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
-                      <span>کل اخراجات (Total Outflow):</span>
-                      <span className="font-mono" style={{ color: "#dc2626" }}>- Rs. {Number(totalCashOutflow).toLocaleString()}</span>
+                    <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: "5px", marginTop: "5px", display: "flex", justifyContent: "space-between", fontWeight: 800 }}>
+                      <span style={{ color: "#dc2626" }}>میزان کل اخراجات:</span>
+                      <span className="font-mono" style={{ color: "#dc2626", direction: "ltr" }}>- Rs. {Number(totalCashOutflow).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Net Expected Live Cash in Drawer Banner */}
+                {/* Net Live Cash in Drawer Banner (Clean Urdu) */}
                 <div
                   style={{
                     border: "2px solid #0f172a",
@@ -409,14 +413,14 @@ export default function PrintableDayClosingSheet({
                   }}
                 >
                   <div>
-                    <div style={{ fontSize: "0.92rem", fontWeight: 800, color: "#065f46" }}>
-                      دراز میں متوقع کل نقد رقم (EXPECTED LIVE CASH IN DRAWER)
+                    <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#065f46", fontFamily: "var(--font-urdu)" }}>
+                      دراز میں موجود متوقع کل نقد رقم
                     </div>
-                    <div style={{ fontSize: "0.72rem", color: "#047857" }}>
-                      حساب: اوپننگ کیش (Rs. {Number(openingCash).toLocaleString()}) + کل آمد (Rs. {Number(totalCashInflow).toLocaleString()}) - کل اخراجات (Rs. {Number(totalCashOutflow).toLocaleString()})
+                    <div style={{ fontSize: "0.74rem", color: "#047857", marginTop: "2px" }}>
+                      اوپننگ بیلنس (Rs. {Number(openingCash).toLocaleString()}) + کل آمد (Rs. {Number(totalCashInflow).toLocaleString()}) - کل اخراجات (Rs. {Number(totalCashOutflow).toLocaleString()})
                     </div>
                   </div>
-                  <div className="font-mono" style={{ fontSize: "1.4rem", fontWeight: 900, color: "#065f46" }}>
+                  <div className="font-mono" style={{ fontSize: "1.45rem", fontWeight: 900, color: "#065f46", direction: "ltr" }}>
                     Rs. {Number(liveCash).toLocaleString()}
                   </div>
                 </div>
@@ -431,68 +435,69 @@ export default function PrintableDayClosingSheet({
                       borderRadius: "6px",
                       marginBottom: "14px",
                       display: "flex",
-                      gap: "10px",
+                      gap: "12px",
                       flexWrap: "wrap",
-                      fontSize: "0.74rem"
+                      fontSize: "0.76rem"
                     }}
                   >
                     <span style={{ fontWeight: 800, color: "#334155" }}>خلاصہ اخراجات:</span>
                     {Object.entries(categoryTotals).map(([cat, amt]) => (
                       <span key={cat} style={{ color: "#475569" }}>
-                        {cat}: <strong className="font-mono" style={{ color: "#0f172a" }}>Rs.{Number(amt).toLocaleString()}</strong> |
+                        {cat}: <strong className="font-mono" style={{ color: "#0f172a", direction: "ltr" }}>Rs.{Number(amt).toLocaleString()}</strong> |
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Line Items Table (A4 Bill Book Style) */}
+                {/* Line Items Table (Clean Urdu Headers) */}
                 <table
                   style={{
                     width: "100%",
                     borderCollapse: "collapse",
-                    fontSize: "0.78rem",
-                    marginBottom: "14px"
+                    fontSize: "0.8rem",
+                    marginBottom: "14px",
+                    direction: "rtl"
                   }}
                 >
                   <thead>
                     <tr style={{ background: "#f1f5f9", borderTop: "2px solid #0f172a", borderBottom: "2px solid #0f172a" }}>
-                      <th style={{ padding: "6px 8px", textAlign: "center", width: "36px", borderRight: "1px solid #cbd5e1" }}>#</th>
-                      <th style={{ padding: "6px 8px", textAlign: "center", width: "70px", borderRight: "1px solid #cbd5e1" }}>وقت</th>
-                      <th style={{ padding: "6px 8px", textAlign: "left", width: "130px", borderRight: "1px solid #cbd5e1" }}>کیٹیگری / شعبہ</th>
-                      <th style={{ padding: "6px 8px", textAlign: "left", width: "120px", borderRight: "1px solid #cbd5e1" }}>کس کو ادا کیا</th>
-                      <th style={{ padding: "6px 8px", textAlign: "left", borderRight: "1px solid #cbd5e1" }}>تفصیل / وجہ خرچ (Remarks)</th>
-                      <th style={{ padding: "6px 8px", textAlign: "center", width: "65px", borderRight: "1px solid #cbd5e1" }}>طریقہ</th>
-                      <th style={{ padding: "6px 8px", textAlign: "right", width: "95px" }}>میزان رقم (Rs.)</th>
+                      <th style={{ padding: "7px 8px", textAlign: "center", width: "36px", borderLeft: "1px solid #cbd5e1" }}>نمبر</th>
+                      <th style={{ padding: "7px 8px", textAlign: "center", width: "70px", borderLeft: "1px solid #cbd5e1" }}>وقت</th>
+                      <th style={{ padding: "7px 8px", textAlign: "right", width: "130px", borderLeft: "1px solid #cbd5e1" }}>شعبہ / مد خرچ</th>
+                      <th style={{ padding: "7px 8px", textAlign: "right", width: "120px", borderLeft: "1px solid #cbd5e1" }}>کس کو ادا کیا</th>
+                      <th style={{ padding: "7px 8px", textAlign: "right", borderLeft: "1px solid #cbd5e1" }}>تفصیل / وجہ خرچ</th>
+                      <th style={{ padding: "7px 8px", textAlign: "center", width: "65px", borderLeft: "1px solid #cbd5e1" }}>طریقہ</th>
+                      <th style={{ padding: "7px 8px", textAlign: "left", width: "105px" }}>رقم (روپے)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {expenses && expenses.length > 0 ? (
                       expenses.map((item, idx) => (
                         <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0" }}>
-                          <td style={{ padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1" }}>{idx + 1}</td>
-                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1", fontSize: "0.72rem", color: "#64748b" }}>
+                          <td style={{ padding: "6px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1" }}>{idx + 1}</td>
+                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1", fontSize: "0.74rem", color: "#64748b", direction: "ltr" }}>
                             {item.createdAt ? new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
                           </td>
-                          <td style={{ padding: "6px 8px", fontWeight: 700, borderRight: "1px solid #cbd5e1", color: "#1e3a8a" }}>
+                          <td style={{ padding: "6px 8px", fontWeight: 700, borderLeft: "1px solid #cbd5e1", color: "#1e3a8a" }}>
                             {item.category}
                           </td>
-                          <td style={{ padding: "6px 8px", fontWeight: 600, borderRight: "1px solid #cbd5e1", color: "#0f172a" }}>
+                          <td style={{ padding: "6px 8px", fontWeight: 600, borderLeft: "1px solid #cbd5e1", color: "#0f172a" }}>
                             {item.paidTo || "-"}
                           </td>
-                          <td style={{ padding: "6px 8px", borderRight: "1px solid #cbd5e1", color: "#475569", fontSize: "0.75rem" }}>
+                          <td style={{ padding: "6px 8px", borderLeft: "1px solid #cbd5e1", color: "#475569", fontSize: "0.78rem" }}>
                             {item.remarks || "-"}
                           </td>
-                          <td style={{ padding: "6px 8px", textAlign: "center", borderRight: "1px solid #cbd5e1", fontSize: "0.72rem", color: "#475569" }}>
-                            {item.paymentMethod || "Cash"}
+                          <td style={{ padding: "6px 8px", textAlign: "center", borderLeft: "1px solid #cbd5e1", fontSize: "0.74rem", color: "#475569" }}>
+                            {item.paymentMethod === "Cash" ? "نقد" : (item.paymentMethod || "نقد")}
                           </td>
-                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: "#dc2626" }}>
-                            {Number(item.amount || 0).toLocaleString()}
+                          <td className="font-mono" style={{ padding: "6px 8px", textAlign: "left", fontWeight: 700, color: "#dc2626", direction: "ltr" }}>
+                            Rs. {Number(item.amount || 0).toLocaleString()}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" style={{ padding: "14px", textAlign: "center", color: "#64748b" }}>
+                        <td colSpan="7" style={{ padding: "16px", textAlign: "center", color: "#64748b" }}>
                           اس تاریخ کے لیے کوئی خرچ ریکارڈ نہیں کیا گیا۔
                         </td>
                       </tr>
@@ -500,17 +505,17 @@ export default function PrintableDayClosingSheet({
                   </tbody>
                   <tfoot>
                     <tr style={{ background: "#f8fafc", borderTop: "2px solid #0f172a", borderBottom: "2px solid #0f172a", fontWeight: 800 }}>
-                      <td colSpan="6" style={{ padding: "8px", textAlign: "right", borderRight: "1px solid #cbd5e1" }}>
-                        کل فیکٹری اخراجات (Total Expenses):
+                      <td colSpan="6" style={{ padding: "8px", textAlign: "left", borderLeft: "1px solid #cbd5e1" }}>
+                        میزان کل فیکٹری اخراجات:
                       </td>
-                      <td className="font-mono" style={{ padding: "8px", textAlign: "right", color: "#dc2626", fontSize: "0.9rem" }}>
+                      <td className="font-mono" style={{ padding: "8px", textAlign: "left", color: "#dc2626", fontSize: "0.92rem", direction: "ltr" }}>
                         Rs. {Number(expensesToday).toLocaleString()}
                       </td>
                     </tr>
                   </tfoot>
                 </table>
 
-                {/* Terms & Disclaimers in Urdu (Bill Book Style) */}
+                {/* Rules & Quick Settlement (Pure Urdu) */}
                 <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "14px", alignItems: "start", marginBottom: "16px" }}>
                   <div
                     style={{
@@ -518,16 +523,16 @@ export default function PrintableDayClosingSheet({
                       borderRadius: "6px",
                       padding: "8px 12px",
                       background: "#f8fafc",
-                      fontSize: "0.7rem",
+                      fontSize: "0.74rem",
                       color: "#475569",
                       fontFamily: "var(--font-urdu)",
-                      lineHeight: 1.6
+                      lineHeight: 1.7
                     }}
                   >
-                    <div style={{ fontWeight: 800, color: "#0f172a", marginBottom: "2px" }}>شرائط و قواعد روزنامچہ:</div>
-                    <div>1. تمام اخراجات فیکٹری مجاز شخص کی اجازت سے ادا کیے گئے ہیں۔</div>
-                    <div>2. دراز میں موجود فزیکل کیش اور روزنامچہ رپورٹ کا روزانہ اختتام پر موازنہ لازمی ہے۔</div>
-                    <div>3. بغیر رسید یا تصدیق کے کوئی رقم دراز سے خارج تصور نہ ہوگی۔</div>
+                    <div style={{ fontWeight: 800, color: "#0f172a", marginBottom: "2px" }}>قواعد و شرائط روزنامچہ:</div>
+                    <div>1. تمام اخراجات مجاز اتھارٹی کی پیشگی منظوری سے ادا کیے گئے ہیں۔</div>
+                    <div>2. دراز میں موجود فزیکل کیش اور روزنامچہ رپورٹ کا یومیہ موازنہ لازمی ہے۔</div>
+                    <div>3. بغیر تصدیق کے کوئی رقم دراز سے خارج تصور نہ ہوگی۔</div>
                   </div>
 
                   {/* Quick Audit Settlement Box */}
@@ -537,51 +542,49 @@ export default function PrintableDayClosingSheet({
                       borderRadius: "6px",
                       padding: "8px 12px",
                       background: "#ffffff",
-                      fontSize: "0.78rem",
+                      fontSize: "0.8rem",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "3px"
+                      gap: "4px"
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", color: "#475569" }}>
                       <span>اوپننگ بیلنس:</span>
-                      <span className="font-mono">Rs. {Number(openingCash).toLocaleString()}</span>
+                      <span className="font-mono" style={{ direction: "ltr" }}>Rs. {Number(openingCash).toLocaleString()}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", color: "#059669" }}>
-                      <span>کل آمد (Inflow):</span>
-                      <span className="font-mono">+ Rs. {Number(totalCashInflow).toLocaleString()}</span>
+                      <span>کل آمد:</span>
+                      <span className="font-mono" style={{ direction: "ltr" }}>+ Rs. {Number(totalCashInflow).toLocaleString()}</span>
                     </div>
                     <div style={{ display: "flex", justifyContent: "space-between", color: "#dc2626" }}>
-                      <span>کل خرچ (Outflow):</span>
-                      <span className="font-mono">- Rs. {Number(totalCashOutflow).toLocaleString()}</span>
+                      <span>کل اخراجات:</span>
+                      <span className="font-mono" style={{ direction: "ltr" }}>- Rs. {Number(totalCashOutflow).toLocaleString()}</span>
                     </div>
-                    <div style={{ borderTop: "1px solid #0f172a", paddingTop: "4px", marginTop: "2px", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "0.85rem", color: "#065f46" }}>
+                    <div style={{ borderTop: "1px solid #0f172a", paddingTop: "5px", marginTop: "2px", display: "flex", justifyContent: "space-between", fontWeight: 800, fontSize: "0.88rem", color: "#065f46" }}>
                       <span>نیٹ کیش دراز:</span>
-                      <span className="font-mono">Rs. {Number(liveCash).toLocaleString()}</span>
+                      <span className="font-mono" style={{ direction: "ltr" }}>Rs. {Number(liveCash).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Signatures Row */}
-                <div style={{ marginTop: "32px", display: "flex", justifyContent: "space-between", fontSize: "0.75rem", padding: "0 15px" }}>
+                <div style={{ marginTop: "34px", display: "flex", justifyContent: "space-between", fontSize: "0.78rem", padding: "0 20px" }}>
                   <div style={{ textAlign: "center", width: "160px" }}>
-                    <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", fontWeight: 800, color: "#0f172a" }}>
+                    <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-urdu)" }}>
                       دستخط منشی / کیشیئر
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#64748b" }}>Cashier / Munshi Signature</div>
                   </div>
 
                   <div style={{ textAlign: "center", width: "160px" }}>
-                    <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "4px", fontWeight: 800, color: "#0f172a" }}>
+                    <div style={{ borderTop: "1.5px solid #0f172a", paddingTop: "5px", fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-urdu)" }}>
                       دستخط مالک کارخانہ
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#64748b" }}>Proprietor Signature</div>
                   </div>
                 </div>
 
                 {/* Footer Brand Line */}
-                <div style={{ textAlign: "center", marginTop: "18px", borderTop: "1px solid #e2e8f0", paddingTop: "6px", fontSize: "0.68rem", color: "#94a3b8" }}>
-                  {companyName} — ERP System • جھمرہ سٹی
+                <div style={{ textAlign: "center", marginTop: "18px", borderTop: "1px solid #e2e8f0", paddingTop: "6px", fontSize: "0.7rem", color: "#94a3b8" }}>
+                  {companyName} — ای آر پی سسٹم • جھمرہ سٹی
                 </div>
               </div>
             )}
@@ -594,78 +597,80 @@ export default function PrintableDayClosingSheet({
                 style={{
                   background: "#ffffff",
                   color: "#000000",
-                  padding: "16px 14px",
-                  borderRadius: "8px",
+                  padding: "12px 10px",
+                  borderRadius: "6px",
                   border: "1px dashed #cbd5e1",
                   fontFamily: "monospace",
                   fontSize: "11px",
-                  maxWidth: "380px",
+                  width: "100%",
+                  maxWidth: "340px",
                   margin: "0 auto",
-                  lineHeight: 1.35
+                  lineHeight: 1.35,
+                  boxSizing: "border-box"
                 }}
               >
                 {/* Thermal Header */}
                 <div style={{ textAlign: "center", borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontSize: "14px", fontWeight: "bold" }}>{companyName}</div>
+                  <div style={{ fontSize: "13px", fontWeight: "bold" }}>{companyName}</div>
                   <div style={{ fontSize: "10px" }}>{address}</div>
-                  <div style={{ fontSize: "10px" }}>Tel: {phone}</div>
+                  <div style={{ fontSize: "10px" }}>فون: {phone}</div>
                   <div style={{ fontSize: "12px", fontWeight: "bold", margin: "4px 0 2px 0", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "2px 0" }}>
-                    DAILY ROZNAMCHA / CASH CLOSING
+                    روزنامچہ کلوزنگ رپورٹ (80mm)
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", marginTop: "4px" }}>
-                    <span>Date: {dateFormatted}</span>
-                    <span>Time: {timeFormatted}</span>
+                    <span>تاریخ: {dateFormatted}</span>
+                    <span>وقت: {timeFormatted}</span>
                   </div>
                 </div>
 
                 {/* Thermal Inflow / Outflow Summary */}
                 <div style={{ borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontWeight: "bold", marginBottom: "3px" }}>=== CASH INFLOW (+) ===</div>
+                  <div style={{ fontWeight: "bold", marginBottom: "3px" }}>=== نقد آمد (+) ===</div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Opening Cash:</span>
+                    <span>اوپننگ کیش:</span>
                     <span>Rs. {Number(openingCash).toLocaleString()}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Cash Sales ({todayInvoicesCount}):</span>
-                    <span>Rs. {Number(cashSalesToday).toLocaleString()}</span>
+                    <span>نقد بل سیلز ({todayInvoicesCount}):</span>
+                    <span>+ Rs. {Number(cashSalesToday).toLocaleString()}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Khata Wasooli ({todayPaymentsCount}):</span>
-                    <span>Rs. {Number(wasooliToday).toLocaleString()}</span>
+                    <span>کھاتہ وصولی ({todayPaymentsCount}):</span>
+                    <span>+ Rs. {Number(wasooliToday).toLocaleString()}</span>
                   </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", borderTop: "1px dotted #000", marginTop: "2px", paddingTop: "2px" }}>
-                    <span>Total Inflow:</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", borderTop: "1px dotted #000", marginTop: "3px", paddingTop: "2px" }}>
+                    <span>میزان کل آمد:</span>
                     <span>Rs. {Number(totalCashInflow).toLocaleString()}</span>
                   </div>
                 </div>
 
                 <div style={{ borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontWeight: "bold", marginBottom: "3px" }}>=== CASH OUTFLOW (-) ===</div>
+                  <div style={{ fontWeight: "bold", marginBottom: "3px" }}>=== نقد اخراجات (-) ===</div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Daily Expenses ({todayExpensesCount}):</span>
-                    <span>Rs. {Number(expensesToday).toLocaleString()}</span>
+                    <span>روزانہ اخراجات ({todayExpensesCount}):</span>
+                    <span>- Rs. {Number(expensesToday).toLocaleString()}</span>
                   </div>
                   {supplierCashToday > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Supplier Cash:</span>
-                      <span>Rs. {Number(supplierCashToday).toLocaleString()}</span>
+                      <span>سپلائر ادائیگیاں:</span>
+                      <span>- Rs. {Number(supplierCashToday).toLocaleString()}</span>
                     </div>
                   )}
                   {employeeAdvancesToday > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>Worker Advances:</span>
-                      <span>Rs. {Number(employeeAdvancesToday).toLocaleString()}</span>
+                      <span>ملازمین ایڈوانس:</span>
+                      <span>- Rs. {Number(employeeAdvancesToday).toLocaleString()}</span>
                     </div>
                   )}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", borderTop: "1px dotted #000", marginTop: "2px", paddingTop: "2px" }}>
-                    <span>Total Outflow:</span>
-                    <span>Rs. {Number(totalCashOutflow).toLocaleString()}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", borderTop: "1px dotted #000", marginTop: "3px", paddingTop: "2px" }}>
+                    <span>میزان کل اخراجات:</span>
+                    <span>- Rs. {Number(totalCashOutflow).toLocaleString()}</span>
                   </div>
                 </div>
 
                 {/* Expected Net Drawer Cash */}
                 <div style={{ border: "1px solid #000", padding: "6px", textAlign: "center", marginBottom: "8px", background: "#f8f8f8" }}>
-                  <div style={{ fontSize: "10px", fontWeight: "bold" }}>EXPECTED DRAWER CASH</div>
+                  <div style={{ fontSize: "10px", fontWeight: "bold" }}>دراز میں متوقع کل نقد رقم</div>
                   <div style={{ fontSize: "15px", fontWeight: "bold", marginTop: "2px" }}>
                     Rs. {Number(liveCash).toLocaleString()}
                   </div>
@@ -674,7 +679,7 @@ export default function PrintableDayClosingSheet({
                 {/* Itemized Expenses List */}
                 {expenses && expenses.length > 0 && (
                   <div style={{ borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "8px" }}>
-                    <div style={{ fontWeight: "bold", marginBottom: "4px" }}>EXPENSES DETAILS:</div>
+                    <div style={{ fontWeight: "bold", marginBottom: "4px" }}>تفصیل اخراجات:</div>
                     {expenses.map((exp, idx) => (
                       <div key={idx} style={{ marginBottom: "3px", fontSize: "10px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -682,8 +687,8 @@ export default function PrintableDayClosingSheet({
                           <span style={{ fontWeight: "bold" }}>Rs. {Number(exp.amount).toLocaleString()}</span>
                         </div>
                         {(exp.paidTo || exp.remarks) && (
-                          <div style={{ color: "#444", fontSize: "9px", paddingLeft: "10px" }}>
-                            {exp.paidTo ? `Paid to: ${exp.paidTo}` : ''} {exp.remarks ? `(${exp.remarks})` : ''}
+                          <div style={{ color: "#444", fontSize: "9px", paddingLeft: "8px" }}>
+                            {exp.paidTo ? `بنام: ${exp.paidTo}` : ''} {exp.remarks ? `(${exp.remarks})` : ''}
                           </div>
                         )}
                       </div>
@@ -692,17 +697,17 @@ export default function PrintableDayClosingSheet({
                 )}
 
                 {/* Signatures */}
-                <div style={{ marginTop: "20px", display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
+                <div style={{ marginTop: "18px", display: "flex", justifyContent: "space-between", fontSize: "10px" }}>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #000", width: "90px", paddingTop: "2px" }}>Munshi Sign</div>
+                    <div style={{ borderTop: "1px solid #000", width: "80px", paddingTop: "2px" }}>دستخط منشی</div>
                   </div>
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ borderTop: "1px solid #000", width: "90px", paddingTop: "2px" }}>Owner Sign</div>
+                    <div style={{ borderTop: "1px solid #000", width: "80px", paddingTop: "2px" }}>دستخط مالک</div>
                   </div>
                 </div>
 
-                <div style={{ textAlign: "center", fontSize: "9px", marginTop: "12px", borderTop: "1px dotted #888", paddingTop: "4px" }}>
-                  Marble Factory ERP System
+                <div style={{ textAlign: "center", fontSize: "9px", marginTop: "10px", borderTop: "1px dotted #888", paddingTop: "4px" }}>
+                  ماربل فیکٹری سسٹم • جھمرہ سٹی
                 </div>
               </div>
             )}
@@ -712,3 +717,4 @@ export default function PrintableDayClosingSheet({
     </div>
   );
 }
+
