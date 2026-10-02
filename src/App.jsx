@@ -171,7 +171,7 @@ export default function App() {
           )}
 
           {activeView === 'returns' && (
-            <ReturnsView />
+            <ReturnsView settings={settings} />
           )}
 
           {activeView === 'gate-pass' && (

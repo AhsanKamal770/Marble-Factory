@@ -608,3 +608,30 @@ export async function getRecentInvoicesForLinking() {
     grandTotal: i.grandTotal
   }));
 }
+
+/**
+ * 10. UPDATE RETURN / WASTAGE RECORD (REMARKS / REASON / OPERATOR)
+ */
+export async function updateReturnRecord(id, updates = {}) {
+  const record = await db.returns.get(Number(id));
+  if (!record) throw new Error('Return record not found.');
+
+  const now = new Date().toISOString();
+  await db.returns.update(Number(id), {
+    ...updates,
+    updatedAt: now
+  });
+
+  if (record.type === 'Factory Wastage') {
+    const matchedLog = await db.wastage_logs.where('logNo').equals(record.returnNo).first();
+    if (matchedLog) {
+      await db.wastage_logs.update(matchedLog.id, {
+        reason: updates.reason || matchedLog.reason,
+        operatorName: updates.operatorName || matchedLog.operatorName,
+        updatedAt: now
+      });
+    }
+  }
+
+  return { success: true };
+}
