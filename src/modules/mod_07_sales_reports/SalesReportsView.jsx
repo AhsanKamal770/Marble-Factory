@@ -79,11 +79,11 @@ export default function SalesReportsView() {
   };
 
   const TH = {
-    padding: '12px 16px',
+    padding: '10px 8px',
     fontSize: '0.72rem',
     fontWeight: 700,
     textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.04em',
     color: 'var(--text-muted)',
     background: 'var(--bg-primary)',
     borderBottom: '1px solid var(--border-color)',
@@ -92,9 +92,9 @@ export default function SalesReportsView() {
   };
 
   const TD = {
-    padding: '14px 16px',
+    padding: '9px 8px',
     verticalAlign: 'middle',
-    fontSize: '0.85rem',
+    fontSize: '0.82rem',
     borderBottom: '1px solid var(--border-divider, rgba(0,0,0,0.05))'
   };
 

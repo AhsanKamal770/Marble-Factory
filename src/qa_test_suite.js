@@ -137,10 +137,9 @@ async function runAllTests() {
     cnic: '33100-1234567-1',
     city: 'Faisalabad',
     address: 'Satyana Road Commercial Plaza',
-    customerType: 'Contractor',
     creditLimit: 500000,
     balanceDue: 0,
-    notes: 'Commercial contractor account'
+    notes: 'Commercial customer account'
   };
 
   const custId = await saveCustomer(newCustData);
@@ -148,7 +147,6 @@ async function runAllTests() {
 
   const custRecord = await db.customers.get(custId);
   assert(custRecord.name === 'Malik Builders & Developers', 'Customer CRUD: Profile record verified in DB');
-  assert(custRecord.customerType === 'Contractor', 'Customer: Category saved as Contractor');
 
   // 2. Record payment recovery
   // Simulate an invoice first: Grand Total = 100,000, Paid = 40,000, Balance Due = 60,000

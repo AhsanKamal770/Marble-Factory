@@ -1,39 +1,99 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   Plus, Search, AlertTriangle, Check, X, MoreVertical,
-  Layers, Gem, Flower2, Ruler, Grid3X3, Wrench, ChevronRight,
+  Layers, Gem, Flower2, Ruler, Grid3X3, Wrench, ChevronRight, ChevronLeft,
   PackagePlus, ChevronDown, Package, MapPin, Tag,
-  ArrowUpDown, Edit2, Trash2, SlidersHorizontal,
+  ArrowUpDown, Edit2, Trash2, SlidersHorizontal, Calendar,
+  Eye, CheckCircle2, DollarSign, Boxes, Filter, HelpCircle
 } from "lucide-react";
 import { db, adjustItemStock, logStockMovement } from "../db/index";
+import { useLanguage } from "../context/LanguageContext";
+import GlobalPagination from "../components/GlobalPagination";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONCEPT: Domain-Driven Category Configuration
-// Each product family has different: stock unit, size quick-picks, Sutar
-// applicability. Centralising this avoids scattered conditionals in JSX.
+// DOMAIN CONFIGURATION: Hierarchical Marble & Tiles Taxonomy
 // ─────────────────────────────────────────────────────────────────────────────
-const CATEGORIES = [
-  { key: "ALL",                label: "All Items",          icon: Layers,       hasSutar: false, defaultUnit: "Sq. Ft." },
-  { key: "Marble Slabs",       label: "Marble Slabs",       icon: Gem,          hasSutar: true,  defaultUnit: "Sq. Ft.",      defaultSizes: ["Random Slabs (3-6 ft)", "Random Slabs (4-8 ft)", "Jumbo Slabs (6-10 ft)"] },
-  { key: "Marble Tiles",       label: "Marble Tiles",       icon: Grid3X3,      hasSutar: true,  defaultUnit: "Sq. Ft.",      defaultSizes: ["12x12 in", "12x24 in", "6x12 in", "6x24 in", "18x18 in", "24x24 in"] },
-  { key: "Flower Medallions",  label: "Flower Medallions",  icon: Flower2,      hasSutar: false, defaultUnit: "Pieces",       defaultSizes: ["12x12 in (1 Sq Ft)", "24x24 in (4 Sq Ft)", "3x3 ft (9 Sq Ft)"] },
-  { key: "Borders & Patti",    label: "Borders & Patti",    icon: Ruler,        hasSutar: false, defaultUnit: "Running Feet", defaultSizes: ["2 inch wide", "3 inch wide", "6 inch wide"] },
-  { key: "Porcelain & Panels", label: "Porcelain & Panels", icon: Grid3X3,      hasSutar: false, defaultUnit: "Boxes",        defaultSizes: ["12x24 in", "16x16 in", "24x24 in", "24x48 in", "3D Wall Panels"] },
-  { key: "Accessories",        label: "Accessories",        icon: Wrench,       hasSutar: false, defaultUnit: "Pieces",       defaultSizes: ["Bond Adhesive (Bag)", "Filling / Grout (Bag)", "Spacers (Pack)", "Golla / Chamfer (Pcs)"] },
-  { key: "Granite",            label: "Granite",            icon: Gem,          hasSutar: false, defaultUnit: "Sq. Ft.",      defaultSizes: ["Random Slabs", "Jumbo Slabs (8x3 ft)", "Cut-to-Size"] },
-  { key: "Steps & Risers",     label: "Steps & Risers",     icon: ChevronRight, hasSutar: true,  defaultUnit: "Pieces",       defaultSizes: ["4ft Step + Riser Set", "3ft Step + Riser Set", "Custom Size"] },
-];
+export const ITEM_TAXONOMY = {
+  marble: {
+    label: "Marble",
+    icon: Gem,
+    sutars: [
+      {
+        sutar: "4 Sutar",
+        sizes: ["12 × 12", "12 × 24", "6 × 12", "6 × 24"],
+        desc: "Standard 4 Sutar cut-to-size tiles"
+      },
+      {
+        sutar: "6 Sutar",
+        sizes: ["Stairs & Kitchen Slabs", "3ft Step + Riser", "4ft Step + Riser", "Kitchen Countertop (Custom)"],
+        desc: "Only 6 Sutar is specially used for Kitchen & Stairs"
+      },
+      {
+        sutar: "9 Sutar",
+        sizes: ["Heavy Flooring Slabs", "Cut-to-Size Slabs"],
+        desc: "Heavy duty flooring marble"
+      },
+      {
+        sutar: "14 Sutar",
+        sizes: ["Industrial / Thick Slabs", "Foundation Slabs"],
+        desc: "Extra thick structural marble"
+      }
+    ]
+  },
+  tiles: {
+    label: "Tiles",
+    icon: Grid3X3,
+    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"],
+    accessories: [
+      { name: "Border", unit: "Running Feet" },
+      { name: "Filling / Grout", unit: "Bags" },
+      { name: "Spacer", unit: "Pieces" },
+      { name: "Gola / Chamfer", unit: "Running Feet" }
+    ],
+    panels: [
+      { name: "Mashallah / Islamic Calligraphy Panels", note: "Rate is higher than simple tiles" }
+    ]
+  },
+  flowers: {
+    label: "Flowers",
+    icon: Flower2,
+    sizes: ["12 × 12", "24 × 24", "3 × 3"],
+    unit: "Pieces",
+    desc: "Mosaic & Handcrafted center flower medallions"
+  },
+  borders: {
+    label: "Borders",
+    icon: Ruler,
+    standard: ["3 inch", "6 inch"],
+    blackBorder: ["2 inch", "3 inch"],
+    unit: "Running Feet",
+    desc: "Standard borders & Kali Patti (Black Border)"
+  },
+  panels: {
+    label: "Panels",
+    icon: Layers,
+    types: ["Mashallah Islamic Panels", "3D Wall Panels", "Front Elevation Panels"],
+    unit: "Pieces",
+    desc: "Decorative high-value entrance and wall panels"
+  }
+};
 
-// CONCEPT: Unit-Aware Stock — each product family tracks stock in a different
-// primary unit. Routing display to the correct field prevents semantic errors.
+// ─────────────────────────────────────────────────────────────────────────────
+// Stock Display & Helper Calculations
+// ─────────────────────────────────────────────────────────────────────────────
 function getStockDisplay(item) {
   const unit = item.unit || "Sq. Ft.";
+  const qty = Number(item.stockSqFt || item.stockPieces || item.stockBoxes || 0);
   switch (unit) {
-    case "Running Feet": return { qty: Number(item.stockSqFt || 0), unit: "Rft",   sub: item.stockPieces > 0 ? `${item.stockPieces} pcs` : null };
-    case "Pieces":       return { qty: Number(item.stockPieces || 0), unit: "Pcs", sub: item.stockBoxes > 0 ? `${item.stockBoxes} boxes` : null };
-    case "Boxes":        return { qty: Number(item.stockBoxes || 0), unit: "Boxes", sub: item.stockSqFt > 0 ? `${Number(item.stockSqFt).toLocaleString()} sq.ft` : null };
-    default:             return { qty: Number(item.stockSqFt || 0), unit: "Sq.Ft", sub: item.stockBoxes > 0 ? `${item.stockBoxes} boxes` : null };
+    case "Running Feet":
+      return { qty: Number(item.stockSqFt || 0), unit: "Feet", sub: item.stockPieces > 0 ? `${item.stockPieces} pcs` : null };
+    case "Pieces":
+      return { qty: Number(item.stockPieces || item.stockSqFt || 0), unit: "Pcs", sub: item.stockBoxes > 0 ? `${item.stockBoxes} boxes` : null };
+    case "Boxes":
+      return { qty: Number(item.stockBoxes || 0), unit: "Boxes", sub: item.stockSqFt > 0 ? `${Number(item.stockSqFt).toLocaleString()} Sq.Ft` : null };
+    default:
+      return { qty: Number(item.stockSqFt || 0), unit: "Sq.Ft", sub: item.stockBoxes > 0 ? `${item.stockBoxes} boxes` : null };
   }
 }
 
@@ -41,381 +101,811 @@ function isLowStock(item) {
   const unit = item.unit || "Sq. Ft.";
   const t = Number(item.minStockAlert) || 0;
   if (t === 0) return false;
-  switch (unit) {
-    case "Running Feet": return Number(item.stockSqFt || 0) <= t;
-    case "Pieces":       return Number(item.stockPieces || 0) <= t;
-    case "Boxes":        return Number(item.stockBoxes || 0) <= t;
-    default:             return Number(item.stockSqFt || 0) <= t;
-  }
+  const current = Number(item.stockSqFt || item.stockPieces || item.stockBoxes || 0);
+  return current > 0 && current <= t;
 }
 
 function isOutOfStock(item) {
-  const unit = item.unit || "Sq. Ft.";
-  switch (unit) {
-    case "Running Feet": return Number(item.stockSqFt || 0) === 0;
-    case "Pieces":       return Number(item.stockPieces || 0) === 0;
-    case "Boxes":        return Number(item.stockBoxes || 0) === 0;
-    default:             return Number(item.stockSqFt || 0) === 0;
-  }
+  const current = Number(item.stockSqFt || item.stockPieces || item.stockBoxes || 0);
+  return current === 0;
 }
 
-const SUTAR_OPTIONS = [
-  { value: "4",  label: "4 Sutar",  desc: "~12 mm  Decorative / Light" },
-  { value: "6",  label: "6 Sutar",  desc: "~18 mm  Kitchen / Stairs / Lift" },
-  { value: "9",  label: "9 Sutar",  desc: "~28 mm  Heavy Flooring" },
-  { value: "14", label: "14 Sutar", desc: "~44 mm  Industrial / Steps" },
-];
-
 const INITIAL_FORM = {
-  code: "", name: "", category: "Marble Slabs", subCategory: "",
-  finish: "Polished", grade: "Grade A", sutarThickness: "6", thicknessMm: 18,
-  standardSize: "", unit: "Sq. Ft.", ratePerSqFt: 0, costPerSqFt: 0,
-  stockSqFt: 0, stockBoxes: 0, stockPieces: 0, minStockAlert: 200,
-  lotNo: "", location: "Yard Shed 1", notes: "",
+  code: "",
+  name: "",
+  category: "Marble",
+  subCategory: "",
+  sutarThickness: "4",
+  standardSize: "12 × 12",
+  finish: "Polished",
+  grade: "Grade A",
+  thicknessMm: 12,
+  unit: "Sq. Ft.",
+  ratePerSqFt: 0,
+  costPerSqFt: 0,
+  stockSqFt: 0,
+  stockBoxes: 0,
+  stockPieces: 0,
+  minStockAlert: 100,
+  lotNo: "",
+  location: "Yard Shed 1",
+  notes: "",
 };
 
-// ── Category Dropdown ──────────────────────────────────────────────────────
-function CategoryDropdown({ value, onChange, items }) {
-  const [open, setOpen] = useState(false);
+// ─────────────────────────────────────────────────────────────────────────────
+// Multi-Level Cascading "Filter by Item Type" Component (Matching Screenshot)
+// ─────────────────────────────────────────────────────────────────────────────
+function CascadingTypeFilter({ filter, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeL1, setActiveL1] = useState(null);
+  const [activeL2, setActiveL2] = useState(null);
   const ref = useRef(null);
 
   useEffect(() => {
-    if (!open) return;
-    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
+    const handleOutside = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setIsOpen(false);
+        setActiveL1(null);
+        setActiveL2(null);
+      }
+    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, []);
 
-  const currentCat = CATEGORIES.find(c => c.key === value) || CATEGORIES[0];
+  const displayLabel = useMemo(() => {
+    if (!filter || filter.type === "ALL") return "All Categories";
+    let text = filter.type;
+    if (filter.sutar) text += ` > ${filter.sutar}`;
+    if (filter.size) text += ` > ${filter.size}`;
+    if (filter.sub) text += ` > ${filter.sub}`;
+    return text;
+  }, [filter]);
+
+  const selectFilter = (newFilter) => {
+    onChange(newFilter);
+    setIsOpen(false);
+    setActiveL1(null);
+    setActiveL2(null);
+  };
 
   return (
     <div ref={ref} style={{ position: "relative" }}>
+      {/* Dropdown Trigger Button */}
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => setIsOpen(v => !v)}
         style={{
-          display: "inline-flex", alignItems: "center", gap: "6px",
-          padding: "0 14px", height: "38px",
-          background: "var(--bg-card)", border: "1px solid var(--border-color)",
-          borderRadius: "var(--radius-md)", color: "var(--text-primary)",
-          fontSize: "0.85rem", fontWeight: 500, cursor: "pointer",
-          whiteSpace: "nowrap", transition: "border-color 0.15s",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          justifyContent: "center",
+          padding: "6px 14px",
+          minHeight: "44px",
+          minWidth: "170px",
+          background: "var(--bg-primary, #f8fafc)",
+          border: "1px solid var(--border-color, #cbd5e1)",
+          borderRadius: "10px",
+          color: "var(--text-primary, #0f172a)",
+          cursor: "pointer",
+          outline: "none",
+          textAlign: "left"
         }}
-        onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent-blue)"}
-        onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border-color)"}
       >
-        <SlidersHorizontal size={13} style={{ color: "var(--text-muted)" }} />
-        <span>{currentCat.label}</span>
-        <ChevronDown size={13} style={{ color: "var(--text-muted)", marginLeft: "2px" }} />
+        <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          Filter by Item Type
+        </span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: "6px" }}>
+          <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary, #0f172a)", whiteSpace: "nowrap" }}>
+            {filter?.type === "ALL" ? "All Types" : displayLabel}
+          </span>
+          <ChevronDown size={14} style={{ color: "#64748b" }} />
+        </div>
       </button>
-      {open && (
-        <div style={{
-          position: "absolute", left: 0, top: "calc(100% + 6px)", zIndex: 300,
-          background: "var(--bg-card)", border: "1px solid var(--border-color)",
-          borderRadius: "10px", boxShadow: "0 12px 32px rgba(0,0,0,0.15)",
-          minWidth: "210px", overflow: "hidden", padding: "4px 0",
-        }}>
-          {CATEGORIES.map(cat => {
-            const count = cat.key === "ALL" ? items.length : items.filter(i => i.category === cat.key).length;
-            const isActive = value === cat.key;
-            return (
-              <button
-                key={cat.key}
-                type="button"
-                onClick={() => { onChange(cat.key); setOpen(false); }}
+
+      {/* Cascading Popover Menus */}
+      {isOpen && (
+        <div
+          style={{
+            position: "absolute",
+            top: "calc(100% + 6px)",
+            left: 0,
+            zIndex: 999,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: "2px"
+          }}
+        >
+          {/* Level 1 Menu: Types */}
+          <div
+            style={{
+              background: "var(--bg-card, #ffffff)",
+              border: "1px solid var(--border-color, #cbd5e1)",
+              borderRadius: "10px",
+              boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+              padding: "4px 0",
+              minWidth: "150px",
+              overflow: "hidden"
+            }}
+          >
+            {/* All */}
+            <button
+              type="button"
+              onClick={() => selectFilter({ type: "ALL" })}
+              style={{
+                width: "100%",
+                padding: "8px 14px",
+                border: "none",
+                background: filter?.type === "ALL" ? "#eff6ff" : "none",
+                color: filter?.type === "ALL" ? "#2563eb" : "var(--text-primary)",
+                fontWeight: filter?.type === "ALL" ? 700 : 500,
+                fontSize: "0.83rem",
+                textAlign: "left",
+                cursor: "pointer"
+              }}
+              onMouseEnter={() => { setActiveL1(null); setActiveL2(null); }}
+            >
+              All Types
+            </button>
+
+            {/* Marble */}
+            <div
+              onMouseEnter={() => { setActiveL1("Marble"); setActiveL2(null); }}
+              onClick={() => { setActiveL1("Marble"); }}
+              style={{
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                background: activeL1 === "Marble" ? "#eff6ff" : "transparent",
+                color: activeL1 === "Marble" ? "#2563eb" : "var(--text-primary)",
+                fontSize: "0.83rem",
+                fontWeight: activeL1 === "Marble" ? 700 : 500
+              }}
+            >
+              <span>Marble</span>
+              <ChevronRight size={13} style={{ color: "#64748b" }} />
+            </div>
+
+            {/* Tiles */}
+            <div
+              onMouseEnter={() => { setActiveL1("Tiles"); setActiveL2(null); }}
+              onClick={() => { setActiveL1("Tiles"); }}
+              style={{
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                background: activeL1 === "Tiles" ? "#eff6ff" : "transparent",
+                color: activeL1 === "Tiles" ? "#2563eb" : "var(--text-primary)",
+                fontSize: "0.83rem",
+                fontWeight: activeL1 === "Tiles" ? 700 : 500
+              }}
+            >
+              <span>Tiles</span>
+              <ChevronRight size={13} style={{ color: "#64748b" }} />
+            </div>
+
+            {/* Flowers */}
+            <div
+              onMouseEnter={() => { setActiveL1("Flowers"); setActiveL2(null); }}
+              onClick={() => { setActiveL1("Flowers"); }}
+              style={{
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                background: activeL1 === "Flowers" ? "#eff6ff" : "transparent",
+                color: activeL1 === "Flowers" ? "#2563eb" : "var(--text-primary)",
+                fontSize: "0.83rem",
+                fontWeight: activeL1 === "Flowers" ? 700 : 500
+              }}
+            >
+              <span>Flowers</span>
+              <ChevronRight size={13} style={{ color: "#64748b" }} />
+            </div>
+
+            {/* Borders */}
+            <div
+              onMouseEnter={() => { setActiveL1("Borders"); setActiveL2(null); }}
+              onClick={() => { setActiveL1("Borders"); }}
+              style={{
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                background: activeL1 === "Borders" ? "#eff6ff" : "transparent",
+                color: activeL1 === "Borders" ? "#2563eb" : "var(--text-primary)",
+                fontSize: "0.83rem",
+                fontWeight: activeL1 === "Borders" ? 700 : 500
+              }}
+            >
+              <span>Borders</span>
+              <ChevronRight size={13} style={{ color: "#64748b" }} />
+            </div>
+
+            {/* Panels */}
+            <button
+              type="button"
+              onClick={() => selectFilter({ type: "Panels" })}
+              onMouseEnter={() => { setActiveL1(null); setActiveL2(null); }}
+              style={{
+                width: "100%",
+                padding: "8px 14px",
+                border: "none",
+                background: filter?.type === "Panels" ? "#eff6ff" : "none",
+                color: filter?.type === "Panels" ? "#2563eb" : "var(--text-primary)",
+                fontWeight: 500,
+                fontSize: "0.83rem",
+                textAlign: "left",
+                cursor: "pointer"
+              }}
+            >
+              Panels
+            </button>
+          </div>
+
+          {/* Level 2 Submenu */}
+          {activeL1 === "Marble" && (
+            <div
+              style={{
+                background: "var(--bg-card, #ffffff)",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                borderRadius: "10px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                padding: "4px 0",
+                minWidth: "145px",
+                overflow: "hidden"
+              }}
+            >
+              {/* 4 Sutar with Level 3 sizes */}
+              <div
+                onMouseEnter={() => setActiveL2("4 Sutar")}
                 style={{
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  width: "100%", padding: "8px 14px",
-                  background: isActive ? "rgba(37,99,235,0.07)" : "none",
-                  border: "none", textAlign: "left", cursor: "pointer",
-                  color: isActive ? "var(--accent-blue)" : "var(--text-primary)",
-                  fontSize: "0.83rem", fontWeight: isActive ? 600 : 400,
-                  transition: "background 0.1s",
+                  padding: "8px 14px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  cursor: "pointer",
+                  background: activeL2 === "4 Sutar" ? "#eff6ff" : "transparent",
+                  color: activeL2 === "4 Sutar" ? "#2563eb" : "var(--text-primary)",
+                  fontSize: "0.83rem",
+                  fontWeight: 600
                 }}
-                onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = "var(--bg-hover)"; }}
-                onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = "none"; }}
               >
-                <span>{cat.label}</span>
-                {count > 0 && (
-                  <span style={{
-                    fontSize: "0.72rem", color: "var(--text-muted)",
-                    background: "var(--bg-primary)", padding: "1px 7px",
-                    borderRadius: "10px", fontWeight: 600,
-                  }}>{count}</span>
-                )}
+                <span>4 Sutar</span>
+                <ChevronRight size={13} style={{ color: "#64748b" }} />
+              </div>
+
+              {/* 6 Sutar (Kitchen & Stairs) */}
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Marble", sutar: "6 Sutar" })}
+                onMouseEnter={() => setActiveL2(null)}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  border: "none",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.83rem",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  fontWeight: 500
+                }}
+              >
+                6 Sutar <span style={{ fontSize: "0.72rem", color: "#64748b" }}>(Stairs/Kitchen)</span>
               </button>
-            );
-          })}
+
+              {/* 9 Sutar */}
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Marble", sutar: "9 Sutar" })}
+                onMouseEnter={() => setActiveL2(null)}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  border: "none",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.83rem",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  fontWeight: 500
+                }}
+              >
+                9 Sutar
+              </button>
+
+              {/* 14 Sutar */}
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Marble", sutar: "14 Sutar" })}
+                onMouseEnter={() => setActiveL2(null)}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  border: "none",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.83rem",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  fontWeight: 500
+                }}
+              >
+                14 Sutar
+              </button>
+
+              {/* All Marble */}
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Marble" })}
+                onMouseEnter={() => setActiveL2(null)}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  borderTop: "1px solid #f1f5f9",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.8rem",
+                  color: "#2563eb",
+                  cursor: "pointer",
+                  fontWeight: 700
+                }}
+              >
+                All Marble
+              </button>
+            </div>
+          )}
+
+          {/* Level 3 Submenu for Marble 4 Sutar */}
+          {activeL1 === "Marble" && activeL2 === "4 Sutar" && (
+            <div
+              style={{
+                background: "var(--bg-card, #ffffff)",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                borderRadius: "10px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                padding: "4px 0",
+                minWidth: "125px",
+                overflow: "hidden"
+              }}
+            >
+              {ITEM_TAXONOMY.marble.sutars[0].sizes.map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => selectFilter({ type: "Marble", sutar: "4 Sutar", size: sz })}
+                  style={{
+                    width: "100%",
+                    padding: "8px 14px",
+                    border: "none",
+                    background: "none",
+                    textAlign: "left",
+                    fontSize: "0.83rem",
+                    color: "var(--text-primary)",
+                    cursor: "pointer",
+                    fontWeight: 500
+                  }}
+                >
+                  {sz}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Marble", sutar: "4 Sutar" })}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  borderTop: "1px solid #f1f5f9",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.78rem",
+                  color: "#2563eb",
+                  cursor: "pointer",
+                  fontWeight: 700
+                }}
+              >
+                All 4 Sutar
+              </button>
+            </div>
+          )}
+
+          {/* Level 2 Submenu for Tiles */}
+          {activeL1 === "Tiles" && (
+            <div
+              style={{
+                background: "var(--bg-card, #ffffff)",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                borderRadius: "10px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                padding: "4px 0",
+                minWidth: "160px",
+                overflow: "hidden"
+              }}
+            >
+              <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Tile Sizes</div>
+              {ITEM_TAXONOMY.tiles.sizes.map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => selectFilter({ type: "Tiles", size: sz })}
+                  style={{
+                    width: "100%",
+                    padding: "6px 14px",
+                    border: "none",
+                    background: "none",
+                    textAlign: "left",
+                    fontSize: "0.83rem",
+                    color: "var(--text-primary)",
+                    cursor: "pointer"
+                  }}
+                >
+                  {sz}
+                </button>
+              ))}
+
+              <div style={{ borderTop: "1px solid #f1f5f9", margin: "4px 0" }} />
+              <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Other Tile Items</div>
+              {ITEM_TAXONOMY.tiles.accessories.map((acc) => (
+                <button
+                  key={acc.name}
+                  type="button"
+                  onClick={() => selectFilter({ type: "Tiles", sub: acc.name })}
+                  style={{
+                    width: "100%",
+                    padding: "6px 14px",
+                    border: "none",
+                    background: "none",
+                    textAlign: "left",
+                    fontSize: "0.83rem",
+                    color: "var(--text-primary)",
+                    cursor: "pointer"
+                  }}
+                >
+                  {acc.name}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Tiles", sub: "Mashallah / Islamic Panels" })}
+                style={{
+                  width: "100%",
+                  padding: "6px 14px",
+                  border: "none",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.83rem",
+                  color: "#d97706",
+                  fontWeight: 600,
+                  cursor: "pointer"
+                }}
+              >
+                Mashallah Panels
+              </button>
+
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Tiles" })}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  borderTop: "1px solid #f1f5f9",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.78rem",
+                  color: "#2563eb",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                All Tiles
+              </button>
+            </div>
+          )}
+
+          {/* Level 2 Submenu for Flowers */}
+          {activeL1 === "Flowers" && (
+            <div
+              style={{
+                background: "var(--bg-card, #ffffff)",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                borderRadius: "10px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                padding: "4px 0",
+                minWidth: "125px",
+                overflow: "hidden"
+              }}
+            >
+              {ITEM_TAXONOMY.flowers.sizes.map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => selectFilter({ type: "Flowers", size: sz })}
+                  style={{
+                    width: "100%",
+                    padding: "8px 14px",
+                    border: "none",
+                    background: "none",
+                    textAlign: "left",
+                    fontSize: "0.83rem",
+                    color: "var(--text-primary)",
+                    cursor: "pointer",
+                    fontWeight: 500
+                  }}
+                >
+                  {sz}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Flowers" })}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  borderTop: "1px solid #f1f5f9",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.78rem",
+                  color: "#2563eb",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                All Flowers
+              </button>
+            </div>
+          )}
+
+          {/* Level 2 Submenu for Borders */}
+          {activeL1 === "Borders" && (
+            <div
+              style={{
+                background: "var(--bg-card, #ffffff)",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                borderRadius: "10px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                padding: "4px 0",
+                minWidth: "160px",
+                overflow: "hidden"
+              }}
+            >
+              <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Standard Border</div>
+              {ITEM_TAXONOMY.borders.standard.map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => selectFilter({ type: "Borders", sub: `Standard ${sz}` })}
+                  style={{
+                    width: "100%",
+                    padding: "6px 14px",
+                    border: "none",
+                    background: "none",
+                    textAlign: "left",
+                    fontSize: "0.83rem",
+                    color: "var(--text-primary)",
+                    cursor: "pointer"
+                  }}
+                >
+                  {sz}
+                </button>
+              ))}
+
+              <div style={{ borderTop: "1px solid #f1f5f9", margin: "4px 0" }} />
+              <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Black Border (Kali Patti)</div>
+              {ITEM_TAXONOMY.borders.blackBorder.map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => selectFilter({ type: "Borders", sub: `Kali Patti ${sz}` })}
+                  style={{
+                    width: "100%",
+                    padding: "6px 14px",
+                    border: "none",
+                    background: "none",
+                    textAlign: "left",
+                    fontSize: "0.83rem",
+                    color: "var(--text-primary)",
+                    cursor: "pointer"
+                  }}
+                >
+                  {sz}
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Borders" })}
+                style={{
+                  width: "100%",
+                  padding: "8px 14px",
+                  borderTop: "1px solid #f1f5f9",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.78rem",
+                  color: "#2563eb",
+                  fontWeight: 700,
+                  cursor: "pointer"
+                }}
+              >
+                All Borders
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
 
-// ── Row overflow menu component ────────────────────────────────────────────
-function RowMenu({ item, onView, onAdjust, onEdit, onDelete }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [open]);
-
-  const menuItem = (label, onClick, danger) => (
-    <button
-      key={label}
-      onClick={(e) => { e.stopPropagation(); setOpen(false); onClick(); }}
-      style={{
-        display: "block", width: "100%", padding: "8px 14px",
-        background: "none", border: "none", textAlign: "left",
-        fontSize: "0.8rem", cursor: "pointer",
-        color: danger ? "#ef4444" : "var(--text-primary)",
-        fontWeight: 500,
-      }}
-      onMouseEnter={e => e.currentTarget.style.background = "var(--bg-hover)"}
-      onMouseLeave={e => e.currentTarget.style.background = "none"}
-    >
-      {label}
-    </button>
-  );
-
-  return (
-    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen(v => !v); }}
-        style={{
-          background: "none", border: "none", cursor: "pointer",
-          padding: "4px 8px", borderRadius: "6px",
-          color: "var(--text-muted)", display: "flex", alignItems: "center",
-          transition: "background 0.12s",
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = "var(--bg-hover)"}
-        onMouseLeave={e => e.currentTarget.style.background = "none"}
-        title="Actions"
-      >
-        <MoreVertical size={15} />
-      </button>
-      {open && (
-        <div style={{
-          position: "absolute", right: 0, top: "calc(100% + 4px)", zIndex: 200,
-          background: "var(--bg-card)", border: "1px solid var(--border-color)",
-          borderRadius: "8px", boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-          minWidth: "160px", overflow: "hidden", padding: "4px 0",
-        }}>
-          {menuItem("View Details", () => onView(item))}
-          {menuItem("Edit", () => onEdit(item))}
-          {menuItem("Adjust Stock", () => onAdjust(item))}
-          {menuItem("Delete", () => onDelete(item), true)}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Item Details Drawer ────────────────────────────────────────────────────
-// CONCEPT: Progressive Disclosure
-// The drawer pattern lets the main table stay focused on scanning essentials
-// while the drawer surfaces complete item details on demand. This avoids the
-// "database dump" feel of trying to show everything in every row.
+// ─────────────────────────────────────────────────────────────────────────────
+// Item Details Drawer (View Item on Eye click)
+// ─────────────────────────────────────────────────────────────────────────────
 function ItemDetailsDrawer({ item, onClose, onEdit, onAdjust }) {
+  if (!item) return null;
   const sd = getStockDisplay(item);
   const low = isLowStock(item);
   const out = isOutOfStock(item);
-  const stockStatus = out ? "Out of stock" : low ? "Low stock" : "In stock";
+  const stockStatus = out ? "Out of Stock" : low ? "Low Stock" : "In Stock";
   const stockColor = out ? "#ef4444" : low ? "#f59e0b" : "#10b981";
-
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onClose]);
-
-  const Row = ({ label, value, mono }) => (
-    <div style={{
-      display: "flex", justifyContent: "space-between", alignItems: "baseline",
-      padding: "10px 0", borderBottom: "1px solid var(--border-divider, rgba(0,0,0,0.05))",
-    }}>
-      <span style={{ fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 500 }}>{label}</span>
-      <span style={{
-        fontSize: "0.83rem", color: "var(--text-primary)", fontWeight: 500,
-        fontFamily: mono ? "monospace" : "inherit", textAlign: "right", maxWidth: "60%",
-      }}>{value || "—"}</span>
-    </div>
-  );
 
   return (
     <>
-      {/* Overlay */}
       <div
         onClick={onClose}
         style={{
-          position: "fixed", inset: 0, zIndex: 400,
-          background: "rgba(0,0,0,0.25)",
-          animation: "fadeIn 0.18s ease",
+          position: "fixed", inset: 0, zIndex: 998,
+          background: "rgba(15, 23, 42, 0.5)",
+          backdropFilter: "blur(4px)"
         }}
       />
-      {/* Drawer Panel */}
-      <div style={{
-        position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 401,
-        width: "min(420px, 95vw)",
-        background: "var(--bg-card)",
-        borderLeft: "1px solid var(--border-color)",
-        boxShadow: "-16px 0 48px rgba(0,0,0,0.12)",
-        display: "flex", flexDirection: "column",
-        animation: "slideInRight 0.22s cubic-bezier(0.16,1,0.3,1)",
-      }}>
-        {/* Drawer Header */}
-        <div style={{
-          padding: "20px 24px 16px",
-          borderBottom: "1px solid var(--border-color)",
-          display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px",
-        }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.3 }}>
-              {item.name}
-            </div>
-            {item.subCategory && (
-              <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "3px" }}>{item.subCategory}</div>
-            )}
-            <div style={{ fontSize: "0.72rem", color: "var(--accent-blue)", fontFamily: "monospace", marginTop: "6px", letterSpacing: "0.04em" }}>
+      <div
+        style={{
+          position: "fixed", top: 0, right: 0, bottom: 0, zIndex: 999,
+          width: "min(420px, 95vw)",
+          background: "var(--bg-card, #ffffff)",
+          borderLeft: "1px solid var(--border-color, #cbd5e1)",
+          boxShadow: "-16px 0 48px rgba(0,0,0,0.15)",
+          display: "flex", flexDirection: "column"
+        }}
+      >
+        {/* Header */}
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border-color, #e2e8f0)", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <span style={{ fontSize: "0.72rem", color: "#2563eb", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
               {item.code}
+            </span>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary, #0f172a)", margin: "4px 0 0 0" }}>
+              {item.name}
+            </h2>
+            <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "2px" }}>
+              {item.category} • {item.subCategory || item.standardSize || "Standard"}
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            style={{
-              background: "none", border: "none", cursor: "pointer",
-              padding: "4px", color: "var(--text-muted)", borderRadius: "6px",
-              display: "flex", alignItems: "center", flexShrink: 0,
-            }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8" }}
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Scrollable Content */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 24px" }}>
-
-          {/* Stock Summary — most important info first */}
-          <div style={{
-            margin: "20px 0 4px",
-            padding: "16px 18px",
-            background: "var(--bg-primary)",
-            borderRadius: "10px",
-            border: "1px solid var(--border-color)",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+        {/* Content */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          {/* Stock Card */}
+          <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "16px", borderRadius: "12px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
-                  Current Stock
+                <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Current Stock</div>
+                <div style={{ fontSize: "1.7rem", fontWeight: 900, color: "var(--text-primary, #0f172a)", fontFamily: "var(--font-mono)" }}>
+                  {sd.qty.toLocaleString()} <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "#64748b" }}>{sd.unit}</span>
                 </div>
-                <div style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--text-primary)", fontFamily: "monospace", lineHeight: 1 }}>
-                  {sd.qty.toLocaleString()}
-                </div>
-                <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px" }}>{sd.unit}</div>
-                {sd.sub && (
-                  <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "2px" }}>{sd.sub}</div>
-                )}
+                {sd.sub && <div style={{ fontSize: "0.76rem", color: "#64748b" }}>{sd.sub}</div>}
               </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "5px", justifyContent: "flex-end" }}>
-                  <span style={{ width: "7px", height: "7px", borderRadius: "50%", background: stockColor, flexShrink: 0 }} />
-                  <span style={{ fontSize: "0.78rem", color: stockColor, fontWeight: 600 }}>{stockStatus}</span>
-                </div>
-                {item.minStockAlert > 0 && (
-                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                    Alert at {Number(item.minStockAlert).toLocaleString()} {sd.unit}
-                  </div>
-                )}
+              <span className={`status-pill-badge ${out ? "due" : low ? "partial" : "cleared"}`}>
+                {stockStatus}
+              </span>
+            </div>
+          </div>
+
+          {/* Pricing & Value */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "12px", borderRadius: "10px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+              <div style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 700 }}>Selling Rate</div>
+              <div style={{ fontSize: "1rem", fontWeight: 800, color: "#2563eb", fontFamily: "var(--font-mono)" }}>
+                Rs. {Number(item.ratePerSqFt || 0).toLocaleString()}
               </div>
             </div>
-          </div>
-
-          {/* Pricing */}
-          <div style={{ margin: "16px 0 4px" }}>
-            <div style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)", marginBottom: "2px" }}>
-              Pricing
+            <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "12px", borderRadius: "10px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+              <div style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 700 }}>Total Value</div>
+              <div style={{ fontSize: "1rem", fontWeight: 800, color: "#059669", fontFamily: "var(--font-mono)" }}>
+                Rs. {(sd.qty * Number(item.ratePerSqFt || 0)).toLocaleString()}
+              </div>
             </div>
-            <Row label="Selling Rate" value={`Rs. ${Number(item.ratePerSqFt || 0).toLocaleString()} / ${item.unit || "Sq. Ft."}`} />
-            {item.costPerSqFt > 0 && <Row label="Cost Price" value={`Rs. ${Number(item.costPerSqFt).toLocaleString()} / ${item.unit || "Sq. Ft."}`} />}
           </div>
 
-          {/* Product Details */}
-          <div style={{ margin: "16px 0 4px" }}>
-            <div style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)", marginBottom: "2px" }}>
-              Product Details
+          {/* Specifications */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.84rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
+              <span style={{ color: "#64748b" }}>Sutar Thickness:</span>
+              <span style={{ fontWeight: 700 }}>{item.sutarThickness ? `${item.sutarThickness} Sutar` : "—"}</span>
             </div>
-            <Row label="Category" value={item.category} />
-            <Row label="Stock Unit" value={item.unit || "Sq. Ft."} />
-            {item.sutarThickness && <Row label="Sutar Thickness" value={`${item.sutarThickness} Sutar`} />}
-            {item.thicknessMm > 0 && <Row label="Thickness" value={`${item.thicknessMm} mm`} />}
-            {item.grade && <Row label="Grade / Quality" value={item.grade} />}
-            {item.standardSize && <Row label="Standard Size" value={item.standardSize} />}
-            {item.finish && <Row label="Finish" value={item.finish} />}
-          </div>
-
-          {/* Storage */}
-          <div style={{ margin: "16px 0 4px" }}>
-            <div style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)", marginBottom: "2px" }}>
-              Storage
+            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
+              <span style={{ color: "#64748b" }}>Standard Size:</span>
+              <span style={{ fontWeight: 700 }}>{item.standardSize || "—"}</span>
             </div>
-            <Row label="Location" value={item.location || "Yard"} />
-            {item.lotNo && <Row label="Lot / Batch" value={item.lotNo} mono />}
+            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
+              <span style={{ color: "#64748b" }}>Finish / Grade:</span>
+              <span style={{ fontWeight: 700 }}>{item.finish || "Polished"} • {item.grade || "Grade A"}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
+              <span style={{ color: "#64748b" }}>Storage Location:</span>
+              <span style={{ fontWeight: 700 }}>{item.location || "Yard"}</span>
+            </div>
           </div>
 
-          {/* Notes */}
           {item.notes && (
-            <div style={{ margin: "16px 0 20px" }}>
-              <div style={{ fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: "var(--text-muted)", marginBottom: "8px" }}>
-                Notes
-              </div>
-              <div style={{ fontSize: "0.83rem", color: "var(--text-secondary)", lineHeight: 1.5, padding: "10px 14px", background: "var(--bg-primary)", borderRadius: "8px" }}>
-                {item.notes}
-              </div>
+            <div style={{ background: "#eff6ff", padding: "10px 14px", borderRadius: "8px", fontSize: "0.8rem", color: "#1e40af" }}>
+              {item.notes}
             </div>
           )}
-          <div style={{ height: "24px" }} />
         </div>
 
-        {/* Drawer Footer — primary actions */}
-        <div style={{
-          padding: "16px 24px",
-          borderTop: "1px solid var(--border-color)",
-          display: "flex", gap: "10px",
-        }}>
+        {/* Footer Actions */}
+        <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-color, #e2e8f0)", display: "flex", gap: "8px" }}>
           <button
+            type="button"
             className="btn btn-secondary"
-            style={{ flex: 1, fontSize: "0.83rem" }}
+            style={{ flex: 1, fontSize: "0.84rem" }}
             onClick={() => { onClose(); onAdjust(item); }}
           >
             Adjust Stock
           </button>
           <button
+            type="button"
             className="btn btn-primary"
-            style={{ flex: 1, fontSize: "0.83rem" }}
+            style={{ flex: 1, fontSize: "0.84rem", background: "#2563eb" }}
             onClick={() => { onClose(); onEdit(item); }}
           >
-            <Edit2 size={13} /> Edit Item
+            Edit Item
           </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
-        @keyframes slideInRight { from { transform:translateX(100%) } to { transform:translateX(0) } }
-      `}</style>
     </>
   );
 }
 
-// ── Main view ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Main StockManagementView Component
+// ─────────────────────────────────────────────────────────────────────────────
 export default function StockManagementView() {
-  const items = useLiveQuery(() => db.items.orderBy("name").toArray(), []) || [];
+  const { language } = useLanguage();
+  const rawItems = useLiveQuery(() => db.items.toArray(), []) || [];
+
+  // Sort items by code/name
+  const items = useMemo(() => {
+    return [...rawItems].sort((a, b) => (a.code || "").localeCompare(b.code || ""));
+  }, [rawItems]);
+
+  // Filters State
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [dateRange, setDateRange] = useState("ALL");
+  const [itemTypeFilter, setItemTypeFilter] = useState({ type: "ALL" });
+  const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | IN_STOCK | LOW_STOCK | OUT_STOCK
+
+  // Selection & Pagination
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Modals & Drawer
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM);
@@ -424,27 +914,132 @@ export default function StockManagementView() {
   const [adjustQty, setAdjustQty] = useState("");
   const [adjustType, setAdjustType] = useState("Adjustment");
   const [adjustNote, setAdjustNote] = useState("");
-  // CONCEPT: Progressive Disclosure — drawer state
   const [drawerItem, setDrawerItem] = useState(null);
 
-  const activeCatConfig = CATEGORIES.find(c => c.key === formData.category) || CATEGORIES[0];
+  // ───────────────────────────────────────────────────────────────────────────
+  // Filter Logic
+  // ───────────────────────────────────────────────────────────────────────────
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      // 1. Search filter
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const m = (item.name || "").toLowerCase().includes(q) ||
+          (item.code || "").toLowerCase().includes(q) ||
+          (item.category || "").toLowerCase().includes(q) ||
+          (item.subCategory || "").toLowerCase().includes(q) ||
+          (item.standardSize || "").toLowerCase().includes(q);
+        if (!m) return false;
+      }
 
-  const handleCategoryChange = (newCategory) => {
-    const catConfig = CATEGORIES.find(c => c.key === newCategory) || CATEGORIES[1];
-    setFormData(prev => ({
-      ...prev, category: newCategory, unit: catConfig.defaultUnit,
-      standardSize: catConfig.defaultSizes?.[0] || "",
-      sutarThickness: catConfig.hasSutar ? prev.sutarThickness : "",
-    }));
+      // 2. Status filter
+      if (statusFilter === "IN_STOCK" && (isOutOfStock(item) || isLowStock(item))) return false;
+      if (statusFilter === "LOW_STOCK" && !isLowStock(item)) return false;
+      if (statusFilter === "OUT_STOCK" && !isOutOfStock(item)) return false;
+
+      // 3. Cascading Item Type Filter
+      if (itemTypeFilter && itemTypeFilter.type !== "ALL") {
+        const cat = (item.category || "").toLowerCase();
+        const sub = (item.subCategory || "").toLowerCase();
+        const sz = (item.standardSize || "").toLowerCase();
+        const sutar = String(item.sutarThickness || "");
+
+        if (itemTypeFilter.type === "Marble") {
+          const isMarble = cat.includes("marble") || sub.includes("marble") || cat.includes("slab");
+          if (!isMarble) return false;
+          if (itemTypeFilter.sutar) {
+            const targetSutar = itemTypeFilter.sutar.split(" ")[0]; // "4", "6", "9", "14"
+            if (sutar !== targetSutar) return false;
+          }
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
+            const cleanItemSz = (sz + " " + sub).replace(/\s+/g, "").toLowerCase();
+            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+          }
+        } else if (itemTypeFilter.type === "Tiles") {
+          const isTile = cat.includes("tile") || cat.includes("porcelain") || sub.includes("tile");
+          if (!isTile) return false;
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
+            const cleanItemSz = (sz + " " + sub).replace(/\s+/g, "").toLowerCase();
+            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+          }
+          if (itemTypeFilter.sub) {
+            if (!sub.toLowerCase().includes(itemTypeFilter.sub.toLowerCase()) && !cat.toLowerCase().includes(itemTypeFilter.sub.toLowerCase())) return false;
+          }
+        } else if (itemTypeFilter.type === "Flowers") {
+          const isFlower = cat.includes("flower") || sub.includes("flower") || (item.name || "").toLowerCase().includes("flower");
+          if (!isFlower) return false;
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
+            const cleanItemSz = (sz + " " + sub + " " + item.name).replace(/\s+/g, "").toLowerCase();
+            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+          }
+        } else if (itemTypeFilter.type === "Borders") {
+          const isBorder = cat.includes("border") || sub.includes("border") || sub.includes("patti") || (item.name || "").toLowerCase().includes("border") || (item.name || "").toLowerCase().includes("patti");
+          if (!isBorder) return false;
+          if (itemTypeFilter.sub) {
+            if (itemTypeFilter.sub.includes("Kali Patti") && !sub.includes("kali patti") && !(item.name || "").toLowerCase().includes("kali patti")) return false;
+          }
+        } else if (itemTypeFilter.type === "Panels") {
+          const isPanel = cat.includes("panel") || sub.includes("panel") || (item.name || "").toLowerCase().includes("panel") || (item.name || "").toLowerCase().includes("mashallah");
+          if (!isPanel) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [items, searchTerm, statusFilter, itemTypeFilter]);
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // KPI Calculations
+  // ───────────────────────────────────────────────────────────────────────────
+  const totalVarieties = items.length;
+  const totalStockSqFt = items.reduce((acc, i) => acc + Number(i.stockSqFt || 0), 0);
+  const totalStockValuation = items.reduce((acc, i) => {
+    const qty = Number(i.stockSqFt || i.stockPieces || i.stockBoxes || 0);
+    return acc + qty * Number(i.ratePerSqFt || 0);
+  }, 0);
+  const lowStockItemsCount = items.filter(i => isLowStock(i) || isOutOfStock(i)).length;
+
+  // Pagination
+  const totalRecords = filteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
+  const activePage = Math.min(Math.max(1, currentPage), totalPages);
+  const paginatedItems = useMemo(() => {
+    const start = (activePage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, activePage, pageSize]);
+
+  // Selection
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(paginatedItems.map(i => i.id));
+    } else {
+      setSelectedIds([]);
+    }
   };
 
+  const handleSelectOne = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  // Action Handlers
   const handleOpenAddModal = () => {
     setEditingItem(null);
-    setFormData({ ...INITIAL_FORM, code: `MB-${Date.now().toString().slice(-5)}`, lotNo: `LOT-${new Date().getFullYear()}` });
+    setFormData({
+      ...INITIAL_FORM,
+      code: `MB-${Date.now().toString().slice(-4)}`,
+      lotNo: `LOT-${new Date().getFullYear()}`
+    });
     setIsModalOpen(true);
   };
 
-  const handleOpenEditModal = (item) => { setEditingItem(item); setFormData({ ...INITIAL_FORM, ...item }); setIsModalOpen(true); };
+  const handleOpenEditModal = (item) => {
+    setEditingItem(item);
+    setFormData({ ...INITIAL_FORM, ...item });
+    setIsModalOpen(true);
+  };
 
   const handleSaveItem = async (e) => {
     e.preventDefault();
@@ -460,358 +1055,612 @@ export default function StockManagementView() {
         thicknessMm: parseFloat(formData.thicknessMm) || 0,
         updatedAt: new Date().toISOString(),
       };
+
       if (editingItem) {
         await db.items.update(editingItem.id, payload);
       } else {
         const addedId = await db.items.add({ ...payload, createdAt: new Date().toISOString() });
-        await logStockMovement({ itemId: addedId, itemName: formData.name, category: formData.category, movementType: "Initial", changeSqFt: payload.stockSqFt, changeBoxes: payload.stockBoxes, changePieces: payload.stockPieces, previousSqFt: 0, newSqFt: payload.stockSqFt, refDocNo: "MANUAL-ENTRY", note: "New item added to catalog" });
+        await logStockMovement({
+          itemId: addedId,
+          itemName: formData.name,
+          category: formData.category,
+          movementType: "Initial",
+          changeSqFt: payload.stockSqFt,
+          changeBoxes: payload.stockBoxes,
+          changePieces: payload.stockPieces,
+          previousSqFt: 0,
+          newSqFt: payload.stockSqFt,
+          refDocNo: "INITIAL-ENTRY",
+          note: "New catalog item added"
+        });
       }
       setIsModalOpen(false);
-    } catch (err) { alert("Error saving item: " + err.message); }
+    } catch (err) {
+      alert("Error saving stock item: " + err.message);
+    }
   };
 
   const handleDeleteItem = async (item) => {
-    if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
-    await db.items.delete(item.id);
-    if (drawerItem?.id === item.id) setDrawerItem(null);
+    if (!window.confirm(`Delete "${item.name}" from inventory?`)) return;
+    try {
+      await db.items.delete(item.id);
+      if (drawerItem?.id === item.id) setDrawerItem(null);
+    } catch (err) {
+      alert("Failed to delete item: " + err.message);
+    }
   };
 
-  const handleOpenAdjust = (item) => { setAdjustingItem(item); setAdjustQty(""); setAdjustNote(""); setAdjustType("Adjustment"); setIsAdjustModalOpen(true); };
+  const handleOpenAdjust = (item) => {
+    setAdjustingItem(item);
+    setAdjustQty("");
+    setAdjustNote("");
+    setAdjustType("Adjustment");
+    setIsAdjustModalOpen(true);
+  };
 
   const handleSaveAdjustment = async (e) => {
     e.preventDefault();
     if (!adjustingItem || !adjustQty) return;
     const delta = parseFloat(adjustQty);
     const unit = adjustingItem.unit || "Sq. Ft.";
-    const deltaSqFt   = (unit === "Sq. Ft." || unit === "Running Feet") ? delta : 0;
-    const deltaBoxes  = unit === "Boxes" ? delta : 0;
+    const deltaSqFt = (unit === "Sq. Ft." || unit === "Running Feet") ? delta : 0;
+    const deltaBoxes = unit === "Boxes" ? delta : 0;
     const deltaPieces = unit === "Pieces" ? delta : 0;
     try {
-      await adjustItemStock(adjustingItem.id, deltaSqFt, deltaBoxes, deltaPieces, adjustType, "MANUAL-ADJUST", adjustNote || "Manual stock correction");
+      await adjustItemStock(
+        adjustingItem.id,
+        deltaSqFt,
+        deltaBoxes,
+        deltaPieces,
+        adjustType,
+        "MANUAL-ADJUST",
+        adjustNote || "Manual stock update"
+      );
       setIsAdjustModalOpen(false);
-    } catch (err) { alert("Error adjusting stock: " + err.message); }
-  };
-
-  const filteredItems = items.filter(item => {
-    const q = searchTerm.toLowerCase();
-    const m = item.name?.toLowerCase().includes(q) || item.code?.toLowerCase().includes(q) || item.lotNo?.toLowerCase().includes(q) || item.location?.toLowerCase().includes(q) || item.subCategory?.toLowerCase().includes(q);
-    if (!m) return false;
-    if (selectedCategory === "ALL") return true;
-    return item.category === selectedCategory;
-  });
-
-  const lowStockCount = items.filter(isLowStock).length;
-
-  // ── CSS-in-JS tokens ──────────────────────────────────────────────────────
-  const TH = {
-    padding: "11px 20px", fontSize: "0.7rem", fontWeight: 700,
-    textTransform: "uppercase", letterSpacing: "0.06em",
-    color: "var(--text-muted)", background: "var(--bg-primary)",
-    borderBottom: "1px solid var(--border-color)", whiteSpace: "nowrap",
-    textAlign: "left",
-  };
-  const TD = {
-    padding: "18px 20px", verticalAlign: "top",
-    borderBottom: "1px solid var(--border-divider, rgba(0,0,0,0.05))",
+    } catch (err) {
+      alert("Error updating stock: " + err.message);
+    }
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "18px", maxWidth: "1440px", margin: "0 auto", paddingBottom: "30px" }}>
 
-      {/* ── PAGE HEADER ─────────────────────────────────────────────────── */}
-      {/* CONCEPT: Page Identity — a clear header gives the screen a name,
-          purpose, and context. Without it the interface feels like a raw tool
-          rather than an intentional product screen.                          */}
-      <div style={{ paddingBottom: "22px" }}>
-        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
-          <div>
-            <h1 style={{
-              fontSize: "1.45rem", fontWeight: 800, color: "var(--text-primary)",
-              letterSpacing: "-0.02em", lineHeight: 1, margin: 0,
+      {/* ------------------------------------------------------------------------- */}
+      {/* 1. SEAMLESS HERO HEADER (Consistent with Dashboard & Invoices)            */}
+      {/* ------------------------------------------------------------------------- */}
+      <div style={{
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '6px 4px 10px 4px',
+        minHeight: '84px',
+        overflow: 'hidden'
+      }}>
+        {/* Left: Category Breadcrumb + Title + Subtitle */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            color: '#2563eb',
+            marginBottom: '4px',
+            display: 'inline-block'
+          }}>
+            {language === 'ur' ? 'اسٹاک اور انوینٹری' : 'Inventory & Yard Stock'}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '13px',
+              background: '#2563eb',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+              flexShrink: 0
             }}>
-              Inventory
-            </h1>
-            <p style={{
-              fontSize: "0.83rem", color: "var(--text-muted)", marginTop: "5px",
-              fontWeight: 400, lineHeight: 1,
-            }}>
-              Manage marble, tiles, slabs and other materials
-              {items.length > 0 && (
-                <span style={{ marginLeft: "10px", color: "var(--text-muted)", opacity: 0.6 }}>
-                  · {items.length} items
-                </span>
-              )}
-            </p>
+              <Boxes size={24} />
+            </div>
+
+            <div>
+              <h1 style={{
+                fontSize: '1.7rem',
+                fontWeight: 800,
+                color: 'var(--text-primary, #0f172a)',
+                margin: 0,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}>
+                Marble & Tiles Stock <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-secondary, #64748b)', fontFamily: 'var(--font-urdu)' }}>(ماربل اور ٹائلز اسٹاک)</span>
+              </h1>
+              <p style={{
+                fontSize: '0.86rem',
+                color: 'var(--text-secondary, #64748b)',
+                margin: '2px 0 0 0',
+                fontWeight: 500
+              }}>
+                {language === 'ur' ? 'ماربل سوتار سائز، ٹائلز، فلاور میڈیلینز اور پٹی کا مکمل انوینٹری ریکارڈ' : 'Manage real-time yard inventory, Sutar sizes, flower medallions, borders & tiles'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: New Stock Entry Action Button */}
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleOpenAddModal}
+            style={{
+              background: '#2563eb',
+              borderColor: '#2563eb',
+              fontWeight: 700,
+              fontSize: '0.86rem',
+              padding: '10px 18px',
+              borderRadius: '9px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+              color: '#ffffff'
+            }}
+          >
+            <Plus size={16} />
+            <span>New Stock Entry</span>
+          </button>
+        </div>
+
+        {/* Right: Background Marble Image extending seamlessly across the header */}
+        <div style={{
+          position: 'absolute',
+          right: '0',
+          top: '-15px',
+          bottom: '-15px',
+          width: '50%',
+          maxWidth: '520px',
+          backgroundImage: `url('./stock_background.jpg'), url('/stock_background.jpg'), url('./invoice_background.jpg'), url('/invoice_background.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'right center',
+          maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+          pointerEvents: 'none',
+          opacity: 0.95,
+          borderRadius: '14px'
+        }} />
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 2. TOP 4 KPI CARDS (Global Unified Metric Cards)                           */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="kpi-card-grid">
+        {/* Card 1: Total Varieties */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon blue">
+            <Layers size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Total Varieties</span>
+              <span className="kpi-metric-label-ur">(کل ورائٹیز)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              {totalVarieties} <span style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>Items</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Total Stock Sq.Ft */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon green">
+            <Boxes size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Total Stock Sq.Ft</span>
+              <span className="kpi-metric-label-ur">(کل اسکوائر فٹ)</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: '#059669' }}>
+              {Math.round(totalStockSqFt).toLocaleString()} <span style={{ fontSize: "0.85rem", color: "#64748b" }}>Sq.Ft</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Total Stock Valuation */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon indigo">
+            <DollarSign size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Stock Valuation</span>
+              <span className="kpi-metric-label-ur">(کل مالیت)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              Rs. {Math.round(totalStockValuation).toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Low Stock Alert */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon amber">
+            <AlertTriangle size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Low Stock Alert</span>
+              <span className="kpi-metric-label-ur">(کم اسٹاک)</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: lowStockItemsCount > 0 ? '#d97706' : '#16a34a' }}>
+              {lowStockItemsCount} <span style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>/ {totalVarieties}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── TOP CONTROLS ────────────────────────────────────────────────── */}
-      {/* CONCEPT: Control Bar Design — one horizontal bar with:
-          [Search dominant] [Category filter secondary] [CTA right-anchored]
-          This is the ERP/SaaS pattern: search first, filter second, create last.
-          No card container — whitespace and alignment do the separation work.  */}
-      <div style={{
-        display: "flex", gap: "10px", alignItems: "center",
-        marginBottom: "18px", flexWrap: "wrap",
-      }}>
-        {/* Search — visually dominant, takes remaining space */}
-        <div style={{ position: "relative", flex: "1 1 280px", minWidth: "200px" }}>
-          <Search size={14} style={{
-            position: "absolute", left: "13px", top: "50%",
-            transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none",
-          }} />
-          <input
-            type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Search inventory, item code, lot, location..."
-            style={{
-              width: "100%", padding: "9px 14px 9px 38px", fontSize: "0.88rem",
-              background: "var(--bg-card)", border: "1px solid var(--border-color)",
-              borderRadius: "var(--radius-md)", color: "var(--text-primary)", outline: "none",
-              boxSizing: "border-box", height: "38px",
-              transition: "border-color 0.15s",
-            }}
-            onFocus={e => e.target.style.borderColor = "var(--accent-blue)"}
-            onBlur={e => e.target.style.borderColor = "var(--border-color)"}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 3. FILTER & CONTROL BAR (Matches User Screenshot)                          */}
+      {/* ------------------------------------------------------------------------- */}
+      <div
+        style={{
+          background: "var(--bg-card, #ffffff)",
+          borderRadius: "14px",
+          padding: "12px 16px",
+          border: "1px solid var(--border-color, #e2e8f0)",
+          boxShadow: "0 1px 3px rgba(0, 0, 0, 0.02)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "12px"
+        }}
+      >
+        {/* Left Side: Search + Date Range + Cascading Category Filter + Status */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", flex: 1 }}>
+          {/* Search Input */}
+          <div style={{ position: "relative", minWidth: "260px", flex: "1 1 260px" }}>
+            <Search size={16} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              placeholder="Search stock items, codes..."
+              style={{
+                width: "100%",
+                padding: "10px 14px 10px 38px",
+                borderRadius: "10px",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                fontSize: "0.84rem",
+                outline: "none",
+                background: "var(--bg-primary, #f8fafc)",
+                color: "var(--text-primary, #0f172a)",
+                height: "44px",
+                boxSizing: "border-box"
+              }}
+            />
+          </div>
+
+          {/* Date Range Dropdown */}
+          <div style={{ position: "relative" }}>
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              style={{
+                padding: "0 14px 0 34px",
+                height: "44px",
+                borderRadius: "10px",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                background: "var(--bg-primary, #f8fafc)",
+                color: "var(--text-primary, #0f172a)",
+                fontSize: "0.84rem",
+                fontWeight: 600,
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              <option value="ALL">Date Range</option>
+              <option value="TODAY">Today</option>
+              <option value="WEEK">This Week</option>
+              <option value="MONTH">This Month</option>
+            </select>
+            <Calendar size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
+          </div>
+
+          {/* Cascading "Filter by Item Type" Multi-Level Dropdown */}
+          <CascadingTypeFilter
+            filter={itemTypeFilter}
+            onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
           />
+
+          {/* Status Dropdown */}
+          <div style={{ position: "relative" }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+              style={{
+                padding: "0 14px 0 34px",
+                height: "44px",
+                borderRadius: "10px",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                background: "var(--bg-primary, #f8fafc)",
+                color: "var(--text-primary, #0f172a)",
+                fontSize: "0.84rem",
+                fontWeight: 600,
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              <option value="ALL">Status: All</option>
+              <option value="IN_STOCK">In Stock</option>
+              <option value="LOW_STOCK">Low Stock</option>
+              <option value="OUT_STOCK">Out of Stock</option>
+            </select>
+            <Tag size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
+          </div>
+
+          {/* Reset Filters */}
+          {(searchTerm || itemTypeFilter.type !== "ALL" || statusFilter !== "ALL" || dateRange !== "ALL") && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm("");
+                setItemTypeFilter({ type: "ALL" });
+                setStatusFilter("ALL");
+                setDateRange("ALL");
+                setCurrentPage(1);
+              }}
+              className="btn btn-ghost btn-sm"
+              style={{ height: "44px", padding: "0 10px", color: "#ef4444", fontSize: "0.78rem" }}
+            >
+              <X size={14} /> Clear
+            </button>
+          )}
         </div>
-
-        {/* Category filter dropdown — compact secondary control */}
-        <CategoryDropdown
-          value={selectedCategory}
-          onChange={setSelectedCategory}
-          items={items}
-        />
-
-        {/* Low-stock warning — situational, shown only when relevant */}
-        {lowStockCount > 0 && (
-          <span style={{
-            display: "inline-flex", alignItems: "center", gap: "5px",
-            padding: "0 11px", height: "38px", borderRadius: "var(--radius-md)",
-            background: "rgba(239,68,68,0.07)", color: "#ef4444",
-            fontSize: "0.78rem", fontWeight: 600, whiteSpace: "nowrap",
-            border: "1px solid rgba(239,68,68,0.18)",
-          }}>
-            <AlertTriangle size={12} /> {lowStockCount} low stock
-          </span>
-        )}
-
-        {/* Primary CTA — right-anchored, always visible */}
-        <button
-          className="btn btn-primary"
-          onClick={handleOpenAddModal}
-          id="add-catalog-item-btn"
-          style={{ whiteSpace: "nowrap", flexShrink: 0, height: "38px" }}
-        >
-          <Plus size={14} /> Add New Variety
-        </button>
       </div>
 
-      {/* ── TABLE ───────────────────────────────────────────────────────── */}
-      {/* CONCEPT: "The table IS the content" — no wrapping card with its own
-          header. The table surface is the interface. Subtle separators, no
-          vertical borders, comfortable row height, strong alignment.          */}
-      <div style={{
-        background: "var(--bg-card)", borderRadius: "var(--radius-md)",
-        border: "1px solid var(--border-color)", overflow: "hidden",
-      }}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse" }}>
+      {/* ------------------------------------------------------------------------- */}
+      {/* 4. STOCK DATA TABLE (Consistent with Bills & Invoices Table Styling)       */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="global-table-container">
+        
+        {/* Table Header Strip with Total Counter & Page Size */}
+        <div style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid var(--border-color, #f1f5f9)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 800, fontSize: "1rem", color: "var(--text-primary)" }}>
+            <Boxes size={18} style={{ color: "#2563eb" }} />
+            <span>Inventory Catalog ({filteredItems.length} records)</span>
+          </div>
+
+          {/* Page size selector */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.8rem", color: "#64748b" }}>
+            <span>Show:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+              style={{
+                padding: "4px 8px",
+                borderRadius: "6px",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                background: "var(--bg-card, #ffffff)",
+                color: "var(--text-primary)",
+                fontSize: "0.8rem",
+                outline: "none",
+                cursor: "pointer"
+              }}
+            >
+              <option value={10}>10 / page</option>
+              <option value={20}>20 / page</option>
+              <option value={50}>50 / page</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Global Table (100% Fit, No Horizontal Scrolling) */}
+        <div className="global-table-scroll">
+          <table className="global-table" style={{ width: "100%" }}>
             <thead>
               <tr>
-                <th style={{ ...TH, minWidth: "240px" }}>Product</th>
-                <th style={{ ...TH, minWidth: "130px" }}>Category</th>
-                <th style={{ ...TH, minWidth: "110px" }}>Thickness</th>
-                <th style={{ ...TH, minWidth: "140px" }}>Size & Finish</th>
-                <th style={{ ...TH, minWidth: "110px", textAlign: "right" }}>Rate</th>
-                <th style={{ ...TH, minWidth: "130px" }}>Stock</th>
-                <th style={{ ...TH, minWidth: "160px" }}>Location</th>
-                <th style={{ ...TH, width: "44px", textAlign: "center" }}></th>
+                <th style={{ width: "36px", textAlign: "center", padding: "10px 4px" }}>
+                  <input
+                    type="checkbox"
+                    checked={paginatedItems.length > 0 && paginatedItems.every(i => selectedIds.includes(i.id))}
+                    onChange={handleSelectAll}
+                    style={{ cursor: "pointer" }}
+                  />
+                </th>
+                <th style={{ width: "75px", padding: "10px 6px" }}>CODE</th>
+                <th style={{ padding: "10px 8px" }}>PRODUCT NAME</th>
+                <th style={{ width: "110px", padding: "10px 6px" }}>CATEGORY</th>
+                <th style={{ width: "115px", padding: "10px 6px" }}>SPECS / SUTAR</th>
+                <th style={{ width: "95px", textAlign: "right", padding: "10px 6px" }}>STOCK</th>
+                <th style={{ width: "80px", textAlign: "right", padding: "10px 6px" }}>RATE</th>
+                <th style={{ width: "95px", textAlign: "right", padding: "10px 6px" }}>VALUE</th>
+                <th style={{ width: "75px", textAlign: "center", padding: "10px 4px" }}>STATUS</th>
+                <th style={{ width: "80px", textAlign: "center", padding: "10px 4px" }}>ACTION</th>
               </tr>
             </thead>
             <tbody>
-              {filteredItems.length === 0 ? (
+              {paginatedItems.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: "center", padding: "72px 20px", color: "var(--text-muted)", fontSize: "0.85rem" }}>
-                    <PackagePlus size={28} style={{ opacity: 0.2, display: "block", margin: "0 auto 12px" }} />
-                    {searchTerm
-                      ? <>No items match <strong>"{searchTerm}"</strong></>
-                      : "No items in this category yet. Click Add New Variety to get started."
-                    }
+                  <td colSpan={10} style={{ textAlign: "center", padding: "45px 20px", color: "#94a3b8" }}>
+                    <div style={{ fontSize: "0.92rem", fontWeight: 700 }}>No stock items match your filter criteria.</div>
+                    <div style={{ fontSize: "0.78rem", marginTop: "4px" }}>Click "+ New Stock Entry" to add new inventory.</div>
                   </td>
                 </tr>
               ) : (
-                filteredItems.map((item, idx) => {
+                paginatedItems.map((item) => {
+                  const isSelected = selectedIds.includes(item.id);
+                  const sd = getStockDisplay(item);
                   const low = isLowStock(item);
                   const out = isOutOfStock(item);
-                  const sd = getStockDisplay(item);
-                  const isLast = idx === filteredItems.length - 1;
-                  const rowTD = { ...TD, borderBottom: isLast ? "none" : TD.borderBottom };
-                  const stockStatus = out ? "Out of stock" : low ? "Low stock" : "In stock";
-                  const stockColor = out ? "#ef4444" : low ? "#f59e0b" : "#10b981";
+                  const totalValue = sd.qty * Number(item.ratePerSqFt || 0);
 
                   return (
-                    // CONCEPT: Row Interaction — the entire row is clickable to open
-                    // the details drawer. This signals the row is a navigation target,
-                    // not just a data display. The hover state confirms the affordance.
                     <tr
                       key={item.id}
-                      onClick={() => setDrawerItem(item)}
-                      style={{ transition: "background 0.1s", cursor: "pointer" }}
-                      onMouseEnter={e => e.currentTarget.style.background = "var(--bg-primary)"}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                      className={isSelected ? "active-row" : ""}
                     >
-                      {/* ── Product ─────────────────────────────────────── */}
-                      {/* CONCEPT: Visual Hierarchy — product name is the anchor.
-                          Variety is secondary. Item code is tertiary/monospace.   */}
-                      <td style={rowTD}>
-                        <div style={{
-                          fontWeight: 700, fontSize: "0.92rem",
-                          color: "var(--text-primary)", lineHeight: 1.35,
-                        }}>
+                      {/* Checkbox */}
+                      <td style={{ textAlign: "center", padding: "8px 4px" }}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleSelectOne(item.id)}
+                          style={{ cursor: "pointer" }}
+                        />
+                      </td>
+
+                      {/* Code */}
+                      <td style={{ padding: "8px 6px" }}>
+                        <span style={{ fontWeight: 800, color: "#2563eb", fontFamily: "var(--font-mono)", fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                          {item.code || "—"}
+                        </span>
+                      </td>
+
+                      {/* Product Name */}
+                      <td style={{ padding: "8px 8px" }}>
+                        <div style={{ fontWeight: 700, color: "var(--text-primary, #0f172a)", fontSize: "0.83rem", lineHeight: 1.2 }}>
                           {item.name}
                         </div>
-                        {item.subCategory && (
-                          <div style={{ fontSize: "0.76rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {item.subCategory}
-                          </div>
+                        {item.lotNo && (
+                          <div style={{ fontSize: "0.7rem", color: "#64748b" }}>{item.lotNo}</div>
                         )}
-                        <div style={{
-                          fontSize: "0.7rem", fontWeight: 600,
-                          color: "var(--accent-blue)", fontFamily: "monospace",
-                          marginTop: "4px", letterSpacing: "0.03em",
-                        }}>
-                          {item.code}
-                        </div>
                       </td>
 
-                      {/* ── Category ────────────────────────────────────── */}
-                      <td style={rowTD}>
-                        <div style={{ fontSize: "0.84rem", color: "var(--text-primary)", fontWeight: 500 }}>
+                      {/* Category */}
+                      <td style={{ padding: "8px 6px" }}>
+                        <span style={{
+                          background: "var(--bg-primary, #f1f5f9)",
+                          padding: "2px 6px",
+                          borderRadius: "5px",
+                          fontSize: "0.72rem",
+                          fontWeight: 600,
+                          color: "#475569",
+                          display: "inline-block",
+                          lineHeight: 1.2
+                        }}>
                           {item.category}
-                        </div>
-                        <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                          {item.unit || "Sq. Ft."}
-                        </div>
-                      </td>
-
-                      {/* ── Thickness ───────────────────────────────────── */}
-                      <td style={rowTD}>
-                        {item.sutarThickness ? (
-                          <>
-                            <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                              {item.sutarThickness} Sutar
-                            </div>
-                            {item.thicknessMm > 0 && (
-                              <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "1px" }}>
-                                {item.thicknessMm} mm
-                              </div>
-                            )}
-                          </>
-                        ) : item.thicknessMm > 0 ? (
-                          <div style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                            {item.thicknessMm} mm
-                          </div>
-                        ) : (
-                          <span style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>—</span>
-                        )}
-                        {item.grade && (
-                          <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {item.grade}
-                          </div>
+                        </span>
+                        {item.subCategory && (
+                          <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "2px" }}>{item.subCategory}</div>
                         )}
                       </td>
 
-                      {/* ── Size & Finish ────────────────────────────────── */}
-                      <td style={rowTD}>
-                        <div style={{
-                          fontSize: "0.83rem", color: "var(--text-primary)",
-                          maxWidth: "140px", overflow: "hidden",
-                          textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>
-                          {item.standardSize || "—"}
+                      {/* Dimensions / Specs */}
+                      <td style={{ padding: "8px 6px" }}>
+                        <div style={{ fontSize: "0.76rem", color: "var(--text-primary, #0f172a)", fontWeight: 600 }}>
+                          {item.sutarThickness ? `${item.sutarThickness} Sutar` : item.standardSize || "Standard"}
                         </div>
-                        {item.finish && (
-                          <div style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {item.finish}
-                          </div>
-                        )}
+                        <div style={{ fontSize: "0.7rem", color: "#64748b" }}>
+                          {item.finish || "Polished"}
+                        </div>
                       </td>
 
-                      {/* ── Rate ────────────────────────────────────────── */}
-                      {/* Selling price is the primary business metric.       */}
-                      <td style={{ ...rowTD, textAlign: "right" }}>
-                        <div style={{
-                          fontSize: "0.95rem", fontWeight: 700,
-                          color: "var(--text-primary)", fontFamily: "monospace",
-                        }}>
-                          {Number(item.ratePerSqFt || 0).toLocaleString()}
-                        </div>
-                        {item.costPerSqFt > 0 && (
-                          <div style={{
-                            fontSize: "0.71rem", color: "var(--text-muted)",
-                            marginTop: "2px", fontFamily: "monospace",
-                          }}>
-                            Cost {Number(item.costPerSqFt).toLocaleString()}
-                          </div>
-                        )}
-                      </td>
-
-                      {/* ── Stock ───────────────────────────────────────── */}
-                      {/* CONCEPT: "Stock is DATA not a button."
-                          Quantity dominant. Unit muted. Status = tiny dot.     */}
-                      <td style={rowTD}>
-                        <div style={{
-                          fontSize: "1.05rem", fontWeight: 800,
-                          color: out ? "#ef4444" : low ? "#f59e0b" : "var(--text-primary)",
-                          fontFamily: "monospace", lineHeight: 1,
-                        }}>
-                          {sd.qty.toLocaleString()}
-                        </div>
-                        <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                          {sd.unit}
+                      {/* Stock Qty */}
+                      <td style={{ textAlign: "right", padding: "8px 6px" }}>
+                        <div style={{ fontWeight: 800, fontFamily: "var(--font-mono)", fontSize: "0.8rem", color: out ? "#ef4444" : low ? "#d97706" : "var(--text-primary)" }}>
+                          {sd.qty.toLocaleString()} <span style={{ fontSize: "0.7rem", fontWeight: 600, color: "#64748b" }}>{sd.unit}</span>
                         </div>
                         {sd.sub && (
-                          <div style={{ fontSize: "0.69rem", color: "var(--text-muted)", marginTop: "1px" }}>
-                            {sd.sub}
-                          </div>
-                        )}
-                        {/* Tiny status indicator — NOT a pill, NOT a badge */}
-                        <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "5px" }}>
-                          <span style={{
-                            width: "5px", height: "5px", borderRadius: "50%",
-                            background: stockColor, flexShrink: 0,
-                          }} />
-                          <span style={{ fontSize: "0.68rem", color: stockColor, fontWeight: 600 }}>
-                            {stockStatus}
-                          </span>
-                        </div>
-                      </td>
-
-                      {/* ── Location ────────────────────────────────────── */}
-                      <td style={rowTD}>
-                        <div style={{ fontSize: "0.84rem", color: "var(--text-primary)" }}>
-                          {item.location || "Yard"}
-                        </div>
-                        {item.lotNo && (
-                          <div style={{
-                            fontSize: "0.7rem", color: "var(--text-muted)",
-                            fontFamily: "monospace", marginTop: "2px",
-                          }}>
-                            {item.lotNo}
-                          </div>
+                          <div style={{ fontSize: "0.68rem", color: "#64748b" }}>{sd.sub}</div>
                         )}
                       </td>
 
-                      {/* ── Actions: single ⋮ overflow menu ─────────────── */}
-                      <td style={{ ...rowTD, textAlign: "center", padding: "18px 8px" }}>
-                        <RowMenu
-                          item={item}
-                          onView={setDrawerItem}
-                          onAdjust={handleOpenAdjust}
-                          onEdit={handleOpenEditModal}
-                          onDelete={handleDeleteItem}
-                        />
+                      {/* Unit Rate */}
+                      <td style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.8rem", padding: "8px 6px", whiteSpace: "nowrap" }}>
+                        Rs. {Number(item.ratePerSqFt || 0).toLocaleString()}
+                      </td>
+
+                      {/* Total Value */}
+                      <td style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 800, color: "#059669", fontSize: "0.8rem", padding: "8px 6px", whiteSpace: "nowrap" }}>
+                        Rs. {Math.round(totalValue).toLocaleString()}
+                      </td>
+
+                      {/* Status */}
+                      <td style={{ textAlign: "center", padding: "8px 4px" }}>
+                        {out ? (
+                          <span className="status-pill-badge due" style={{ fontSize: "0.68rem", padding: "1px 6px" }}>Out</span>
+                        ) : low ? (
+                          <span className="status-pill-badge partial" style={{ fontSize: "0.68rem", padding: "1px 6px" }}>Low</span>
+                        ) : (
+                          <span className="status-pill-badge cleared" style={{ fontSize: "0.68rem", padding: "1px 6px" }}>In Stock</span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td style={{ textAlign: "center", padding: "8px 4px" }}>
+                        <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          {/* View Drawer */}
+                          <button
+                            type="button"
+                            onClick={() => setDrawerItem(item)}
+                            style={{
+                              width: "25px",
+                              height: "25px",
+                              borderRadius: "6px",
+                              border: "1px solid #bfdbfe",
+                              background: "#eff6ff",
+                              color: "#2563eb",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer"
+                            }}
+                            title="View Details"
+                          >
+                            <Eye size={12} />
+                          </button>
+
+                          {/* Edit Item */}
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditModal(item)}
+                            style={{
+                              width: "25px",
+                              height: "25px",
+                              borderRadius: "6px",
+                              border: "1px solid #bbf7d0",
+                              background: "#f0fdf4",
+                              color: "#16a34a",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer"
+                            }}
+                            title="Edit Item"
+                          >
+                            <Edit2 size={12} />
+                          </button>
+
+                          {/* Delete Item */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteItem(item)}
+                            style={{
+                              width: "25px",
+                              height: "25px",
+                              borderRadius: "6px",
+                              border: "1px solid #fecdd3",
+                              background: "#fff1f2",
+                              color: "#e11d48",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: "pointer"
+                            }}
+                            title="Delete Item"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -821,232 +1670,356 @@ export default function StockManagementView() {
           </table>
         </div>
 
-        {/* Table footer — subtle count, not a card */}
-        {filteredItems.length > 0 && (
-          <div style={{
-            padding: "11px 20px", borderTop: "1px solid var(--border-color)",
-            fontSize: "0.73rem", color: "var(--text-muted)",
-            display: "flex", justifyContent: "space-between", alignItems: "center",
-          }}>
-            <span>
-              {filteredItems.length} {filteredItems.length === 1 ? "item" : "items"}
-              {selectedCategory !== "ALL" && ` in ${selectedCategory}`}
-            </span>
-            {lowStockCount > 0 && (
-              <span style={{ color: "#ef4444", fontWeight: 600 }}>
-                {lowStockCount} low stock
-              </span>
-            )}
-          </div>
-        )}
+        {/* Global Pagination Component (Matches Screenshot) */}
+        <GlobalPagination
+          currentPage={activePage}
+          totalPages={totalPages}
+          totalRecords={totalRecords}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          language={language}
+        />
       </div>
 
-      {/* ── Item Details Drawer ──────────────────────────────────────────── */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 5. ITEM DETAILS DRAWER (Progressive Disclosure)                            */}
+      {/* ------------------------------------------------------------------------- */}
       {drawerItem && (
         <ItemDetailsDrawer
           item={drawerItem}
           onClose={() => setDrawerItem(null)}
-          onEdit={handleOpenEditModal}
-          onAdjust={handleOpenAdjust}
+          onEdit={(i) => { setDrawerItem(null); handleOpenEditModal(i); }}
+          onAdjust={(i) => { setDrawerItem(null); handleOpenAdjust(i); }}
         />
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          ADD / EDIT MODAL
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 6. ADD / EDIT STOCK ITEM MODAL                                            */}
+      {/* ------------------------------------------------------------------------- */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: "720px", width: "95vw" }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#fff" }}>
-                {editingItem ? `Edit: ${editingItem.name}` : "Add New Catalog Item"}
-              </h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsModalOpen(false)}><X size={18} /></button>
+        <div className="modal-overlay" style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          backgroundColor: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px"
+        }}>
+          <div className="modal-card" style={{
+            maxWidth: "600px", width: "100%", background: "var(--bg-card)",
+            borderRadius: "16px", boxShadow: "var(--shadow-lg)", border: "1px solid var(--border-color)",
+            overflow: "hidden", display: "flex", flexDirection: "column"
+          }}>
+            {/* Modal Header */}
+            <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Boxes size={20} style={{ color: "var(--accent-blue)" }} />
+                <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                  {editingItem ? "Edit Stock Item" : "Register New Stock Entry"}
+                </h3>
+              </div>
+              <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+                <X size={18} />
+              </button>
             </div>
+
+            {/* Form */}
             <form onSubmit={handleSaveItem}>
-              <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                <div style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Item Code *</label>
-                    <input type="text" required className="form-control font-mono" value={formData.code} onChange={e => setFormData({ ...formData, code: e.target.value })} />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Variety / Product Name *</label>
-                    <input type="text" required className="form-control" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Ziarat White Super Slab" />
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 140px", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Category *</label>
-                    <select className="form-control" value={formData.category} onChange={e => handleCategoryChange(e.target.value)}>
-                      {CATEGORIES.filter(c => c.key !== "ALL").map(c => <option key={c.key} value={c.key}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Sub-Category</label>
-                    <input type="text" className="form-control" value={formData.subCategory} onChange={e => setFormData({ ...formData, subCategory: e.target.value })} placeholder="e.g. Ziarat Marble" />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Stock Unit</label>
-                    <select className="form-control" value={formData.unit} onChange={e => setFormData({ ...formData, unit: e.target.value })}>
-                      <option>Sq. Ft.</option><option>Running Feet</option><option>Pieces</option><option>Boxes</option>
-                    </select>
-                  </div>
-                </div>
-
-                {activeCatConfig.hasSutar && (
+              <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px", maxHeight: "72vh", overflowY: "auto" }}>
+                
+                {/* Product Name & Code */}
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: "12px" }}>
                   <div>
-                    <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Sutar Thickness Classification</label>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                      {SUTAR_OPTIONS.map(opt => {
-                        const isSel = formData.sutarThickness === opt.value;
-                        return (
-                          <button key={opt.value} type="button"
-                            onClick={() => setFormData({ ...formData, sutarThickness: opt.value })}
-                            style={{ padding: "8px 16px", borderRadius: "8px", border: `2px solid ${isSel ? "var(--accent-blue)" : "var(--border-color)"}`, background: isSel ? "rgba(37,99,235,0.08)" : "transparent", color: isSel ? "var(--accent-blue)" : "var(--text-secondary)", cursor: "pointer", textAlign: "left", transition: "all 0.12s ease" }}>
-                            <div style={{ fontWeight: 700, fontSize: "0.82rem" }}>{opt.label}</div>
-                            <div style={{ fontSize: "0.68rem", opacity: 0.75, marginTop: "1px" }}>{opt.desc}</div>
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Product / Variety Name *
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      value={formData.name}
+                      onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                      className="form-control"
+                      placeholder="e.g. Ziarat White / Tavera / Mashallah Panel"
+                    />
                   </div>
-                )}
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Item Code *
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      value={formData.code}
+                      onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
+                      className="form-control font-mono"
+                      placeholder="MB-001"
+                    />
+                  </div>
+                </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Standard Size</label>
-                    {activeCatConfig.defaultSizes ? (
-                      <select className="form-control" value={formData.standardSize} onChange={e => setFormData({ ...formData, standardSize: e.target.value })}>
-                        <option value="">- Select -</option>
-                        {activeCatConfig.defaultSizes.map(s => <option key={s} value={s}>{s}</option>)}
+                {/* Main Category Selector */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Category Type *
+                    </label>
+                    <select
+                      value={formData.category}
+                      onChange={e => {
+                        const newCat = e.target.value;
+                        let defaultUnit = "Sq. Ft.";
+                        if (newCat === "Flowers" || newCat === "Flower Medallions" || newCat === "Panels") defaultUnit = "Pieces";
+                        if (newCat === "Borders" || newCat === "Borders & Patti") defaultUnit = "Running Feet";
+                        if (newCat === "Porcelain & Panels") defaultUnit = "Boxes";
+                        setFormData(p => ({ ...p, category: newCat, unit: defaultUnit }));
+                      }}
+                      className="form-control"
+                    >
+                      <option value="Marble">Marble Slabs & Tiles</option>
+                      <option value="Porcelain & Panels">Tiles (Porcelain / Ceramic)</option>
+                      <option value="Flower Medallions">Flowers (Flower Medallions)</option>
+                      <option value="Borders & Patti">Borders & Patti</option>
+                      <option value="Panels">Panels (Mashallah / 3D)</option>
+                      <option value="Granite">Granite</option>
+                      <option value="Accessories">Accessories (Gola, Spacer, Filling)</option>
+                    </select>
+                  </div>
+
+                  {/* Sutar Thickness (if Marble) */}
+                  {formData.category.includes("Marble") ? (
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                        Sutar Thickness
+                      </label>
+                      <select
+                        value={formData.sutarThickness}
+                        onChange={e => setFormData(p => ({ ...p, sutarThickness: e.target.value }))}
+                        className="form-control"
+                      >
+                        <option value="4">4 Sutar (12x12, 12x24, 6x12, 6x24)</option>
+                        <option value="6">6 Sutar (Kitchen & Stairs Only)</option>
+                        <option value="9">9 Sutar (Heavy Flooring)</option>
+                        <option value="14">14 Sutar (Thick Industrial)</option>
                       </select>
-                    ) : (
-                      <input type="text" className="form-control" value={formData.standardSize} onChange={e => setFormData({ ...formData, standardSize: e.target.value })} placeholder="e.g. 12x24 in" />
-                    )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                        Sub-Category / Variety Spec
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.subCategory}
+                        onChange={e => setFormData(p => ({ ...p, subCategory: e.target.value }))}
+                        className="form-control"
+                        placeholder="e.g. Kali Patti / Mashallah / Spacer"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Standard Sizes Quick Pick */}
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "12px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Dimensions / Standard Size
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.standardSize}
+                      onChange={e => setFormData(p => ({ ...p, standardSize: e.target.value }))}
+                      className="form-control"
+                      placeholder="e.g. 12 × 12, 24 × 24, 3 inch, 6 inch"
+                    />
                   </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Finish</label>
-                    <input type="text" className="form-control" value={formData.finish} onChange={e => setFormData({ ...formData, finish: e.target.value })} placeholder="e.g. Mirror Polished" />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Grade / Quality</label>
-                    <input type="text" className="form-control" value={formData.grade} onChange={e => setFormData({ ...formData, grade: e.target.value })} placeholder="e.g. Grade A (Super)" />
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Stock Unit
+                    </label>
+                    <select
+                      value={formData.unit}
+                      onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))}
+                      className="form-control"
+                    >
+                      <option value="Sq. Ft.">Sq. Ft.</option>
+                      <option value="Boxes">Boxes</option>
+                      <option value="Pieces">Pieces</option>
+                      <option value="Running Feet">Running Feet</option>
+                    </select>
                   </div>
                 </div>
 
+                {/* Pricing & Stock Qty */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Selling Rate (Rs)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.ratePerSqFt}
+                      onChange={e => setFormData(p => ({ ...p, ratePerSqFt: e.target.value }))}
+                      className="form-control font-mono"
+                      placeholder="380"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Cost Rate (Rs)
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.costPerSqFt}
+                      onChange={e => setFormData(p => ({ ...p, costPerSqFt: e.target.value }))}
+                      className="form-control font-mono"
+                      placeholder="290"
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Stock Quantity
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      value={formData.stockSqFt}
+                      onChange={e => setFormData(p => ({ ...p, stockSqFt: e.target.value, stockPieces: e.target.value }))}
+                      className="form-control font-mono"
+                      placeholder="4500"
+                    />
+                  </div>
+                </div>
+
+                {/* Location & Min Stock Alert */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Sale Rate / Sq.Ft (Rs.) *</label>
-                    <input type="number" required className="form-control font-mono" value={formData.ratePerSqFt} onChange={e => setFormData({ ...formData, ratePerSqFt: e.target.value })} />
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Yard Location
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.location}
+                      onChange={e => setFormData(p => ({ ...p, location: e.target.value }))}
+                      className="form-control"
+                      placeholder="Yard Shed 1 - Bay A"
+                    />
                   </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Cost / Sq.Ft (Rs.)</label>
-                    <input type="number" className="form-control font-mono" value={formData.costPerSqFt} onChange={e => setFormData({ ...formData, costPerSqFt: e.target.value })} />
+                  <div>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                      Low Stock Alert Threshold
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.minStockAlert}
+                      onChange={e => setFormData(p => ({ ...p, minStockAlert: e.target.value }))}
+                      className="form-control font-mono"
+                      placeholder="200"
+                    />
                   </div>
                 </div>
 
+                {/* Notes */}
                 <div>
-                  <label className="form-label" style={{ marginBottom: "8px", display: "block" }}>Opening Stock &amp; Alert Threshold</label>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "12px" }}>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Sq.Ft / RFT</label>
-                      <input type="number" step="0.1" className="form-control font-mono" style={{ color: "#10b981", fontWeight: 700 }} value={formData.stockSqFt} onChange={e => setFormData({ ...formData, stockSqFt: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Boxes</label>
-                      <input type="number" className="form-control" value={formData.stockBoxes} onChange={e => setFormData({ ...formData, stockBoxes: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Pieces</label>
-                      <input type="number" className="form-control" value={formData.stockPieces} onChange={e => setFormData({ ...formData, stockPieces: e.target.value })} />
-                    </div>
-                    <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontSize: "0.72rem" }}>Min Alert</label>
-                      <input type="number" className="form-control" value={formData.minStockAlert} onChange={e => setFormData({ ...formData, minStockAlert: e.target.value })} />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Yard / Shed Location</label>
-                    <input type="text" className="form-control" value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} placeholder="e.g. Shed 1 - Bay A" />
-                  </div>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Lot / Batch Number</label>
-                    <input type="text" className="form-control font-mono" value={formData.lotNo} onChange={e => setFormData({ ...formData, lotNo: e.target.value })} />
-                  </div>
-                </div>
-
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Notes</label>
-                  <input type="text" className="form-control" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Additional notes about this variety..." />
+                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "4px" }}>
+                    Remarks / Notes
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={formData.notes}
+                    onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
+                    className="form-control"
+                    placeholder="Specific marble details, polish finish, usage instructions..."
+                  />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary"><Check size={15} /> {editingItem ? "Save Changes" : "Add to Catalog"}</button>
+
+              {/* Modal Footer */}
+              <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+                <button type="button" onClick={() => setIsModalOpen(false)} className="btn btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ background: "#2563eb" }}>
+                  {editingItem ? "Save Changes" : "Create Item"}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          STOCK ADJUSTMENT MODAL — unit-aware label
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 7. QUICK STOCK ADJUSTMENT MODAL                                           */}
+      {/* ------------------------------------------------------------------------- */}
       {isAdjustModalOpen && adjustingItem && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: "440px" }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: "1.05rem", fontWeight: 700, color: "#fff" }}>Stock Adjustment</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsAdjustModalOpen(false)}><X size={18} /></button>
+        <div className="modal-overlay" style={{
+          position: "fixed", top: 0, left: 0, width: "100vw", height: "100vh",
+          backgroundColor: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px"
+        }}>
+          <div className="modal-card" style={{
+            maxWidth: "460px", width: "100%", background: "var(--bg-card)",
+            borderRadius: "16px", boxShadow: "var(--shadow-lg)", border: "1px solid var(--border-color)",
+            overflow: "hidden", display: "flex", flexDirection: "column"
+          }}>
+            <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>Adjust Stock: {adjustingItem.name}</h3>
+              <button type="button" onClick={() => setIsAdjustModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                <X size={18} />
+              </button>
             </div>
             <form onSubmit={handleSaveAdjustment}>
-              <div className="modal-body">
-                <div style={{ padding: "12px 14px", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", marginBottom: "16px" }}>
-                  <div style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "0.9rem" }}>{adjustingItem.name}</div>
-                  <div style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "2px" }}>{adjustingItem.category}</div>
-                  <div style={{ marginTop: "8px" }}>
-                    {(() => {
-                      const d = getStockDisplay(adjustingItem);
-                      return <span style={{ fontSize: "0.82rem" }}>Current: <strong style={{ color: "#10b981", fontFamily: "monospace" }}>{d.qty.toLocaleString()} {d.unit}</strong></span>;
-                    })()}
-                  </div>
+              <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, marginBottom: "4px" }}>
+                    Adjustment Qty (+ to add, - to subtract)
+                  </label>
+                  <input
+                    required
+                    type="number"
+                    step="any"
+                    value={adjustQty}
+                    onChange={e => setAdjustQty(e.target.value)}
+                    className="form-control font-mono"
+                    placeholder="e.g. +500 or -200"
+                    autoFocus
+                  />
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label">Adjustment Quantity ({adjustingItem.unit || "Sq. Ft."}) *</label>
-                  <input type="number" step="0.1" required autoFocus className="form-control font-mono" value={adjustQty} onChange={e => setAdjustQty(e.target.value)} placeholder="e.g. +200 to add, -50 to reduce" />
-                  <span style={{ fontSize: "0.73rem", color: "var(--text-muted)", marginTop: "4px", display: "block" }}>Positive = add | Negative = reduce</span>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Reason</label>
-                  <select className="form-control" value={adjustType} onChange={e => setAdjustType(e.target.value)}>
-                    <option value="Adjustment">Yard Physical Audit Count</option>
-                    <option value="Initial">Additional Loading / Purchase Received</option>
-                    <option value="Damaged/Wastage">Damaged / Broken Scrap</option>
-                    <option value="Return">Customer Return - Restocked</option>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, marginBottom: "4px" }}>
+                    Reason / Type
+                  </label>
+                  <select
+                    value={adjustType}
+                    onChange={e => setAdjustType(e.target.value)}
+                    className="form-control"
+                  >
+                    <option value="Adjustment">Yard Recount Adjustment</option>
+                    <option value="Intake">New Stock Intake</option>
+                    <option value="Damage">Broken / Wastage</option>
+                    <option value="Return">Return Restock</option>
                   </select>
                 </div>
-
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Reference Note</label>
-                  <input type="text" className="form-control" value={adjustNote} onChange={e => setAdjustNote(e.target.value)} placeholder="e.g. Monthly yard count - Sep 2026" />
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, marginBottom: "4px" }}>
+                    Audit Notes
+                  </label>
+                  <input
+                    type="text"
+                    value={adjustNote}
+                    onChange={e => setAdjustNote(e.target.value)}
+                    className="form-control"
+                    placeholder="Remarks..."
+                  />
                 </div>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsAdjustModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary"><Check size={15} /> Apply Adjustment</button>
+              <div style={{ padding: "14px 24px", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                <button type="button" onClick={() => setIsAdjustModalOpen(false)} className="btn btn-secondary">Cancel</button>
+                <button type="submit" className="btn btn-primary" style={{ background: "#2563eb" }}>Apply Adjustment</button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }

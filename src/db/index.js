@@ -2,112 +2,12 @@ import Dexie from 'dexie';
 
 export const db = new Dexie('MarbleFactoryDB');
 
-// Database Schema Definitions with Versioning
-db.version(1).stores({
-  items: '++id, code, name, category, finish, grade, stockSqFt, minStockAlert',
-  customers: '++id, name, phone, city, customerType, balanceDue',
-  suppliers: '++id, name, phone, company, balancePayable',
-  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue',
-  customer_payments: '++id, paymentNo, invoiceId, customerId, date',
-  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, paymentStatus, balanceDue',
-  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date',
-  returns: '++id, returnNo, type, refDocNo, partyName, date',
-  stock_movements: '++id, date, itemId, movementType, refDocNo',
-  settings: '++id, companyName'
-});
-
-db.version(2).stores({
-  items: '++id, code, name, category, finish, grade, sutarThickness, stockSqFt, minStockAlert',
-  customers: '++id, name, phone, city, customerType, balanceDue',
-  suppliers: '++id, name, phone, company, balancePayable',
-  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, createdAt',
-  customer_payments: '++id, paymentNo, invoiceId, customerId, date',
-  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, paymentStatus, balanceDue',
-  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date',
-  returns: '++id, returnNo, type, refDocNo, partyName, date',
-  stock_movements: '++id, date, itemId, movementType, refDocNo',
-  settings: '++id, companyName',
-  gate_passes: '++id, gatePassNo, invoiceId, customerName, vehicleNo, driverName, date, status',
-  daily_expenses: '++id, date, category, amount, paidTo, remarks, createdAt',
-  employees: '++id, name, role, basicSalary, advanceDrawn, joiningDate',
-  employee_advances: '++id, employeeId, employeeName, amount, date, notes',
-  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, status, date',
-  wastage_logs: '++id, date, itemId, itemName, sqFt, pieces, reason'
-});
-
-// Production Schema Version 3: Comprehensive Indices for High Performance
-db.version(3).stores({
-  users: '++id, username, role, fullName, isActive, createdAt',
-  items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
-  stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
-  customers: '++id, name, phone, city, customerType, balanceDue, totalBilled, totalPaid, createdAt',
-  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
-  customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
-  suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',
-  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, supplierName, paymentStatus, balanceDue, grandTotal, createdAt',
-  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date, paymentMethod, createdAt',
-  gate_passes: '++id, gatePassNo, invoiceId, customerName, vehicleNo, driverName, date, status, dispatchTime, createdAt',
-  daily_expenses: '++id, date, category, amount, paidTo, remarks, createdAt',
-  wastage_logs: '++id, docNo, date, type, itemId, itemName, createdAt',
-  employees: '++id, name, role, basicSalary, advanceDrawn, joiningDate, isActive',
-  employee_advances: '++id, employeeId, employeeName, amount, date, notes',
-  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, status, date',
-  returns: '++id, returnNo, type, refDocNo, partyName, date, createdAt',
-  settings: '++id, companyName'
-});
-
-// Version 4: Merging HEAD changes with Production Schema
-db.version(4).stores({
-  users: '++id, username, role, fullName, isActive, createdAt',
-  items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
-  stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
-  customers: '++id, name, phone, city, customerType, balanceDue, totalBilled, totalPaid, createdAt',
-  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
-  customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
-  suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',
-  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, supplierName, paymentStatus, balanceDue, grandTotal, createdAt',
-  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date, paymentMethod, createdAt',
-  gate_passes: '++id, gatePassNo, invoiceId, customerName, vehicleNo, driverName, date, status, dispatchTime, createdAt',
-  daily_expenses: '++id, date, category, amount, paidTo, remarks, createdAt',
-  wastage_logs: '++id, logNo, docNo, date, type, itemId, itemName, sqFt, pieces, reason, source, createdAt',
-  employees: '++id, name, role, basicSalary, advanceDrawn, joiningDate, isActive',
-  employee_advances: '++id, employeeId, employeeName, amount, date, notes',
-  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, monthKey, status, date',
-  returns: '++id, returnNo, type, refDocNo, partyId, partyName, date, createdAt, status',
-  settings: '++id, companyName',
-  zakat_beneficiaries: '++id, name, monthlyAmount',
-  payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date'
-});
-
-// Version 5: Bump version to force update for users who were on HEAD's v4 (which dropped tables)
-db.version(5).stores({
-  users: '++id, username, role, fullName, isActive, createdAt',
-  items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
-  stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
-  customers: '++id, name, phone, city, customerType, balanceDue, totalBilled, totalPaid, createdAt',
-  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
-  customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
-  suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',
-  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, supplierName, paymentStatus, balanceDue, grandTotal, createdAt',
-  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date, paymentMethod, createdAt',
-  gate_passes: '++id, gatePassNo, invoiceId, customerName, vehicleNo, driverName, date, status, dispatchTime, createdAt',
-  daily_expenses: '++id, date, category, amount, paidTo, remarks, createdAt',
-  wastage_logs: '++id, logNo, docNo, date, type, itemId, itemName, sqFt, pieces, reason, source, createdAt',
-  employees: '++id, name, role, basicSalary, advanceDrawn, joiningDate, isActive',
-  employee_advances: '++id, employeeId, employeeName, amount, date, notes',
-  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, monthKey, status, date',
-  returns: '++id, returnNo, type, refDocNo, partyId, partyName, date, createdAt, status',
-  settings: '++id, companyName',
-  zakat_beneficiaries: '++id, name, monthlyAmount',
-  payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date'
-});
-
-// Version 6: Add payrolls for EmployeesPayrollModule
+// Database Schema Definitions: Keeping only the latest 2 versions (Version 6 and Version 7)
 db.version(6).stores({
   users: '++id, username, role, fullName, isActive, createdAt',
   items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
   stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
-  customers: '++id, name, phone, city, customerType, balanceDue, totalBilled, totalPaid, createdAt',
+  customers: '++id, name, phone, city, balanceDue, totalBilled, totalPaid, createdAt',
   invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
   customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
   suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',
@@ -126,12 +26,12 @@ db.version(6).stores({
   payrolls: '++id, employeeId, employeeName, month, date, createdAt'
 });
 
-// Version 7: Add zakat_welfare for ZakatWelfareModule
+// Version 7: Latest Schema with zakat_welfare and clean indices
 db.version(7).stores({
   users: '++id, username, role, fullName, isActive, createdAt',
   items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
   stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
-  customers: '++id, name, phone, city, customerType, balanceDue, totalBilled, totalPaid, createdAt',
+  customers: '++id, name, phone, city, balanceDue, totalBilled, totalPaid, createdAt',
   invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
   customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
   suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',

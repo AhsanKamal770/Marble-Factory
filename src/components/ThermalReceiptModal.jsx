@@ -68,7 +68,6 @@ export default function ThermalReceiptModal({ isOpen, onClose, invoice, settings
               <div style={{ borderTop: '1px dotted #000', margin: '4px 0' }}></div>
               <div><strong>Customer:</strong> {invoice.customerName || 'Walk-in Customer'}</div>
               {invoice.customerPhone && <div><strong>Phone:</strong> {invoice.customerPhone}</div>}
-              {customer?.customerType && <div><strong>Type:</strong> {customer.customerType}</div>}
             </div>
 
             <div className="thermal-divider-double"></div>

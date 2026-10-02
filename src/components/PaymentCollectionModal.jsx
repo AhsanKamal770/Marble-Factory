@@ -101,7 +101,7 @@ export default function PaymentCollectionModal({ isOpen, onClose, customer, onSu
             </div>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>Receive Customer Payment (Wasooli)</h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{customer.name} ({customer.customerType || 'Customer'})</p>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{customer.name}</p>
             </div>
           </div>
           <button className="btn btn-ghost btn-sm" onClick={onClose}>

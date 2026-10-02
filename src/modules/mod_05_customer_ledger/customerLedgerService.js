@@ -23,7 +23,6 @@ export async function saveCustomer(customerData) {
       cnic: customerData.cnic?.trim() || '',
       city: customerData.city?.trim() || 'Faisalabad / Jhumra',
       address: customerData.address?.trim() || '',
-      customerType: customerData.customerType || 'Retail',
       creditLimit: Number(customerData.creditLimit || 0),
       notes: customerData.notes || '',
       updatedAt: new Date().toISOString()
@@ -39,7 +38,6 @@ export async function saveCustomer(customerData) {
       cnic: customerData.cnic?.trim() || '',
       city: customerData.city?.trim() || 'Faisalabad / Jhumra',
       address: customerData.address?.trim() || '',
-      customerType: customerData.customerType || 'Retail',
       creditLimit: Number(customerData.creditLimit || 0),
       totalBilled: openingBal,
       totalPaid: 0,

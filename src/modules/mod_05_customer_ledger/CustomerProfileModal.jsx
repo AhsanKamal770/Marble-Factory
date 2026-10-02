@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { X, Save, User, Phone, MapPin, CreditCard, Building2 } from "lucide-react";
+import { X, Save, User, Phone, MapPin, CreditCard } from "lucide-react";
 
 export default function CustomerProfileModal({ customer, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     cnic: "",
-    city: "Faisalabad / Jhumra",
+    city: "Karachi",
     address: "",
-    customerType: "Retail", // Retail, Builder, Contractor, Architect
     creditLimit: 0,
     balanceDue: 0,
     notes: ""
@@ -142,40 +141,22 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                   onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
                   className="form-control"
                   style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                  placeholder="Jhumra / Faisalabad"
+                  placeholder="Karachi / Faisalabad"
                 />
               </div>
               <div>
                 <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                  Customer Category
+                  Site / Delivery Address
                 </label>
-                <select
-                  value={formData.customerType}
-                  onChange={e => setFormData(p => ({ ...p, customerType: e.target.value }))}
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={e => setFormData(p => ({ ...p, address: e.target.value }))}
                   className="form-control"
                   style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                >
-                  <option value="Retail">Retail (عام خریدار)</option>
-                  <option value="Builder">Builder (بلڈر کھاتہ)</option>
-                  <option value="Contractor">Contractor (ٹھیکیدار)</option>
-                  <option value="Architect">Architect (آرکیٹیکٹ)</option>
-                </select>
+                  placeholder="Plot #, Street, Area"
+                />
               </div>
-            </div>
-
-            {/* Address */}
-            <div>
-              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                Site / Delivery Address
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={e => setFormData(p => ({ ...p, address: e.target.value }))}
-                className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                placeholder="Plot #, Street, Area"
-              />
             </div>
 
             {/* Credit Limit & Opening Balance */}

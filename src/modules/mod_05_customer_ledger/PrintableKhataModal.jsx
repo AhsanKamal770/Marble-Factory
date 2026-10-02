@@ -106,7 +106,6 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
             <div style={{ borderBottom: '1px dashed #000', paddingBottom: '8px', marginBottom: '8px', fontSize: '11px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span><strong>Customer:</strong> {customer.name}</span>
-                <span><strong>Type:</strong> {customer.customerType || 'Retail'}</span>
               </div>
               {customer.phone && (
                 <div><strong>Phone:</strong> {customer.phone}</div>

@@ -15,7 +15,8 @@ import {
   BookOpen,
   Clock,
   Activity,
-  BarChart2
+  BarChart2,
+  LayoutDashboard
 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getLiveCashInDrawer, adjustItemStock } from '../db/index';
@@ -404,143 +405,161 @@ export default function DashboardView({ setActiveView, settings }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto' }}>
 
       {/* ------------------------------------------------------------------------- */}
-      {/* 1. PAGE HEADER (Action Buttons & Live Factory Context)                     */}
+      {/* 1. SEAMLESS HERO HEADER SECTION (with invoice_background.jpeg)            */}
       {/* ------------------------------------------------------------------------- */}
       <div style={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px'
+        padding: '6px 4px 10px 4px',
+        minHeight: '84px',
+        overflow: 'hidden'
       }}>
-        <div>
-          <h2 style={{
-            fontSize: '1.4rem',
-            fontWeight: 800,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.02em',
-            margin: 0
+        {/* Left: Overview Breadcrumb + Title + Subtitle / Live Date */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            color: '#2563eb',
+            marginBottom: '4px',
+            display: 'inline-block'
           }}>
-            {language === 'ur' ? 'کارخانہ ڈیش بورڈ' : 'Karkhana Dashboard'}
-          </h2>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-            {new Date().toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-US', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric'
-            })}
+            {language === 'ur' ? 'کارخانہ مانیٹرنگ' : 'Overview'}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '13px',
+              background: '#2563eb',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+              flexShrink: 0
+            }}>
+              <LayoutDashboard size={24} />
+            </div>
+
+            <div>
+              <h1 style={{
+                fontSize: '1.7rem',
+                fontWeight: 800,
+                color: 'var(--text-primary, #0f172a)',
+                margin: 0,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}>
+                {language === 'ur' ? 'کارخانہ ڈیش بورڈ' : 'Karkhana Dashboard'}
+              </h1>
+              <p style={{
+                fontSize: '0.86rem',
+                color: 'var(--text-secondary, #64748b)',
+                margin: '2px 0 0 0',
+                fontWeight: 500
+              }}>
+                {new Date().toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-US', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                })}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Action Button System */}
-        <ActionGroup
-          language={language}
-          primaryAction={{
-            icon: Plus,
-            label: language === 'ur' ? 'نیا بل' : 'New Bill',
-            onClick: () => setActiveView('billing'),
-            title: language === 'ur' ? 'نیا بل کاؤنٹر کھولیں' : 'Create new bill in Bill Book'
-          }}
-          secondaryActions={[
-            {
-              icon: Wallet,
-              iconColor: 'var(--text-secondary, #475569)',
-              label: language === 'ur' ? 'نیا خرچ' : '+ Record Expense',
-              onClick: () => setIsQuickExpenseOpen(true),
-              title: language === 'ur' ? 'فیکٹری خرچ درج کریں' : 'Record daily expense'
-            },
-            {
-              icon: CreditCard,
-              iconColor: 'var(--text-secondary, #475569)',
-              label: language === 'ur' ? 'ادھار وصولی' : '+ Receive Payment',
-              onClick: () => {
-                if (customersWithDues.length > 0) {
-                  setWasooliForm({
-                    customerId: customersWithDues[0].id.toString(),
-                    amount: customersWithDues[0].balanceDue.toString(),
-                    paymentMethod: 'Cash',
-                    notes: `Payment for ${customersWithDues[0].name}`
-                  });
-                }
-                setIsQuickWasooliOpen(true);
-              },
-              title: language === 'ur' ? 'گاہک سے رقم وصول کریں' : 'Receive customer payment'
-            },
-            {
-              icon: BookOpen,
-              iconColor: '#059669',
-              label: language === 'ur' ? 'روزنامچہ' : 'Roznamcha',
-              onClick: () => setIsRoznamchaOpen(true),
-              title: language === 'ur' ? 'روزنامچہ کیش دراز حساب کھولیں' : "Today's Cash Flow & Live Drawer"
-            }
-          ]}
-        />
+        {/* Right: Background Marble Image extending seamlessly across the header */}
+        <div style={{
+          position: 'absolute',
+          right: '0',
+          top: '-15px',
+          bottom: '-15px',
+          width: '50%',
+          maxWidth: '520px',
+          backgroundImage: `url('./invoice_background.jpg'), url('/invoice_background.jpg'), url('./invoice_background.jpeg'), url('/invoice_background.jpeg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'right center',
+          maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+          pointerEvents: 'none',
+          opacity: 0.95,
+          borderRadius: '14px'
+        }} />
       </div>
 
       {/* ------------------------------------------------------------------------- */}
       {/* 2. REAL-TIME KPI STRIP (Derived from Real Live Database)                   */}
       {/* ------------------------------------------------------------------------- */}
-      <div className="kpi-unified-strip">
+      <div className="kpi-card-grid">
         {/* KPI 1: TOTAL SALES */}
-        <div className="kpi-strip-cell">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {language === 'ur' ? 'کل سیلز' : 'TOTAL SALES'}
-            </span>
-            <TrendingUp size={14} style={{ color: 'var(--text-muted)' }} />
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon blue">
+            <TrendingUp size={22} />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            Rs. {totalSales.toLocaleString()}
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Total Sales</span>
+              <span className="kpi-metric-label-ur">(کل سیلز)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              Rs. {totalSales.toLocaleString()}
+            </div>
           </div>
         </div>
 
         {/* KPI 2: CASH & BANK (Clickable to open Roznamcha Modal) */}
         <div
-          className="kpi-strip-cell"
+          className="kpi-metric-card interactive"
           onClick={() => setIsRoznamchaOpen(true)}
           title={language === 'ur' ? 'روزنامچہ کیش دراز حساب کھولیں' : 'Click to view Live Roznamcha Cash Breakdown'}
-          style={{ cursor: 'pointer', transition: 'background-color 0.15s ease' }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'rgba(5, 150, 105, 0.04)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {language === 'ur' ? 'وصول شدہ رقم' : 'CASH & BANK'}
-            </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <CreditCard size={14} style={{ color: '#059669' }} />
-              <ArrowUpRight size={12} style={{ color: '#059669', opacity: 0.7 }} />
-            </div>
+          <div className="kpi-metric-icon green">
+            <CreditCard size={22} />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#059669', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            Rs. {totalReceived.toLocaleString()}
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Cash & Bank</span>
+              <span className="kpi-metric-label-ur">(وصول شدہ)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              Rs. {totalReceived.toLocaleString()}
+            </div>
           </div>
         </div>
 
         {/* KPI 3: CUSTOMER DUES */}
-        <div className="kpi-strip-cell">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#dc2626', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {language === 'ur' ? 'گاہک بقایا ادھار' : 'CUSTOMER DUES'}
-            </span>
-            <AlertCircle size={14} style={{ color: '#dc2626' }} />
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon red">
+            <AlertCircle size={22} />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#dc2626', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            Rs. {totalDue.toLocaleString()}
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Customer Dues</span>
+              <span className="kpi-metric-label-ur">(بقایا ادھار)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              Rs. {totalDue.toLocaleString()}
+            </div>
           </div>
         </div>
 
         {/* KPI 4: YARD STOCK */}
-        <div className="kpi-strip-cell">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              {language === 'ur' ? 'یارڈ اسٹاک' : 'YARD STOCK'}
-            </span>
-            <Boxes size={14} style={{ color: 'var(--accent-blue)' }} />
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon purple">
+            <Boxes size={22} />
           </div>
-          <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--accent-blue)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }} className="font-mono">
-            {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>Sq.Ft</span>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Yard Stock</span>
+              <span className="kpi-metric-label-ur">(یارڈ اسٹاک)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)' }}>Sq.Ft</span>
+            </div>
           </div>
         </div>
       </div>
@@ -688,7 +707,328 @@ export default function DashboardView({ setActiveView, settings }) {
       })()}
 
       {/* ------------------------------------------------------------------------- */}
-      {/* 4. RECENT BILLS TABLE (Real Database Records)                              */}
+      {/* 4. SALES & COLLECTION TREND (Wide 2-Card Full Width Banner)               */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="dash-card" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="dash-card-header">
+          <div>
+            <h3 className="dash-card-title">
+              <BarChart2 size={18} style={{ color: 'var(--accent-blue)' }} />
+              <span>{language === 'ur' ? 'سیلز و وصولی رجحان' : 'Sales & Collection Trend'}</span>
+            </h3>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+              {salesTimeFilter === 'today'
+                ? (language === 'ur' ? 'آج کی کارکردگی اور کیش فلو' : "Today's sales vs wasooli performance")
+                : salesTimeFilter === 'month'
+                ? (language === 'ur' ? 'اس ماہ کا مجموعی جائزہ' : 'This Month total comparison')
+                : (language === 'ur' ? 'حالیہ 7 دن کی سیلز اور کیش وصولی کا جائزہ' : 'Last 7 days daily sales vs collections')}
+            </div>
+          </div>
+
+          {/* Filter Pills */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            background: 'var(--bg-primary)',
+            padding: '3px',
+            borderRadius: '10px',
+            border: '1px solid var(--border-color)',
+            fontSize: '0.74rem'
+          }}>
+            {[
+              { key: 'today', labelEn: 'Today', labelUr: 'آج' },
+              { key: 'week', labelEn: 'This Week', labelUr: 'اس ہفتے' },
+              { key: 'month', labelEn: 'This Month', labelUr: 'اس ماہ' }
+            ].map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => setSalesTimeFilter(f.key)}
+                style={{
+                  background: salesTimeFilter === f.key ? 'var(--bg-card)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '7px',
+                  padding: '5px 14px',
+                  fontWeight: salesTimeFilter === f.key ? 700 : 500,
+                  color: salesTimeFilter === f.key ? 'var(--accent-blue)' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  boxShadow: salesTimeFilter === f.key ? '0 1px 3px rgba(15,23,42,0.08)' : 'none'
+                }}
+              >
+                {language === 'ur' ? f.labelUr : f.labelEn}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Metric Summary Cards */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '32px', padding: '0 4px' }}>
+          <div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+              {language === 'ur' ? 'کل سیلز' : 'Total Sales'}
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--accent-blue)', marginTop: '2px' }}>
+              Rs. {salesTrendSummary.periodSales.toLocaleString()}
+            </div>
+          </div>
+
+          <div style={{ borderLeft: '1px solid var(--border-color)', height: '36px' }}></div>
+
+          <div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.04em' }}>
+              {language === 'ur' ? 'وصول شدہ رقم' : 'Total Received'}
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 800, color: '#059669', marginTop: '2px' }}>
+              Rs. {salesTrendSummary.periodWasooli.toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* Wide SVG Trend Chart */}
+        <div style={{ width: '100%', overflowX: 'auto', padding: '6px 0' }}>
+          {(() => {
+            const maxVal = Math.max(...weeklyTrendData.map((d) => Math.max(d.sales, d.wasooli)), 1000);
+            const totalDays = weeklyTrendData.length;
+            const step = totalDays > 1 ? 680 / (totalDays - 1) : 100;
+            const salesPoints = weeklyTrendData.map((d, i) => `${40 + i * step},${125 - (d.sales / maxVal) * 95}`).join(' ');
+            const wasooliPoints = weeklyTrendData.map((d, i) => `${40 + i * step},${125 - (d.wasooli / maxVal) * 95}`).join(' ');
+
+            return (
+              <svg viewBox="0 0 760 155" style={{ width: '100%', height: '155px', overflow: 'visible' }}>
+                <line x1="30" y1="30" x2="730" y2="30" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
+                <line x1="30" y1="78" x2="730" y2="78" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
+                <line x1="30" y1="125" x2="730" y2="125" stroke="var(--border-color)" />
+
+                <polyline points={salesPoints} fill="none" stroke="var(--accent-blue)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <polyline points={wasooliPoints} fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+
+                {weeklyTrendData.map((d, i) => {
+                  const cx = 40 + i * step;
+                  const cySales = 125 - (d.sales / maxVal) * 95;
+                  const cyWasooli = 125 - (d.wasooli / maxVal) * 95;
+                  return (
+                    <g key={i}>
+                      <circle cx={cx} cy={cySales} r="4.5" fill="var(--accent-blue)" stroke="#ffffff" strokeWidth="1.5" />
+                      <circle cx={cx} cy={cyWasooli} r="4.5" fill="#059669" stroke="#ffffff" strokeWidth="1.5" />
+                      <text x={cx} y="145" textAnchor="middle" fontSize="12" fill="var(--text-secondary)" fontWeight="700">
+                        {d.day}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            );
+          })()}
+        </div>
+
+        <div className="dash-card-footer" style={{ borderTop: '1px solid var(--border-color, #f1f5f9)', paddingTop: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', fontSize: '0.78rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: 'var(--accent-blue)' }}></span>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{language === 'ur' ? 'سیلز (Sales)' : 'Sales'}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#059669' }}></span>
+              <span style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{language === 'ur' ? 'وصولی (Received)' : 'Received'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 5. CUSTOMER DUES | YARD STOCK POSITION (2 Column Side-by-Side Grid)        */}
+      {/* ------------------------------------------------------------------------- */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
+        gap: '16px'
+      }}>
+        {/* Left: CUSTOMER DUES PANEL */}
+        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div className="dash-card-header">
+              <h3 className="dash-card-title">
+                <CreditCard size={17} style={{ color: '#dc2626' }} />
+                <span>{language === 'ur' ? 'گاہک ادھار' : 'Customer Dues'}</span>
+              </h3>
+              <button
+                type="button"
+                className="dash-card-action"
+                onClick={() => setActiveView('customers')}
+              >
+                <span>{language === 'ur' ? 'تمام دیکھیں' : 'View all'}</span>
+                <ArrowRight size={13} />
+              </button>
+            </div>
+
+            {customersWithDues.length === 0 ? (
+              <div style={{
+                padding: '36px 12px',
+                textAlign: 'center',
+                color: '#059669',
+                fontSize: '0.84rem',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}>
+                <CheckCircle2 size={18} />
+                <span>{language === 'ur' ? 'تمام گاہکوں کے ادھار کھاتے کلیئر ہیں' : 'All customer accounts are settled'}</span>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {customersWithDues.slice(0, 4).map((cust) => (
+                  <div
+                    key={cust.id}
+                    className="dash-row-item interactive"
+                    onClick={() => {
+                      setWasooliForm({
+                        customerId: cust.id.toString(),
+                        amount: cust.balanceDue.toString(),
+                        paymentMethod: 'Cash',
+                        notes: `Payment for ${cust.name}`
+                      });
+                      setIsQuickWasooliOpen(true);
+                    }}
+                    title="Click to record payment"
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {cust.name}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        {cust.phone || 'No phone'}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="font-mono" style={{ fontSize: '0.92rem', fontWeight: 800, color: '#dc2626' }}>
+                        Rs. {Number(cust.balanceDue).toLocaleString()}
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: 'var(--accent-blue)', fontWeight: 600, marginTop: '2px' }}>
+                        + {language === 'ur' ? 'وصولی' : 'Receive Payment'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="dash-card-footer">
+            <span style={{ color: 'var(--text-secondary)', fontSize: '0.78rem' }}>
+              {customersWithDues.length} {language === 'ur' ? 'گاہکوں کا ادھار' : 'customers overdue'}
+            </span>
+            <div>
+              <span style={{ color: 'var(--text-muted)', marginRight: '6px', fontSize: '0.78rem' }}>{language === 'ur' ? 'کل بقایا:' : 'Total Due:'}</span>
+              <strong className="font-mono" style={{ color: '#dc2626', fontSize: '0.96rem' }}>
+                Rs. {totalDue.toLocaleString()}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: YARD STOCK POSITION & BREAKDOWN */}
+        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div>
+            <div className="dash-card-header">
+              <h3 className="dash-card-title">
+                <Boxes size={17} style={{ color: 'var(--accent-blue)' }} />
+                <span>{language === 'ur' ? 'یارڈ اسٹاک پوزیشن' : 'Yard Stock Position'}</span>
+              </h3>
+              <button
+                type="button"
+                className="dash-card-action"
+                onClick={() => setActiveView('stock')}
+              >
+                <span>{language === 'ur' ? 'اسٹاک لسٹ' : 'View stock'}</span>
+                <ArrowRight size={13} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <span className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Sq.Ft Total</span>
+              </span>
+            </div>
+
+            {/* Category Proportion Bars */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Slabs */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {language === 'ur' ? 'ماربل سلیبز' : 'Marble Slabs'}
+                  </span>
+                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+                    {stockBreakdown.slabsSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.slabsPct}%)
+                  </span>
+                </div>
+                <div style={{ height: '8px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ width: `${stockBreakdown.slabsPct}%`, height: '100%', background: 'var(--accent-blue)', borderRadius: '99px' }}></div>
+                </div>
+              </div>
+
+              {/* Tiles */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {language === 'ur' ? 'ماربل و پورسلین ٹائلز' : 'Marble & Porcelain Tiles'}
+                  </span>
+                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+                    {stockBreakdown.tilesSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.tilesPct}%)
+                  </span>
+                </div>
+                <div style={{ height: '8px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ width: `${stockBreakdown.tilesPct}%`, height: '100%', background: '#059669', borderRadius: '99px' }}></div>
+                </div>
+              </div>
+
+              {/* Other & Borders */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {language === 'ur' ? 'سیڑھیاں، گرینائٹ و پٹی' : 'Steps, Granite & Borders'}
+                  </span>
+                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+                    {stockBreakdown.otherSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.otherPct}%)
+                  </span>
+                </div>
+                <div style={{ height: '8px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ width: `${stockBreakdown.otherPct}%`, height: '100%', background: '#d97706', borderRadius: '99px' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="dash-card-footer">
+            {lowStockItems.length > 0 ? (
+              <div
+                onClick={() => {
+                  setSelectedRestockItem(lowStockItems[0]);
+                  setIsRestockModalOpen(true);
+                }}
+                style={{ color: '#b45309', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}
+              >
+                <AlertTriangle size={14} />
+                <span>
+                  {language === 'ur'
+                    ? `${lowStockItems.length} آئٹمز ری آرڈر لیول سے نیچے ہیں (اسٹاک بڑھائیں)`
+                    : `${lowStockItems.length} items below factory reorder level`}
+                </span>
+              </div>
+            ) : (
+              <div style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem' }}>
+                <CheckCircle2 size={14} />
+                <span>{language === 'ur' ? 'یارڈ کا اسٹاک لیول تسلی بخش ہے' : 'Yard inventory levels healthy'}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 6. RECENT BILLS TABLE (Real Database Records)                              */}
       {/* ------------------------------------------------------------------------- */}
       <div className="dash-card dash-card-flush" style={{ width: '100%' }}>
         <div className="dash-card-header-flush">
@@ -797,397 +1137,6 @@ export default function DashboardView({ setActiveView, settings }) {
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* ------------------------------------------------------------------------- */}
-      {/* 5. BUSINESS INTELLIGENCE & OPERATIONAL CONTEXT (2x2 Uniform Grid)          */}
-      {/* ------------------------------------------------------------------------- */}
-      <div className="dash-grid-2x2">
-
-        {/* 1. SALES & COLLECTION TREND */}
-        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div className="dash-card-header">
-              <div>
-                <h3 className="dash-card-title">
-                  <BarChart2 size={16} style={{ color: 'var(--accent-blue)' }} />
-                  <span>{language === 'ur' ? 'سیلز و وصولی رجحان' : 'Sales & Collection Trend'}</span>
-                </h3>
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                  {salesTimeFilter === 'today'
-                    ? (language === 'ur' ? 'آج کی کارکردگی' : "Today's performance")
-                    : salesTimeFilter === 'month'
-                    ? (language === 'ur' ? 'اس ماہ کا مجموعہ' : 'This Month total')
-                    : (language === 'ur' ? 'حالیہ 7 دن کا جائزہ' : 'Last 7 days daily trend')}
-                </div>
-              </div>
-
-              {/* Filter Pills */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                background: 'var(--bg-primary)',
-                padding: '2px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                fontSize: '0.72rem'
-              }}>
-                {[
-                  { key: 'today', labelEn: 'Today', labelUr: 'آج' },
-                  { key: 'week', labelEn: 'This Week', labelUr: 'اس ہفتے' },
-                  { key: 'month', labelEn: 'This Month', labelUr: 'اس ماہ' }
-                ].map((f) => (
-                  <button
-                    key={f.key}
-                    type="button"
-                    onClick={() => setSalesTimeFilter(f.key)}
-                    style={{
-                      background: salesTimeFilter === f.key ? 'var(--bg-card)' : 'transparent',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '4px 10px',
-                      fontWeight: salesTimeFilter === f.key ? 700 : 500,
-                      color: salesTimeFilter === f.key ? 'var(--accent-blue)' : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      boxShadow: salesTimeFilter === f.key ? '0 1px 2px rgba(15,23,42,0.06)' : 'none'
-                    }}
-                  >
-                    {language === 'ur' ? f.labelUr : f.labelEn}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Metric KPIs */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '14px' }}>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  {language === 'ur' ? 'سیلز' : 'Sales'}
-                </div>
-                <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-blue)' }}>
-                  Rs. {salesTrendSummary.periodSales.toLocaleString()}
-                </div>
-              </div>
-              <div style={{ borderLeft: '1px solid var(--border-color)', height: '30px' }}></div>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                  {language === 'ur' ? 'وصول رقم' : 'Received'}
-                </div>
-                <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: '#059669' }}>
-                  Rs. {salesTrendSummary.periodWasooli.toLocaleString()}
-                </div>
-              </div>
-            </div>
-
-            {/* SVG Trend Visualization */}
-            <div style={{ width: '100%', overflowX: 'auto', padding: '4px 0' }}>
-              {(() => {
-                const maxVal = Math.max(...weeklyTrendData.map((d) => Math.max(d.sales, d.wasooli)), 1000);
-                const salesPoints = weeklyTrendData.map((d, i) => `${35 + i * 65},${120 - (d.sales / maxVal) * 95}`).join(' ');
-                const wasooliPoints = weeklyTrendData.map((d, i) => `${35 + i * 65},${120 - (d.wasooli / maxVal) * 95}`).join(' ');
-
-                return (
-                  <svg viewBox="0 0 460 145" style={{ width: '100%', height: '145px', overflow: 'visible' }}>
-                    <line x1="20" y1="25" x2="445" y2="25" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="20" y1="72" x2="445" y2="72" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
-                    <line x1="20" y1="120" x2="445" y2="120" stroke="var(--border-color)" />
-
-                    <polyline points={salesPoints} fill="none" stroke="var(--accent-blue)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                    <polyline points={wasooliPoints} fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-
-                    {weeklyTrendData.map((d, i) => {
-                      const cx = 35 + i * 65;
-                      const cySales = 120 - (d.sales / maxVal) * 95;
-                      const cyWasooli = 120 - (d.wasooli / maxVal) * 95;
-                      return (
-                        <g key={i}>
-                          <circle cx={cx} cy={cySales} r="3.5" fill="var(--accent-blue)" />
-                          <circle cx={cx} cy={cyWasooli} r="3.5" fill="#059669" />
-                          <text x={cx} y="138" textAnchor="middle" fontSize="11" fill="var(--text-secondary)" fontWeight="600">
-                            {d.day}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                );
-              })()}
-            </div>
-          </div>
-
-          <div className="dash-card-footer">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '0.74rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-blue)' }}></span>
-                <span style={{ color: 'var(--text-secondary)' }}>{language === 'ur' ? 'سیلز' : 'Sales'}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669' }}></span>
-                <span style={{ color: 'var(--text-secondary)' }}>{language === 'ur' ? 'وصولی' : 'Received'}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 2. CUSTOMER DUES PANEL */}
-        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div className="dash-card-header">
-              <h3 className="dash-card-title">
-                <CreditCard size={16} style={{ color: '#dc2626' }} />
-                <span>{language === 'ur' ? 'گاہک ادھار' : 'Customer Dues'}</span>
-              </h3>
-              <button
-                type="button"
-                className="dash-card-action"
-                onClick={() => setActiveView('customers')}
-              >
-                <span>{language === 'ur' ? 'تمام دیکھیں' : 'View all'}</span>
-                <ArrowRight size={13} />
-              </button>
-            </div>
-
-            {customersWithDues.length === 0 ? (
-              <div style={{
-                padding: '28px 12px',
-                textAlign: 'center',
-                color: '#059669',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}>
-                <CheckCircle2 size={16} />
-                <span>{language === 'ur' ? 'تمام گاہکوں کے ادھار کھاتے کلیئر ہیں' : 'All customer accounts are settled'}</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {customersWithDues.slice(0, 4).map((cust) => (
-                  <div
-                    key={cust.id}
-                    className="dash-row-item interactive"
-                    onClick={() => {
-                      setWasooliForm({
-                        customerId: cust.id.toString(),
-                        amount: cust.balanceDue.toString(),
-                        paymentMethod: 'Cash',
-                        notes: `Payment for ${cust.name}`
-                      });
-                      setIsQuickWasooliOpen(true);
-                    }}
-                    title="Click to record payment"
-                  >
-                    <div>
-                      <div style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {cust.name}
-                      </div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        {cust.phone || 'No phone'}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div className="font-mono" style={{ fontSize: '0.88rem', fontWeight: 800, color: '#dc2626' }}>
-                        Rs. {Number(cust.balanceDue).toLocaleString()}
-                      </div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--accent-blue)', fontWeight: 600 }}>
-                        + {language === 'ur' ? 'وصولی' : 'Payment'}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="dash-card-footer">
-            <span style={{ color: 'var(--text-secondary)' }}>
-              {customersWithDues.length} {language === 'ur' ? 'گاہکوں کا ادھار' : 'customers overdue'}
-            </span>
-            <div>
-              <span style={{ color: 'var(--text-muted)', marginRight: '6px' }}>{language === 'ur' ? 'کل بقایا:' : 'Total Due:'}</span>
-              <strong className="font-mono" style={{ color: '#dc2626', fontSize: '0.92rem' }}>
-                Rs. {totalDue.toLocaleString()}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        {/* 3. YARD STOCK POSITION & BREAKDOWN */}
-        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div className="dash-card-header">
-              <h3 className="dash-card-title">
-                <Boxes size={16} style={{ color: 'var(--accent-blue)' }} />
-                <span>{language === 'ur' ? 'یارڈ اسٹاک پوزیشن' : 'Yard Stock Position'}</span>
-              </h3>
-              <button
-                type="button"
-                className="dash-card-action"
-                onClick={() => setActiveView('stock')}
-              >
-                <span>{language === 'ur' ? 'اسٹاک لسٹ' : 'View stock'}</span>
-                <ArrowRight size={13} />
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <span className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Sq.Ft Total</span>
-              </span>
-            </div>
-
-            {/* Category Proportion Bars */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {/* Slabs */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {language === 'ur' ? 'ماربل سلیبز' : 'Marble Slabs'}
-                  </span>
-                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
-                    {stockBreakdown.slabsSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.slabsPct}%)
-                  </span>
-                </div>
-                <div style={{ height: '7px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
-                  <div style={{ width: `${stockBreakdown.slabsPct}%`, height: '100%', background: 'var(--accent-blue)', borderRadius: '99px' }}></div>
-                </div>
-              </div>
-
-              {/* Tiles */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {language === 'ur' ? 'ماربل و پورسلین ٹائلز' : 'Marble & Porcelain Tiles'}
-                  </span>
-                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
-                    {stockBreakdown.tilesSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.tilesPct}%)
-                  </span>
-                </div>
-                <div style={{ height: '7px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
-                  <div style={{ width: `${stockBreakdown.tilesPct}%`, height: '100%', background: '#059669', borderRadius: '99px' }}></div>
-                </div>
-              </div>
-
-              {/* Other & Borders */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {language === 'ur' ? 'سیڑھیاں، گرینائٹ و پٹی' : 'Steps, Granite & Borders'}
-                  </span>
-                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
-                    {stockBreakdown.otherSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.otherPct}%)
-                  </span>
-                </div>
-                <div style={{ height: '7px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
-                  <div style={{ width: `${stockBreakdown.otherPct}%`, height: '100%', background: '#d97706', borderRadius: '99px' }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="dash-card-footer">
-            {lowStockItems.length > 0 ? (
-              <div
-                onClick={() => {
-                  setSelectedRestockItem(lowStockItems[0]);
-                  setIsRestockModalOpen(true);
-                }}
-                style={{ color: '#b45309', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <AlertTriangle size={14} />
-                <span>
-                  {language === 'ur'
-                    ? `${lowStockItems.length} آئٹمز ری آرڈر لیول سے نیچے ہیں (اسٹاک بڑھائیں)`
-                    : `${lowStockItems.length} items below factory reorder level`}
-                </span>
-              </div>
-            ) : (
-              <div style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={14} />
-                <span>{language === 'ur' ? 'یارڈ کا اسٹاک لیول تسلی بخش ہے' : 'Yard inventory levels healthy'}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 4. RECENT FACTORY ACTIVITY FEED */}
-        <div className="dash-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-          <div>
-            <div className="dash-card-header">
-              <h3 className="dash-card-title">
-                <Activity size={16} style={{ color: 'var(--accent-blue)' }} />
-                <span>{language === 'ur' ? 'حالیہ فیکٹری سرگرمیاں' : 'Recent Activity'}</span>
-              </h3>
-            </div>
-
-            {activityFeed.length === 0 ? (
-              <div style={{ padding: '28px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                {language === 'ur' ? 'کوئی حالیہ سرگرمی ریکارڈ نہیں ہے' : 'No recent factory activity recorded'}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {activityFeed.map((act) => (
-                  <div
-                    key={act.id}
-                    className={`dash-row-item ${act.invoiceObj ? 'interactive' : ''}`}
-                    onClick={() => {
-                      if (act.invoiceObj) {
-                        setSelectedInvoice(act.invoiceObj);
-                        setIsInvoiceDetailOpen(true);
-                      }
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{
-                        width: '28px',
-                        height: '28px',
-                        borderRadius: '6px',
-                        background: act.type === 'sale' ? 'rgba(37, 99, 235, 0.08)' : act.type === 'payment' ? 'rgba(5, 150, 105, 0.08)' : 'rgba(220, 38, 38, 0.08)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: act.type === 'sale' ? 'var(--accent-blue)' : act.type === 'payment' ? '#059669' : '#dc2626',
-                        flexShrink: 0
-                      }}>
-                        {act.type === 'sale' ? <FileText size={14} /> : act.type === 'payment' ? <CreditCard size={14} /> : <Wallet size={14} />}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {act.title}
-                        </div>
-                        <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                          {act.subtitle}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div className="font-mono" style={{
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        color: act.type === 'payment' ? '#059669' : act.type === 'expense' ? '#dc2626' : 'var(--text-primary)'
-                      }}>
-                        {act.amount}
-                      </div>
-                      <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>
-                        {act.date.toLocaleDateString(language === 'ur' ? 'ur-PK' : 'en-US', { day: 'numeric', month: 'short' })}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="dash-card-footer">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: 'var(--text-muted)' }}>
-              <Clock size={13} />
-              <span>{language === 'ur' ? 'لائیو آڈٹ ٹریل' : 'Live factory audit stream'}</span>
-            </div>
-          </div>
-        </div>
-
       </div>
 
       {/* ------------------------------------------------------------------------- */}
