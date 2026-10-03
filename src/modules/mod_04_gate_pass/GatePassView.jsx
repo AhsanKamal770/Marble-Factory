@@ -558,19 +558,7 @@ export default function GatePassView() {
               gap: "6px"
             }}
           >
-            <span>{language === "ur" ? "رکشہ گیٹ پاس و ترسیل لاجسٹکس" : "Logistics & Gate Pass Operations"}</span>
-            <span
-              style={{
-                fontSize: "0.68rem",
-                fontWeight: 800,
-                padding: "1px 6px",
-                borderRadius: "4px",
-                background: "rgba(37,99,235,0.12)",
-                color: "#2563eb"
-              }}
-            >
-              MOD-04
-            </span>
+            <span>{language === "ur" ? "لاجسٹکس و گیٹ پاس" : "Logistics & Gate Pass"}</span>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>

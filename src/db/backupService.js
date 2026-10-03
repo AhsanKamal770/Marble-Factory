@@ -24,7 +24,9 @@ export async function exportDatabaseToJson() {
     employee_advances: await db.employee_advances.toArray(),
     zakat_records: await db.zakat_records.toArray(),
     zakat_beneficiaries: await db.zakat_beneficiaries.toArray(),
-    payroll_records: await db.payroll_records.toArray()
+    payroll_records: await db.payroll_records.toArray(),
+    payrolls: db.payrolls ? await db.payrolls.toArray() : [],
+    zakat_welfare: db.zakat_welfare ? await db.zakat_welfare.toArray() : []
   };
 
   const jsonString = JSON.stringify(data, null, 2);
@@ -56,7 +58,7 @@ export async function importDatabaseFromJson(jsonString) {
       throw new Error("Invalid backup file structure: missing settings.");
     }
 
-    await db.transaction('rw', [
+    const txStores = [
       db.settings,
       db.users,
       db.items,
@@ -76,7 +78,11 @@ export async function importDatabaseFromJson(jsonString) {
       db.zakat_records,
       db.zakat_beneficiaries,
       db.payroll_records
-    ], async () => {
+    ];
+    if (db.payrolls) txStores.push(db.payrolls);
+    if (db.zakat_welfare) txStores.push(db.zakat_welfare);
+
+    await db.transaction('rw', txStores, async () => {
       await db.settings.clear();
       await db.users.clear();
       await db.items.clear();
@@ -96,6 +102,8 @@ export async function importDatabaseFromJson(jsonString) {
       await db.zakat_records.clear();
       await db.zakat_beneficiaries.clear();
       await db.payroll_records.clear();
+      if (db.payrolls) await db.payrolls.clear();
+      if (db.zakat_welfare) await db.zakat_welfare.clear();
 
       if (data.settings?.length) await db.settings.bulkAdd(data.settings);
       if (data.users?.length) await db.users.bulkAdd(data.users);
@@ -116,6 +124,8 @@ export async function importDatabaseFromJson(jsonString) {
       if (data.zakat_records?.length) await db.zakat_records.bulkAdd(data.zakat_records);
       if (data.zakat_beneficiaries?.length) await db.zakat_beneficiaries.bulkAdd(data.zakat_beneficiaries);
       if (data.payroll_records?.length) await db.payroll_records.bulkAdd(data.payroll_records);
+      if (db.payrolls && data.payrolls?.length) await db.payrolls.bulkAdd(data.payrolls);
+      if (db.zakat_welfare && data.zakat_welfare?.length) await db.zakat_welfare.bulkAdd(data.zakat_welfare);
     });
 
     return { success: true };

@@ -105,34 +105,33 @@ export default function BillPrintModal({
       <style>{`
         @media print {
           @page {
-            size: A4 portrait;
-            margin: 6mm;
+            size: ${printFormat === 'thermal' ? '80mm auto' : 'A4 portrait'} !important;
+            margin: ${printFormat === 'thermal' ? '0mm' : '6mm'} !important;
           }
-          body {
+          body * {
             visibility: hidden !important;
-            background: #ffffff !important;
-          }
-          .print-hide, .modal-header, .modal-overlay {
-            display: none !important;
           }
           .print-target, .print-target * {
             visibility: visible !important;
           }
           .print-target {
-            position: fixed !important;
-            top: 0 !important;
+            display: block !important;
+            position: absolute !important;
             left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
+            top: 0 !important;
+            width: ${printFormat === 'thermal' ? '78mm' : '100%'} !important;
+            max-width: ${printFormat === 'thermal' ? '78mm' : '210mm'} !important;
+            margin: 0 auto !important;
+            padding: ${printFormat === 'thermal' ? '3mm 2mm' : '4mm'} !important;
             background: #ffffff !important;
+            color: #000000 !important;
+            box-sizing: border-box !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
+          }
+          .print-hide, .modal-header, .no-print {
+            display: none !important;
           }
         }
       `}</style>

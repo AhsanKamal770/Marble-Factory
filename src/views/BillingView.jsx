@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import {
   ArrowLeft,
   Plus,
@@ -22,7 +23,9 @@ import {
   Info,
   DollarSign,
   Save,
-  Filter
+  Filter,
+  Boxes,
+  CreditCard
 } from 'lucide-react';
 import { db, adjustItemStock, getLiveCashInDrawer } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
@@ -34,6 +37,30 @@ import { saveCustomer } from '../modules/mod_05_customer_ledger/customerLedgerSe
 export default function BillingView({ setActiveView, settings }) {
   const { language } = useLanguage();
   const isUrdu = language === 'ur';
+
+  // Live KPI Queries for Dashboard-Consistent Metrics Strip
+  const allLiveInvoices = useLiveQuery(() => db.invoices.toArray(), []) || [];
+  const allLiveCustomers = useLiveQuery(() => db.customers.toArray(), []) || [];
+  const allLiveItems = useLiveQuery(() => db.items.toArray(), []) || [];
+  const allLivePayments = useLiveQuery(() => db.customer_payments.toArray(), []) || [];
+  const allLiveExpenses = useLiveQuery(() => db.daily_expenses.toArray(), []) || [];
+
+  const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
+
+  const todaySalesTotal = useMemo(() => {
+    return allLiveInvoices.filter(inv => (inv.createdAt || inv.date || '').slice(0, 10) === todayStr)
+      .reduce((s, inv) => s + Number(inv.grandTotal || 0), 0);
+  }, [allLiveInvoices, todayStr]);
+
+  const totalCustomerDues = useMemo(() => {
+    return allLiveCustomers.reduce((s, c) => s + Number(c.balanceDue || 0), 0);
+  }, [allLiveCustomers]);
+
+  const totalYardStock = useMemo(() => {
+    return allLiveItems.reduce((s, it) => s + Number(it.stockSqFt || 0), 0);
+  }, [allLiveItems]);
+
+  const liveDrawerData = useLiveQuery(() => getLiveCashInDrawer(), [allLiveInvoices.length, allLivePayments.length, allLiveExpenses.length]) || { liveCash: 0 };
 
   // Master Data
   const [items, setItems] = useState([]);
@@ -893,53 +920,156 @@ export default function BillingView({ setActiveView, settings }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '32px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '32px' }}>
       
-      {/* ------------------------------------------------------------- */}
-      {/* 1. MOCKUP TOP HEADER                                           */}
-      {/* ------------------------------------------------------------- */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 1. SEAMLESS HERO HEADER SECTION (with general_background)                 */}
+      {/* ------------------------------------------------------------------------- */}
       <div style={{
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '24px 32px',
-        background: `url('/background.jpeg') center/cover no-repeat, linear-gradient(to right, rgba(248,250,252,0.95), rgba(248,250,252,0.85))`,
-        backgroundBlendMode: 'overlay',
-        borderBottom: '1px solid var(--border-color)',
-        marginBottom: '16px'
+        padding: '6px 4px 10px 4px',
+        minHeight: '84px',
+        overflow: 'hidden'
       }}>
-        {/* Left: Icon, Title & Subtitle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        {/* Left: Overview Breadcrumb + Title + Subtitle / Live Date */}
+        <div style={{ position: 'relative', zIndex: 2 }}>
           <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            background: 'var(--accent-blue-light, rgba(37,99,235,0.1))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--accent-blue)'
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            color: '#2563eb',
+            marginBottom: '4px',
+            display: 'inline-block'
           }}>
-             <FileText size={24} />
+            {isUrdu ? 'سیلز و انوائسنگ' : 'Sales & Invoicing'}
           </div>
-          <div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-              {isUrdu ? 'نیا بل (پوائنٹ آف سیل)' : 'New Bill (POS)'}
-            </h2>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              {isUrdu ? 'نئی سیلز کا بل بنائیں اور ٹرانزیکشن مکمل کریں' : 'Create a new sales bill and complete the transaction'}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '13px',
+              background: '#2563eb',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+              flexShrink: 0
+            }}>
+              <FileText size={24} />
+            </div>
+
+            <div>
+              <h1 style={{
+                fontSize: '1.7rem',
+                fontWeight: 800,
+                color: 'var(--text-primary, #0f172a)',
+                margin: 0,
+                letterSpacing: '-0.02em',
+                lineHeight: 1.2
+              }}>
+                {isUrdu ? 'نیا بل (POS سسٹم)' : 'New Bill (POS System)'}
+              </h1>
+              <p style={{
+                fontSize: '0.86rem',
+                color: 'var(--text-secondary, #64748b)',
+                margin: '2px 0 0 0',
+                fontWeight: 500
+              }}>
+                {isUrdu ? 'نئی سیلز کا بل بنائیں، کسٹمر کھاتہ اور رکشہ گیٹ پاس جاری کریں' : 'Create new sales invoice, update customer khata, and dispatch gate pass'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Right: Breadcrumb */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => lineItems.length > 0 ? setIsDiscardModalOpen(true) : setActiveView('dashboard')}>
-            <Layers size={15} style={{ color: 'var(--accent-blue)' }} />
-            <span style={{ color: 'var(--accent-blue)' }}>Sales</span>
+        {/* Right: Background Marble Image extending seamlessly across the header */}
+        <div style={{
+          position: 'absolute',
+          right: '0',
+          top: '-15px',
+          bottom: '-15px',
+          width: '50%',
+          maxWidth: '520px',
+          backgroundImage: `url('./general_background.png'), url('/general_background.png'), url('./general_background.jpg'), url('/general_background.jpg'), url('./invoice_background.jpg'), url('/invoice_background.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'right center',
+          maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+          WebkitMaskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
+          pointerEvents: 'none',
+          opacity: 0.95,
+          borderRadius: '14px'
+        }} />
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 2. REAL-TIME KPI STRIP                                                    */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="kpi-card-grid">
+        {/* KPI 1: Live Cash in Drawer */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon blue">
+            <Wallet size={22} />
           </div>
-          <span style={{ opacity: 0.5 }}>/</span>
-          <span style={{ color: 'var(--text-primary)' }}>New Bill</span>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Live Cash Drawer</span>
+              <span className="kpi-metric-label-ur">(روزنامچہ کیش)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              Rs. {Number(liveDrawerData.liveCash || 0).toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 2: Today's Sales */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon green">
+            <DollarSign size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Today's Sales</span>
+              <span className="kpi-metric-label-ur">(آج کی سیلز)</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: '#059669' }}>
+              Rs. {Number(todaySalesTotal).toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: Market Receivables / Dues */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon amber">
+            <CreditCard size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Customer Dues</span>
+              <span className="kpi-metric-label-ur">(مارکیٹ بقایا)</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: '#d97706' }}>
+              Rs. {Number(totalCustomerDues).toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Yard Stock Available */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon purple">
+            <Boxes size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Yard Stock</span>
+              <span className="kpi-metric-label-ur">(کل اسٹاک)</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              {Math.round(totalYardStock).toLocaleString()} <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Sq.Ft</span>
+            </div>
+          </div>
         </div>
       </div>
 

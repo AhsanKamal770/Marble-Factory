@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { db } from '../../db/index';
 import { useLanguage } from '../../context/LanguageContext';
+import UniversalReportPrintModal from '../../components/UniversalReportPrintModal';
 import {
   getComprehensiveSalesReport,
   exportSalesReportToCSV,
@@ -58,7 +59,9 @@ export default function SalesReportsView() {
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('OVERVIEW'); // 'OVERVIEW' | 'CATEGORIES' | 'SUTARS' | 'CUSTOMERS' | 'PRODUCTS'
+  const dbSettings = useLiveQuery(() => db.settings.toArray(), [])?.[0] || {};
 
   // Watch Dexie tables to trigger reactive refreshes
   const invoicesCount = useLiveQuery(() => db.invoices.count(), []) || 0;
@@ -208,10 +211,26 @@ export default function SalesReportsView() {
         }
       `}</style>
 
+      {/* Print-Only Header Banner */}
+      <div style={{ display: 'none' }} className="print-target">
+        <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
+            رانا شہاب ماربل فیکٹری اینڈ ٹائلز (Rana Shahab Marble Factory)
+          </h2>
+          <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
+            Executive Sales, Cost & Profit Audit Report (سیلز، لاگت و خالص منافع رپورٹ)
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#555', marginTop: '2px' }}>
+            Period Horizon: {horizon} | Printed on: {new Date().toLocaleString()}
+          </div>
+        </div>
+      </div>
+
       {/* ------------------------------------------------------------------------- */}
       {/* 1. SEAMLESS HERO HEADER (Matching Dashboard & general_background.jpg)       */}
       {/* ------------------------------------------------------------------------- */}
       <div
+        className="no-print"
         style={{
           position: 'relative',
           display: 'flex',
@@ -236,18 +255,6 @@ export default function SalesReportsView() {
             }}
           >
             <span>{language === 'ur' ? 'مالی تجزیہ و سیلز رپورٹس' : 'Financial Insights & Analytics'}</span>
-            <span
-              style={{
-                fontSize: '0.68rem',
-                fontWeight: 800,
-                padding: '1px 6px',
-                borderRadius: '4px',
-                background: 'rgba(37,99,235,0.12)',
-                color: '#2563eb'
-              }}
-            >
-              MOD-07
-            </span>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
@@ -330,7 +337,7 @@ export default function SalesReportsView() {
 
           <button
             type="button"
-            onClick={() => window.print()}
+            onClick={() => setIsPrintModalOpen(true)}
             className="btn btn-primary"
             style={{
               background: '#2563eb',
@@ -1387,6 +1394,41 @@ export default function SalesReportsView() {
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* PDF Print / Save Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  setExportModalOpen(false);
+                  setTimeout(() => window.print(), 200);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, rgba(37,99,235,0.08) 0%, rgba(37,99,235,0.02) 100%)',
+                  border: '1.5px solid #2563eb',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <Printer size={24} style={{ color: '#2563eb', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontWeight: 800, color: '#2563eb', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>{tr('Print / Save PDF Executive Sales Summary', 'پی ڈی ایف سیلز و منافع خلاصہ رپورٹ')}</span>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 800, padding: '2px 6px', background: '#2563eb', color: '#fff', borderRadius: '4px' }}>Recommended</span>
+                  </div>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    {tr('Clean, aligned document layout ready for browser PDF export & printing', 'بہترین فارمیٹنگ اور مکمل ڈیٹا کے ساتھ پرنٹ اور پی ڈی ایف سیو کے لیے')}
+                  </span>
+                </div>
+              </button>
+
               <button
                 type="button"
                 onClick={handleDownloadCSV}
@@ -1465,6 +1507,68 @@ export default function SalesReportsView() {
           </div>
         </div>
       )}
+
+      {/* Universal Report Print Modal for Sales Reports */}
+      <UniversalReportPrintModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        title="Sales & Financial Insights Audit Report"
+        titleUrdu="سیلز اور مالیاتی تجزیہ آڈٹ رپورٹ"
+        subtitle={`Period: ${horizon} ${horizon === 'Custom' ? `(${custom.from} to ${custom.to})` : ''}`}
+        factorySettings={dbSettings}
+        kpis={[
+          { label: 'Gross Sales', labelUrdu: 'کل سیلز', value: rs(summary?.grossSales), color: '#2563eb' },
+          { label: 'Net Sales', labelUrdu: 'خالص سیلز', value: rs(summary?.netSales), color: '#059669' },
+          { label: 'Total Expenses', labelUrdu: 'کل اخراجات', value: rs(summary?.totalExpenses), color: '#dc2626' },
+          {
+            label: 'Net Operating Profit',
+            labelUrdu: 'خالص منافع',
+            value: rs(summary?.netOperatingProfit),
+            color: (summary?.netOperatingProfit || 0) >= 0 ? '#059669' : '#dc2626'
+          }
+        ]}
+        columns={[
+          { key: 'category', label: 'Category / Description', labelUrdu: 'کیٹیگری / آئٹم', bold: true, render: (r) => r.category || r.name || r.sutar || r.customerName || '-' },
+          {
+            key: 'quantity',
+            label: 'Quantity / Sq.Ft',
+            labelUrdu: 'رقبہ / تعداد',
+            align: 'right',
+            render: (r) => `${Number(r.totalSqFt || r.quantity || r.invoicesCount || 0).toLocaleString()} ${r.totalSqFt ? 'sqft' : ''}`
+          },
+          {
+            key: 'revenue',
+            label: 'Revenue (Rs.)',
+            labelUrdu: 'آمدن',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.revenue || r.grossRevenue || r.amount || r.totalSpend || 0)
+          },
+          {
+            key: 'share',
+            label: 'Share %',
+            labelUrdu: 'حصہ',
+            align: 'center',
+            render: (r) => `${Number(r.sharePercent || r.percentage || 0).toFixed(1)}%`
+          }
+        ]}
+        data={
+          activeTab === 'CATEGORIES'
+            ? categoryBreakdown
+            : activeTab === 'SUTARS'
+            ? sutarBreakdown
+            : activeTab === 'CUSTOMERS'
+            ? topCustomers
+            : topProducts.length > 0
+            ? topProducts
+            : categoryBreakdown
+        }
+        summaryRows={[
+          { label: 'کل نقد وصولی (Cash Collected)', value: rs(summary?.cashCollected) },
+          { label: 'واجب الوصول بقایا (Unpaid Receivables)', value: rs(summary?.unpaidReceivables) },
+          { label: 'کل بلز تعداد (Invoices Count)', value: `${summary?.invoiceCount || 0}` }
+        ]}
+      />
     </div>
   );
 }

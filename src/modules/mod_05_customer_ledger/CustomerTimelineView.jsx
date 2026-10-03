@@ -139,7 +139,7 @@ export default function CustomerTimelineView({
               }}
             >
               <Check size={15} strokeWidth={2.5} />
-              <span>Receive Payment (وصولی)</span>
+              <span>Receive Payment</span>
             </button>
 
             {onOpenPrintKhata && (
@@ -191,7 +191,7 @@ export default function CustomerTimelineView({
         }}>
           <div>
             <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Total Purchases (خریداری)
+              Total Purchases
             </div>
             <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
               Rs. {totalBilled.toLocaleString()}
@@ -200,7 +200,7 @@ export default function CustomerTimelineView({
 
           <div>
             <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Total Wasooli (وصولی)
+              Total Received
             </div>
             <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 800, color: "#059669" }}>
               Rs. {totalPaid.toLocaleString()}
@@ -209,7 +209,7 @@ export default function CustomerTimelineView({
 
           <div>
             <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-              Balance Due (بقایا کھاتہ)
+              Balance Due
             </div>
             <div className="font-mono" style={{ fontSize: "1.05rem", fontWeight: 900, color: hasDue ? "#dc2626" : "#059669" }}>
               Rs. {balanceDue.toLocaleString()}
@@ -256,9 +256,9 @@ export default function CustomerTimelineView({
                 <tr style={{ background: "var(--bg-primary)" }}>
                   <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Date</th>
                   <th style={{ textAlign: "left", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Document / Description</th>
-                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Debit (+خریداری)</th>
-                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Credit (-وصولی)</th>
-                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Balance (بقایا)</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Debit (+)</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Credit (-)</th>
+                  <th style={{ textAlign: "right", padding: "10px 14px", borderBottom: "1px solid var(--border-divider)", color: "var(--text-muted)", fontWeight: 700, fontSize: "0.72rem", textTransform: "uppercase" }}>Balance</th>
                 </tr>
               </thead>
               <tbody>

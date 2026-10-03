@@ -26,6 +26,7 @@ import {
 import { db, adjustItemStock, logStockMovement } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import GlobalPagination from '../components/GlobalPagination';
+import UniversalReportPrintModal from '../components/UniversalReportPrintModal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOMAIN TAXONOMY for Cascading Filter & Form
@@ -484,6 +485,8 @@ export default function StockSheetView({ settings }) {
   const [itemTypeFilter, setItemTypeFilter] = useState({ type: 'ALL' });
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateRange, setDateRange] = useState('ALL');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [selectedMovementType, setSelectedMovementType] = useState('ALL');
 
   // Pagination
@@ -495,8 +498,13 @@ export default function StockSheetView({ settings }) {
   const [selectedIds, setSelectedIds] = useState([]);
   const [drawerItem, setDrawerItem] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState(INITIAL_FORM);
+
+  const handlePrint = () => {
+    setIsPrintModalOpen(true);
+  };
 
   // Live Queries
   const items = useLiveQuery(() => db.items.orderBy('name').toArray(), []) || [];
@@ -528,6 +536,28 @@ export default function StockSheetView({ settings }) {
           (item.subCategory || "").toLowerCase().includes(s) ||
           (item.lotNo || "").toLowerCase().includes(s);
         if (!matches) return false;
+      }
+
+      // Date Range Filter
+      if (dateRange !== "ALL") {
+        const rawDate = item.createdAt || item.date || item.updatedAt || "";
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0, 10);
+        const thisMonthStr = now.toISOString().slice(0, 7);
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const itemDateObj = new Date(rawDate);
+
+        if (dateRange === "TODAY") {
+          if (!rawDate.startsWith(todayStr)) return false;
+        } else if (dateRange === "WEEK") {
+          if (itemDateObj < oneWeekAgo) return false;
+        } else if (dateRange === "MONTH") {
+          if (!rawDate.startsWith(thisMonthStr)) return false;
+        } else if (dateRange === "CUSTOM") {
+          const itemDateStr = rawDate.slice(0, 10);
+          if (customStartDate && itemDateStr < customStartDate) return false;
+          if (customEndDate && itemDateStr > customEndDate) return false;
+        }
       }
 
       // Status
@@ -594,7 +624,7 @@ export default function StockSheetView({ settings }) {
 
       return true;
     });
-  }, [items, searchTerm, statusFilter, itemTypeFilter]);
+  }, [items, searchTerm, dateRange, customStartDate, customEndDate, statusFilter, itemTypeFilter]);
 
   // Paginated Items
   const totalRecords = filteredItems.length;
@@ -617,10 +647,33 @@ export default function StockSheetView({ settings }) {
         (m.note || "").toLowerCase().includes(s);
 
       if (!matchesSearch) return false;
+
+      // Date Range Filter on Movements
+      if (dateRange !== "ALL") {
+        const rawDate = m.date || m.createdAt || "";
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0, 10);
+        const thisMonthStr = now.toISOString().slice(0, 7);
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const movDateObj = new Date(rawDate);
+
+        if (dateRange === "TODAY") {
+          if (!rawDate.startsWith(todayStr)) return false;
+        } else if (dateRange === "WEEK") {
+          if (movDateObj < oneWeekAgo) return false;
+        } else if (dateRange === "MONTH") {
+          if (!rawDate.startsWith(thisMonthStr)) return false;
+        } else if (dateRange === "CUSTOM") {
+          const movDateStr = rawDate.slice(0, 10);
+          if (customStartDate && movDateStr < customStartDate) return false;
+          if (customEndDate && movDateStr > customEndDate) return false;
+        }
+      }
+
       if (selectedMovementType === 'ALL') return true;
       return (m.movementType || "").toLowerCase() === selectedMovementType.toLowerCase();
     });
-  }, [movements, searchTerm, selectedMovementType]);
+  }, [movements, searchTerm, dateRange, customStartDate, customEndDate, selectedMovementType]);
 
   const movementTotalPages = Math.max(1, Math.ceil(filteredMovements.length / pageSize));
   const activeMovementPage = Math.min(Math.max(1, movementPage), movementTotalPages);
@@ -707,17 +760,60 @@ export default function StockSheetView({ settings }) {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '30px' }}>
+    <div
+      className="stock-sheet-printable-area"
+      style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '30px' }}
+    >
+      {/* ── Dynamic Print Styles ─────────────────────────────────────────── */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          .stock-sheet-printable-area, .stock-sheet-printable-area * { visibility: visible !important; }
+          .stock-sheet-printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 15px !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+          .no-print { display: none !important; }
+          h1, h2, h3, p, span, td, th, div {
+            color: #000000 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+          }
+          table { border: 1px solid #cbd5e1 !important; width: 100% !important; border-collapse: collapse !important; }
+          th, td { border-bottom: 1px solid #e2e8f0 !important; padding: 6px 8px !important; }
+          .print-header-banner { display: block !important; margin-bottom: 14px !important; border-bottom: 2px solid #0f172a !important; padding-bottom: 8px !important; }
+        }
+        .print-header-banner { display: none; }
+      `}</style>
+
+      {/* Print-Only Header */}
+      <div className="print-header-banner">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, textTransform: 'uppercase', color: '#0f172a' }}>Marble & Granite Factory</h1>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
+              {activeTab === 'sheet' ? 'Live Yard Stock Sheet & Valuation Report' : 'Stock In/Out Movement Audit Log'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#64748b' }}>
+            <div><strong>Printed On:</strong> {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+            <div><strong>Total Varieties:</strong> {items.length} items</div>
+          </div>
+        </div>
+      </div>
 
       {/* ------------------------------------------------------------------------- */}
       {/* 1. SEAMLESS HERO HEADER (With Background Image matching other views)       */}
       {/* ------------------------------------------------------------------------- */}
       <div
+        className="no-print"
         style={{
           position: 'relative',
           display: 'flex',
@@ -908,6 +1004,7 @@ export default function StockSheetView({ settings }) {
       {/* 3. TABS & FILTER CONTROL PANEL (Same filters as Marble & Tiles Stock)       */}
       {/* ------------------------------------------------------------------------- */}
       <div
+        className="no-print"
         style={{
           background: 'var(--bg-card, #ffffff)',
           borderRadius: '16px',
@@ -1015,6 +1112,12 @@ export default function StockSheetView({ settings }) {
             />
           </div>
 
+          {/* Cascading "Filter by Item Type" Multi-Level Dropdown */}
+          <CascadingTypeFilter
+            filter={itemTypeFilter}
+            onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
+          />
+
           {/* Date Range Dropdown */}
           <div style={{ position: 'relative' }}>
             <select
@@ -1037,15 +1140,49 @@ export default function StockSheetView({ settings }) {
               <option value="TODAY">Today</option>
               <option value="WEEK">This Week</option>
               <option value="MONTH">This Month</option>
+              <option value="CUSTOM">Custom Range</option>
             </select>
             <Calendar size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
           </div>
 
-          {/* Cascading "Filter by Item Type" Multi-Level Dropdown */}
-          <CascadingTypeFilter
-            filter={itemTypeFilter}
-            onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
-          />
+          {/* Custom Date Pickers when CUSTOM is active */}
+          {dateRange === 'CUSTOM' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); setMovementPage(1); }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none',
+                  height: '44px'
+                }}
+                title="From Date"
+              />
+              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); setMovementPage(1); }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none',
+                  height: '44px'
+                }}
+                title="To Date"
+              />
+            </div>
+          )}
 
           {/* Status Dropdown */}
           <div style={{ position: 'relative' }}>
@@ -1074,7 +1211,7 @@ export default function StockSheetView({ settings }) {
           </div>
 
           {/* Reset Filters */}
-          {(searchTerm || itemTypeFilter.type !== 'ALL' || statusFilter !== 'ALL' || dateRange !== 'ALL') && (
+          {(searchTerm || itemTypeFilter.type !== 'ALL' || statusFilter !== 'ALL' || dateRange !== 'ALL' || customStartDate || customEndDate) && (
             <button
               type="button"
               onClick={() => {
@@ -1082,7 +1219,10 @@ export default function StockSheetView({ settings }) {
                 setItemTypeFilter({ type: 'ALL' });
                 setStatusFilter('ALL');
                 setDateRange('ALL');
+                setCustomStartDate('');
+                setCustomEndDate('');
                 setCurrentPage(1);
+                setMovementPage(1);
               }}
               style={{
                 height: '44px',
@@ -1094,8 +1234,7 @@ export default function StockSheetView({ settings }) {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '4px',
-                fontWeight: 600
+                gap: '4px'
               }}
             >
               <X size={14} /> Clear
@@ -1139,7 +1278,7 @@ export default function StockSheetView({ settings }) {
             <table className="global-table" style={{ width: '100%' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '36px', textAlign: 'center', padding: '10px 4px' }}>
+                  <th className="no-print" style={{ width: '36px', textAlign: 'center', padding: '10px 4px' }}>
                     <input
                       type="checkbox"
                       checked={paginatedItems.length > 0 && paginatedItems.every((i) => selectedIds.includes(i.id))}
@@ -1155,7 +1294,7 @@ export default function StockSheetView({ settings }) {
                   <th style={{ width: '85px', textAlign: 'right', padding: '10px 6px' }}>RATE</th>
                   <th style={{ width: '105px', textAlign: 'right', padding: '10px 6px' }}>TOTAL VALUE</th>
                   <th style={{ width: '85px', textAlign: 'center', padding: '10px 4px' }}>STATUS</th>
-                  <th style={{ width: '85px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
+                  <th className="no-print" style={{ width: '85px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -1180,7 +1319,7 @@ export default function StockSheetView({ settings }) {
                         className={isSelected ? 'active-row' : ''}
                       >
                         {/* Checkbox */}
-                        <td style={{ textAlign: 'center', padding: '8px 4px' }}>
+                        <td className="no-print" style={{ textAlign: 'center', padding: '8px 4px' }}>
                           <input
                             type="checkbox"
                             checked={isSelected}
@@ -1201,9 +1340,6 @@ export default function StockSheetView({ settings }) {
                           <div style={{ fontWeight: 700, color: 'var(--text-primary, #0f172a)', fontSize: '0.84rem', lineHeight: 1.25 }}>
                             {item.name}
                           </div>
-                          {item.lotNo && (
-                            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{item.lotNo}</div>
-                          )}
                         </td>
 
                         {/* Category */}
@@ -1221,7 +1357,9 @@ export default function StockSheetView({ settings }) {
                             {item.category}
                           </span>
                           {item.subCategory && (
-                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>{item.subCategory}</div>
+                            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px' }}>
+                              {item.subCategory.replace(new RegExp(`^${item.category}\\s*-\\s*`, 'i'), '').trim()}
+                            </div>
                           )}
                         </td>
 
@@ -1300,7 +1438,7 @@ export default function StockSheetView({ settings }) {
                         </td>
 
                         {/* Actions */}
-                        <td style={{ textAlign: 'center', padding: '8px 4px' }}>
+                        <td className="no-print" style={{ textAlign: 'center', padding: '8px 4px' }}>
                           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                             <button
                               type="button"
@@ -1888,6 +2026,62 @@ export default function StockSheetView({ settings }) {
           </div>
         </div>
       )}
+
+      {/* Universal Report Print Modal for Stock Sheet & Movements */}
+      <UniversalReportPrintModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        title={activeTab === 'sheet' ? "Stock Inventory Valuation Report" : "Stock Movement Audit Log"}
+        titleUrdu={activeTab === 'sheet' ? "اسٹاک انوینٹری ویلیوایشن آڈٹ رپورٹ" : "اسٹاک موومنٹ آڈٹ لاگ"}
+        subtitle={`Filter: ${itemTypeFilter.type || 'All'} | Records: ${activeTab === 'sheet' ? filteredItems.length : filteredMovements.length}`}
+        factorySettings={settings}
+        kpis={
+          activeTab === 'sheet'
+            ? [
+                { label: 'Total Items', labelUrdu: 'کل اقسام', value: filteredItems.length, color: '#2563eb' },
+                { label: 'Total Stock Sq.Ft', labelUrdu: 'کل مربع فٹ', value: `${filteredItems.reduce((acc, it) => acc + (Number(it.stockSqFt) || 0), 0).toLocaleString()} Sq.Ft`, color: '#059669' },
+                { label: 'Total Boxes', labelUrdu: 'کل پیٹیاں', value: `${filteredItems.reduce((acc, it) => acc + (Number(it.stockBoxes) || 0), 0).toLocaleString()}`, color: '#d97706' },
+                { label: 'Total Valuation', labelUrdu: 'کل مالیت', value: `Rs. ${filteredItems.reduce((acc, it) => acc + ((Number(it.stockSqFt) || Number(it.stockPieces) || 0) * (Number(it.costPerSqFt) || Number(it.ratePerSqFt) || 0)), 0).toLocaleString()}`, color: '#7c3aed' }
+              ]
+            : [
+                { label: 'Total Movements', labelUrdu: 'کل اندراجات', value: filteredMovements.length, color: '#2563eb' },
+                { label: 'Inward Logs', labelUrdu: 'آمد اسٹاک', value: filteredMovements.filter(m => m.type === 'IN' || m.type === 'PURCHASE').length, color: '#059669' },
+                { label: 'Outward Logs', labelUrdu: 'اخراج اسٹاک', value: filteredMovements.filter(m => m.type === 'OUT' || m.type === 'SALE').length, color: '#dc2626' },
+                { label: 'Adjustments', labelUrdu: 'تبدیلی ریکارڈ', value: filteredMovements.filter(m => m.type === 'ADJUSTMENT' || m.type === 'WASTAGE').length, color: '#d97706' }
+              ]
+        }
+        columns={
+          activeTab === 'sheet'
+            ? [
+                { key: 'code', label: 'Item Code', labelUrdu: 'کوڈ', width: '90px' },
+                { key: 'name', label: 'Item Description', labelUrdu: 'نام و تفصیل', bold: true },
+                { key: 'category', label: 'Category', labelUrdu: 'کیٹیگری', render: (r) => `${r.category || ''} ${r.subCategory ? '- ' + r.subCategory : ''}` },
+                { key: 'stockSqFt', label: 'Stock (Sq.Ft)', labelUrdu: 'اسٹاک', align: 'right', render: (r) => `${Number(r.stockSqFt || 0).toLocaleString()} sq.ft` },
+                { key: 'ratePerSqFt', label: 'Rate (Rs.)', labelUrdu: 'ریٹ', align: 'right', render: (r) => `Rs.${Number(r.ratePerSqFt || 0).toLocaleString()}` },
+                { key: 'valuation', label: 'Valuation (Rs.)', labelUrdu: 'کل مالیت', align: 'right', bold: true, render: (r) => `Rs.${Number((Number(r.stockSqFt || 0) * (Number(r.costPerSqFt) || Number(r.ratePerSqFt) || 0))).toLocaleString()}` },
+                { key: 'status', label: 'Status', labelUrdu: 'حیثیت', align: 'center', render: (r) => isOutOfStock(r) ? 'ختم (Out)' : isLowStock(r) ? 'کم (Low)' : 'موجود (In Stock)' }
+              ]
+            : [
+                { key: 'date', label: 'Date', labelUrdu: 'تاریخ', render: (r) => new Date(r.date || r.createdAt || Date.now()).toLocaleDateString('en-PK') },
+                { key: 'itemName', label: 'Item Name', labelUrdu: 'آئٹم', bold: true },
+                { key: 'type', label: 'Movement', labelUrdu: 'قسم', align: 'center', render: (r) => r.type },
+                { key: 'quantity', label: 'Quantity / Sq.Ft', labelUrdu: 'مقدار', align: 'right', render: (r) => `${Number(r.quantity || r.qtySqFt || 0).toLocaleString()} ${r.unit || 'sqft'}` },
+                { key: 'reason', label: 'Reason / Notes', labelUrdu: 'وجہ / تفصیل' },
+                { key: 'user', label: 'Authorized By', labelUrdu: 'دستخط', render: (r) => r.createdBy || r.user || 'Admin' }
+              ]
+        }
+        data={activeTab === 'sheet' ? filteredItems : filteredMovements}
+        summaryRows={
+          activeTab === 'sheet'
+            ? [
+                { label: 'کل اسٹاک مالیت (Total Valuation)', value: `Rs. ${filteredItems.reduce((acc, it) => acc + ((Number(it.stockSqFt) || Number(it.stockPieces) || 0) * (Number(it.costPerSqFt) || Number(it.ratePerSqFt) || 0)), 0).toLocaleString()}` },
+                { label: 'کل مربع فٹ (Total Sq.Ft)', value: `${filteredItems.reduce((acc, it) => acc + (Number(it.stockSqFt) || 0), 0).toLocaleString()} Sq.Ft` }
+              ]
+            : [
+                { label: 'کل اندراجات (Total Log Count)', value: `${filteredMovements.length}` }
+              ]
+        }
+      />
 
     </div>
   );

@@ -283,7 +283,7 @@ export function LanguageProvider({ children }) {
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('dir', language === 'ur' ? 'rtl' : 'ltr');
+    document.documentElement.setAttribute('dir', 'ltr');
     document.documentElement.setAttribute('lang', language);
     localStorage.setItem('app_language', language);
 

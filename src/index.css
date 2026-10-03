@@ -120,11 +120,12 @@ body {
   transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-[dir="rtl"] {
+/* Language Specific Font and Direction */
+.lang-ur, [dir="rtl"] {
   font-family: var(--font-urdu);
 }
 
-[dir="rtl"] .font-mono {
+.lang-ur .font-mono, [dir="rtl"] .font-mono {
   font-family: var(--font-mono) !important;
   direction: ltr !important;
   display: inline-block;
@@ -166,22 +167,30 @@ body {
   font-size: 0.72rem;
 }
 
-/* App Layout Grid */
+/* App Layout Grid - Sidebar stays permanently on Left side */
 .app-container {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background-color: var(--bg-primary);
+  direction: ltr !important;
+}
+
+.sidebar {
+  direction: ltr !important;
 }
 
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  height: 100vh;
   overflow: hidden;
   position: relative;
   background-color: var(--bg-primary);
+  direction: ltr !important;
 }
 
 .view-content {
@@ -1752,40 +1761,64 @@ select.form-control option {
 
 /* Print Media Rules */
 @media print {
+  @page {
+    margin: 6mm;
+    size: auto;
+  }
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
   }
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
   body * {
     visibility: hidden;
   }
   .print-area, .print-area *,
-  .print-target, .print-target * {
-    visibility: visible;
+  .print-target, .print-target *,
+  .printable-view, .printable-view *,
+  #gatepass-print-area, #gatepass-print-area *,
+  #roznamcha-print-area, #roznamcha-print-area *,
+  #khata-print-area, #khata-print-area * {
+    visibility: visible !important;
   }
-  .print-target {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+  .print-target,
+  .printable-view,
+  #gatepass-print-area,
+  #roznamcha-print-area,
+  #khata-print-area {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff !important;
+    color: #000000 !important;
   }
   .print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    margin: 0;
-    padding: 4px;
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
   }
   .print-hide,
-  .modal-overlay,
+  .no-print,
   .modal-header,
+  .modal-footer,
   .sidebar,
-  .top-header {
+  .top-header,
+  .pagination-container,
+  .global-pagination {
     display: none !important;
   }
 }

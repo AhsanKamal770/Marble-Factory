@@ -125,18 +125,6 @@ export default function DailyExpensesView() {
             }}
           >
             <span>{language === "ur" ? "روزانہ اخراجات و روزنامچہ" : "Cash Flow & Daily Expenses"}</span>
-            <span
-              style={{
-                fontSize: "0.68rem",
-                fontWeight: 800,
-                padding: "1px 6px",
-                borderRadius: "4px",
-                background: "rgba(37,99,235,0.12)",
-                color: "#2563eb"
-              }}
-            >
-              MOD-06
-            </span>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
@@ -192,122 +180,8 @@ export default function DailyExpensesView() {
                   ? "فیکٹری کے روزمرہ اخراجات، نقد وصولیاں اور دراز کیش کا مکمل انتظام"
                   : "Manage factory petty expenses, cash recoveries, and live drawer reconciliation"}
               </p>
-
-              {/* Date Controls placed directly under subtitle */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  flexWrap: "wrap",
-                  marginTop: "12px"
-                }}
-              >
-                {/* Today / Yesterday Quick Toggle */}
-                <div
-                  style={{
-                    display: "flex",
-                    background: "var(--bg-card, #ffffff)",
-                    border: "1px solid var(--border-color, #e2e8f0)",
-                    borderRadius: "9px",
-                    padding: "3px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setQuickDate("today")}
-                    style={{
-                      border: "none",
-                      background: selectedDate === todayStr ? "#2563eb" : "transparent",
-                      color: selectedDate === todayStr ? "#ffffff" : "var(--text-secondary, #64748b)",
-                      padding: "5px 14px",
-                      borderRadius: "7px",
-                      fontSize: "0.8rem",
-                      fontWeight: selectedDate === todayStr ? 800 : 600,
-                      cursor: "pointer",
-                      transition: "all 0.15s ease"
-                    }}
-                  >
-                    {tr("Today", "آج")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setQuickDate("yesterday")}
-                    style={{
-                      border: "none",
-                      background: selectedDate !== todayStr ? "#2563eb" : "transparent",
-                      color: selectedDate !== todayStr ? "#ffffff" : "var(--text-secondary, #64748b)",
-                      padding: "5px 14px",
-                      borderRadius: "7px",
-                      fontSize: "0.8rem",
-                      fontWeight: selectedDate !== todayStr ? 800 : 600,
-                      cursor: "pointer",
-                      transition: "all 0.15s ease"
-                    }}
-                  >
-                    {tr("Yesterday", "گزشتہ کل")}
-                  </button>
-                </div>
-
-                {/* Date Picker Input */}
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    background: "var(--bg-card, #ffffff)",
-                    border: "1px solid var(--border-color, #e2e8f0)",
-                    borderRadius: "9px",
-                    padding: "5px 12px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)"
-                  }}
-                >
-                  <Calendar size={15} style={{ color: "#2563eb" }} />
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    style={{
-                      border: "none",
-                      background: "transparent",
-                      color: "var(--text-primary, #0f172a)",
-                      fontSize: "0.84rem",
-                      fontWeight: 700,
-                      outline: "none",
-                      cursor: "pointer"
-                    }}
-                  />
-                </div>
-              </div>
             </div>
           </div>
-        </div>
-
-        {/* Right: Print Roznamcha Action Button (Blue) */}
-        <div className="no-print" style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", gap: "10px" }}>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => handleOpenPrintModal("a4")}
-            style={{
-              background: "#2563eb",
-              borderColor: "#2563eb",
-              fontWeight: 700,
-              fontSize: "0.86rem",
-              padding: "10px 18px",
-              borderRadius: "9px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
-              color: "#ffffff",
-              cursor: "pointer"
-            }}
-          >
-            <Printer size={16} />
-            <span>{tr("Print Report", "پرنٹ رپورٹ")}</span>
-          </button>
         </div>
 
         {/* Seamless Background Image on Header Right using general_background.jpg */}
@@ -395,6 +269,129 @@ export default function DailyExpensesView() {
               Rs. {Number(cashData?.liveCash || 0).toLocaleString()}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── 2.5 DATE CONTROLS & PRINT REPORT ACTION CARD ── */}
+      <div
+        className="no-print"
+        style={{
+          background: "var(--bg-card, #ffffff)",
+          border: "1px solid var(--border-color, #e2e8f0)",
+          borderRadius: "14px",
+          padding: "12px 18px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "12px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
+        }}
+      >
+        {/* Left: Quick Date Switcher & Calendar Picker */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          {/* Today / Yesterday Toggle */}
+          <div
+            style={{
+              display: "flex",
+              background: "var(--bg-primary, #f1f5f9)",
+              border: "1px solid var(--border-color, #e2e8f0)",
+              borderRadius: "9px",
+              padding: "3px"
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setQuickDate("today")}
+              style={{
+                border: "none",
+                background: selectedDate === todayStr ? "#2563eb" : "transparent",
+                color: selectedDate === todayStr ? "#ffffff" : "var(--text-secondary, #64748b)",
+                padding: "6px 14px",
+                borderRadius: "7px",
+                fontSize: "0.82rem",
+                fontWeight: selectedDate === todayStr ? 800 : 600,
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+            >
+              {tr("Today", "آج")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setQuickDate("yesterday")}
+              style={{
+                border: "none",
+                background: selectedDate !== todayStr ? "#2563eb" : "transparent",
+                color: selectedDate !== todayStr ? "#ffffff" : "var(--text-secondary, #64748b)",
+                padding: "6px 14px",
+                borderRadius: "7px",
+                fontSize: "0.82rem",
+                fontWeight: selectedDate !== todayStr ? 800 : 600,
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+            >
+              {tr("Yesterday", "گزشتہ کل")}
+            </button>
+          </div>
+
+          {/* Date Picker Input */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "var(--bg-card, #ffffff)",
+              border: "1px solid var(--border-color, #cbd5e1)",
+              borderRadius: "9px",
+              padding: "6px 12px",
+              height: "38px",
+              boxSizing: "border-box"
+            }}
+          >
+            <Calendar size={15} style={{ color: "#2563eb" }} />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "var(--text-primary, #0f172a)",
+                fontSize: "0.84rem",
+                fontWeight: 700,
+                outline: "none",
+                cursor: "pointer"
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Right: Print Report Action Button */}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => handleOpenPrintModal("a4")}
+            style={{
+              background: "#2563eb",
+              borderColor: "#2563eb",
+              fontWeight: 700,
+              fontSize: "0.84rem",
+              padding: "8px 16px",
+              borderRadius: "9px",
+              display: "flex",
+              alignItems: "center",
+              gap: "7px",
+              boxShadow: "0 2px 8px rgba(37, 99, 235, 0.25)",
+              color: "#ffffff",
+              cursor: "pointer"
+            }}
+          >
+            <Printer size={15} />
+            <span>{tr("Print Report", "پرنٹ رپورٹ")}</span>
+          </button>
         </div>
       </div>
 

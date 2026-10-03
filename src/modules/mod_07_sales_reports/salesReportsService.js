@@ -6,7 +6,7 @@
 // (Munafa) calculation, Sutar thickness distribution, and customer Khata rankings.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { db } from '../../db/index';
+import { db } from '../../db/index.js';
 
 /**
  * Returns date range boundaries for a selected time horizon

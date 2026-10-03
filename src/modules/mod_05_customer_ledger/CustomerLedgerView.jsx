@@ -406,7 +406,7 @@ export default function CustomerLedgerView() {
 
           {/* Header Title */}
           <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
-            Customer List <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.9rem', color: '#64748b' }}>(گاہکوں کی فہرست)</span>
+            Customer List
           </div>
 
           {/* Search & Filter Row */}
@@ -450,8 +450,8 @@ export default function CustomerLedgerView() {
               }}
             >
               <option value="all">All Categories</option>
-              <option value="dues">With Dues (بقایا دار)</option>
-              <option value="cleared">Cleared (صاف)</option>
+              <option value="dues">With Dues</option>
+              <option value="cleared">Cleared</option>
             </select>
 
             {/* Filter Reset Button */}
@@ -462,15 +462,16 @@ export default function CustomerLedgerView() {
                 height: '38px',
                 borderRadius: '8px',
                 border: '1px solid var(--border-color, #cbd5e1)',
-                background: 'var(--bg-primary, #f8fafc)',
+                background: (searchTerm || statusFilter !== 'all') ? '#eff6ff' : 'var(--bg-primary, #f8fafc)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#64748b',
-                cursor: 'pointer'
+                color: (searchTerm || statusFilter !== 'all') ? '#2563eb' : '#64748b',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
               }}
-              onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
-              title="Reset Filters"
+              onClick={() => { setSearchTerm(''); setStatusFilter('all'); setCurrentPage(1); }}
+              title="Reset Filters (فلٹر صاف کریں)"
             >
               <SlidersHorizontal size={15} />
             </button>
@@ -482,10 +483,10 @@ export default function CustomerLedgerView() {
               <thead>
                 <tr>
                   <th style={{ padding: '8px 6px' }}>
-                    CUSTOMER <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.7rem' }}>(گاہک)</span>
+                    CUSTOMER
                   </th>
                   <th style={{ textAlign: 'right', width: '90px', padding: '8px 6px' }}>
-                    DUE <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.7rem' }}>(بقایا)</span>
+                    DUE
                   </th>
                   <th style={{ textAlign: 'center', width: '65px', padding: '8px 4px' }}>
                     STATUS
@@ -604,9 +605,6 @@ export default function CustomerLedgerView() {
                       <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0 }}>
                         {selectedCustomer.name}
                       </h2>
-                      <span style={{ fontSize: '0.78rem', color: '#64748b', fontFamily: 'var(--font-urdu)' }}>
-                        (گاہک)
-                      </span>
                       <span style={{
                         background: '#dbeafe',
                         color: '#1d4ed8',
@@ -660,7 +658,7 @@ export default function CustomerLedgerView() {
                     }}
                   >
                     <Zap size={13} />
-                    <span>Receive Payment <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.74rem' }}>(وصولی)</span></span>
+                    <span>Receive Payment</span>
                   </button>
 
                   <button
@@ -680,7 +678,7 @@ export default function CustomerLedgerView() {
                     }}
                   >
                     <Printer size={13} />
-                    <span>Print Slip <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.74rem' }}>(پرنٹ سلپ)</span></span>
+                    <span>Print Slip</span>
                   </button>
 
                   <button
@@ -748,7 +746,7 @@ export default function CustomerLedgerView() {
                   }}
                 >
                   <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                    Total Purchases <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.68rem' }}>(خریداری)</span>
+                    Total Purchases
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                     Rs. {Number(selectedCustomer.totalBilled || 0).toLocaleString()}
@@ -770,7 +768,7 @@ export default function CustomerLedgerView() {
                   }}
                 >
                   <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                    Total Wasooli <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.68rem' }}>(وصولی)</span>
+                    Total Received
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 800, color: '#16a34a' }}>
                     Rs. {Number(selectedCustomer.totalPaid || 0).toLocaleString()}
@@ -792,7 +790,7 @@ export default function CustomerLedgerView() {
                   }}
                 >
                   <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                    Balance Due <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.68rem' }}>(بقایا)</span>
+                    Balance Due
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 900, color: Number(selectedCustomer.balanceDue) > 0 ? '#dc2626' : '#16a34a' }}>
                     Rs. {Number(selectedCustomer.balanceDue || 0).toLocaleString()}
@@ -814,7 +812,7 @@ export default function CustomerLedgerView() {
                   }}
                 >
                   <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                    Credit Limit <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.68rem' }}>(کریڈٹ حد)</span>
+                    Credit Limit
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                     Rs. {Number(selectedCustomer.creditLimit || 500000).toLocaleString()}
@@ -825,7 +823,7 @@ export default function CustomerLedgerView() {
               {/* Payment Method Selector Dropdown */}
               <div>
                 <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                  Payment Method <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.72rem' }}>(ادائیگی کا طریقہ)</span>
+                  Payment Method
                 </label>
                 <div style={{ position: 'relative' }}>
                   <Wallet size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#2563eb' }} />
@@ -858,7 +856,7 @@ export default function CustomerLedgerView() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
                     <FileText size={16} style={{ color: '#2563eb' }} />
-                    <span>Khata Ledger & Transaction History <span style={{ fontFamily: 'var(--font-urdu)', fontSize: '0.8rem', color: '#64748b' }}>(کھاتہ)</span></span>
+                    <span>Khata Ledger & Transaction History</span>
                   </div>
                   <button
                     type="button"
@@ -875,7 +873,7 @@ export default function CustomerLedgerView() {
                       gap: '4px'
                     }}
                   >
-                    <span>View All <span style={{ fontFamily: 'var(--font-urdu)' }}>(سب دیکھیں)</span></span>
+                    <span>View All</span>
                     <ChevronRight size={13} />
                   </button>
                 </div>

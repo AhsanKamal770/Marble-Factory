@@ -329,24 +329,24 @@ function CascadingTypeFilter({ filter, onChange }) {
             </div>
 
             {/* Panels */}
-            <button
-              type="button"
-              onClick={() => selectFilter({ type: "Panels" })}
-              onMouseEnter={() => { setActiveL1(null); setActiveL2(null); }}
+            <div
+              onMouseEnter={() => { setActiveL1("Panels"); setActiveL2(null); }}
+              onClick={() => { setActiveL1("Panels"); }}
               style={{
-                width: "100%",
                 padding: "8px 14px",
-                border: "none",
-                background: filter?.type === "Panels" ? "#eff6ff" : "none",
-                color: filter?.type === "Panels" ? "#2563eb" : "var(--text-primary)",
-                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+                background: activeL1 === "Panels" ? "#eff6ff" : "transparent",
+                color: activeL1 === "Panels" ? "#2563eb" : "var(--text-primary)",
                 fontSize: "0.83rem",
-                textAlign: "left",
-                cursor: "pointer"
+                fontWeight: activeL1 === "Panels" ? 700 : 500
               }}
             >
-              Panels
-            </button>
+              <span>Panels</span>
+              <ChevronRight size={13} style={{ color: activeL1 === "Panels" ? "#2563eb" : "#64748b" }} />
+            </div>
           </div>
 
           {/* Level 2 Submenu */}
@@ -472,7 +472,7 @@ function CascadingTypeFilter({ filter, onChange }) {
                 borderRadius: "10px",
                 boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
                 padding: "4px 0",
-                minWidth: "125px",
+                minWidth: "140px",
                 overflow: "hidden"
               }}
             >
@@ -490,7 +490,8 @@ function CascadingTypeFilter({ filter, onChange }) {
                     fontSize: "0.83rem",
                     color: "var(--text-primary)",
                     cursor: "pointer",
-                    fontWeight: 500
+                    fontWeight: 500,
+                    whiteSpace: "nowrap"
                   }}
                 >
                   {sz}
@@ -508,7 +509,8 @@ function CascadingTypeFilter({ filter, onChange }) {
                   fontSize: "0.78rem",
                   color: "#2563eb",
                   cursor: "pointer",
-                  fontWeight: 700
+                  fontWeight: 700,
+                  whiteSpace: "nowrap"
                 }}
               >
                 All 4 Sutar
@@ -738,6 +740,59 @@ function CascadingTypeFilter({ filter, onChange }) {
               </button>
             </div>
           )}
+
+          {/* Level 2 Submenu for Panels */}
+          {activeL1 === "Panels" && (
+            <div
+              style={{
+                background: "var(--bg-card, #ffffff)",
+                border: "1px solid var(--border-color, #cbd5e1)",
+                borderRadius: "10px",
+                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                padding: "4px 0",
+                minWidth: "175px",
+                overflow: "hidden"
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => selectFilter({ type: "Panels" })}
+                style={{
+                  width: "100%",
+                  padding: "7px 12px",
+                  border: "none",
+                  background: "none",
+                  textAlign: "left",
+                  fontSize: "0.8rem",
+                  fontWeight: 700,
+                  color: "#2563eb",
+                  cursor: "pointer"
+                }}
+              >
+                All Panels
+              </button>
+              {ITEM_TAXONOMY.panels.types.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => selectFilter({ type: "Panels", sub: p })}
+                  style={{
+                    width: "100%",
+                    padding: "6px 14px",
+                    border: "none",
+                    background: "none",
+                    textAlign: "left",
+                    fontSize: "0.83rem",
+                    cursor: "pointer",
+                    color: "var(--text-primary)",
+                    whiteSpace: "nowrap"
+                  }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -897,6 +952,8 @@ export default function StockManagementView() {
   // Filters State
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState("ALL");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
   const [itemTypeFilter, setItemTypeFilter] = useState({ type: "ALL" });
   const [statusFilter, setStatusFilter] = useState("ALL"); // ALL | IN_STOCK | LOW_STOCK | OUT_STOCK
 
@@ -932,12 +989,34 @@ export default function StockManagementView() {
         if (!m) return false;
       }
 
-      // 2. Status filter
+      // 2. Date Range Filter
+      if (dateRange !== "ALL") {
+        const rawDate = item.createdAt || item.date || item.updatedAt || "";
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0, 10);
+        const thisMonthStr = now.toISOString().slice(0, 7);
+        const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const itemDateObj = new Date(rawDate);
+
+        if (dateRange === "TODAY") {
+          if (!rawDate.startsWith(todayStr)) return false;
+        } else if (dateRange === "WEEK") {
+          if (itemDateObj < oneWeekAgo) return false;
+        } else if (dateRange === "MONTH") {
+          if (!rawDate.startsWith(thisMonthStr)) return false;
+        } else if (dateRange === "CUSTOM") {
+          const itemDateStr = rawDate.slice(0, 10);
+          if (customStartDate && itemDateStr < customStartDate) return false;
+          if (customEndDate && itemDateStr > customEndDate) return false;
+        }
+      }
+
+      // 3. Status filter
       if (statusFilter === "IN_STOCK" && (isOutOfStock(item) || isLowStock(item))) return false;
       if (statusFilter === "LOW_STOCK" && !isLowStock(item)) return false;
       if (statusFilter === "OUT_STOCK" && !isOutOfStock(item)) return false;
 
-      // 3. Cascading Item Type Filter
+      // 4. Cascading Item Type Filter
       if (itemTypeFilter && itemTypeFilter.type !== "ALL") {
         const cat = (item.category || "").toLowerCase();
         const sub = (item.subCategory || "").toLowerCase();
@@ -984,12 +1063,16 @@ export default function StockManagementView() {
         } else if (itemTypeFilter.type === "Panels") {
           const isPanel = cat.includes("panel") || sub.includes("panel") || (item.name || "").toLowerCase().includes("panel") || (item.name || "").toLowerCase().includes("mashallah");
           if (!isPanel) return false;
+          if (itemTypeFilter.sub) {
+            const cleanSub = itemTypeFilter.sub.toLowerCase();
+            if (!sub.includes(cleanSub) && !(item.name || "").toLowerCase().includes(cleanSub)) return false;
+          }
         }
       }
 
       return true;
     });
-  }, [items, searchTerm, statusFilter, itemTypeFilter]);
+  }, [items, searchTerm, dateRange, customStartDate, customEndDate, statusFilter, itemTypeFilter]);
 
   // ───────────────────────────────────────────────────────────────────────────
   // KPI Calculations
@@ -1343,11 +1426,17 @@ export default function StockManagementView() {
             />
           </div>
 
+          {/* Cascading "Filter by Item Type" Multi-Level Dropdown */}
+          <CascadingTypeFilter
+            filter={itemTypeFilter}
+            onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
+          />
+
           {/* Date Range Dropdown */}
           <div style={{ position: "relative" }}>
             <select
               value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
+              onChange={(e) => { setDateRange(e.target.value); setCurrentPage(1); }}
               style={{
                 padding: "0 14px 0 34px",
                 height: "44px",
@@ -1365,15 +1454,49 @@ export default function StockManagementView() {
               <option value="TODAY">Today</option>
               <option value="WEEK">This Week</option>
               <option value="MONTH">This Month</option>
+              <option value="CUSTOM">Custom Range</option>
             </select>
             <Calendar size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b", pointerEvents: "none" }} />
           </div>
 
-          {/* Cascading "Filter by Item Type" Multi-Level Dropdown */}
-          <CascadingTypeFilter
-            filter={itemTypeFilter}
-            onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
-          />
+          {/* Custom Date Pickers when CUSTOM is active */}
+          {dateRange === "CUSTOM" && (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }}
+                style={{
+                  padding: "6px 8px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color, #cbd5e1)",
+                  fontSize: "0.8rem",
+                  color: "var(--text-primary)",
+                  background: "var(--bg-card, #ffffff)",
+                  outline: "none",
+                  height: "44px"
+                }}
+                title="From Date"
+              />
+              <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }}
+                style={{
+                  padding: "6px 8px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color, #cbd5e1)",
+                  fontSize: "0.8rem",
+                  color: "var(--text-primary)",
+                  background: "var(--bg-card, #ffffff)",
+                  outline: "none",
+                  height: "44px"
+                }}
+                title="To Date"
+              />
+            </div>
+          )}
 
           {/* Status Dropdown */}
           <div style={{ position: "relative" }}>
@@ -1402,7 +1525,7 @@ export default function StockManagementView() {
           </div>
 
           {/* Reset Filters */}
-          {(searchTerm || itemTypeFilter.type !== "ALL" || statusFilter !== "ALL" || dateRange !== "ALL") && (
+          {(searchTerm || itemTypeFilter.type !== "ALL" || statusFilter !== "ALL" || dateRange !== "ALL" || customStartDate || customEndDate) && (
             <button
               type="button"
               onClick={() => {
@@ -1410,6 +1533,8 @@ export default function StockManagementView() {
                 setItemTypeFilter({ type: "ALL" });
                 setStatusFilter("ALL");
                 setDateRange("ALL");
+                setCustomStartDate("");
+                setCustomEndDate("");
                 setCurrentPage(1);
               }}
               className="btn btn-ghost btn-sm"
@@ -1530,9 +1655,6 @@ export default function StockManagementView() {
                         <div style={{ fontWeight: 700, color: "var(--text-primary, #0f172a)", fontSize: "0.83rem", lineHeight: 1.2 }}>
                           {item.name}
                         </div>
-                        {item.lotNo && (
-                          <div style={{ fontSize: "0.7rem", color: "#64748b" }}>{item.lotNo}</div>
-                        )}
                       </td>
 
                       {/* Category */}
@@ -1550,7 +1672,9 @@ export default function StockManagementView() {
                           {item.category}
                         </span>
                         {item.subCategory && (
-                          <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "2px" }}>{item.subCategory}</div>
+                          <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "2px" }}>
+                            {item.subCategory.replace(new RegExp(`^${item.category}\\s*-\\s*`, 'i'), '').trim()}
+                          </div>
                         )}
                       </td>
 

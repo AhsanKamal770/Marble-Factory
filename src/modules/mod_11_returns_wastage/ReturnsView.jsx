@@ -41,6 +41,7 @@ import confetti from 'canvas-confetti';
 import { db, adjustItemStock } from '../../db/index';
 import { useLanguage } from '../../context/LanguageContext';
 import GlobalPagination from '../../components/GlobalPagination';
+import UniversalReportPrintModal from '../../components/UniversalReportPrintModal';
 import {
   recordSalesReturn,
   recordPurchaseReturn,
@@ -81,7 +82,9 @@ export default function ReturnsView({ settings }) {
   // ─────────────────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'SALES_RETURNS' | 'FACTORY_WASTAGE' | 'PURCHASE_RETURNS'
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState('ALL'); // 'ALL' | 'TODAY' | 'WEEK' | 'MONTH'
+  const [dateRange, setDateRange] = useState('ALL'); // 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'CUSTOM'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'CLEARED' | 'GOOD' | 'DAMAGED'
 
   // Pagination
@@ -213,11 +216,16 @@ export default function ReturnsView({ settings }) {
           monthAgo.setMonth(now.getMonth() - 1);
           if (rDate < monthAgo) return false;
         }
+        if (dateRange === 'CUSTOM') {
+          const rDateStr = (r.date || r.createdAt || '').slice(0, 10);
+          if (customStartDate && rDateStr < customStartDate) return false;
+          if (customEndDate && rDateStr > customEndDate) return false;
+        }
       }
 
       return true;
     });
-  }, [returnsData, activeTab, searchTerm, statusFilter, dateRange]);
+  }, [returnsData, activeTab, searchTerm, statusFilter, dateRange, customStartDate, customEndDate]);
 
   const totalPages = Math.max(1, Math.ceil(filteredReturns.length / pageSize));
   const activePage = Math.min(Math.max(1, currentPage), totalPages);
@@ -437,12 +445,63 @@ export default function ReturnsView({ settings }) {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '30px' }}>
+    <div
+      className="returns-printable-area"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '18px',
+        maxWidth: '1440px',
+        margin: '0 auto',
+        paddingBottom: '30px'
+      }}
+    >
+      {/* ── Dynamic Print Styles Fix ────────────────────────────────────── */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          .returns-printable-area, .returns-printable-area * { visibility: visible !important; }
+          .returns-printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 15px !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+          .no-print { display: none !important; }
+          h1, h2, h3, p, span, td, th, div {
+            color: #000000 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+          }
+          table { border: 1px solid #ccc !important; width: 100% !important; border-collapse: collapse !important; }
+          th, td { border-bottom: 1px solid #ddd !important; padding: 6px 8px !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Banner */}
+      <div style={{ display: 'none' }} className="print-target">
+        <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
+            {dbSettings?.companyName || 'رانا شہاب ماربل فیکٹری اینڈ ٹائلز'}
+          </h2>
+          <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
+            Returns, Breakage & Wastage Audit Report (واپسی و نقصان رپورٹ)
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#555', marginTop: '2px' }}>
+            Printed on: {new Date().toLocaleString()} | Filter: {activeTab === 'ALL' ? 'All Records' : activeTab}
+          </div>
+        </div>
+      </div>
 
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {/* 1. SEAMLESS HERO HEADER (Matching Picture 1 & Picture 2 Standard)            */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       <div
+        className="no-print"
         style={{
           position: 'relative',
           display: 'flex',
@@ -527,24 +586,6 @@ export default function ReturnsView({ settings }) {
 
         {/* Right Action Buttons */}
         <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => handleOpenModal('Factory Wastage')}
-            style={{
-              fontWeight: 700,
-              fontSize: '0.84rem',
-              padding: '10px 16px',
-              borderRadius: '9px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <Hammer size={15} />
-            <span>{tr('Log Wastage', 'کٹائی نقصان')}</span>
-          </button>
-
           <button
             type="button"
             className="btn btn-primary"
@@ -861,9 +902,49 @@ export default function ReturnsView({ settings }) {
               <option value="TODAY">Today</option>
               <option value="WEEK">This Week</option>
               <option value="MONTH">This Month</option>
+              <option value="CUSTOM">Custom Range</option>
             </select>
             <Calendar size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
           </div>
+
+          {/* Custom Date Pickers */}
+          {dateRange === 'CUSTOM' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none',
+                  height: '44px'
+                }}
+                title="From Date"
+              />
+              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none',
+                  height: '44px'
+                }}
+                title="To Date"
+              />
+            </div>
+          )}
 
           {/* Status Dropdown */}
           <div style={{ position: 'relative' }}>
@@ -895,13 +976,15 @@ export default function ReturnsView({ settings }) {
           </div>
 
           {/* Reset Filters */}
-          {(searchTerm || statusFilter !== 'ALL' || dateRange !== 'ALL') && (
+          {(searchTerm || statusFilter !== 'ALL' || dateRange !== 'ALL' || customStartDate || customEndDate) && (
             <button
               type="button"
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('ALL');
                 setDateRange('ALL');
+                setCustomStartDate('');
+                setCustomEndDate('');
                 setCurrentPage(1);
               }}
               style={{
@@ -988,14 +1071,14 @@ export default function ReturnsView({ settings }) {
                         <div style={{ fontWeight: 700, color: 'var(--text-primary, #0f172a)', fontSize: '0.83rem' }}>
                           {ret.partyName}
                         </div>
-                        {ret.refDocNo && ret.refDocNo !== 'N/A' && (
+                        {ret.refDocNo && ret.refDocNo !== 'N/A' && !ret.refDocNo.toLowerCase().includes('n/a') && !ret.refDocNo.toLowerCase().includes('internal') && (
                           <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '1px' }}>
                             Ref: {ret.refDocNo}
                           </div>
                         )}
                         {ret.operatorName && (
-                          <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
-                            Master: {ret.operatorName}
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '1px' }}>
+                            {ret.operatorName.replace(/^Master:\s*/i, '')}
                           </div>
                         )}
                       </td>
@@ -1916,140 +1999,36 @@ export default function ReturnsView({ settings }) {
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {/* 8. MODAL: PRINTABLE SUMMARY AUDIT REPORT                                     */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
-      {isReportModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            backdropFilter: 'blur(4px)',
-            padding: '16px'
-          }}
-          onClick={() => setIsReportModalOpen(false)}
-        >
-          <div
-            style={{
-              background: 'var(--bg-card, #ffffff)',
-              borderRadius: '16px',
-              width: '100%',
-              maxWidth: '820px',
-              maxHeight: '92vh',
-              overflowY: 'auto',
-              padding: '24px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.25)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>
-                Returns & Wastage Audit Report
-              </h3>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: '6px',
-                    background: '#2563eb',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '5px'
-                  }}
-                >
-                  <Printer size={14} /> Print Report
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsReportModalOpen(false)}
-                  style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
-
-            {/* Printable Report View */}
-            <div style={{ padding: '12px', background: '#ffffff' }}>
-              <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 900 }}>
-                  {dbSettings?.companyName || 'رانا شہاب ماربل فیکٹری اینڈ ٹائلز'}
-                </h2>
-                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                  Returns, Breakage & Factory Wastage Audit Summary
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '2px' }}>
-                  Generated on: {new Date().toLocaleString()}
-                </div>
-              </div>
-
-              {/* Summary KPIs Strip */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '10px' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>RETURNS VALUE</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#2563eb' }}>{rs(totalSalesReturnValue)}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>BREAKAGE LOSS</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#059669' }}>{totalBreakageLossSqFt} SqFt</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>FINANCIAL LOSS</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#dc2626' }}>{rs(totalFinancialWastageLoss)}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>RESTOCKED AREA</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#d97706' }}>{totalReturnsAreaRestocked} SqFt</div>
-                </div>
-              </div>
-
-              {/* Report Table */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderTop: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>
-                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>DOC #</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>DATE</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>TYPE</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>PARTY / SOURCE</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>STONE ITEM</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>SQFT</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>AMOUNT</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'center' }}>STATUS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredReturns.map((r, i) => {
-                    const it = r.items?.[0] || {};
-                    return (
-                      <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                        <td style={{ padding: '6px 8px', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{r.returnNo}</td>
-                        <td style={{ padding: '6px 8px' }}>{(r.date || r.createdAt || '').slice(0, 10)}</td>
-                        <td style={{ padding: '6px 8px' }}>{r.type}</td>
-                        <td style={{ padding: '6px 8px' }}>{r.partyName}</td>
-                        <td style={{ padding: '6px 8px' }}>{it.name || 'Marble'}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{it.sqft || 0}</td>
-                        <td style={{ padding: '6px 8px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                          Rs. {Number(r.totalAmount || 0).toLocaleString()}
-                        </td>
-                        <td style={{ padding: '6px 8px', textAlign: 'center' }}>{r.status || 'Cleared'}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Universal Report Print Modal for Returns & Wastage */}
+      <UniversalReportPrintModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        title="Factory Wastage & Customer Returns Audit Report"
+        titleUrdu="فیکٹری ویسٹیج و کسٹمر واپسی آڈٹ رپورٹ"
+        subtitle={`Filter: ${activeTab} | Date: ${dateRange} | Total Records: ${filteredReturns.length}`}
+        factorySettings={dbSettings || settings}
+        kpis={[
+          { label: 'Returns Value', labelUrdu: 'واپسی مالیت', value: rs(totalSalesReturnValue), color: '#2563eb' },
+          { label: 'Breakage Loss', labelUrdu: 'ٹوٹ پھوٹ رقبہ', value: `${totalBreakageLossSqFt} SqFt`, color: '#059669' },
+          { label: 'Financial Loss', labelUrdu: 'مالی نقصان', value: rs(totalFinancialWastageLoss), color: '#dc2626' },
+          { label: 'Restocked Area', labelUrdu: 'بحال شدہ اسٹاک', value: `${totalReturnsAreaRestocked} SqFt`, color: '#d97706' }
+        ]}
+        columns={[
+          { key: 'returnNo', label: 'Doc / Log #', labelUrdu: 'نمبر', bold: true },
+          { key: 'date', label: 'Date', labelUrdu: 'تاریخ', render: (r) => (r.date || r.createdAt || '').slice(0, 10) },
+          { key: 'type', label: 'Type', labelUrdu: 'قسم' },
+          { key: 'partyName', label: 'Party / Source', labelUrdu: 'پارٹی / مشین' },
+          { key: 'itemName', label: 'Stone Item', labelUrdu: 'آئٹم', render: (r) => r.items?.[0]?.name || 'Marble' },
+          { key: 'sqft', label: 'Sq.Ft / Qty', labelUrdu: 'رقبہ / تعداد', align: 'right', render: (r) => `${r.items?.[0]?.sqft || 0} sqft` },
+          { key: 'totalAmount', label: 'Amount (Rs.)', labelUrdu: 'رقم', align: 'right', bold: true, render: (r) => rs(r.totalAmount || 0) },
+          { key: 'status', label: 'Status', labelUrdu: 'حیثیت', align: 'center', render: (r) => r.status || 'Cleared' }
+        ]}
+        data={filteredReturns}
+        summaryRows={[
+          { label: 'کل واپسی مالیت (Total Returns Value)', value: rs(totalSalesReturnValue) },
+          { label: 'کل خالص مالی نقصان (Net Financial Loss)', value: rs(totalFinancialWastageLoss) }
+        ]}
+      />
 
     </div>
   );

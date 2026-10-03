@@ -52,10 +52,10 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
   return (
     <div style={{
       background: "#ffffff",
-      padding: "20px 22px",
-      borderRadius: "16px",
+      padding: "14px 16px",
+      borderRadius: "14px",
       border: "1px solid #e2e8f0",
-      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+      boxShadow: "0 2px 10px rgba(0, 0, 0, 0.04)",
       height: "100%",
       display: "flex",
       flexDirection: "column",
@@ -63,15 +63,15 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
       boxSizing: "border-box"
     }}>
       {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px", paddingBottom: "14px", borderBottom: "1px solid #f1f5f9" }}>
-        <div className="app-modal-icon-badge" style={{ background: "linear-gradient(135deg, #ef4444 0%, #f97316 100%)", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)", flexShrink: 0 }}>
-          <Wallet size={22} color="#ffffff" />
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", paddingBottom: "10px", borderBottom: "1px solid #f1f5f9" }}>
+        <div className="app-modal-icon-badge" style={{ width: "36px", height: "36px", borderRadius: "10px", background: "linear-gradient(135deg, #ef4444 0%, #f97316 100%)", boxShadow: "0 2px 8px rgba(239, 68, 68, 0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Wallet size={18} color="#ffffff" />
         </div>
         <div>
-          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, margin: 0, color: "#0f172a" }}>
+          <h3 style={{ fontSize: "0.95rem", fontWeight: 800, margin: 0, color: "#0f172a" }}>
             {tr("Record Daily Expense", "نیا روزانہ خرچ درج کریں")}
           </h3>
-          <p style={{ fontSize: "0.78rem", color: "#64748b", margin: "2px 0 0 0" }}>
+          <p style={{ fontSize: "0.74rem", color: "#64748b", margin: "1px 0 0 0" }}>
             {tr("Log petty expense to deduct from cash drawer", "فیکٹری کا روزمرہ خرچ درج کریں")}
           </p>
         </div>
@@ -82,20 +82,20 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
           background: "rgba(16, 185, 129, 0.12)",
           border: "1px solid #10b981",
           color: "#059669",
-          padding: "8px 12px",
-          borderRadius: "8px",
-          fontSize: "0.82rem",
+          padding: "6px 10px",
+          borderRadius: "7px",
+          fontSize: "0.78rem",
           fontWeight: 700,
-          marginBottom: "12px",
+          marginBottom: "8px",
           display: "flex",
           alignItems: "center",
-          gap: "8px"
+          gap: "6px"
         }}>
-          <Check size={16} /> {successMsg}
+          <Check size={14} /> {successMsg}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1, justifyContent: "space-between" }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, justifyContent: "space-between" }}>
         
         {/* Expense Category */}
         <div className="app-form-group">

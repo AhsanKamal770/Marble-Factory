@@ -31,7 +31,9 @@ export default function InvoicesView({ settings }) {
   // Filter and Search States
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'YEAR'
+  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'YEAR' | 'CUSTOM'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL'); // 'ALL' | 'WALKIN' | 'REGISTERED'
 
   // Pagination States
@@ -141,6 +143,10 @@ export default function InvoicesView({ settings }) {
           if (!rawDate.startsWith(thisMonthStr)) return false;
         } else if (dateFilter === 'YEAR') {
           if (!rawDate.startsWith(thisYearStr)) return false;
+        } else if (dateFilter === 'CUSTOM') {
+          const invDateStr = rawDate.slice(0, 10);
+          if (customStartDate && invDateStr < customStartDate) return false;
+          if (customEndDate && invDateStr > customEndDate) return false;
         }
       }
 
@@ -152,7 +158,7 @@ export default function InvoicesView({ settings }) {
 
       return true;
     });
-  }, [invoices, searchTerm, statusFilter, dateFilter, categoryFilter]);
+  }, [invoices, searchTerm, statusFilter, dateFilter, customStartDate, customEndDate, categoryFilter]);
 
   // ---------------------------------------------------------------------------
   // 4. PAGINATION (Prevents UI Freeze on Large Datasets)
@@ -173,6 +179,8 @@ export default function InvoicesView({ settings }) {
     setSearchTerm('');
     setStatusFilter('ALL');
     setDateFilter('ALL');
+    setCustomStartDate('');
+    setCustomEndDate('');
     setCategoryFilter('ALL');
     setCurrentPage(1);
   };
@@ -562,9 +570,47 @@ export default function InvoicesView({ settings }) {
                 <option value="WEEK">This Week</option>
                 <option value="MONTH">This Month</option>
                 <option value="YEAR">This Year</option>
+                <option value="CUSTOM">Custom Range</option>
               </select>
             </div>
           </div>
+
+          {/* Custom Date Pickers when CUSTOM is active */}
+          {dateFilter === 'CUSTOM' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => { setCustomStartDate(e.target.value); setCurrentPage(1); }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none'
+                }}
+                title="From Date"
+              />
+              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => { setCustomEndDate(e.target.value); setCurrentPage(1); }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none'
+                }}
+                title="To Date"
+              />
+            </div>
+          )}
 
           {/* Status Dropdown */}
           <div style={{

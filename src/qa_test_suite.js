@@ -453,6 +453,113 @@ async function runAllTests() {
   assert(stockAfterReturn === stockBeforeReturn + returnSqFt, 'Returns: Returned stock restored to inventory by +40 Sq.Ft');
 
   // =========================================================================
+  // MODULE 9A: Employees, Payroll, Unlimited Advances & 10% Increment
+  // =========================================================================
+  console.log(bold('\n--- [MODULE 9A] Employees, Payroll, Advances & 10% Raise ---'));
+
+  // 1. Add Employee with 1-Year Completed Anniversary
+  const joinDateTwoYearsAgo = new Date();
+  joinDateTwoYearsAgo.setFullYear(joinDateTwoYearsAgo.getFullYear() - 2);
+  const empId = await db.employees.add({
+    name: 'Muhammad Rashid Cutter',
+    role: 'Marble Cutter',
+    phone: '0300-1122334',
+    joiningDate: joinDateTwoYearsAgo.toISOString().slice(0, 10),
+    salaryType: 'Monthly',
+    baseSalary: 34000,
+    advanceBalance: 0,
+    createdAt: new Date().toISOString()
+  });
+  const addedEmp = await db.employees.get(empId);
+  assert(addedEmp && addedEmp.name === 'Muhammad Rashid Cutter', 'Employees: Employee Muhammad Rashid registered');
+  assert(Number(addedEmp.baseSalary) === 34000, 'Employees: Base salary recorded as Rs. 34,000');
+
+  // 2. 10% Integer Annual Raise Calculation Test
+  const currentBase = Number(addedEmp.baseSalary);
+  const tenPercentRaise = Math.round(currentBase * 0.10);
+  const newSalaryAfterRaise = currentBase + tenPercentRaise;
+  assert(tenPercentRaise === 3400, 'Employees: 10% increment is exact integer 3,400');
+  assert(newSalaryAfterRaise === 37400, 'Employees: New salary after 10% raise is integer Rs. 37,400');
+  await db.employees.update(empId, { baseSalary: newSalaryAfterRaise });
+
+  // 3. Issue Advance (Unlimited Advance Feature: e.g. Rs. 40,000 > salary 37,400)
+  const advanceAmount = 40000;
+  await db.employee_advances.add({
+    employeeId: empId,
+    employeeName: addedEmp.name,
+    amount: advanceAmount,
+    paymentMode: 'Cash',
+    notes: 'Advance for house construction',
+    date: new Date().toISOString().slice(0, 10),
+    createdAt: new Date().toISOString()
+  });
+  await db.employees.update(empId, { advanceBalance: advanceAmount });
+  const empAfterAdvance = await db.employees.get(empId);
+  assert(Number(empAfterAdvance.advanceBalance) === 40000, 'Employees: Advance of Rs. 40,000 recorded (higher than salary)');
+
+  // 4. Monthly Salary Disbursement with Auto-Adjustment
+  const baseSal = Number(empAfterAdvance.baseSalary); // 37,400
+  const curAdv = Number(empAfterAdvance.advanceBalance); // 40,000
+  const autoDeduction = Math.min(baseSal, curAdv); // 37,400
+  const netCashPaid = Math.max(0, baseSal - autoDeduction); // 0
+  const remainingAdv = curAdv - autoDeduction; // 2,600
+
+  await db.payrolls.add({
+    employeeId: empId,
+    employeeName: addedEmp.name,
+    month: new Date().toISOString().slice(0, 7),
+    baseSalary: baseSal,
+    advanceDeducted: autoDeduction,
+    amount: netCashPaid,
+    remainingAdvance: remainingAdv,
+    paymentMode: 'Cash',
+    date: new Date().toISOString(),
+    createdAt: new Date().toISOString()
+  });
+  await db.employees.update(empId, { advanceBalance: remainingAdv });
+
+  const empAfterSalary = await db.employees.get(empId);
+  assert(Number(empAfterSalary.advanceBalance) === 2600, 'Employees: Remaining advance after auto-deduction is Rs. 2,600');
+  assert(netCashPaid === 0, 'Employees: Net cash paid is Rs. 0 because full salary adjusted against advance');
+
+  // =========================================================================
+  // MODULE 9B: Zakat & Welfare Fund Compliance
+  // =========================================================================
+  console.log(bold('\n--- [MODULE 9B] Zakat & Welfare Fund Compliance ---'));
+
+  // 1. Record Zakat Disbursement
+  const zakatId = await db.zakat_records.add({
+    recipientName: 'Haleema Bibi (Widow)',
+    phone: '0300-9988776',
+    category: 'Zakat',
+    amount: 15000,
+    paymentMode: 'Cash',
+    reason: 'Monthly family support',
+    date: new Date().toISOString().slice(0, 10),
+    createdAt: new Date().toISOString()
+  });
+  const zakatRec = await db.zakat_records.get(zakatId);
+  assert(zakatRec && zakatRec.recipientName === 'Haleema Bibi (Widow)', 'Zakat: Zakat disbursement record saved');
+  assert(Number(zakatRec.amount) === 15000, 'Zakat: Amount Rs. 15,000 recorded');
+  assert(zakatRec.category === 'Zakat', 'Zakat: Category verified as Zakat');
+
+  // 2. Record Welfare Ration Aid
+  const welfareId = await db.zakat_records.add({
+    recipientName: 'Master Aslam (Helper)',
+    phone: '0301-5544332',
+    category: 'Ration',
+    amount: 8000,
+    paymentMode: 'Cash',
+    reason: 'Ramadan Ration Box',
+    date: new Date().toISOString().slice(0, 10),
+    createdAt: new Date().toISOString()
+  });
+  const allZakat = await db.zakat_records.toArray();
+  const totalZakatDist = allZakat.reduce((s, z) => s + Number(z.amount || 0), 0);
+  assert(totalZakatDist === 23000, 'Zakat: Total fund distributed calculated accurately as Rs. 23,000');
+
+
+  // =========================================================================
   // MODULE 10: Database Backup, Export & Clean Reset
   // =========================================================================
   console.log(bold('\n--- [MODULE 10] Backup, Export & Database Recovery ---'));

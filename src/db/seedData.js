@@ -58,7 +58,7 @@ export async function initializeDatabaseWithSeedData() {
  * Wipe all transaction and inventory data for a completely clean slate
  */
 export async function wipeAllData() {
-  await db.transaction('rw', [
+  const stores = [
     db.items,
     db.customers,
     db.suppliers,
@@ -76,7 +76,11 @@ export async function wipeAllData() {
     db.zakat_records,
     db.zakat_beneficiaries,
     db.payroll_records
-  ], async () => {
+  ];
+  if (db.payrolls) stores.push(db.payrolls);
+  if (db.zakat_welfare) stores.push(db.zakat_welfare);
+
+  await db.transaction('rw', stores, async () => {
     await db.items.clear();
     await db.customers.clear();
     await db.suppliers.clear();
@@ -94,6 +98,8 @@ export async function wipeAllData() {
     await db.zakat_records.clear();
     await db.zakat_beneficiaries.clear();
     await db.payroll_records.clear();
+    if (db.payrolls) await db.payrolls.clear();
+    if (db.zakat_welfare) await db.zakat_welfare.clear();
   });
 }
 
@@ -388,7 +394,7 @@ export const sampleItems = [
   // ── TYPES OF BLACK BORDER (KALI PATTI: 2 INCH, 3 INCH) ──
   {
     code: "KP-02IN",
-    name: "Kali Patti Black Border (2 inch)",
+    name: "Black Border (2 inch)",
     category: "Kali Patti",
     subCategory: "Kali Patti 2 inch",
     sutarThickness: 4,
@@ -409,7 +415,7 @@ export const sampleItems = [
   },
   {
     code: "KP-03IN",
-    name: "Kali Patti Black Border (3 inch)",
+    name: "Black Border (3 inch)",
     category: "Kali Patti",
     subCategory: "Kali Patti 3 inch",
     sutarThickness: 4,
@@ -524,7 +530,7 @@ export const sampleItems = [
     code: "ACC-BR-01",
     name: "Tile Border Patti",
     category: "Tile Accessories",
-    subCategory: "Tile Accessories - Border",
+    subCategory: "Border",
     sutarThickness: 0,
     finish: "Glazed Ceramic",
     grade: "Standard",
@@ -537,7 +543,7 @@ export const sampleItems = [
     stockBoxes: 0,
     stockPieces: 350,
     minStockAlert: 50,
-    lotNo: "LOT-ACC-TBR",
+    lotNo: "LOT-BR-01",
     location: "Accessories Shelf 1",
     notes: "Tile border decorative patti"
   },
@@ -545,7 +551,7 @@ export const sampleItems = [
     code: "ACC-FL-01",
     name: "Tile Joint Filling / Bond Grout",
     category: "Tile Accessories",
-    subCategory: "Tile Accessories - Filling",
+    subCategory: "Filling",
     sutarThickness: 0,
     finish: "Powder / Polymer",
     grade: "Super Bond",
@@ -558,7 +564,7 @@ export const sampleItems = [
     stockBoxes: 0,
     stockPieces: 150,
     minStockAlert: 30,
-    lotNo: "LOT-ACC-FL",
+    lotNo: "LOT-FL-01",
     location: "Accessories Warehouse",
     notes: "Joint filling grout & tile adhesive bond"
   },
@@ -566,7 +572,7 @@ export const sampleItems = [
     code: "ACC-SP-01",
     name: "Tile Cross Spacers (3mm)",
     category: "Tile Accessories",
-    subCategory: "Tile Accessories - Spacer",
+    subCategory: "Spacer",
     sutarThickness: 0,
     finish: "Plastic",
     grade: "Standard",
@@ -579,7 +585,7 @@ export const sampleItems = [
     stockBoxes: 50,
     stockPieces: 500,
     minStockAlert: 100,
-    lotNo: "LOT-ACC-SP",
+    lotNo: "LOT-SP-01",
     location: "Accessories Shelf 2",
     notes: "Tile spacer pack for uniform joint lines"
   },
@@ -587,7 +593,7 @@ export const sampleItems = [
     code: "ACC-GL-01",
     name: "Chamfer Corner Gola Patti (8ft)",
     category: "Tile Accessories",
-    subCategory: "Tile Accessories - Gola",
+    subCategory: "Gola",
     sutarThickness: 0,
     finish: "Glazed / PVC",
     grade: "Standard",
@@ -600,7 +606,7 @@ export const sampleItems = [
     stockBoxes: 0,
     stockPieces: 150,
     minStockAlert: 80,
-    lotNo: "LOT-ACC-GL",
+    lotNo: "LOT-GL-01",
     location: "Accessories Shelf 3",
     notes: "Tile edge chamfer gola for corner protection"
   },

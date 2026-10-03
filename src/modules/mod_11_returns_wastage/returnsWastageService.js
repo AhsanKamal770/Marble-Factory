@@ -8,7 +8,7 @@
 // 4. Atomic stock reconciliation and rollback capabilities.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { db, adjustItemStock } from '../../db/index';
+import { db, adjustItemStock } from '../../db/index.js';
 
 /**
  * Sequential document number generator for Returns & Wastage

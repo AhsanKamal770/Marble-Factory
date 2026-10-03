@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Users,
   Plus,
   Search,
   DollarSign,
-  UserCheck,
   Calendar,
   FileText,
   X,
@@ -19,19 +18,27 @@ import {
   TrendingUp,
   Pencil,
   Trash2,
-  AlertCircle,
   Award,
   Wallet,
   ArrowDownRight,
   ArrowUpRight,
-  Receipt
+  Receipt,
+  UserCheck,
+  CheckCircle2,
+  Clock,
+  Printer
 } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../db/index";
 import { useLanguage } from "../../context/LanguageContext";
+import UniversalReportPrintModal from "../../components/UniversalReportPrintModal";
 import { employeesPayrollService } from "./employeesPayrollService";
 
 export default function EmployeesPayrollModule() {
   const { language } = useLanguage();
   const isUrdu = language === "ur";
+  const tr = (en, ur) => (isUrdu ? ur : en);
+
   const [employees, setEmployees] = useState([]);
   const [payrolls, setPayrolls] = useState([]);
   const [advances, setAdvances] = useState([]);
@@ -43,7 +50,9 @@ export default function EmployeesPayrollModule() {
   const [isEmpModalOpen, setIsEmpModalOpen] = useState(false);
   const [isPayrollModalOpen, setIsPayrollModalOpen] = useState(false);
   const [isAdvModalOpen, setIsAdvModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [editingEmpId, setEditingEmpId] = useState(null);
+  const dbSettings = useLiveQuery(() => db.settings.toArray(), [])?.[0] || {};
 
   // Form States - Employee
   const [empName, setEmpName] = useState("");
@@ -144,6 +153,23 @@ export default function EmployeesPayrollModule() {
 
   const dueAnniversaryEmployees = employees.filter((emp) => getAnniversaryInfo(emp).isDue);
   const dueSalaryEmployees = employees.filter((emp) => !getMonthlySalaryStatus(emp, currentMonthKey).isPaid);
+
+  // ---------- Derived KPIs ----------
+  const totalBaseSalaryMonthly = useMemo(() => {
+    return employees.reduce((sum, emp) => sum + Math.round(Number(emp.baseSalary || emp.basicSalary || 0)), 0);
+  }, [employees]);
+
+  const totalActiveAdvanceOutstanding = useMemo(() => {
+    return employees.reduce((sum, emp) => sum + Math.round(Number(emp.advanceBalance || emp.advanceDrawn || 0)), 0);
+  }, [employees]);
+
+  const totalMonthlyPayrollDisbursed = useMemo(() => {
+    return payrolls.reduce((sum, curr) => sum + Math.round(Number(curr.amount || 0)), 0);
+  }, [payrolls]);
+
+  const totalAdvanceDeductedAllTime = useMemo(() => {
+    return advances.filter((a) => a.amount < 0).reduce((sum, a) => sum + Math.abs(Number(a.amount || 0)), 0);
+  }, [advances]);
 
   // ---------- Employee Modal Handlers ----------
   const handleOpenAddEmployee = () => {
@@ -301,7 +327,6 @@ export default function EmployeesPayrollModule() {
     if (!emp) return;
 
     try {
-      // 1. Record Advance in employee_advances
       await employeesPayrollService.addAdvance({
         employeeId: emp.id,
         employeeName: emp.name,
@@ -313,7 +338,6 @@ export default function EmployeesPayrollModule() {
         createdAt: new Date().toISOString()
       });
 
-      // 2. Increase Employee's active advance balance (unlimited)
       const currentAdv = Math.round(Number(emp.advanceBalance || emp.advanceDrawn || 0));
       const updatedAdv = currentAdv + amountNum;
       await employeesPayrollService.updateEmployee(emp.id, {
@@ -324,7 +348,7 @@ export default function EmployeesPayrollModule() {
 
       alert(
         isUrdu
-          ? `${emp.name} کو Rs. ${amountNum.toLocaleString()} ایڈوانس کامیابی سے جاری کر دیا گیا ہے۔ کل ایڈوانس بقایا: Rs. ${updatedAdv.toLocaleString()}`
+          ? `${emp.name} کو Rs. ${amountNum.toLocaleString()} ایڈوانس جاری کر دیا گیا۔ کل بقایا: Rs. ${updatedAdv.toLocaleString()}`
           : `Advance of Rs. ${amountNum.toLocaleString()} issued to ${emp.name}. New advance balance: Rs. ${updatedAdv.toLocaleString()}.`
       );
 
@@ -355,7 +379,6 @@ export default function EmployeesPayrollModule() {
     setIsPayrollModalOpen(true);
   };
 
-  // Auto-calculation of Advance Deduction & Net Pay
   const calculatePayrollValues = (empId, customDeduction = null) => {
     const emp = employees.find((x) => x.id === parseInt(empId, 10));
     if (!emp) return;
@@ -363,7 +386,6 @@ export default function EmployeesPayrollModule() {
     const base = Math.round(Number(emp.baseSalary || emp.basicSalary || 0));
     const currentAdv = Math.round(Number(emp.advanceBalance || emp.advanceDrawn || 0));
 
-    // Default deduction absorbs as much advance as base salary allows
     const maxAutoDeduct = Math.min(base, currentAdv);
     const deduction = customDeduction !== null ? Math.min(currentAdv, Math.max(0, Math.round(customDeduction))) : maxAutoDeduct;
 
@@ -404,14 +426,13 @@ export default function EmployeesPayrollModule() {
     if (!emp) return;
 
     try {
-      // 1. Record in payrolls
       await employeesPayrollService.addPayroll({
         employeeId: emp.id,
         employeeName: emp.name,
         month: payMonth,
         baseSalary: payBaseSalary,
         advanceDeducted: payAdvanceDeduction,
-        amount: payNetCash, // Net paid in cash/bank
+        amount: payNetCash,
         remainingAdvance: payRemainingAdvance,
         paymentMode,
         notes: payrollNotes.trim() || `Salary for ${payMonth}`,
@@ -419,7 +440,6 @@ export default function EmployeesPayrollModule() {
         createdAt: new Date().toISOString()
       });
 
-      // 2. If advance was deducted, record a deduction entry in employee_advances
       if (payAdvanceDeduction > 0) {
         await employeesPayrollService.addAdvance({
           employeeId: emp.id,
@@ -433,7 +453,6 @@ export default function EmployeesPayrollModule() {
         });
       }
 
-      // 3. Update employee's active advance balance
       await employeesPayrollService.updateEmployee(emp.id, {
         ...emp,
         advanceBalance: payRemainingAdvance,
@@ -476,101 +495,360 @@ export default function EmployeesPayrollModule() {
     return matchEmp && matchSearch;
   });
 
-  // KPI Calculations
-  const totalMonthlyPayrollDisbursed = payrolls.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
-  const totalActiveAdvanceOutstanding = employees.reduce((acc, emp) => acc + (Number(emp.advanceBalance || emp.advanceDrawn || 0)), 0);
-  const totalAdvancesGivenAllTime = advances.filter((a) => a.amount > 0).reduce((acc, a) => acc + Number(a.amount || 0), 0);
-  const totalAdvanceDeductedAllTime = advances.filter((a) => a.amount < 0).reduce((acc, a) => acc + Math.abs(Number(a.amount || 0)), 0);
-
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      {/* Top Filter & Action Bar */}
-      <div className="card" style={{ padding: "16px 20px" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            flexWrap: "wrap",
-            gap: "14px",
-          }}
-        >
-          {/* Navigation Tabs */}
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === "EMPLOYEES" ? "btn-primary" : "btn-secondary"}`}
-              onClick={() => setActiveTab("EMPLOYEES")}
-            >
-              <Users size={15} /> {isUrdu ? `تمام ملازمین (${employees.length})` : `All Employees (${employees.length})`}
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === "ADVANCES" ? "btn-primary" : "btn-secondary"}`}
-              onClick={() => setActiveTab("ADVANCES")}
-            >
-              <Wallet size={15} /> {isUrdu ? `ایڈوانس کھاتہ (${advances.length})` : `Advance Ledger (${advances.length})`}
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm ${activeTab === "PAYROLL" ? "btn-primary" : "btn-secondary"}`}
-              onClick={() => setActiveTab("PAYROLL")}
-            >
-              <Receipt size={15} /> {isUrdu ? `تنخواہ ریکارڈ (${payrolls.length})` : `Salary Records (${payrolls.length})`}
-            </button>
+    <div
+      className="employees-printable-area"
+      style={{ display: "flex", flexDirection: "column", gap: "18px", maxWidth: "1440px", margin: "0 auto" }}
+    >
+      {/* ── Dynamic Print Styles Fix ────────────────────────────────────── */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          .employees-printable-area, .employees-printable-area * { visibility: visible !important; }
+          .employees-printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 15px !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+          .no-print { display: none !important; }
+          h1, h2, h3, p, span, td, th, div {
+            color: #000000 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+          }
+          table { border: 1px solid #ccc !important; width: 100% !important; border-collapse: collapse !important; }
+          th, td { border-bottom: 1px solid #ddd !important; padding: 6px 8px !important; }
+        }
+      `}</style>
+
+      {/* Print-Only Header Banner */}
+      <div style={{ display: 'none' }} className="print-target">
+        <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
+            رانا شہاب ماربل فیکٹری اینڈ ٹائلز (Rana Shahab Marble Factory)
+          </h2>
+          <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
+            Workforce Payroll & Advance Audit Statement (ملازمین، تنخواہ و پیشگی کھاتہ رپورٹ)
           </div>
-
-          {/* Search & Actions */}
-          <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ position: "relative", width: "240px" }}>
-              <Search
-                size={16}
-                style={{
-                  position: "absolute",
-                  left: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#64748b",
-                }}
-              />
-              <input
-                type="text"
-                className="input-search"
-                style={{ paddingLeft: "38px", fontSize: "0.88rem" }}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder={isUrdu ? "ملازم تلاش کریں..." : "Search employee..."}
-              />
-            </div>
-
-            <button
-              className="btn btn-secondary btn-sm"
-              style={{ color: "#d97706", borderColor: "#fde68a", background: "#fffbeb", fontWeight: 700 }}
-              onClick={() => handleOpenAdvanceModal()}
-              disabled={employees.length === 0}
-            >
-              <Wallet size={15} /> {isUrdu ? "+ ایڈوانس دیں" : "+ Issue Advance"}
-            </button>
-
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={() => handleOpenPayrollModal()}
-              disabled={employees.length === 0}
-            >
-              <CreditCard size={15} /> {isUrdu ? "تنخواہ ادا کریں" : "Pay Salary"}
-            </button>
-
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={handleOpenAddEmployee}
-            >
-              <Plus size={15} /> {isUrdu ? "نیا ملازم" : "Add Employee"}
-            </button>
+          <div style={{ fontSize: '0.78rem', color: '#555', marginTop: '2px' }}>
+            Printed on: {new Date().toLocaleString()} | Month: {currentMonthLabel}
           </div>
         </div>
       </div>
 
-      {/* 1. Monthly Salary Due Notification Banner */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 1. SEAMLESS HERO HEADER SECTION (Matching Dashboard & general_background) */}
+      {/* ------------------------------------------------------------------------- */}
+      <div
+        className="no-print"
+        style={{
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "6px 4px 10px 4px",
+          minHeight: "84px",
+          overflow: "hidden"
+        }}
+      >
+        {/* Left: Overview Breadcrumb + Title + Subtitle */}
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <div
+            style={{
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              color: "#2563eb",
+              marginBottom: "4px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+          >
+            <span>{isUrdu ? "ملازمین و تنخواہ کھاتہ" : "Workforce & Payroll Management"}</span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div
+              style={{
+                width: "46px",
+                height: "46px",
+                borderRadius: "13px",
+                background: "#2563eb",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#ffffff",
+                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+                flexShrink: 0
+              }}
+            >
+              <Users size={24} />
+            </div>
+
+            <div>
+              <h1
+                style={{
+                  fontSize: "1.7rem",
+                  fontWeight: 800,
+                  color: "var(--text-primary, #0f172a)",
+                  margin: 0,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1.2
+                }}
+              >
+                {isUrdu ? "ملازمین و ماہانہ تنخواہ" : "Employees & Monthly Payroll"}{" "}
+                <span
+                  style={{
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    color: "var(--text-secondary, #64748b)",
+                    fontFamily: "var(--font-urdu, inherit)"
+                  }}
+                >
+                  {isUrdu ? "" : "(ملازمین و پے رول)"}
+                </span>
+              </h1>
+              <p
+                style={{
+                  fontSize: "0.86rem",
+                  color: "var(--text-secondary, #64748b)",
+                  margin: "2px 0 0 0",
+                  fontWeight: 500
+                }}
+              >
+                {isUrdu
+                  ? "ملازمین کی شمولیت، ماہانہ تنخواہ کٹوتی، لامحدود ایڈوانس لیجر اور خودکار سالانہ 10% اضافہ کا جامع نظام"
+                  : "Workforce directory, automated monthly payroll cycles, unlimited advances & 10% annual increments"}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Quick Action Buttons - Pay Salary ONLY */}
+        <div className="no-print" style={{ position: "relative", zIndex: 2, display: "flex", alignItems: "center", gap: "8px" }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{
+              background: "#2563eb",
+              borderColor: "#2563eb",
+              fontWeight: 700,
+              fontSize: "0.86rem",
+              padding: "9px 18px",
+              borderRadius: "9px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+              color: "#ffffff"
+            }}
+            onClick={() => handleOpenPayrollModal()}
+            disabled={employees.length === 0}
+          >
+            <CreditCard size={16} />
+            <span>{tr("Pay Salary", "تنخواہ ادا کریں")}</span>
+          </button>
+        </div>
+
+        {/* Right: Background Marble Image with seamless fade mask using general_background */}
+        <div
+          style={{
+            position: "absolute",
+            right: "0",
+            top: "-15px",
+            bottom: "-15px",
+            width: "50%",
+            maxWidth: "520px",
+            backgroundImage: `url('./general_background.jpg'), url('/general_background.jpg'), url('./general_background.jpeg'), url('/general_background.jpeg'), url('./invoice_background.jpg')`,
+            backgroundSize: "cover",
+            backgroundPosition: "right center",
+            maskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
+            WebkitMaskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
+            pointerEvents: "none",
+            opacity: 0.95,
+            borderRadius: "14px"
+          }}
+        />
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 2. PRIMARY 4 KPI METRIC CARDS (Dashboard standard .kpi-card-grid)         */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="kpi-card-grid">
+        {/* KPI 1: TOTAL ACTIVE WORKFORCE */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon blue">
+            <Users size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Total Workforce</span>
+              <span className="kpi-metric-label-ur">({isUrdu ? "کل ملازمین" : "Staff"})</span>
+            </div>
+            <div className="kpi-metric-value font-mono">
+              {employees.length} <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)" }}>{isUrdu ? "ملازمین" : "Staff"}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 2: MONTHLY BASE PAYROLL BUDGET */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon green">
+            <DollarSign size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Salary Commitment</span>
+              <span className="kpi-metric-label-ur">({isUrdu ? "ماہانہ بجٹ" : "Monthly"})</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: "#059669" }}>
+              Rs. {totalBaseSalaryMonthly.toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: TOTAL ACTIVE ADVANCE OUTSTANDING */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon amber">
+            <Wallet size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">Active Advances</span>
+              <span className="kpi-metric-label-ur">({isUrdu ? "بقایا ایڈوانس" : "Outstanding"})</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: "#d97706" }}>
+              Rs. {totalActiveAdvanceOutstanding.toLocaleString()}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: 10% ANNUAL INCREMENT DUE */}
+        <div className="kpi-metric-card">
+          <div className="kpi-metric-icon purple">
+            <TrendingUp size={22} />
+          </div>
+          <div className="kpi-metric-body">
+            <div className="kpi-metric-label">
+              <span className="kpi-metric-label-en">10% Raise Due</span>
+              <span className="kpi-metric-label-ur">({isUrdu ? "سالانہ اضافہ" : "Anniversary"})</span>
+            </div>
+            <div className="kpi-metric-value font-mono" style={{ color: dueAnniversaryEmployees.length > 0 ? "#d97706" : "#7c3aed" }}>
+              {dueAnniversaryEmployees.length} <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)" }}>{isUrdu ? "واجب الادا" : "Due"}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 3. TOOLBAR CARD (Search bar on Left, Action buttons on Right) ─────── */}
+      <div
+        className="no-print"
+        style={{
+          background: "var(--bg-card)",
+          padding: "12px 18px",
+          borderRadius: "12px",
+          border: "1px solid var(--border-color)",
+          display: "flex",
+          gap: "12px",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)"
+        }}
+      >
+        {/* Left: Search Input Box */}
+        <div style={{ position: "relative", flex: "1 1 260px", minWidth: "220px" }}>
+          <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b" }} />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder={tr("Search by employee name, role, phone, CNIC...", "ملازم کا نام، عہدہ، فون، شناختی کارڈ سے تلاش کریں...")}
+            style={{
+              width: "100%",
+              padding: "9px 12px 9px 36px",
+              fontSize: "0.84rem",
+              background: "var(--bg-primary)",
+              border: "1px solid var(--border-color)",
+              borderRadius: "8px",
+              color: "var(--text-primary)",
+              outline: "none",
+              transition: "border-color 0.2s ease"
+            }}
+          />
+        </div>
+
+        {/* Right: Action Buttons (Single icon + text) */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{
+              fontWeight: 700,
+              fontSize: "0.84rem",
+              padding: "9px 16px",
+              borderRadius: "9px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+            onClick={() => setIsPrintModalOpen(true)}
+          >
+            <Printer size={15} />
+            <span>{tr("Print Statement", "آڈٹ رپورٹ")}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{
+              fontWeight: 700,
+              fontSize: "0.84rem",
+              padding: "9px 16px",
+              borderRadius: "9px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              color: "#d97706",
+              borderColor: "#fde68a",
+              background: "#fffbeb"
+            }}
+            onClick={() => handleOpenAdvanceModal()}
+            disabled={employees.length === 0}
+          >
+            <Wallet size={15} />
+            <span>{tr("Issue Advance", "ایڈوانس دیں")}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{
+              fontWeight: 700,
+              fontSize: "0.84rem",
+              padding: "9px 16px",
+              borderRadius: "9px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+            onClick={handleOpenAddEmployee}
+          >
+            <Plus size={15} />
+            <span>{tr("Add Employee", "نیا ملازم")}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------------- */}
+      {/* 4. ACTIVE NOTIFICATION BANNERS (Monthly Salary Due & 10% Annual Raise)   */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* A. Monthly Salary Due Banner */}
       {dueSalaryEmployees.length > 0 && activeTab === "EMPLOYEES" && (
         <div
           className="card"
@@ -593,7 +871,7 @@ export default function EmployeesPayrollModule() {
                 </h4>
                 <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#1e40af" }}>
                   {isUrdu
-                    ? `${dueSalaryEmployees.length} ملازمین کا مہینہ مکمل ہو چکا ہے اور تنخواہ واجب الادا ہے۔ ایڈوانس خودکار ایڈجسٹ ہو جائے گا۔`
+                    ? `${dueSalaryEmployees.length} ملازمین کا مہینہ مکمل ہو چکا ہے۔ ایڈوانس خودکار کٹوتی کے ساتھ تنخواہ ادا کریں۔`
                     : `${dueSalaryEmployees.length} employee(s) are due for monthly salary payment. Advances will auto-adjust.`}
                 </p>
               </div>
@@ -613,7 +891,7 @@ export default function EmployeesPayrollModule() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    background: "rgba(255, 255, 255, 0.9)",
+                    background: "rgba(255, 255, 255, 0.95)",
                     padding: "10px 14px",
                     borderRadius: "8px",
                     border: "1px solid #bfdbfe",
@@ -624,12 +902,12 @@ export default function EmployeesPayrollModule() {
                   <div>
                     <strong style={{ color: "#0f172a", fontSize: "0.9rem" }}>{emp.name}</strong>
                     <span style={{ fontSize: "0.8rem", color: "#64748b", marginLeft: "8px" }}>
-                      ({emp.role}) · مقررہ تنخواہ: <strong className="font-mono">Rs. {base.toLocaleString()}</strong>
+                      ({emp.role}) · {tr("Base:", "تنخواہ:")} <strong className="font-mono">Rs. {base.toLocaleString()}</strong>
                     </span>
                     {adv > 0 && (
                       <div style={{ fontSize: "0.8rem", marginTop: "2px", color: "#d97706", fontWeight: 700 }}>
-                        ⚠️ ایڈوانس بقایا: Rs. {adv.toLocaleString()} → کٹوتی کے بعد خالص: <span className="font-mono" style={{ color: "#2563eb" }}>Rs. {net.toLocaleString()}</span>
-                        {adv > base && <span style={{ color: "#dc2626", marginLeft: "6px" }}>(Rs. {(adv - base).toLocaleString()} اگلے ماہ ٹرانسفر)</span>}
+                        ⚠️ {tr("Advance Bal:", "ایڈوانس:")} Rs. {adv.toLocaleString()} → {tr("Net Payable:", "خالص رقم:")} <span className="font-mono" style={{ color: "#2563eb" }}>Rs. {net.toLocaleString()}</span>
+                        {adv > base && <span style={{ color: "#dc2626", marginLeft: "6px" }}>(Rs. {(adv - base).toLocaleString()} {isUrdu ? "اگلے ماہ ٹرانسفر" : "carried over"})</span>}
                       </div>
                     )}
                   </div>
@@ -649,7 +927,7 @@ export default function EmployeesPayrollModule() {
         </div>
       )}
 
-      {/* 2. 10% Annual Increment Due Notification Banner */}
+      {/* B. 10% Annual Increment Due Banner */}
       {dueAnniversaryEmployees.length > 0 && activeTab === "EMPLOYEES" && (
         <div
           className="card"
@@ -672,7 +950,7 @@ export default function EmployeesPayrollModule() {
                 </h4>
                 <p style={{ margin: "2px 0 0", fontSize: "0.8rem", color: "#78350f" }}>
                   {isUrdu
-                    ? `${dueAnniversaryEmployees.length} ملازمین کا 1 سال مکمل ہو چکا ہے۔ 10% سالانہ اضافہ لاگو کرنے کے لیے بٹن دبائیں۔`
+                    ? `${dueAnniversaryEmployees.length} ملازمین کا 1 سال مکمل ہو چکا ہے۔ 10% سالانہ اضافہ لاگو کریں۔`
                     : `${dueAnniversaryEmployees.length} employee(s) completed 1 year of service. Apply 10% integer increment.`}
                 </p>
               </div>
@@ -689,7 +967,7 @@ export default function EmployeesPayrollModule() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    background: "rgba(255, 255, 255, 0.85)",
+                    background: "rgba(255, 255, 255, 0.95)",
                     padding: "10px 14px",
                     borderRadius: "8px",
                     border: "1px solid #fcd34d",
@@ -727,47 +1005,62 @@ export default function EmployeesPayrollModule() {
         </div>
       )}
 
-      {/* Summary KPI Cards Bar */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
-        <div className="card" style={{ padding: "14px 18px", borderLeft: "4px solid #2563eb" }}>
-          <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
-            {isUrdu ? "ماہانہ تنخواہ ادائیگیاں" : "Total Payroll Paid"}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 5. MAIN DATA SECTIONS WITH TABS                                            */}
+      {/* ------------------------------------------------------------------------- */}
+      <div className="card" style={{ padding: 0 }}>
+        {/* Table Toolbar Header */}
+        <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-divider, #f1f5f9)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+          {/* Left: Tab Switcher */}
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === "EMPLOYEES" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setActiveTab("EMPLOYEES")}
+              style={{ fontWeight: 700 }}
+            >
+              <Users size={14} /> {isUrdu ? `ملازمین (${employees.length})` : `Employees (${employees.length})`}
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === "ADVANCES" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setActiveTab("ADVANCES")}
+              style={{ fontWeight: 700 }}
+            >
+              <Wallet size={14} /> {isUrdu ? `ایڈوانس لیجر (${advances.length})` : `Advance Ledger (${advances.length})`}
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${activeTab === "PAYROLL" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setActiveTab("PAYROLL")}
+              style={{ fontWeight: 700 }}
+            >
+              <Receipt size={14} /> {isUrdu ? `تنخواہ تاریخ (${payrolls.length})` : `Salary History (${payrolls.length})`}
+            </button>
           </div>
-          <div className="font-mono" style={{ fontSize: "1.2rem", fontWeight: 800, color: "#2563eb", marginTop: "4px" }}>
-            Rs. {totalMonthlyPayrollDisbursed.toLocaleString()}
-          </div>
+
+          {/* Right: Employee Filter (Only in Advances Tab) */}
+          {activeTab === "ADVANCES" && (
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <select
+                className="app-form-select"
+                style={{ width: "220px", padding: "6px 12px", fontSize: "0.82rem" }}
+                value={selectedAdvFilterEmp}
+                onChange={(e) => setSelectedAdvFilterEmp(e.target.value)}
+              >
+                <option value="ALL">{isUrdu ? "تمام ملازمین" : "All Employees"}</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={String(emp.id)}>
+                    {emp.name} (بقایا: Rs. {Number(emp.advanceBalance || 0).toLocaleString()})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
-        <div className="card" style={{ padding: "14px 18px", borderLeft: "4px solid #d97706" }}>
-          <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
-            {isUrdu ? "کل ایڈوانس بقایا (Active Advance)" : "Total Advance Outstanding"}
-          </div>
-          <div className="font-mono" style={{ fontSize: "1.2rem", fontWeight: 800, color: "#d97706", marginTop: "4px" }}>
-            Rs. {totalActiveAdvanceOutstanding.toLocaleString()}
-          </div>
-        </div>
-
-        <div className="card" style={{ padding: "14px 18px", borderLeft: "4px solid #059669" }}>
-          <div style={{ fontSize: "0.74rem", color: "var(--text-secondary)", fontWeight: 700, textTransform: "uppercase" }}>
-            {isUrdu ? "تنخواہ سے ریکور ایڈوانس" : "Recovered via Salary"}
-          </div>
-          <div className="font-mono" style={{ fontSize: "1.2rem", fontWeight: 800, color: "#059669", marginTop: "4px" }}>
-            Rs. {totalAdvanceDeductedAllTime.toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* TAB 1: EMPLOYEES LIST WITH SALARY DUE BADGES & ADVANCE BALANCES */}
-      {/* ========================================================================= */}
-      {activeTab === "EMPLOYEES" && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">
-              <Users size={18} className="text-gold" /> {isUrdu ? `ملازمین ریکارڈ (${filteredEmployees.length})` : `Employee Records (${filteredEmployees.length})`}
-            </h3>
-          </div>
-
+        {/* TAB 1: EMPLOYEES TABLE */}
+        {activeTab === "EMPLOYEES" && (
           <div className="table-container">
             <table className="data-table">
               <thead>
@@ -778,15 +1071,14 @@ export default function EmployeesPayrollModule() {
                   <th>{isUrdu ? "مقررہ تنخواہ" : "Base Salary"}</th>
                   <th>{isUrdu ? "ایڈوانس بقایا" : "Advance Balance"}</th>
                   <th>{isUrdu ? "ماہانہ تنخواہ کیفیت" : "Monthly Status"}</th>
-                  <th>{isUrdu ? "10% سالانہ اضافہ" : "10% Annual Increment"}</th>
                   <th style={{ textAlign: "right" }}>{isUrdu ? "اختیارات" : "Actions"}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEmployees.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ textAlign: "center", padding: "36px", color: "#94a3b8" }}>
-                      {isUrdu ? "کوئی ملازم نہیں ملا۔ 'نیا ملازم شامل کریں' پر کلک کریں۔" : "No employee records found. Click 'Add Employee' to register."}
+                    <td colSpan={7} style={{ textAlign: "center", padding: "36px", color: "#94a3b8" }}>
+                      {isUrdu ? "کوئی ملازم نہیں ملا۔ 'نیا ملازم' پر کلک کریں۔" : "No employee records found. Click 'Add Employee' to register."}
                     </td>
                   </tr>
                 ) : (
@@ -801,8 +1093,8 @@ export default function EmployeesPayrollModule() {
                         <td style={{ fontWeight: 700, color: "var(--text-primary)" }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             <div style={{
-                              width: "30px",
-                              height: "30px",
+                              width: "32px",
+                              height: "32px",
                               borderRadius: "50%",
                               background: "rgba(37, 99, 235, 0.1)",
                               color: "#2563eb",
@@ -810,7 +1102,7 @@ export default function EmployeesPayrollModule() {
                               alignItems: "center",
                               justifyContent: "center",
                               fontWeight: 800,
-                              fontSize: "0.8rem"
+                              fontSize: "0.82rem"
                             }}>
                               {emp.name?.charAt(0)?.toUpperCase() || "E"}
                             </div>
@@ -875,7 +1167,7 @@ export default function EmployeesPayrollModule() {
                                 Rs. {currentAdvBal.toLocaleString()}
                               </span>
                               <div style={{ fontSize: "0.68rem", color: "#64748b", marginTop: "2px" }}>
-                                {isUrdu ? "خودکار کٹوتی ہوگا" : "Auto-deducts in salary"}
+                                {isUrdu ? "خودکار کٹوتی ہوگا" : "Auto-adjusts in salary"}
                               </div>
                             </div>
                           ) : (
@@ -936,80 +1228,72 @@ export default function EmployeesPayrollModule() {
                           )}
                         </td>
 
-                        {/* 10% Annual Increment */}
-                        <td>
-                          {annInfo.isDue ? (
-                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                              <span
-                                style={{
-                                  padding: "2px 8px",
-                                  borderRadius: "4px",
-                                  fontSize: "0.74rem",
-                                  fontWeight: 800,
-                                  background: "#fef3c7",
-                                  color: "#d97706",
-                                  border: "1px solid #fde68a"
-                                }}
-                              >
-                                {isUrdu ? "+10% واجب" : "+10% Due"}
-                              </span>
-                              <button
-                                type="button"
-                                className="btn btn-primary btn-sm"
-                                style={{ padding: "2px 7px", fontSize: "0.72rem", background: "#059669", borderColor: "#059669" }}
-                                onClick={() => handleApplyIncrement(emp)}
-                              >
-                                +Rs. {annInfo.incrementAmount.toLocaleString()}
-                              </button>
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: "0.74rem", color: "var(--text-muted)" }}>
-                              <span>{isUrdu ? "اگلا:" : "Next:"}</span>{" "}
-                              <span className="font-mono" style={{ fontWeight: 600 }}>{annInfo.nextDueDateStr}</span>
-                              <div style={{ fontSize: "0.7rem", color: "#059669", fontWeight: 700 }}>
-                                (+Rs. {annInfo.incrementAmount.toLocaleString()})
-                              </div>
-                            </div>
-                          )}
-                        </td>
-
                         {/* Actions */}
                         <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            style={{ color: "#d97706" }}
-                            onClick={() => handleOpenAdvanceModal(emp.id)}
-                            title={isUrdu ? "ایڈوانس جاری کریں" : "Issue Advance"}
-                          >
-                            <Wallet size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            style={{ color: "#2563eb" }}
-                            onClick={() => handleApplyIncrement(emp)}
-                            title={isUrdu ? "10% سالانہ اضافہ لگائیں" : "Apply 10% annual salary increase"}
-                          >
-                            <TrendingUp size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => handleOpenEditEmployee(emp)}
-                            title={isUrdu ? "ترمیم کریں" : "Edit employee"}
-                          >
-                            <Pencil size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            style={{ color: "#ef4444" }}
-                            onClick={() => handleDeleteEmployee(emp)}
-                            title={isUrdu ? "حذف کریں" : "Delete employee"}
-                          >
-                            <Trash2 size={15} />
-                          </button>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                            {/* Issue Advance */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAdvanceModal(emp.id)}
+                              style={{
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "6px",
+                                border: "1px solid #fde68a",
+                                background: "#fffbeb",
+                                color: "#d97706",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer"
+                              }}
+                              title={isUrdu ? "ایڈوانس جاری کریں" : "Issue Advance"}
+                            >
+                              <Wallet size={13} />
+                            </button>
+
+                            {/* Edit Employee */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditEmployee(emp)}
+                              style={{
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "6px",
+                                border: "1px solid #bbf7d0",
+                                background: "#f0fdf4",
+                                color: "#16a34a",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer"
+                              }}
+                              title={isUrdu ? "ترمیم کریں" : "Edit employee"}
+                            >
+                              <Pencil size={13} />
+                            </button>
+
+                            {/* Delete Employee */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteEmployee(emp)}
+                              style={{
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "6px",
+                                border: "1px solid #fecdd3",
+                                background: "#fff1f2",
+                                color: "#e11d48",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                cursor: "pointer"
+                              }}
+                              title={isUrdu ? "حذف کریں" : "Delete employee"}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1018,40 +1302,10 @@ export default function EmployeesPayrollModule() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ========================================================================= */}
-      {/* TAB 2: ADVANCE LEDGER (UNLIMITED ADVANCE TRACKING) */}
-      {/* ========================================================================= */}
-      {activeTab === "ADVANCES" && (
-        <div className="card">
-          <div className="card-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
-            <h3 className="card-title">
-              <Wallet size={18} className="text-gold" /> {isUrdu ? `ایڈوانس کھاتہ و کٹوتی (${filteredAdvances.length})` : `Advance Ledger & Deductions (${filteredAdvances.length})`}
-            </h3>
-
-            {/* Employee Filter */}
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 700 }}>
-                {isUrdu ? "ملازم فلٹر:" : "Filter:"}
-              </span>
-              <select
-                className="app-form-select"
-                style={{ width: "200px", padding: "6px 12px", fontSize: "0.82rem" }}
-                value={selectedAdvFilterEmp}
-                onChange={(e) => setSelectedAdvFilterEmp(e.target.value)}
-              >
-                <option value="ALL">{isUrdu ? "تمام ملازمین (All)" : "All Employees"}</option>
-                {employees.map((emp) => (
-                  <option key={emp.id} value={String(emp.id)}>
-                    {emp.name} (بقایا: Rs. {Number(emp.advanceBalance || 0).toLocaleString()})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
+        {/* TAB 2: ADVANCES LEDGER */}
+        {activeTab === "ADVANCES" && (
           <div className="table-container">
             <table className="data-table">
               <thead>
@@ -1068,7 +1322,7 @@ export default function EmployeesPayrollModule() {
                 {filteredAdvances.length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ textAlign: "center", padding: "36px", color: "#94a3b8" }}>
-                      {isUrdu ? "کوئی ایڈوانس ریکارڈ موجود نہیں۔ '+ ایڈوانس دیں' پر کلک کریں۔" : "No advance records found. Click '+ Issue Advance' to record."}
+                      {isUrdu ? "کوئی ایڈوانس ریکارڈ موجود نہیں۔ 'ایڈوانس دیں' پر کلک کریں۔" : "No advance records found. Click 'Issue Advance' to record."}
                     </td>
                   </tr>
                 ) : (
@@ -1111,20 +1365,10 @@ export default function EmployeesPayrollModule() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ========================================================================= */}
-      {/* TAB 3: SALARY HISTORY */}
-      {/* ========================================================================= */}
-      {activeTab === "PAYROLL" && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">
-              <DollarSign size={18} className="text-gold" /> {isUrdu ? `تنخواہ ادائیگی تاریخ (${filteredPayrolls.length})` : `Salary Payment History (${filteredPayrolls.length})`}
-            </h3>
-          </div>
-
+        {/* TAB 3: PAYROLL HISTORY */}
+        {activeTab === "PAYROLL" && (
           <div className="table-container">
             <table className="data-table">
               <thead>
@@ -1175,11 +1419,11 @@ export default function EmployeesPayrollModule() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ========================================================================= */}
-      {/* MODAL 1: ADD / EDIT EMPLOYEE */}
+      {/* MODAL 1: ADD / EDIT EMPLOYEE                                              */}
       {/* ========================================================================= */}
       {isEmpModalOpen && (
         <div className="app-modal-overlay" onClick={() => setIsEmpModalOpen(false)}>
@@ -1362,7 +1606,7 @@ export default function EmployeesPayrollModule() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 2: ISSUE ADVANCE PAYMENT (UNLIMITED ADVANCE) */}
+      {/* MODAL 2: ISSUE ADVANCE PAYMENT (UNLIMITED ADVANCE)                        */}
       {/* ========================================================================= */}
       {isAdvModalOpen && (
         <div className="app-modal-overlay" onClick={() => setIsAdvModalOpen(false)}>
@@ -1412,7 +1656,7 @@ export default function EmployeesPayrollModule() {
                     >
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name} ({emp.role}) — تنخواہ: Rs. {Number(emp.baseSalary || 0).toLocaleString()} (موجودہ ایڈوانس: Rs. {Number(emp.advanceBalance || 0).toLocaleString()})
+                          {emp.name}
                         </option>
                       ))}
                     </select>
@@ -1530,7 +1774,7 @@ export default function EmployeesPayrollModule() {
       )}
 
       {/* ========================================================================= */}
-      {/* MODAL 3: PAY SALARY (WITH AUTOMATIC ADVANCE SETTLEMENT) */}
+      {/* MODAL 3: PAY SALARY (WITH AUTOMATIC ADVANCE SETTLEMENT)                    */}
       {/* ========================================================================= */}
       {isPayrollModalOpen && (
         <div className="app-modal-overlay" onClick={() => setIsPayrollModalOpen(false)}>
@@ -1580,7 +1824,7 @@ export default function EmployeesPayrollModule() {
                     >
                       {employees.map((emp) => (
                         <option key={emp.id} value={emp.id}>
-                          {emp.name} ({emp.role}) — تنخواہ: Rs. {Number(emp.baseSalary || 0).toLocaleString()} (ایڈوانس: Rs. {Number(emp.advanceBalance || 0).toLocaleString()})
+                          {emp.name}
                         </option>
                       ))}
                     </select>
@@ -1751,6 +1995,132 @@ export default function EmployeesPayrollModule() {
           </div>
         </div>
       )}
+
+      {/* Universal Report Print Modal for Employees & Payroll */}
+      <UniversalReportPrintModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        title="Workforce Payroll & Advances Audit Statement"
+        titleUrdu="ملازمین تنخواہ و ایڈوانس آڈٹ اسٹیٹمنٹ"
+        subtitle={`Active Tab: ${activeTab} | Month: ${currentMonthLabel} | Total: ${employees.length} Staff`}
+        factorySettings={dbSettings}
+        kpis={[
+          { label: "Active Staff", labelUrdu: "کل ملازمین", value: employees.length, color: "#2563eb" },
+          {
+            label: "Monthly Payroll",
+            labelUrdu: "ماہانہ بجٹ",
+            value: `Rs. ${employees.reduce((acc, e) => acc + Number(e.baseSalary || e.basicSalary || 0), 0).toLocaleString()}`,
+            color: "#059669"
+          },
+          {
+            label: "Total Advances",
+            labelUrdu: "کل ایڈوانس بقایا",
+            value: `Rs. ${employees.reduce((acc, e) => acc + Number(e.advanceBalance || e.currentAdvance || 0), 0).toLocaleString()}`,
+            color: "#dc2626"
+          },
+          {
+            label: "Raises Due",
+            labelUrdu: "سالانہ اضافہ واجب",
+            value: `${dueAnniversaryEmployees.length}`,
+            color: "#d97706"
+          }
+        ]}
+        columns={
+          activeTab === "PAYROLL"
+            ? [
+                { key: "payMonth", label: "Month", labelUrdu: "مہینہ", bold: true },
+                { key: "empName", label: "Employee Name", labelUrdu: "ملازم کا نام", bold: true },
+                {
+                  key: "baseSalary",
+                  label: "Base Salary",
+                  labelUrdu: "بنیادی تنخواہ",
+                  align: "right",
+                  render: (r) => `Rs. ${Number(r.baseSalary || 0).toLocaleString()}`
+                },
+                {
+                  key: "advanceDeduction",
+                  label: "Advance Deducted",
+                  labelUrdu: "ایڈوانس کٹوتی",
+                  align: "right",
+                  render: (r) => `Rs. ${Number(r.advanceDeduction || 0).toLocaleString()}`
+                },
+                {
+                  key: "netCashPaid",
+                  label: "Net Paid",
+                  labelUrdu: "خالص ادا رقم",
+                  align: "right",
+                  bold: true,
+                  render: (r) => `Rs. ${Number(r.netCashPaid || r.amount || 0).toLocaleString()}`
+                },
+                {
+                  key: "remainingAdvance",
+                  label: "Remaining Adv",
+                  labelUrdu: "باقی ایڈوانس",
+                  align: "right",
+                  render: (r) => `Rs. ${Number(r.remainingAdvance || 0).toLocaleString()}`
+                }
+              ]
+            : activeTab === "ADVANCES"
+            ? [
+                {
+                  key: "date",
+                  label: "Date",
+                  labelUrdu: "تاریخ",
+                  render: (r) => (r.date || r.createdAt || "").slice(0, 10)
+                },
+                { key: "empName", label: "Employee Name", labelUrdu: "ملازم کا نام", bold: true },
+                {
+                  key: "amount",
+                  label: "Advance Amount",
+                  labelUrdu: "ایڈوانس رقم",
+                  align: "right",
+                  bold: true,
+                  render: (r) => `Rs. ${Number(r.amount || 0).toLocaleString()}`
+                },
+                { key: "paymentMode", label: "Mode", labelUrdu: "طریقہ ادائیگی" },
+                { key: "notes", label: "Notes", labelUrdu: "تفصیل" }
+              ]
+            : [
+                { key: "name", label: "Employee Name", labelUrdu: "ملازم نام", bold: true },
+                { key: "role", label: "Designation", labelUrdu: "عہدہ" },
+                { key: "phone", label: "Contact Phone", labelUrdu: "فون" },
+                { key: "joiningDate", label: "Joining Date", labelUrdu: "تاریخ شمولیت" },
+                {
+                  key: "baseSalary",
+                  label: "Basic Salary",
+                  labelUrdu: "بنیادی تنخواہ",
+                  align: "right",
+                  bold: true,
+                  render: (r) => `Rs. ${Number(r.baseSalary || r.basicSalary || 0).toLocaleString()}`
+                },
+                {
+                  key: "advanceBalance",
+                  label: "Advance Due",
+                  labelUrdu: "ایڈوانس واجب الادا",
+                  align: "right",
+                  render: (r) => `Rs. ${Number(r.advanceBalance || r.currentAdvance || 0).toLocaleString()}`
+                },
+                { key: "status", label: "Status", labelUrdu: "حیثیت", align: "center", render: (r) => r.status || "Active" }
+              ]
+        }
+        data={
+          activeTab === "PAYROLL"
+            ? payrolls
+            : activeTab === "ADVANCES"
+            ? advances
+            : filteredEmployees
+        }
+        summaryRows={[
+          {
+            label: "کل ماہانہ تنخواہ بجٹ (Total Monthly Payroll)",
+            value: `Rs. ${employees.reduce((acc, e) => acc + Number(e.baseSalary || e.basicSalary || 0), 0).toLocaleString()}`
+          },
+          {
+            label: "کل واجب الادا ایڈوانس (Total Outstanding Advances)",
+            value: `Rs. ${employees.reduce((acc, e) => acc + Number(e.advanceBalance || e.currentAdvance || 0), 0).toLocaleString()}`
+          }
+        ]}
+      />
     </div>
   );
 }

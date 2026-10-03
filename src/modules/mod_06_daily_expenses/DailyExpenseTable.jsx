@@ -12,7 +12,7 @@ export default function DailyExpenseTable({ expenses = [], onDeleteExpense }) {
   const [confirmId, setConfirmId] = useState(null);
 
   // Pagination state
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(7);
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filter expenses
@@ -61,7 +61,7 @@ export default function DailyExpenseTable({ expenses = [], onDeleteExpense }) {
       display: "flex",
       flexDirection: "column",
       height: "100%",
-      minHeight: "440px",
+      minHeight: "380px",
       boxSizing: "border-box"
     }}>
       {/* Search & Filter Header Bar */}

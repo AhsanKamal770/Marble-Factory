@@ -1,4 +1,4 @@
-import { db } from '../../db/index';
+import { db } from '../../db/index.js';
 
 export const employeesPayrollService = {
   // Employee Operations

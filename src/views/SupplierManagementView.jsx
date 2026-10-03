@@ -34,6 +34,7 @@ import {
 import { db, adjustItemStock, logStockMovement } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import GlobalPagination from '../components/GlobalPagination';
+import UniversalReportPrintModal from '../components/UniversalReportPrintModal';
 
 export default function SupplierManagementView({ settings }) {
   const { language } = useLanguage();
@@ -58,6 +59,8 @@ export default function SupplierManagementView({ settings }) {
   const [activeTab, setActiveTab] = useState('purchases'); // 'purchases' | 'suppliers' | 'payments'
   const [searchTerm, setSearchTerm] = useState('');
   const [dateRange, setDateRange] = useState('ALL');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
 
   // Pagination
@@ -70,10 +73,15 @@ export default function SupplierManagementView({ settings }) {
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [drawerPurchase, setDrawerPurchase] = useState(null);
   const [ledgerSupplier, setLedgerSupplier] = useState(null);
   const [activeSupplierForPayment, setActiveSupplierForPayment] = useState(null);
+
+  const handlePrint = () => {
+    setIsPrintModalOpen(true);
+  };
 
   // Inward Purchase Form
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -132,8 +140,9 @@ export default function SupplierManagementView({ settings }) {
       }
 
       if (dateRange !== 'ALL') {
+        const rawDate = p.date || p.createdAt || '';
         const now = new Date();
-        const pDate = new Date(p.date || p.createdAt || 0);
+        const pDate = new Date(rawDate);
         if (dateRange === 'TODAY' && pDate.toDateString() !== now.toDateString()) return false;
         if (dateRange === 'WEEK') {
           const weekAgo = new Date();
@@ -145,11 +154,16 @@ export default function SupplierManagementView({ settings }) {
           monthAgo.setMonth(now.getMonth() - 1);
           if (pDate < monthAgo) return false;
         }
+        if (dateRange === 'CUSTOM') {
+          const pDateStr = rawDate.slice(0, 10);
+          if (customStartDate && pDateStr < customStartDate) return false;
+          if (customEndDate && pDateStr > customEndDate) return false;
+        }
       }
 
       return true;
     });
-  }, [purchases, searchTerm, statusFilter, dateRange]);
+  }, [purchases, searchTerm, statusFilter, dateRange, customStartDate, customEndDate]);
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter((s) => {
@@ -183,9 +197,32 @@ export default function SupplierManagementView({ settings }) {
           (py.notes || '').toLowerCase().includes(s);
         if (!matches) return false;
       }
+
+      if (dateRange !== 'ALL') {
+        const rawDate = py.date || py.createdAt || '';
+        const now = new Date();
+        const pyDate = new Date(rawDate);
+        if (dateRange === 'TODAY' && pyDate.toDateString() !== now.toDateString()) return false;
+        if (dateRange === 'WEEK') {
+          const weekAgo = new Date();
+          weekAgo.setDate(now.getDate() - 7);
+          if (pyDate < weekAgo) return false;
+        }
+        if (dateRange === 'MONTH') {
+          const monthAgo = new Date();
+          monthAgo.setMonth(now.getMonth() - 1);
+          if (pyDate < monthAgo) return false;
+        }
+        if (dateRange === 'CUSTOM') {
+          const pyDateStr = rawDate.slice(0, 10);
+          if (customStartDate && pyDateStr < customStartDate) return false;
+          if (customEndDate && pyDateStr > customEndDate) return false;
+        }
+      }
+
       return true;
     });
-  }, [payments, searchTerm]);
+  }, [payments, searchTerm, dateRange, customStartDate, customEndDate]);
 
   // Paginated Data
   const purchaseTotalPages = Math.max(1, Math.ceil(filteredPurchases.length / pageSize));
@@ -499,17 +536,60 @@ export default function SupplierManagementView({ settings }) {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '30px' }}>
+    <div
+      className="supplier-printable-area"
+      style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '30px' }}
+    >
+      {/* ── Dynamic Print Styles ─────────────────────────────────────────── */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          .supplier-printable-area, .supplier-printable-area * { visibility: visible !important; }
+          .supplier-printable-area {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            padding: 15px !important;
+            margin: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+          }
+          .no-print { display: none !important; }
+          h1, h2, h3, p, span, td, th, div {
+            color: #000000 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+          }
+          table { border: 1px solid #cbd5e1 !important; width: 100% !important; border-collapse: collapse !important; }
+          th, td { border-bottom: 1px solid #e2e8f0 !important; padding: 6px 8px !important; }
+          .print-header-banner { display: block !important; margin-bottom: 14px !important; border-bottom: 2px solid #0f172a !important; padding-bottom: 8px !important; }
+        }
+        .print-header-banner { display: none; }
+      `}</style>
+
+      {/* Print-Only Header */}
+      <div className="print-header-banner">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, textTransform: 'uppercase', color: '#0f172a' }}>Marble & Granite Factory</h1>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2563eb', marginTop: '2px' }}>
+              {activeTab === 'purchases' ? 'Supplier Purchases & Quarry Inward Shipments Report' : activeTab === 'suppliers' ? 'Supplier Accounts & Payables Ledger Report' : 'Supplier Payment Voucher Records Audit'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', fontSize: '0.8rem', color: '#64748b' }}>
+            <div><strong>Printed On:</strong> {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+            <div><strong>Total Payable:</strong> Rs. {totalPayable.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
 
       {/* ------------------------------------------------------------------------- */}
       {/* 1. SEAMLESS HERO HEADER (With Background Image matching Stock Sheet)       */}
       {/* ------------------------------------------------------------------------- */}
       <div
+        className="no-print"
         style={{
           position: 'relative',
           display: 'flex',
@@ -718,6 +798,7 @@ export default function SupplierManagementView({ settings }) {
       {/* 3. TABS & FILTER CONTROL PANEL (Identical to Stock Sheet)                  */}
       {/* ------------------------------------------------------------------------- */}
       <div
+        className="no-print"
         style={{
           background: 'var(--bg-card, #ffffff)',
           borderRadius: '16px',
@@ -885,9 +966,57 @@ export default function SupplierManagementView({ settings }) {
               <option value="TODAY">Today</option>
               <option value="WEEK">This Week</option>
               <option value="MONTH">This Month</option>
+              <option value="CUSTOM">Custom Range</option>
             </select>
             <Calendar size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b', pointerEvents: 'none' }} />
           </div>
+
+          {/* Custom Date Pickers when CUSTOM is active */}
+          {dateRange === 'CUSTOM' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <input
+                type="date"
+                value={customStartDate}
+                onChange={(e) => {
+                  setCustomStartDate(e.target.value);
+                  setPurchasePage(1);
+                  setPaymentPage(1);
+                }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none',
+                  height: '44px'
+                }}
+                title="From Date"
+              />
+              <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>to</span>
+              <input
+                type="date"
+                value={customEndDate}
+                onChange={(e) => {
+                  setCustomEndDate(e.target.value);
+                  setPurchasePage(1);
+                  setPaymentPage(1);
+                }}
+                style={{
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color, #cbd5e1)',
+                  fontSize: '0.8rem',
+                  color: 'var(--text-primary)',
+                  background: 'var(--bg-card, #ffffff)',
+                  outline: 'none',
+                  height: '44px'
+                }}
+                title="To Date"
+              />
+            </div>
+          )}
 
           {/* Status Dropdown */}
           <div style={{ position: 'relative' }}>
@@ -920,13 +1049,15 @@ export default function SupplierManagementView({ settings }) {
           </div>
 
           {/* Reset Filters */}
-          {(searchTerm || statusFilter !== 'ALL' || dateRange !== 'ALL') && (
+          {(searchTerm || statusFilter !== 'ALL' || dateRange !== 'ALL' || customStartDate || customEndDate) && (
             <button
               type="button"
               onClick={() => {
                 setSearchTerm('');
                 setStatusFilter('ALL');
                 setDateRange('ALL');
+                setCustomStartDate('');
+                setCustomEndDate('');
                 setPurchasePage(1);
                 setSupplierPage(1);
                 setPaymentPage(1);
@@ -1713,9 +1844,12 @@ export default function SupplierManagementView({ settings }) {
                             onChange={(e) => handleUpdatePurchaseItem(idx, 'itemId', e.target.value)}
                             style={{ padding: '7px 10px 7px 32px', fontSize: '0.82rem', height: '36px' }}
                           >
-                            {items.map((i) => (
-                              <option key={i.id} value={i.id}>{i.name} [{i.category}]</option>
-                            ))}
+                            {items.map((i) => {
+                              const cleanName = (i.name || '').replace(/^Kali Patti\s+/i, '');
+                              return (
+                                <option key={i.id} value={i.id}>{cleanName}</option>
+                              );
+                            })}
                           </select>
                           <ChevronDown size={12} className="app-input-chevron" />
                         </div>
@@ -2112,6 +2246,227 @@ export default function SupplierManagementView({ settings }) {
           </div>
         </div>
       )}
+
+      {/* Universal Report Print Modal for Supplier Purchases / Suppliers / Payments */}
+      <UniversalReportPrintModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        title={
+          activeTab === 'purchases'
+            ? 'Supplier Purchases & Inward Shipments Report'
+            : activeTab === 'suppliers'
+            ? 'Supplier Accounts & Payable Balance Directory'
+            : 'Supplier Payment History & Vouchers Log'
+        }
+        titleUrdu={
+          activeTab === 'purchases'
+            ? 'سپلائر انورڈ خریداری و کنسائنمنٹ آڈٹ رپورٹ'
+            : activeTab === 'suppliers'
+            ? 'سپلائر اکاؤنٹس و واجب الادا بقایا جات آڈٹ رپورٹ'
+            : 'سپلائر ادائیگیاں و واؤچرز آڈٹ لاگ'
+        }
+        subtitle={`Active Tab: ${activeTab.toUpperCase()} | Date Filter: ${dateRange} | Total: ${
+          activeTab === 'purchases'
+            ? filteredPurchases.length
+            : activeTab === 'suppliers'
+            ? filteredSuppliers.length
+            : filteredPayments.length
+        }`}
+        factorySettings={settings}
+        kpis={
+          activeTab === 'purchases'
+            ? [
+                { label: 'Total Inward Shipments', labelUrdu: 'کل کنسائنمنٹس', value: filteredPurchases.length, color: '#2563eb' },
+                {
+                  label: 'Gross Purchase',
+                  labelUrdu: 'کل خریداری',
+                  value: `Rs. ${filteredPurchases.reduce((acc, p) => acc + (Number(p.grandTotal) || 0), 0).toLocaleString()}`,
+                  color: '#1e293b'
+                },
+                {
+                  label: 'Total Paid',
+                  labelUrdu: 'ادا شدہ رقم',
+                  value: `Rs. ${filteredPurchases.reduce((acc, p) => acc + (Number(p.paidAmount) || 0), 0).toLocaleString()}`,
+                  color: '#059669'
+                },
+                {
+                  label: 'Outstanding Payable',
+                  labelUrdu: 'واجب الادا بقایا',
+                  value: `Rs. ${filteredPurchases.reduce((acc, p) => acc + (Number(p.balanceDue) || 0), 0).toLocaleString()}`,
+                  color: '#dc2626'
+                }
+              ]
+            : activeTab === 'suppliers'
+            ? [
+                { label: 'Total Suppliers', labelUrdu: 'کل سپلائرز', value: filteredSuppliers.length, color: '#2563eb' },
+                {
+                  label: 'Total Purchases',
+                  labelUrdu: 'کل مال خریدا',
+                  value: `Rs. ${filteredSuppliers.reduce((acc, s) => acc + (Number(s.totalPurchases) || 0), 0).toLocaleString()}`,
+                  color: '#1e293b'
+                },
+                {
+                  label: 'Total Paid',
+                  labelUrdu: 'ادا شدہ',
+                  value: `Rs. ${filteredSuppliers.reduce((acc, s) => acc + (Number(s.totalPaid) || 0), 0).toLocaleString()}`,
+                  color: '#059669'
+                },
+                {
+                  label: 'Net Balance Payable',
+                  labelUrdu: 'کل واجب الادا',
+                  value: `Rs. ${filteredSuppliers.reduce((acc, s) => acc + (Number(s.balancePayable) || 0), 0).toLocaleString()}`,
+                  color: '#dc2626'
+                }
+              ]
+            : [
+                { label: 'Total Payments', labelUrdu: 'کل واؤچرز', value: filteredPayments.length, color: '#2563eb' },
+                {
+                  label: 'Total Disbursed',
+                  labelUrdu: 'کل ادائیگی',
+                  value: `Rs. ${filteredPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0).toLocaleString()}`,
+                  color: '#059669'
+                }
+              ]
+        }
+        columns={
+          activeTab === 'purchases'
+            ? [
+                { key: 'purchaseNo', label: 'Purchase #', labelUrdu: 'نمبر', bold: true },
+                {
+                  key: 'date',
+                  label: 'Date',
+                  labelUrdu: 'تاریخ',
+                  render: (r) => new Date(r.date || r.createdAt || Date.now()).toLocaleDateString('en-PK')
+                },
+                { key: 'supplierName', label: 'Supplier Name', labelUrdu: 'سپلائر' },
+                {
+                  key: 'vehicleNo',
+                  label: 'Vehicle / Challan',
+                  labelUrdu: 'گاڑی / چالان',
+                  render: (r) => `${r.vehicleNo || '-'} / ${r.challanNo || '-'}`
+                },
+                {
+                  key: 'items',
+                  label: 'Items',
+                  labelUrdu: 'آئٹمز',
+                  render: (r) => `${(r.items || []).length} items`
+                },
+                {
+                  key: 'grandTotal',
+                  label: 'Grand Total',
+                  labelUrdu: 'کل رقم',
+                  align: 'right',
+                  bold: true,
+                  render: (r) => `Rs. ${Number(r.grandTotal || 0).toLocaleString()}`
+                },
+                {
+                  key: 'paidAmount',
+                  label: 'Paid',
+                  labelUrdu: 'ادا شدہ',
+                  align: 'right',
+                  render: (r) => `Rs. ${Number(r.paidAmount || 0).toLocaleString()}`
+                },
+                {
+                  key: 'balanceDue',
+                  label: 'Balance',
+                  labelUrdu: 'بقایا',
+                  align: 'right',
+                  bold: true,
+                  render: (r) => `Rs. ${Number(r.balanceDue || 0).toLocaleString()}`
+                },
+                {
+                  key: 'paymentStatus',
+                  label: 'Status',
+                  labelUrdu: 'حیثیت',
+                  align: 'center',
+                  render: (r) => (r.paymentStatus === 'PAID' ? 'مکمل ادا' : r.paymentStatus === 'PARTIAL' ? 'جزوی ادا' : 'غیر ادا شدہ')
+                }
+              ]
+            : activeTab === 'suppliers'
+            ? [
+                { key: 'name', label: 'Supplier Name', labelUrdu: 'سپلائر نام', bold: true },
+                { key: 'company', label: 'Company / Quarry', labelUrdu: 'کمپنی / کان' },
+                { key: 'contactPerson', label: 'Contact Person', labelUrdu: 'رابطہ کار' },
+                { key: 'phone', label: 'Phone', labelUrdu: 'فون نمبر' },
+                {
+                  key: 'totalPurchases',
+                  label: 'Total Purchases',
+                  labelUrdu: 'کل خریداری',
+                  align: 'right',
+                  render: (r) => `Rs. ${Number(r.totalPurchases || 0).toLocaleString()}`
+                },
+                {
+                  key: 'totalPaid',
+                  label: 'Total Paid',
+                  labelUrdu: 'کل ادائیگی',
+                  align: 'right',
+                  render: (r) => `Rs. ${Number(r.totalPaid || 0).toLocaleString()}`
+                },
+                {
+                  key: 'balancePayable',
+                  label: 'Balance Payable',
+                  labelUrdu: 'واجب الادا بقایا',
+                  align: 'right',
+                  bold: true,
+                  render: (r) => `Rs. ${Number(r.balancePayable || 0).toLocaleString()}`
+                }
+              ]
+            : [
+                {
+                  key: 'date',
+                  label: 'Date',
+                  labelUrdu: 'تاریخ',
+                  render: (r) => new Date(r.date || r.createdAt || Date.now()).toLocaleDateString('en-PK')
+                },
+                { key: 'paymentNo', label: 'Voucher #', labelUrdu: 'واؤچر نمبر', bold: true },
+                { key: 'supplierName', label: 'Supplier Name', labelUrdu: 'سپلائر نام' },
+                { key: 'paymentMethod', label: 'Method', labelUrdu: 'طریقہ' },
+                { key: 'referenceNo', label: 'Reference / Cheque', labelUrdu: 'ریفرنس' },
+                {
+                  key: 'amount',
+                  label: 'Amount Paid',
+                  labelUrdu: 'ادا رقم',
+                  align: 'right',
+                  bold: true,
+                  render: (r) => `Rs. ${Number(r.amount || 0).toLocaleString()}`
+                },
+                { key: 'notes', label: 'Notes', labelUrdu: 'تفصیل' }
+              ]
+        }
+        data={
+          activeTab === 'purchases'
+            ? filteredPurchases
+            : activeTab === 'suppliers'
+            ? filteredSuppliers
+            : filteredPayments
+        }
+        summaryRows={
+          activeTab === 'purchases'
+            ? [
+                {
+                  label: 'کل خریداری (Total Purchases)',
+                  value: `Rs. ${filteredPurchases.reduce((acc, p) => acc + (Number(p.grandTotal) || 0), 0).toLocaleString()}`
+                },
+                {
+                  label: 'کل واجب الادا (Total Balance Due)',
+                  value: `Rs. ${filteredPurchases.reduce((acc, p) => acc + (Number(p.balanceDue) || 0), 0).toLocaleString()}`
+                }
+              ]
+            : activeTab === 'suppliers'
+            ? [
+                {
+                  label: 'کل بقایا جات (Total Net Payable)',
+                  value: `Rs. ${filteredSuppliers.reduce((acc, s) => acc + (Number(s.balancePayable) || 0), 0).toLocaleString()}`
+                }
+              ]
+            : [
+                {
+                  label: 'کل ادا شدہ رقم (Total Disbursed)',
+                  value: `Rs. ${filteredPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0).toLocaleString()}`
+                }
+              ]
+        }
+      />
     </div>
   );
 }
