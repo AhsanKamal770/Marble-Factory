@@ -264,14 +264,15 @@ export default function SupplierManagementView({ settings }) {
     setPurchaseNotes('');
 
     if (items.length > 0) {
+      const defaultItem = items[0];
       setPurchaseItems([
         {
-          itemId: items[0].id,
-          name: items[0].name,
-          category: items[0].category,
+          itemId: defaultItem.id,
+          name: defaultItem.name,
+          category: defaultItem.category,
           totalSqFt: 500,
-          ratePerSqFt: items[0].costPerSqFt || items[0].ratePerSqFt || 200,
-          amount: 500 * (items[0].costPerSqFt || items[0].ratePerSqFt || 200)
+          ratePerSqFt: defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200,
+          amount: 500 * (defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200)
         }
       ]);
     } else {
@@ -281,32 +282,44 @@ export default function SupplierManagementView({ settings }) {
   };
 
   const handleAddPurchaseItem = () => {
-    if (items.length === 0) return;
-    const it = items[0];
+    if (items.length === 0) {
+      alert('No inventory items found. Please add items in Stock Management first.');
+      return;
+    }
+    // Pick the next available item that is not already selected
+    const selectedIds = new Set(purchaseItems.map((p) => String(p.itemId)));
+    const nextItem = items.find((i) => !selectedIds.has(String(i.id))) || items[0];
+
     setPurchaseItems([
       ...purchaseItems,
       {
-        itemId: it.id,
-        name: it.name,
-        category: it.category,
+        itemId: nextItem.id,
+        name: nextItem.name,
+        category: nextItem.category,
         totalSqFt: 500,
-        ratePerSqFt: it.costPerSqFt || it.ratePerSqFt || 200,
-        amount: 500 * (it.costPerSqFt || it.ratePerSqFt || 200)
+        ratePerSqFt: nextItem.costPerSqFt || nextItem.ratePerSqFt || 200,
+        amount: 500 * (nextItem.costPerSqFt || nextItem.ratePerSqFt || 200)
       }
     ]);
   };
 
   const handleUpdatePurchaseItem = (index, field, value) => {
     const updated = [...purchaseItems];
-    const row = { ...updated[index], [field]: value };
+    const row = { ...updated[index] };
 
     if (field === 'itemId') {
-      const found = items.find((i) => i.id === parseInt(value, 10));
+      const parsedId = !isNaN(Number(value)) ? Number(value) : value;
+      const found = items.find((i) => i.id === parsedId || String(i.id) === String(value));
       if (found) {
+        row.itemId = found.id;
         row.name = found.name;
         row.category = found.category;
-        row.ratePerSqFt = found.costPerSqFt || found.ratePerSqFt || row.ratePerSqFt;
+        row.ratePerSqFt = found.costPerSqFt || found.ratePerSqFt || row.ratePerSqFt || 200;
+      } else {
+        row.itemId = parsedId;
       }
+    } else {
+      row[field] = value;
     }
 
     const sqft = parseFloat(field === 'totalSqFt' ? value : row.totalSqFt) || 0;
@@ -318,6 +331,10 @@ export default function SupplierManagementView({ settings }) {
   };
 
   const handleRemovePurchaseItem = (index) => {
+    if (purchaseItems.length <= 1) {
+      alert('At least one item is required in the inward shipment.');
+      return;
+    }
     setPurchaseItems(purchaseItems.filter((_, i) => i !== index));
   };
 
@@ -370,9 +387,10 @@ export default function SupplierManagementView({ settings }) {
 
         // Add stock to yard inventory and log stock movement
         for (const it of purchaseItems) {
-          if (it.itemId) {
+          if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
+            const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
             await adjustItemStock(
-              it.itemId,
+              finalItemId,
               parseFloat(it.totalSqFt) || 0,
               0,
               0,
@@ -1735,7 +1753,7 @@ export default function SupplierManagementView({ settings }) {
           <div
             className="app-modal-card"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '580px' }}
+            style={{ maxWidth: '780px', width: '100%' }}
           >
             {/* Modal Header */}
             <div className="app-modal-header">
@@ -1745,7 +1763,7 @@ export default function SupplierManagementView({ settings }) {
                 </div>
                 <div>
                   <h3 className="app-modal-title">Record Inward Stock Shipment</h3>
-                  <p className="app-modal-subtitle">Receive stock & update inventory from supplier</p>
+                  <p className="app-modal-subtitle">Receive stock & update inventory from quarry or supplier</p>
                 </div>
               </div>
               <button
@@ -1818,36 +1836,50 @@ export default function SupplierManagementView({ settings }) {
                 </div>
 
                 {/* Items Received into Yard */}
-                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <label className="app-form-label" style={{ margin: 0, fontWeight: 700, color: '#1e293b' }}>
-                      Stock Items Received into Yard
-                    </label>
+                <div style={{ background: '#f8fafc', padding: '14px 16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <div>
+                      <label className="app-form-label" style={{ margin: 0, fontWeight: 800, color: '#1e293b', fontSize: '0.88rem' }}>
+                        Inward Shipment Materials ({purchaseItems.length} {purchaseItems.length === 1 ? 'Item' : 'Items'})
+                      </label>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Select inventory marble/tile items and specify incoming square footage</div>
+                    </div>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={handleAddPurchaseItem}
-                      style={{ padding: '5px 12px', fontSize: '0.78rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                      style={{ padding: '6px 14px', fontSize: '0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}
                     >
-                      <Plus size={14} /> Add Item Row
+                      <Plus size={15} /> Add Item Row
                     </button>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Table Column Headings */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.1fr 1.2fr 36px', gap: '8px', padding: '0 8px 6px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                    <span>Select Item / Type</span>
+                    <span>Qty (Sq.Ft)</span>
+                    <span>Rate / Sq.Ft</span>
+                    <span style={{ textAlign: 'right' }}>Total (Rs.)</span>
+                    <span></span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
                     {purchaseItems.map((it, idx) => (
-                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1.2fr auto', gap: '8px', alignItems: 'center', background: '#ffffff', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.1fr 1.2fr 36px', gap: '8px', alignItems: 'center', background: '#ffffff', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                         <div className="app-input-wrapper">
                           <Layers size={14} className="app-input-icon" />
                           <select
                             className="app-form-select"
-                            value={it.itemId}
+                            value={String(it.itemId)}
                             onChange={(e) => handleUpdatePurchaseItem(idx, 'itemId', e.target.value)}
-                            style={{ padding: '7px 10px 7px 32px', fontSize: '0.82rem', height: '36px' }}
+                            style={{ padding: '7px 10px 7px 32px', fontSize: '0.82rem', height: '36px', fontWeight: 600 }}
                           >
                             {items.map((i) => {
                               const cleanName = (i.name || '').replace(/^Kali Patti\s+/i, '');
                               return (
-                                <option key={i.id} value={i.id}>{cleanName}</option>
+                                <option key={i.id} value={String(i.id)}>
+                                  {cleanName} ({i.category || 'Marble'})
+                                </option>
                               );
                             })}
                           </select>
@@ -1857,23 +1889,26 @@ export default function SupplierManagementView({ settings }) {
                         <div className="app-input-wrapper">
                           <input
                             type="number"
-                            step="0.1"
+                            step="any"
+                            min="0"
                             placeholder="Sq.Ft"
                             className="app-form-input font-mono"
                             value={it.totalSqFt}
                             onChange={(e) => handleUpdatePurchaseItem(idx, 'totalSqFt', e.target.value)}
-                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px' }}
+                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
                           />
                         </div>
 
                         <div className="app-input-wrapper">
                           <input
                             type="number"
-                            placeholder="Rate/SqFt"
+                            step="any"
+                            min="0"
+                            placeholder="Rate"
                             className="app-form-input font-mono"
                             value={it.ratePerSqFt}
                             onChange={(e) => handleUpdatePurchaseItem(idx, 'ratePerSqFt', e.target.value)}
-                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px' }}
+                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
                           />
                         </div>
 
@@ -1884,10 +1919,12 @@ export default function SupplierManagementView({ settings }) {
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm"
-                          style={{ color: '#ef4444', padding: '6px', borderRadius: '6px' }}
+                          style={{ color: purchaseItems.length <= 1 ? '#cbd5e1' : '#ef4444', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: purchaseItems.length <= 1 ? 'not-allowed' : 'pointer' }}
                           onClick={() => handleRemovePurchaseItem(idx)}
+                          disabled={purchaseItems.length <= 1}
+                          title={purchaseItems.length <= 1 ? 'At least one item row is required' : 'Remove item row'}
                         >
-                          <X size={16} />
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     ))}
@@ -1902,6 +1939,7 @@ export default function SupplierManagementView({ settings }) {
                       <DollarSign size={16} className="app-input-icon" />
                       <input
                         type="number"
+                        min="0"
                         className="app-form-input font-mono"
                         value={freightCharges}
                         onChange={(e) => setFreightCharges(e.target.value)}
@@ -1916,6 +1954,7 @@ export default function SupplierManagementView({ settings }) {
                       <DollarSign size={16} className="app-input-icon" />
                       <input
                         type="number"
+                        min="0"
                         className="app-form-input font-mono"
                         style={{ color: '#059669', fontWeight: 700 }}
                         value={paidAmount}

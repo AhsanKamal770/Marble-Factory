@@ -144,15 +144,27 @@ export async function adjustItemStock(
   note = ''
 ) {
   return await db.transaction('rw', db.items, db.stock_movements, async () => {
-    const item = await db.items.get(itemId);
+    let item = await db.items.get(itemId);
+    if (!item && !isNaN(Number(itemId))) {
+      item = await db.items.get(Number(itemId));
+    }
+    if (!item && typeof itemId === 'number') {
+      item = await db.items.get(String(itemId));
+    }
+    if (!item) {
+      // Fallback search in items table
+      const allItems = await db.items.toArray();
+      item = allItems.find(i => String(i.id) === String(itemId));
+    }
     if (!item) throw new Error(`Item with id ${itemId} not found`);
 
+    const realItemId = item.id;
     const prevSqFt = Number(item.stockSqFt) || 0;
     const newSqFt = Math.max(0, Math.round((prevSqFt + deltaSqFt) * 100) / 100);
     const newBoxes = Math.max(0, (Number(item.stockBoxes) || 0) + deltaBoxes);
     const newPieces = Math.max(0, (Number(item.stockPieces) || 0) + deltaPieces);
 
-    await db.items.update(itemId, {
+    await db.items.update(realItemId, {
       stockSqFt: newSqFt,
       stockBoxes: newBoxes,
       stockPieces: newPieces,
@@ -160,7 +172,7 @@ export async function adjustItemStock(
     });
 
     await logStockMovement({
-      itemId,
+      itemId: realItemId,
       itemName: item.name,
       category: item.category,
       movementType,
