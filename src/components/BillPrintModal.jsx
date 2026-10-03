@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Printer, X, FileText, Receipt, Share2, Check, User, MapPin, Phone } from 'lucide-react';
+import { Printer, X, FileText, Receipt, Share2, Check, User, MapPin, Phone, Download } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { printElement } from '../utils/printHelper';
 
 export default function BillPrintModal({
   isOpen,
@@ -12,12 +13,37 @@ export default function BillPrintModal({
   const { language } = useLanguage();
   const [printFormat, setPrintFormat] = useState('a4'); // 'a4' | 'thermal'
   const [copied, setCopied] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const printRef = useRef(null);
 
   if (!isOpen || !invoice) return null;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `Bill_${invoice.invoiceNo || 'Invoice'}`,
+        format: printFormat,
+        isExportPDF: false,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `Bill_${invoice.invoiceNo || 'Invoice'}`,
+        format: printFormat,
+        isExportPDF: true,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const formatUrduDate = (dateVal) => {
@@ -217,9 +243,32 @@ export default function BillPrintModal({
 
             <button
               type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={handleExportPDF}
+              disabled={isPrinting}
+              title="Save as PDF directly"
+              style={{
+                fontSize: '0.74rem',
+                padding: '4px 10px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontWeight: 700,
+                color: '#059669',
+                borderColor: '#10b981',
+                background: 'rgba(16, 185, 129, 0.08)'
+              }}
+            >
+              <Download size={12} />
+              <span>Save PDF (پی ڈی ایف)</span>
+            </button>
+
+            <button
+              type="button"
               className="btn btn-primary btn-sm"
               onClick={handlePrint}
-              style={{ fontSize: '0.76rem', padding: '5px 12px', background: 'var(--accent-blue, #2563eb)', borderColor: 'var(--accent-blue, #2563eb)' }}
+              disabled={isPrinting}
+              style={{ fontSize: '0.76rem', padding: '5px 12px', background: 'var(--accent-blue, #2563eb)', borderColor: 'var(--accent-blue, #2563eb)', display: 'flex', alignItems: 'center', gap: '5px' }}
             >
               <Printer size={13} />
               <span>Print (پرنٹ)</span>

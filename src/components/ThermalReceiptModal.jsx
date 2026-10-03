@@ -1,17 +1,38 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Printer, X, Download, Share2, Check } from 'lucide-react';
+import { printElement } from '../utils/printHelper';
 
 export default function ThermalReceiptModal({ isOpen, onClose, invoice, settings, customer }) {
   const receiptRef = useRef(null);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   if (!isOpen || !invoice) return null;
 
   const handlePrint = async () => {
-    if (window.electronAPI && window.electronAPI.printReceipt && receiptRef.current) {
-      const html = receiptRef.current.innerHTML;
-      await window.electronAPI.printReceipt(html);
-    } else {
-      window.print();
+    setIsPrinting(true);
+    try {
+      await printElement(receiptRef, {
+        title: `Receipt_${invoice.invoiceNo || 'Thermal'}`,
+        format: 'thermal',
+        isExportPDF: false,
+        dir: 'ltr'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(receiptRef, {
+        title: `Receipt_${invoice.invoiceNo || 'Thermal'}`,
+        format: 'thermal',
+        isExportPDF: true,
+        dir: 'ltr'
+      });
+    } finally {
+      setIsPrinting(false);
     }
   };
 
@@ -185,13 +206,24 @@ export default function ThermalReceiptModal({ isOpen, onClose, invoice, settings
           </div>
         </div>
 
-        <div className="modal-footer">
+        <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', gap: '8px' }}>
           <button type="button" className="btn btn-secondary" onClick={onClose}>
             Close
           </button>
-          <button type="button" className="btn btn-primary" onClick={handlePrint}>
-            <Printer size={16} /> Print 80mm Slip
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleExportPDF}
+              disabled={isPrinting}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#059669', borderColor: '#10b981', fontWeight: 700 }}
+            >
+              <Download size={15} /> Save PDF
+            </button>
+            <button type="button" className="btn btn-primary" onClick={handlePrint} disabled={isPrinting}>
+              <Printer size={16} /> Print 80mm Slip
+            </button>
+          </div>
         </div>
       </div>
     </div>

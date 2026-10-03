@@ -12,9 +12,11 @@ import {
   Calendar,
   Clock,
   CheckCircle2,
-  Hash
+  Hash,
+  Download
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { printElement } from '../utils/printHelper';
 
 export default function UniversalReportPrintModal({
   isOpen,
@@ -32,6 +34,7 @@ export default function UniversalReportPrintModal({
   const { language } = useLanguage();
   const [printFormat, setPrintFormat] = useState(defaultFormat || 'a4');
   const [copied, setCopied] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const printRef = useRef(null);
 
   if (!isOpen) return null;
@@ -68,8 +71,32 @@ export default function UniversalReportPrintModal({
   const phone = factorySettings?.phone || '0300-8456123 | 0321-6606645';
   const address = factorySettings?.address || 'جھمرہ روڈ، بالمقابل ریلوے پھاٹک، فیصل آباد';
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `${titleUrdu || title}`,
+        format: printFormat,
+        isExportPDF: false,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `${titleUrdu || title}`,
+        format: printFormat,
+        isExportPDF: true,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const handleCopyWhatsApp = () => {
@@ -247,8 +274,31 @@ export default function UniversalReportPrintModal({
 
             <button
               type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={handleExportPDF}
+              disabled={isPrinting}
+              title="Save as PDF directly"
+              style={{
+                fontSize: '0.78rem',
+                padding: '6px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontWeight: 700,
+                color: '#059669',
+                borderColor: '#10b981',
+                background: 'rgba(16, 185, 129, 0.08)'
+              }}
+            >
+              <Download size={14} />
+              <span>Save PDF (پی ڈی ایف)</span>
+            </button>
+
+            <button
+              type="button"
               className="btn btn-primary btn-sm"
               onClick={handlePrint}
+              disabled={isPrinting}
               style={{
                 fontSize: '0.78rem',
                 padding: '6px 16px',

@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   Printer, X, FileText, Receipt, Share2, Check,
-  Truck, User, MapPin, Phone, Info, Calendar
+  Truck, User, MapPin, Phone, Info, Calendar, Download
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { db } from "../../db/index";
+import { printElement } from "../../utils/printHelper";
 
 export default function PrintableGateSlip({
   isOpen,
@@ -16,6 +17,7 @@ export default function PrintableGateSlip({
   const { language } = useLanguage();
   const [printFormat, setPrintFormat] = useState(defaultFormat || "a4");
   const [copied, setCopied] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const [linkedInvoice, setLinkedInvoice] = useState(null);
   const printRef = useRef(null);
 
@@ -126,8 +128,32 @@ export default function PrintableGateSlip({
     (gatePass.carriageCharges || 0) ||
     79250;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `GatePass_${gatePass.gatePassNo || 'Slip'}`,
+        format: printFormat,
+        isExportPDF: false,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `GatePass_${gatePass.gatePassNo || 'Slip'}`,
+        format: printFormat,
+        isExportPDF: true,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const handleCopyWhatsApp = () => {
@@ -288,7 +314,31 @@ export default function PrintableGateSlip({
 
             <button
               type="button"
+              onClick={handleExportPDF}
+              disabled={isPrinting}
+              title="Save as PDF directly"
+              style={{
+                fontSize: "0.76rem",
+                padding: "6px 14px",
+                borderRadius: "6px",
+                border: "1px solid #10b981",
+                background: "rgba(16, 185, 129, 0.08)",
+                color: "#059669",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                cursor: "pointer"
+              }}
+            >
+              <Download size={13} />
+              <span>Save PDF (پی ڈی ایف)</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handlePrint}
+              disabled={isPrinting}
               style={{
                 fontSize: "0.76rem",
                 padding: "6px 16px",

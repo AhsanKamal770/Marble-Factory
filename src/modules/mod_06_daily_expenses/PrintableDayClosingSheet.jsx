@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
-import { Printer, X, FileText, Receipt, Share2, Check } from "lucide-react";
+import { Printer, X, FileText, Receipt, Share2, Check, Download } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
+import { printElement } from "../../utils/printHelper";
 
 export default function PrintableDayClosingSheet({
   isOpen,
@@ -13,6 +14,7 @@ export default function PrintableDayClosingSheet({
   const { language } = useLanguage();
   const [printFormat, setPrintFormat] = useState(defaultFormat || "a4");
   const [copied, setCopied] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
   const printRef = useRef(null);
 
   if (!isOpen || !cashData) return null;
@@ -42,8 +44,32 @@ export default function PrintableDayClosingSheet({
   const phone = factorySettings?.phone || "0300-7708899 / 0321-6606645";
   const address = factorySettings?.address || "جھمرہ سٹی، بالمقابل ریلوے پھاٹک، فیصل آباد روڈ";
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `DayClosing_${dateFormatted}`,
+        format: printFormat,
+        isExportPDF: false,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `DayClosing_${dateFormatted}`,
+        format: printFormat,
+        isExportPDF: true,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const handleCopyWhatsApp = () => {
@@ -199,7 +225,31 @@ export default function PrintableDayClosingSheet({
 
             <button
               type="button"
+              onClick={handleExportPDF}
+              disabled={isPrinting}
+              title="Save as PDF directly"
+              style={{
+                fontSize: "0.75rem",
+                padding: "6px 14px",
+                borderRadius: "6px",
+                border: "1px solid #10b981",
+                background: "rgba(16, 185, 129, 0.08)",
+                color: "#059669",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                cursor: "pointer"
+              }}
+            >
+              <Download size={13} />
+              <span>پی ڈی ایف (Save PDF)</span>
+            </button>
+
+            <button
+              type="button"
               onClick={handlePrint}
+              disabled={isPrinting}
               style={{
                 fontSize: "0.75rem",
                 padding: "6px 14px",

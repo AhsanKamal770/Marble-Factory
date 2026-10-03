@@ -5,6 +5,7 @@ import { db } from '../../db/index';
 import FactoryProfileForm from './FactoryProfileForm';
 import PrintTemplateSettings from './PrintTemplateSettings';
 import DatabaseBackupRestore from './DatabaseBackupRestore';
+import RemoteUpdateCard from './RemoteUpdateCard';
 
 export default function SettingsView({ settings, onSettingsUpdated }) {
   const { language } = useLanguage();
@@ -68,6 +69,7 @@ export default function SettingsView({ settings, onSettingsUpdated }) {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <RemoteUpdateCard />
           <DatabaseBackupRestore />
         </div>
       </div>

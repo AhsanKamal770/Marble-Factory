@@ -1,13 +1,39 @@
-import React, { useRef } from 'react';
-import { Printer, X, FileText, CheckCircle2, Phone, MapPin } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Printer, X, FileText, CheckCircle2, Phone, MapPin, Download } from 'lucide-react';
+import { printElement } from '../../utils/printHelper';
 
 export default function PrintableKhataModal({ isOpen, onClose, customer, timeline = [], settings }) {
   const printRef = useRef(null);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   if (!isOpen || !customer) return null;
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `Khata_${customer.name || 'Statement'}`,
+        format: 'thermal',
+        isExportPDF: false,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setIsPrinting(true);
+    try {
+      await printElement(printRef, {
+        title: `Khata_${customer.name || 'Statement'}`,
+        format: 'thermal',
+        isExportPDF: true,
+        dir: 'rtl'
+      });
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const companyName = settings?.companyName || 'Rana Shahab Marble Factory';
@@ -184,7 +210,8 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'var(--bg-primary)'
+          background: 'var(--bg-primary)',
+          gap: '8px'
         }}>
           <button
             type="button"
@@ -193,15 +220,36 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
           >
             Close
           </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={handlePrint}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Printer size={15} />
-            <span>Print 80mm Khata Slip</span>
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={handleExportPDF}
+              disabled={isPrinting}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: '#059669',
+                borderColor: '#10b981',
+                background: 'rgba(16, 185, 129, 0.08)',
+                fontWeight: 700
+              }}
+            >
+              <Download size={14} />
+              <span>Save PDF</span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={handlePrint}
+              disabled={isPrinting}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <Printer size={15} />
+              <span>Print 80mm Slip</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

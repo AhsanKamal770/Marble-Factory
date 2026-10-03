@@ -19,6 +19,7 @@ import GatePassView from './modules/mod_04_gate_pass/GatePassView';
 import DailyExpensesView from './modules/mod_06_daily_expenses/DailyExpensesView';
 import ZakatWelfareModule from './modules/mod_09_zakat_welfare/ZakatWelfareModule';
 import EmployeesPayrollModule from './modules/mod_08_employees_payroll/EmployeesPayrollModule';
+import AutoUpdateModal from './components/AutoUpdateModal';
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
   const [settings, setSettings] = useState(defaultSettings);
@@ -193,6 +194,7 @@ export default function App() {
         </main>
       </div>
     </div>
+    <AutoUpdateModal />
     </LanguageProvider>
   );
 }
