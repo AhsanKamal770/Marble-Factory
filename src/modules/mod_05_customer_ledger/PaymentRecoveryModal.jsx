@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { X, CheckCircle, Wallet, CreditCard, FileText } from "lucide-react";
+import { X, CheckCircle, Wallet, CreditCard, FileText, DollarSign, Info, ChevronDown } from "lucide-react";
 
 export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -21,99 +21,81 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px'
-    }}>
-      <div className="modal-card" style={{
-        maxWidth: "460px",
-        width: "100%",
-        background: "var(--bg-card)",
-        borderRadius: "16px",
-        boxShadow: "var(--shadow-lg)",
-        border: "1px solid var(--border-color)",
-        overflow: "hidden"
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: "18px 22px",
-          borderBottom: "1px solid var(--border-color)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Wallet size={18} style={{ color: '#059669' }} />
-            <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>
-              Receive Customer Payment (ادھار وصولی)
-            </h3>
+    <div className="app-modal-overlay" onClick={onClose}>
+      <div
+        className="app-modal-card"
+        style={{ maxWidth: "500px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="app-modal-header">
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div className="app-modal-icon-badge" style={{ background: "linear-gradient(135deg, #059669 0%, #10b981 100%)", boxShadow: "0 4px 12px rgba(5, 150, 105, 0.25)" }}>
+              <Wallet size={24} color="#ffffff" />
+            </div>
+            <div>
+              <h3 className="app-modal-title">
+                Receive Customer Payment
+              </h3>
+              <p className="app-modal-subtitle">
+                ادھار وصولی — Record payment against customer ledger
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="btn btn-ghost btn-sm"
-            style={{ padding: "4px", color: "var(--text-muted)" }}
+            className="app-modal-close-btn"
+            aria-label="Close"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
         
         {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", gap: "14px" }}>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+          <div className="app-modal-body" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             
-            {/* Customer Info Pill */}
+            {/* Customer Info Card */}
             <div style={{
-              padding: "14px",
-              background: "var(--bg-primary)",
-              borderRadius: "10px",
-              border: "1px solid var(--border-color)",
+              padding: "14px 16px",
+              background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+              borderRadius: "12px",
+              border: "1px solid #e2e8f0",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center"
             }}>
               <div>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
+                <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
                   Customer Khata
                 </div>
-                <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#0f172a", marginTop: "2px" }}>
                   {customer.name}
                 </div>
                 {customer.phone && (
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "2px" }}>
+                  <div style={{ fontSize: "0.76rem", color: "#64748b", marginTop: "2px" }}>
                     {customer.phone}
                   </div>
                 )}
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
-                  Outstanding Balance
+                <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                  Current Balance
                 </div>
-                <div style={{ fontSize: "1.15rem", fontWeight: 800, color: currentBalance > 0 ? "#dc2626" : "#059669" }} className="font-mono">
+                <div style={{ fontSize: "1.25rem", fontWeight: 800, color: currentBalance > 0 ? "#dc2626" : "#059669", marginTop: "2px" }} className="font-mono">
                   Rs. {currentBalance.toLocaleString()}
                 </div>
               </div>
             </div>
 
             {/* Amount Received */}
-            <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "6px" }}>
-                Amount Received (وصول شدہ رقم) *
+            <div className="app-form-group">
+              <label className="app-form-label">
+                Amount Received (وصول شدہ رقم) <span className="app-form-label-required">*</span>
               </label>
-              <div style={{ position: "relative" }}>
-                <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", fontWeight: 700 }}>
-                  Rs.
-                </span>
+              <div className="app-input-wrapper">
+                <DollarSign size={16} className="app-input-icon" />
                 <input
                   required
                   type="number"
@@ -121,15 +103,11 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
                   autoFocus
                   value={formData.amount}
                   onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))}
-                  className="form-control font-mono"
+                  className="app-form-input font-mono"
                   style={{
-                    width: "100%",
-                    padding: "12px 14px 12px 42px",
-                    fontSize: "1.2rem",
+                    fontSize: "1.15rem",
                     fontWeight: 800,
-                    borderRadius: "8px",
-                    border: "1.5px solid var(--border-color)",
-                    color: "var(--text-primary)"
+                    color: "#059669"
                   }}
                   placeholder="0"
                 />
@@ -137,85 +115,86 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
             </div>
 
             {/* Payment Method */}
-            <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "6px" }}>
-                Payment Method (طریقہ ادائیگی)
+            <div className="app-form-group">
+              <label className="app-form-label">
+                Payment Method (طریقہ ادائیگی) <span className="app-form-label-required">*</span>
               </label>
-              <select
-                value={formData.paymentMethod}
-                onChange={e => setFormData(p => ({ ...p, paymentMethod: e.target.value }))}
-                className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.9rem" }}
-              >
-                <option value="Cash">Cash in Drawer (نقد دراز کیش)</option>
-                <option value="Bank Transfer">Bank Transfer (بینک آن لائن)</option>
-                <option value="Cheque">Cheque (بینک چیک)</option>
-                <option value="EasyPaisa / JazzCash">EasyPaisa / JazzCash</option>
-              </select>
+              <div className="app-input-wrapper">
+                <CreditCard size={16} className="app-input-icon" />
+                <select
+                  value={formData.paymentMethod}
+                  onChange={e => setFormData(p => ({ ...p, paymentMethod: e.target.value }))}
+                  className="app-form-select"
+                >
+                  <option value="Cash">Cash in Drawer (نقد دراز کیش)</option>
+                  <option value="Bank Transfer">Bank Transfer / IBFT (بینک آن لائن)</option>
+                  <option value="Cheque">Cheque (بینک چیک)</option>
+                  <option value="EasyPaisa / JazzCash">EasyPaisa / JazzCash</option>
+                </select>
+                <ChevronDown size={14} className="app-input-chevron" />
+              </div>
             </div>
 
             {/* Remarks / Notes */}
-            <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "6px" }}>
+            <div className="app-form-group">
+              <label className="app-form-label">
                 Bank Slip # / Cheque # / Remarks
               </label>
-              <input
-                type="text"
-                value={formData.notes}
-                onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
-                className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                placeholder="e.g. HBL Online Slip #9921, Cheque #5582"
-              />
+              <div className="app-input-wrapper">
+                <FileText size={16} className="app-input-icon" />
+                <input
+                  type="text"
+                  value={formData.notes}
+                  onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
+                  className="app-form-input"
+                  placeholder="e.g. HBL Online Slip #9921, Cheque #5582"
+                />
+              </div>
             </div>
 
             {/* Live Remaining Balance Calculation Preview */}
             <div style={{
               background: "rgba(5, 150, 105, 0.08)",
-              border: "1px dashed rgba(5, 150, 105, 0.3)",
-              borderRadius: "8px",
-              padding: "10px 14px",
+              border: "1px dashed rgba(5, 150, 105, 0.35)",
+              borderRadius: "10px",
+              padding: "12px 16px",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              fontSize: "0.82rem"
+              fontSize: "0.85rem"
             }}>
-              <span style={{ color: "var(--text-secondary)", fontWeight: 600 }}>
-                Remaining Balance after recovery:
+              <span style={{ color: "#334155", fontWeight: 600 }}>
+                Remaining Balance after wasooli:
               </span>
-              <strong className="font-mono" style={{ color: remainingBalance > 0 ? "#dc2626" : "#059669", fontSize: "0.95rem" }}>
+              <strong className="font-mono" style={{ color: remainingBalance > 0 ? "#dc2626" : "#059669", fontSize: "1.05rem" }}>
                 Rs. {remainingBalance.toLocaleString()}
               </strong>
+            </div>
+
+            {/* Notice banner */}
+            <div className="app-form-notice">
+              <Info size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+              <span>All fields marked with <b style={{ color: '#ef4444' }}>*</b> are required.</span>
             </div>
 
           </div>
           
           {/* Footer */}
-          <div style={{
-            padding: "14px 22px",
-            borderTop: "1px solid var(--border-color)",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            background: "var(--bg-primary)",
-            borderRadius: "0 0 16px 16px"
-          }}>
+          <div className="app-modal-footer">
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-secondary btn-sm"
+              className="app-btn-cancel"
             >
+              <X size={16} />
               Cancel
             </button>
             <button
               type="submit"
-              className="btn btn-primary btn-sm"
+              className="app-btn-submit"
               style={{
-                background: "#059669",
-                borderColor: "#059669",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px"
+                background: "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                boxShadow: "0 4px 12px rgba(5, 150, 105, 0.25)"
               }}
             >
               <CheckCircle size={16} />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Heart, Plus, Pencil, Trash2, CheckCircle, RotateCcw, Printer, X } from 'lucide-react';
+import { Heart, Plus, Pencil, Trash2, CheckCircle, RotateCcw, Printer, X, User, Phone, DollarSign, FileText, ChevronDown, Save, Info, HandHeart } from 'lucide-react';
 import { db } from '../../db';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -361,45 +361,74 @@ export default function ZakatManagementView() {
 
       {/* Add / Edit modal */}
       {modalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '480px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
-                {editingId ? tr('Edit Beneficiary', 'مستحق میں ترمیم') : tr('Add Beneficiary', 'مستحق شامل کریں')}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setModalOpen(false)}>
-                <X size={18} />
+        <div className="app-modal-overlay" onClick={() => setModalOpen(false)}>
+          <div className="app-modal-card" style={{ maxWidth: '560px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="app-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div className="app-modal-icon-badge">
+                  <HandHeart size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">
+                    {editingId ? tr('Edit Beneficiary', 'مستحق میں ترمیم') : tr('Add Beneficiary', 'مستحق شامل کریں')}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {tr('Update or register beneficiary for monthly zakat fund', 'ماہانہ زکوٰۃ فنڈ کے لیے مستحق کی تفصیلات درج کریں')}
+                  </p>
+                </div>
+              </div>
+              <button type="button" className="app-modal-close-btn" onClick={() => setModalOpen(false)}>
+                <X size={20} />
               </button>
             </div>
-            <form onSubmit={saveBeneficiary}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">{tr('Name / Family', 'نام / خاندان')} *</label>
-                  <input className="form-control" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <form onSubmit={saveBeneficiary} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="app-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="app-form-group">
+                  <label className="app-form-label">{tr('Name / Family', 'نام / خاندان')} <span className="app-form-label-required">*</span></label>
+                  <div className="app-input-wrapper">
+                    <User size={16} className="app-input-icon" />
+                    <input className="app-form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Rashid Family / Widow" />
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label">CNIC</label>
-                    <input className="form-control" placeholder="33102-1234567-8" value={form.cnic} onChange={(e) => setForm({ ...form, cnic: e.target.value })} />
+                  <div className="app-form-group">
+                    <label className="app-form-label">CNIC</label>
+                    <div className="app-input-wrapper">
+                      <FileText size={16} className="app-input-icon" />
+                      <input className="app-form-input font-mono" placeholder="33102-1234567-8" value={form.cnic} onChange={(e) => setForm({ ...form, cnic: e.target.value })} />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{tr('Phone', 'فون')}</label>
-                    <input className="form-control" placeholder="0300-1234567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                  <div className="app-form-group">
+                    <label className="app-form-label">{tr('Phone', 'فون')}</label>
+                    <div className="app-input-wrapper">
+                      <Phone size={16} className="app-input-icon" />
+                      <input className="app-form-input font-mono" placeholder="0300-1234567" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                    </div>
                   </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">{tr('Fixed Monthly Amount (Rs.)', 'مقررہ ماہانہ رقم (روپے)')} *</label>
-                  <input type="number" min="0" className="form-control" value={form.monthlyAmount} onChange={(e) => setForm({ ...form, monthlyAmount: e.target.value })} />
+                <div className="app-form-group">
+                  <label className="app-form-label">{tr('Fixed Monthly Amount (Rs.)', 'مقررہ ماہانہ رقم (روپے)')} <span className="app-form-label-required">*</span></label>
+                  <div className="app-input-wrapper">
+                    <DollarSign size={16} className="app-input-icon" />
+                    <input type="number" min="0" className="app-form-input font-mono" style={{ color: '#2563eb', fontWeight: 700 }} value={form.monthlyAmount} onChange={(e) => setForm({ ...form, monthlyAmount: e.target.value })} placeholder="e.g. 5000" />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">{tr('Notes', 'نوٹس')}</label>
-                  <input className="form-control" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <div className="app-form-group">
+                  <label className="app-form-label">{tr('Notes', 'نوٹس')}</label>
+                  <div className="app-input-wrapper">
+                    <FileText size={16} className="app-input-icon" />
+                    <input className="app-form-input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="e.g. Monthly ration assistance" />
+                  </div>
                 </div>
-                {error && <div style={{ color: '#fb7185', fontSize: '0.85rem', fontWeight: 600 }}>{error}</div>}
+                {error && <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>{error}</div>}
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setModalOpen(false)}>{tr('Cancel', 'منسوخ')}</button>
-                <button type="submit" className="btn btn-primary">{tr('Save', 'محفوظ کریں')}</button>
+              <div className="app-modal-footer">
+                <button type="button" className="app-btn-cancel" onClick={() => setModalOpen(false)}>
+                  <X size={16} /> {tr('Cancel', 'منسوخ')}
+                </button>
+                <button type="submit" className="app-btn-submit">
+                  <Save size={16} /> {tr('Save', 'محفوظ کریں')}
+                </button>
               </div>
             </form>
           </div>

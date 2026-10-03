@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { PlusCircle, DollarSign, User, FileText, Calendar, Check, Tag } from "lucide-react";
+import { PlusCircle, DollarSign, User, FileText, Calendar, Check, Tag, ChevronDown, Info, Save, Wallet } from "lucide-react";
 import { EXPENSE_CATEGORIES } from "./dailyExpenseService";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -51,26 +51,28 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
   return (
     <div style={{
-      background: "var(--bg-card)",
-      padding: "16px 18px",
-      borderRadius: "14px",
-      border: "1px solid var(--border-color)",
-      boxShadow: "0 1px 3px rgba(15, 23, 42, 0.04)",
+      background: "#ffffff",
+      padding: "20px 22px",
+      borderRadius: "16px",
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
       height: "100%",
-      minHeight: "440px",
       display: "flex",
       flexDirection: "column",
       justifyContent: "space-between",
       boxSizing: "border-box"
     }}>
-      {/* Title */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "16px", paddingBottom: "14px", borderBottom: "1px solid #f1f5f9" }}>
+        <div className="app-modal-icon-badge" style={{ background: "linear-gradient(135deg, #ef4444 0%, #f97316 100%)", boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)", flexShrink: 0 }}>
+          <Wallet size={22} color="#ffffff" />
+        </div>
         <div>
-          <h3 style={{ fontSize: "0.98rem", fontWeight: 800, margin: 0, color: "var(--text-primary)" }}>
+          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, margin: 0, color: "#0f172a" }}>
             {tr("Record Daily Expense", "نیا روزانہ خرچ درج کریں")}
           </h3>
-          <p style={{ fontSize: "0.76rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
-            {tr("Log expense to deduct from live drawer cash", "فیکٹری کا روزمرہ خرچ درج کریں")}
+          <p style={{ fontSize: "0.78rem", color: "#64748b", margin: "2px 0 0 0" }}>
+            {tr("Log petty expense to deduct from cash drawer", "فیکٹری کا روزمرہ خرچ درج کریں")}
           </p>
         </div>
       </div>
@@ -80,69 +82,50 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
           background: "rgba(16, 185, 129, 0.12)",
           border: "1px solid #10b981",
           color: "#059669",
-          padding: "6px 10px",
-          borderRadius: "6px",
-          fontSize: "0.8rem",
-          fontWeight: 600,
-          marginBottom: "10px",
+          padding: "8px 12px",
+          borderRadius: "8px",
+          fontSize: "0.82rem",
+          fontWeight: 700,
+          marginBottom: "12px",
           display: "flex",
           alignItems: "center",
-          gap: "6px"
+          gap: "8px"
         }}>
-          <Check size={14} /> {successMsg}
+          <Check size={16} /> {successMsg}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "10px", flex: 1, justifyContent: "space-between" }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1, justifyContent: "space-between" }}>
         
         {/* Expense Category */}
-        <div>
-          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-            {tr("Expense Category *", "خرچے کی کیٹیگری *")}
+        <div className="app-form-group">
+          <label className="app-form-label">
+            {tr("Expense Category", "خرچے کی کیٹیگری")} <span className="app-form-label-required">*</span>
           </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            style={{
-              width: "100%",
-              height: "34px",
-              padding: "0 10px",
-              borderRadius: "7px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-primary)",
-              color: "var(--text-primary)",
-              fontSize: "0.82rem",
-              fontWeight: 600,
-              outline: "none",
-              boxSizing: "border-box"
-            }}
-          >
-            {EXPENSE_CATEGORIES.map(cat => (
-              <option key={cat.id} value={cat.id}>
-                {language === "ur" ? cat.ur : cat.en}
-              </option>
-            ))}
-          </select>
+          <div className="app-input-wrapper">
+            <Tag size={16} className="app-input-icon" />
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="app-form-select"
+            >
+              {EXPENSE_CATEGORIES.map(cat => (
+                <option key={cat.id} value={cat.id}>
+                  {language === "ur" ? cat.ur : cat.en}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={14} className="app-input-chevron" />
+          </div>
         </div>
 
         {/* Amount with Quick Presets */}
-        <div>
-          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
-            {tr("Expense Amount (Rs.) *", "رقم (روپے) *")}
+        <div className="app-form-group">
+          <label className="app-form-label">
+            {tr("Expense Amount (Rs.)", "رقم (روپے)")} <span className="app-form-label-required">*</span>
           </label>
-          <div style={{ position: "relative" }}>
-            <span style={{
-              position: "absolute",
-              left: "10px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              fontWeight: 800,
-              color: "#ef4444",
-              fontSize: "0.85rem",
-              fontFamily: "var(--font-mono)"
-            }}>
-              Rs.
-            </span>
+          <div className="app-input-wrapper">
+            <DollarSign size={16} className="app-input-icon" />
             <input
               type="number"
               min="1"
@@ -151,37 +134,30 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
               onChange={e => setAmount(e.target.value)}
               placeholder="0"
               required
+              className="app-form-input font-mono"
               style={{
-                width: "100%",
-                height: "34px",
-                padding: "0 10px 0 38px",
-                borderRadius: "7px",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-primary)",
-                color: "var(--text-primary)",
-                fontSize: "0.95rem",
+                fontSize: "1.1rem",
                 fontWeight: 800,
-                fontFamily: "var(--font-mono)",
-                outline: "none",
-                boxSizing: "border-box"
+                color: "#ef4444"
               }}
             />
           </div>
 
           {/* Quick Click Preset Buttons */}
-          <div style={{ display: "flex", gap: "5px", marginTop: "6px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: "6px", marginTop: "8px", flexWrap: "wrap" }}>
             {quickAmounts.map(val => (
               <button
                 key={val}
                 type="button"
                 onClick={() => setAmount(val.toString())}
                 style={{
-                  background: amount === val.toString() ? "#2563eb" : "var(--bg-primary)",
-                  color: amount === val.toString() ? "#fff" : "var(--text-secondary)",
-                  border: "1px solid var(--border-color)",
-                  borderRadius: "5px",
-                  padding: "3px 6px",
-                  fontSize: "0.72rem",
+                  background: amount === val.toString() ? "#2563eb" : "#f1f5f9",
+                  color: amount === val.toString() ? "#ffffff" : "#475569",
+                  border: "1px solid",
+                  borderColor: amount === val.toString() ? "#2563eb" : "#e2e8f0",
+                  borderRadius: "6px",
+                  padding: "4px 8px",
+                  fontSize: "0.74rem",
                   fontWeight: 700,
                   cursor: "pointer",
                   transition: "all 0.15s ease"
@@ -195,86 +171,62 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
         {/* Paid To & Date Row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-          <div>
-            <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+          <div className="app-form-group">
+            <label className="app-form-label">
               {tr("Paid To / Person", "وصول کنندہ")}
             </label>
-            <input
-              type="text"
-              value={paidTo}
-              onChange={e => setPaidTo(e.target.value)}
-              placeholder="e.g. Driver"
-              style={{
-                width: "100%",
-                height: "34px",
-                padding: "0 10px",
-                borderRadius: "7px",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-primary)",
-                color: "var(--text-primary)",
-                fontSize: "0.82rem",
-                outline: "none",
-                boxSizing: "border-box"
-              }}
-            />
+            <div className="app-input-wrapper">
+              <User size={15} className="app-input-icon" />
+              <input
+                type="text"
+                value={paidTo}
+                onChange={e => setPaidTo(e.target.value)}
+                placeholder="e.g. Driver"
+                className="app-form-input"
+              />
+            </div>
           </div>
 
-          <div>
-            <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+          <div className="app-form-group">
+            <label className="app-form-label">
               {tr("Expense Date", "تاریخ")}
             </label>
-            <input
-              type="date"
-              value={expenseDate}
-              onChange={e => setExpenseDate(e.target.value)}
-              style={{
-                width: "100%",
-                height: "34px",
-                padding: "0 8px",
-                borderRadius: "7px",
-                border: "1px solid var(--border-color)",
-                background: "var(--bg-primary)",
-                color: "var(--text-primary)",
-                fontSize: "0.82rem",
-                outline: "none",
-                boxSizing: "border-box"
-              }}
-            />
+            <div className="app-input-wrapper">
+              <Calendar size={15} className="app-input-icon" />
+              <input
+                type="date"
+                value={expenseDate}
+                onChange={e => setExpenseDate(e.target.value)}
+                className="app-form-input"
+              />
+            </div>
           </div>
         </div>
 
         {/* Remarks */}
-        <div>
-          <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>
+        <div className="app-form-group">
+          <label className="app-form-label">
             {tr("Remarks / Details", "تفصیل")}
           </label>
-          <input
-            type="text"
-            value={remarks}
-            onChange={e => setRemarks(e.target.value)}
-            placeholder="e.g. Generator Diesel"
-            style={{
-              width: "100%",
-              height: "34px",
-              padding: "0 10px",
-              borderRadius: "7px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-primary)",
-              color: "var(--text-primary)",
-              fontSize: "0.82rem",
-              outline: "none",
-              boxSizing: "border-box"
-            }}
-          />
+          <div className="app-input-wrapper">
+            <FileText size={15} className="app-input-icon" />
+            <input
+              type="text"
+              value={remarks}
+              onChange={e => setRemarks(e.target.value)}
+              placeholder="e.g. Generator Diesel"
+              className="app-form-input"
+            />
+          </div>
         </div>
 
         {/* Payment Method Selector */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-            طریقہ:
+        <div style={{ display: "flex", gap: "12px", alignItems: "center", padding: "8px 12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" }}>
+          <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#475569" }}>
+            Payment Mode:
           </span>
           {["Cash", "Bank"].map(method => (
-            <label key={method} style={{ display: "flex", alignItems: "center", gap: "5px", cursor: "pointer", fontSize: "0.78rem", fontWeight: 600, color: "var(--text-primary)" }}>
+            <label key={method} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", fontSize: "0.8rem", fontWeight: 600, color: "#1e293b" }}>
               <input
                 type="radio"
                 name="paymentMethod"
@@ -287,26 +239,26 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
           ))}
         </div>
 
+        {/* Notice banner */}
+        <div className="app-form-notice" style={{ margin: "2px 0 4px 0" }}>
+          <Info size={15} color="#2563eb" style={{ flexShrink: 0 }} />
+          <span>All fields marked with <b style={{ color: '#ef4444' }}>*</b> are required.</span>
+        </div>
+
         {/* Submit Button */}
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn btn-primary"
+          className="app-btn-submit"
           style={{
-            marginTop: "4px",
             width: "100%",
-            padding: "9px",
-            borderRadius: "7px",
-            fontWeight: 800,
-            fontSize: "0.88rem",
-            display: "flex",
-            alignItems: "center",
             justifyContent: "center",
-            gap: "6px",
-            cursor: isSubmitting ? "not-allowed" : "pointer"
+            padding: "11px",
+            background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+            boxShadow: "0 4px 12px rgba(239, 68, 68, 0.25)"
           }}
         >
-          <PlusCircle size={15} />
+          <Save size={16} />
           {isSubmitting ? tr("Saving...", "محفوظ ہو رہا ہے...") : tr("Record Expense", "خرچ درج کریں")}
         </button>
 

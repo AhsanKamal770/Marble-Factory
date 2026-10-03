@@ -9,13 +9,19 @@ import {
   FileText,
   X,
   CheckCircle,
-  Users
+  Users,
+  User,
+  ChevronDown,
+  CreditCard,
+  Save,
+  Info
 } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 import { zakatWelfareService } from "./zakatWelfareService";
 
-
 export default function ZakatWelfareModule() {
+  const { language } = useLanguage();
+  const isUrdu = language === "ur";
   const [zakatRecords, setZakatRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("ALL"); // 'ALL' | 'Zakat' | 'Welfare'
@@ -131,7 +137,7 @@ export default function ZakatWelfareModule() {
               <input
                 type="text"
                 className="input-search"
-                style={{ paddingLeft: "34px", fontSize: "0.88rem" }}
+                style={{ paddingLeft: "38px", fontSize: "0.88rem" }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search recipient or cause..."
@@ -230,87 +236,151 @@ export default function ZakatWelfareModule() {
 
       {/* Modal: Record Zakat / Welfare Payment */}
       {isModalOpen && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: "520px" }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 700, color: "#fff" }}>Record Zakat / Welfare Payment</h3>
-              <button className="btn btn-ghost btn-sm" onClick={() => setIsModalOpen(false)}>
-                <X size={18} />
+        <div className="app-modal-overlay" onClick={() => setIsModalOpen(false)}>
+          <div
+            className="app-modal-card"
+            style={{ maxWidth: "560px" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="app-modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                <div className="app-modal-icon-badge">
+                  <HandHeart size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">
+                    {isUrdu ? "زکوٰۃ و امداد کی ادائیگی کا اندراج" : "Record Zakat & Welfare Disbursement"}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {isUrdu ? "مستحقین میں زکوٰۃ یا فلاحی امداد کا ریکارڈ محفوظ کریں" : "Record charitable fund disbursement for audit & tracking"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="app-modal-close-btn"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+              >
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveRecord}>
-              <div className="modal-body">
+            <form onSubmit={handleSaveRecord} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+              <div className="app-modal-body" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="form-group">
-                    <label className="form-label">Fund Category *</label>
-                    <select
-                      className="form-control"
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                    >
-                      <option value="Zakat">Zakat Fund</option>
-                      <option value="Welfare">General Welfare / Sadqah</option>
-                    </select>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      {isUrdu ? "فنڈ کیٹیگری" : "Fund Category"} <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <Heart size={16} className="app-input-icon" />
+                      <select
+                        className="app-form-select"
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                      >
+                        <option value="Zakat">{isUrdu ? "زکوٰۃ فنڈ (Zakat Fund)" : "Zakat Fund"}</option>
+                        <option value="Welfare">{isUrdu ? "عام صدقات و فلاح (Sadqah / Welfare)" : "General Welfare / Sadqah"}</option>
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
                   </div>
 
-                  <div className="form-group">
-                    <label className="form-label">Payment Method</label>
-                    <select
-                      className="form-control"
-                      value={paymentMode}
-                      onChange={(e) => setPaymentMode(e.target.value)}
-                    >
-                      <option value="Cash">Cash</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Ration / Material">Ration / Material Direct</option>
-                    </select>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      {isUrdu ? "ادائیگی موڈ" : "Payment Method"}
+                    </label>
+                    <div className="app-input-wrapper">
+                      <CreditCard size={16} className="app-input-icon" />
+                      <select
+                        className="app-form-select"
+                        value={paymentMode}
+                        onChange={(e) => setPaymentMode(e.target.value)}
+                      >
+                        <option value="Cash">{isUrdu ? "نقدی (Cash)" : "Cash"}</option>
+                        <option value="Bank Transfer">{isUrdu ? "بینک ٹرانسفر (Bank Transfer)" : "Bank Transfer"}</option>
+                        <option value="Ration / Material">{isUrdu ? "راشن / سامان (Direct Ration)" : "Ration / Material Direct"}</option>
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Recipient Name / Organization *</label>
-                  <input
-                    type="text"
-                    required
-                    className="form-control"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    placeholder="e.g. Local Needy Family / Saylani Welfare"
-                  />
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    {isUrdu ? "مستحق کا نام / ادارہ" : "Recipient Name / Organization"} <span className="app-form-label-required">*</span>
+                  </label>
+                  <div className="app-input-wrapper">
+                    <User size={16} className="app-input-icon" />
+                    <input
+                      type="text"
+                      required
+                      className="app-form-input"
+                      value={recipientName}
+                      onChange={(e) => setRecipientName(e.target.value)}
+                      placeholder="e.g. Local Needy Family / Saylani Welfare"
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Amount (Rs.) *</label>
-                  <input
-                    type="number"
-                    required
-                    className="form-control font-mono"
-                    style={{ color: "var(--accent-blue)", fontWeight: 700, fontSize: "1.1rem" }}
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount"
-                  />
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    {isUrdu ? "رقم (روپے)" : "Amount (Rs.)"} <span className="app-form-label-required">*</span>
+                  </label>
+                  <div className="app-input-wrapper">
+                    <DollarSign size={16} className="app-input-icon" />
+                    <input
+                      type="number"
+                      required
+                      className="app-form-input font-mono"
+                      style={{ color: "#2563eb", fontWeight: 700, fontSize: "1.05rem" }}
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="e.g. 5000"
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Purpose / Details</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    placeholder="e.g. Monthly Ration, Medical Help"
-                  />
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    {isUrdu ? "مقصد / تفصیل" : "Purpose / Details"}
+                  </label>
+                  <div className="app-input-wrapper">
+                    <FileText size={16} className="app-input-icon" />
+                    <input
+                      type="text"
+                      className="app-form-input"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="e.g. Monthly Ration, Medical Help"
+                    />
+                  </div>
+                </div>
+
+                <div className="app-form-notice">
+                  <Info size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                  <span>{isUrdu ? "یہ اندراج فیکٹری کے سالانہ زکوٰۃ آڈٹ میں شامل ہو جائے گا" : "This payment will be recorded in the annual Zakat audit."}</span>
                 </div>
               </div>
 
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
-                  Cancel
+              {/* Modal Footer */}
+              <div className="app-modal-footer">
+                <button
+                  type="button"
+                  className="app-btn-cancel"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  <X size={16} />
+                  {isUrdu ? "منسوخ" : "Cancel"}
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  <CheckCircle size={16} /> Save Record
+                <button
+                  type="submit"
+                  className="app-btn-submit"
+                >
+                  <Save size={16} />
+                  {isUrdu ? "ریکارڈ محفوظ کریں" : "Save Record"}
                 </button>
               </div>
             </form>

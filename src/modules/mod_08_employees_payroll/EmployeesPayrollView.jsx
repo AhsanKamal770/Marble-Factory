@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, Pencil, Trash2, Wallet, TrendingUp, CheckCircle, RotateCcw, Printer, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Wallet, TrendingUp, CheckCircle, RotateCcw, Printer, X, User, Briefcase, Phone, Calendar, DollarSign, FileText, ChevronDown, Save, Info, CreditCard, Users } from 'lucide-react';
 import { db } from '../../db';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -118,16 +118,18 @@ export default function EmployeesPayrollView() {
 
   // ---------- 10% increment ----------
   const applyIncrement = async (emp) => {
-    const newSalary = Math.round(Number(emp.basicSalary) * 1.1);
+    const currentSalary = Number(emp.baseSalary || emp.basicSalary || 0);
+    const newSalary = Math.round(currentSalary * 1.1);
     if (!window.confirm(tr(
-      `Raise ${emp.name}'s salary from ${rs(emp.basicSalary)} to ${rs(newSalary)}?`,
-      `${emp.name} کی تنخواہ ${rs(emp.basicSalary)} سے بڑھا کر ${rs(newSalary)} کریں؟`
+      `Raise ${emp.name}'s salary from ${rs(currentSalary)} to ${rs(newSalary)}?`,
+      `${emp.name} کی تنخواہ ${rs(currentSalary)} سے بڑھا کر ${rs(newSalary)} کریں؟`
     ))) return;
     const history = emp.salaryHistory || [];
     await db.employees.update(emp.id, {
       basicSalary: newSalary,
+      baseSalary: newSalary,
       lastIncrementDate: todayStr(),
-      salaryHistory: [...history, { date: todayStr(), oldSalary: emp.basicSalary, newSalary }]
+      salaryHistory: [...history, { date: todayStr(), oldSalary: currentSalary, newSalary }]
     });
   };
 
@@ -358,51 +360,86 @@ export default function EmployeesPayrollView() {
 
       {/* Employee modal */}
       {empModal && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '520px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
-                {editingId ? tr('Edit Employee', 'ملازم میں ترمیم') : tr('Add Employee', 'ملازم شامل کریں')}
-              </h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEmpModal(false)}><X size={18} /></button>
-            </div>
-            <form onSubmit={saveEmp}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">{tr('Name', 'نام')} *</label>
-                  <input className="form-control" value={empForm.name} onChange={(e) => setEmpForm({ ...empForm, name: e.target.value })} />
+        <div className="app-modal-overlay" onClick={() => setEmpModal(false)}>
+          <div className="app-modal-card" style={{ maxWidth: '560px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="app-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div className="app-modal-icon-badge">
+                  <Users size={24} color="#ffffff" />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label">{tr('Role', 'عہدہ')}</label>
-                    <select className="form-control" value={empForm.role} onChange={(e) => setEmpForm({ ...empForm, role: e.target.value })}>
-                      {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">{tr('Basic Salary (Rs.)', 'بنیادی تنخواہ')} *</label>
-                    <input type="number" min="0" className="form-control" value={empForm.basicSalary} onChange={(e) => setEmpForm({ ...empForm, basicSalary: e.target.value })} />
-                  </div>
+                <div>
+                  <h3 className="app-modal-title">
+                    {editingId ? tr('Edit Employee', 'ملازم میں ترمیم') : tr('Add Employee', 'ملازم شامل کریں')}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {tr('Update employee personal and salary information', 'ملازم کی معلومات اور تنخواہ درج کریں')}
+                  </p>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label">{tr('Phone', 'فون')}</label>
-                    <input className="form-control" value={empForm.phone} onChange={(e) => setEmpForm({ ...empForm, phone: e.target.value })} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">CNIC</label>
-                    <input className="form-control" value={empForm.cnic} onChange={(e) => setEmpForm({ ...empForm, cnic: e.target.value })} />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">{tr('Joining Date', 'شمولیت کی تاریخ')}</label>
-                  <input type="date" className="form-control" value={empForm.joiningDate} onChange={(e) => setEmpForm({ ...empForm, joiningDate: e.target.value })} />
-                </div>
-                {error && <div style={{ color: '#fb7185', fontSize: '0.85rem', fontWeight: 600 }}>{error}</div>}
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setEmpModal(false)}>{tr('Cancel', 'منسوخ')}</button>
-                <button type="submit" className="btn btn-primary">{tr('Save', 'محفوظ کریں')}</button>
+              <button type="button" className="app-modal-close-btn" onClick={() => setEmpModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={saveEmp} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="app-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="app-form-group">
+                  <label className="app-form-label">{tr('Name', 'نام')} <span className="app-form-label-required">*</span></label>
+                  <div className="app-input-wrapper">
+                    <User size={16} className="app-input-icon" />
+                    <input className="app-form-input" value={empForm.name} onChange={(e) => setEmpForm({ ...empForm, name: e.target.value })} placeholder="e.g. Muhammad Ali" />
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">{tr('Role', 'عہدہ')}</label>
+                    <div className="app-input-wrapper">
+                      <Briefcase size={16} className="app-input-icon" />
+                      <select className="app-form-select" value={empForm.role} onChange={(e) => setEmpForm({ ...empForm, role: e.target.value })}>
+                        {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
+                  </div>
+                  <div className="app-form-group">
+                    <label className="app-form-label">{tr('Basic Salary (Rs.)', 'بنیادی تنخواہ')} <span className="app-form-label-required">*</span></label>
+                    <div className="app-input-wrapper">
+                      <DollarSign size={16} className="app-input-icon" />
+                      <input type="number" min="0" className="app-form-input font-mono" value={empForm.basicSalary} onChange={(e) => setEmpForm({ ...empForm, basicSalary: e.target.value })} placeholder="e.g. 35000" />
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">{tr('Phone', 'فون')}</label>
+                    <div className="app-input-wrapper">
+                      <Phone size={16} className="app-input-icon" />
+                      <input className="app-form-input font-mono" value={empForm.phone} onChange={(e) => setEmpForm({ ...empForm, phone: e.target.value })} placeholder="0300-1234567" />
+                    </div>
+                  </div>
+                  <div className="app-form-group">
+                    <label className="app-form-label">CNIC</label>
+                    <div className="app-input-wrapper">
+                      <FileText size={16} className="app-input-icon" />
+                      <input className="app-form-input font-mono" value={empForm.cnic} onChange={(e) => setEmpForm({ ...empForm, cnic: e.target.value })} placeholder="33102-1234567-8" />
+                    </div>
+                  </div>
+                </div>
+                <div className="app-form-group">
+                  <label className="app-form-label">{tr('Joining Date', 'شمولیت کی تاریخ')}</label>
+                  <div className="app-input-wrapper">
+                    <Calendar size={16} className="app-input-icon" />
+                    <input type="date" className="app-form-input font-mono" value={empForm.joiningDate} onChange={(e) => setEmpForm({ ...empForm, joiningDate: e.target.value })} />
+                  </div>
+                </div>
+                {error && <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>{error}</div>}
+              </div>
+              <div className="app-modal-footer">
+                <button type="button" className="app-btn-cancel" onClick={() => setEmpModal(false)}>
+                  <X size={16} /> {tr('Cancel', 'منسوخ')}
+                </button>
+                <button type="submit" className="app-btn-submit">
+                  <Save size={16} /> {tr('Save', 'محفوظ کریں')}
+                </button>
               </div>
             </form>
           </div>
@@ -411,39 +448,66 @@ export default function EmployeesPayrollView() {
 
       {/* Advance modal */}
       {advModal && (
-        <div className="modal-overlay">
-          <div className="modal-card" style={{ maxWidth: '440px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>{tr('Advance Salary', 'ایڈوانس تنخواہ')}</h3>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAdvModal(false)}><X size={18} /></button>
+        <div className="app-modal-overlay" onClick={() => setAdvModal(false)}>
+          <div className="app-modal-card" style={{ maxWidth: '560px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="app-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div className="app-modal-icon-badge">
+                  <CreditCard size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">{tr('Advance Salary', 'ایڈوانس تنخواہ')}</h3>
+                  <p className="app-modal-subtitle">{tr('Disburse and record salary advance to employee', 'ملازم کو ایڈوانس کی ادائیگی درج کریں')}</p>
+                </div>
+              </div>
+              <button type="button" className="app-modal-close-btn" onClick={() => setAdvModal(false)}>
+                <X size={20} />
+              </button>
             </div>
-            <form onSubmit={saveAdvance}>
-              <div className="modal-body">
-                <div className="form-group">
-                  <label className="form-label">{tr('Employee', 'ملازم')}</label>
-                  <select className="form-control" value={advForm.employeeId} onChange={(e) => setAdvForm({ ...advForm, employeeId: e.target.value })}>
-                    {employees.map((e) => <option key={e.id} value={String(e.id)}>{e.name} — {e.role}</option>)}
-                  </select>
+            <form onSubmit={saveAdvance} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="app-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="app-form-group">
+                  <label className="app-form-label">{tr('Employee', 'ملازم')} <span className="app-form-label-required">*</span></label>
+                  <div className="app-input-wrapper">
+                    <User size={16} className="app-input-icon" />
+                    <select className="app-form-select" value={advForm.employeeId} onChange={(e) => setAdvForm({ ...advForm, employeeId: e.target.value })}>
+                      {employees.map((e) => <option key={e.id} value={String(e.id)}>{e.name} — {e.role}</option>)}
+                    </select>
+                    <ChevronDown size={14} className="app-input-chevron" />
+                  </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label className="form-label">{tr('Amount (Rs.)', 'رقم (روپے)')} *</label>
-                    <input type="number" min="0" className="form-control" value={advForm.amount} onChange={(e) => setAdvForm({ ...advForm, amount: e.target.value })} />
+                  <div className="app-form-group">
+                    <label className="app-form-label">{tr('Amount (Rs.)', 'رقم (روپے)')} <span className="app-form-label-required">*</span></label>
+                    <div className="app-input-wrapper">
+                      <DollarSign size={16} className="app-input-icon" />
+                      <input type="number" min="0" className="app-form-input font-mono" value={advForm.amount} onChange={(e) => setAdvForm({ ...advForm, amount: e.target.value })} placeholder="e.g. 5000" />
+                    </div>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">{tr('Date', 'تاریخ')}</label>
-                    <input type="date" className="form-control" value={advForm.date} onChange={(e) => setAdvForm({ ...advForm, date: e.target.value })} />
+                  <div className="app-form-group">
+                    <label className="app-form-label">{tr('Date', 'تاریخ')}</label>
+                    <div className="app-input-wrapper">
+                      <Calendar size={16} className="app-input-icon" />
+                      <input type="date" className="app-form-input font-mono" value={advForm.date} onChange={(e) => setAdvForm({ ...advForm, date: e.target.value })} />
+                    </div>
                   </div>
                 </div>
-                <div className="form-group">
-                  <label className="form-label">{tr('Notes', 'نوٹس')}</label>
-                  <input className="form-control" value={advForm.notes} onChange={(e) => setAdvForm({ ...advForm, notes: e.target.value })} />
+                <div className="app-form-group">
+                  <label className="app-form-label">{tr('Notes', 'نوٹس')}</label>
+                  <div className="app-input-wrapper">
+                    <FileText size={16} className="app-input-icon" />
+                    <input className="app-form-input" value={advForm.notes} onChange={(e) => setAdvForm({ ...advForm, notes: e.target.value })} placeholder="e.g. Medical emergency advance" />
+                  </div>
                 </div>
-                {error && <div style={{ color: '#fb7185', fontSize: '0.85rem', fontWeight: 600 }}>{error}</div>}
+                {error && <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600 }}>{error}</div>}
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setAdvModal(false)}>{tr('Cancel', 'منسوخ')}</button>
-                <button type="submit" className="btn btn-primary">{tr('Save Advance', 'ایڈوانس محفوظ کریں')}</button>
+              <div className="app-modal-footer">
+                <button type="button" className="app-btn-cancel" onClick={() => setAdvModal(false)}>
+                  <X size={16} /> {tr('Cancel', 'منسوخ')}
+                </button>
+                <button type="submit" className="app-btn-submit">
+                  <Save size={16} /> {tr('Save Advance', 'ایڈوانس محفوظ کریں')}
+                </button>
               </div>
             </form>
           </div>

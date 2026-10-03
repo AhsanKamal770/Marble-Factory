@@ -33,7 +33,9 @@ import {
   Receipt,
   Phone,
   Building,
-  DollarSign
+  DollarSign,
+  Info,
+  Save
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { db, adjustItemStock } from '../../db/index';
@@ -940,21 +942,17 @@ export default function ReturnsView({ settings }) {
               <tr style={{ background: 'var(--bg-primary, #f8fafc)', borderBottom: '1px solid var(--border-color, #e2e8f0)' }}>
                 <th style={{ width: '100px', padding: '12px 14px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>DOC #</th>
                 <th style={{ width: '90px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>DATE</th>
-                <th style={{ width: '120px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>TYPE</th>
                 <th style={{ padding: '12px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>PARTY / SOURCE</th>
                 <th style={{ padding: '12px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>STONE ITEM</th>
-                <th style={{ width: '85px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textAlign: 'right' }}>SQ. FT.</th>
                 <th style={{ width: '120px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textAlign: 'right' }}>FINANCIAL AMOUNT</th>
                 <th style={{ width: '150px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>CONDITION / METHOD</th>
-                <th style={{ padding: '12px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>REASON</th>
-                <th style={{ width: '85px', padding: '12px 8px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textAlign: 'center' }}>STATUS</th>
                 <th style={{ width: '95px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textAlign: 'center' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {paginatedReturns.length === 0 ? (
                 <tr>
-                  <td colSpan={11} style={{ textAlign: 'center', padding: '45px 20px', color: '#94a3b8' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '45px 20px', color: '#94a3b8' }}>
                     <div style={{ fontSize: '0.92rem', fontWeight: 700 }}>No return or wastage records found.</div>
                     <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>Click "+ Add Return" or "Log Wastage" to record transactions into the system.</div>
                   </td>
@@ -963,8 +961,6 @@ export default function ReturnsView({ settings }) {
                 paginatedReturns.map((ret) => {
                   const item = ret.items?.[0] || {};
                   const isWastage = ret.type === 'Factory Wastage';
-                  const isSales = ret.type === 'Sales Return';
-                  const isPurchase = ret.type === 'Purchase Return';
                   const isGood = (item.condition || '').includes('Good');
 
                   return (
@@ -985,24 +981,6 @@ export default function ReturnsView({ settings }) {
                       {/* DATE */}
                       <td style={{ padding: '11px 10px', fontSize: '0.78rem', color: '#64748b', whiteSpace: 'nowrap' }}>
                         {(ret.date || ret.createdAt || '').slice(0, 10)}
-                      </td>
-
-                      {/* TYPE */}
-                      <td style={{ padding: '11px 10px', whiteSpace: 'nowrap' }}>
-                        <span
-                          style={{
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            fontSize: '0.73rem',
-                            fontWeight: 700,
-                            background: isWastage ? '#fee2e2' : isSales ? '#eff6ff' : '#fef3c7',
-                            color: isWastage ? '#dc2626' : isSales ? '#2563eb' : '#d97706',
-                            border: `1px solid ${isWastage ? 'rgba(239, 68, 68, 0.2)' : isSales ? 'rgba(37, 99, 235, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
-                            display: 'inline-block'
-                          }}
-                        >
-                          {ret.type}
-                        </span>
                       </td>
 
                       {/* PARTY / SOURCE */}
@@ -1030,11 +1008,6 @@ export default function ReturnsView({ settings }) {
                         <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
                           {item.category || 'Standard'}
                         </div>
-                      </td>
-
-                      {/* SQ. FT. */}
-                      <td style={{ padding: '11px 10px', textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.84rem', color: 'var(--text-primary, #0f172a)', whiteSpace: 'nowrap' }}>
-                        {item.sqft || 0} <span style={{ fontSize: '0.72rem', color: '#64748b' }}>SqFt.</span>
                       </td>
 
                       {/* FINANCIAL AMOUNT */}
@@ -1075,32 +1048,6 @@ export default function ReturnsView({ settings }) {
                             {ret.refundMethod === 'Deduct from Khata Due Balance' ? 'Deduct Khata' : ret.refundMethod}
                           </div>
                         )}
-                      </td>
-
-                      {/* REASON */}
-                      <td style={{ padding: '11px 12px', fontSize: '0.78rem', color: '#475569', maxWidth: '240px' }}>
-                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ret.reason}>
-                          {ret.reason || '—'}
-                        </div>
-                      </td>
-
-                      {/* STATUS */}
-                      <td style={{ padding: '11px 8px', textAlign: 'center' }}>
-                        <span
-                          style={{
-                            background: '#dcfce7',
-                            color: '#15803d',
-                            border: '1px solid #bbf7d0',
-                            padding: '2px 8px',
-                            borderRadius: '20px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            display: 'inline-block',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          {ret.status || 'Cleared'}
-                        </span>
                       </td>
 
                       {/* ACTIONS */}
@@ -1193,52 +1140,42 @@ export default function ReturnsView({ settings }) {
       {/* 5. MODAL: ADD RETURN / FACTORY WASTAGE / SUPPLIER RETURN                      */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {isModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.75)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            backdropFilter: 'blur(4px)',
-            padding: '16px'
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
+        <div className="app-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div
-            style={{
-              background: 'var(--bg-card, #ffffff)',
-              border: '1px solid var(--border-color, #e2e8f0)',
-              borderRadius: '16px',
-              width: '100%',
-              maxWidth: '580px',
-              maxHeight: '90vh',
-              overflowY: 'auto',
-              padding: '24px',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.25)'
-            }}
+            className="app-modal-card"
+            style={{ maxWidth: '640px' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
-                  {modalMode === 'Factory Wastage'
-                    ? tr('Log Factory Cutting Wastage', 'فیکٹری کٹائی نقصان درج کریں')
-                    : modalMode === 'Sales Return'
-                      ? tr('Record Customer Sales Return', 'گاہک واپسی مال ریکارڈ کریں')
-                      : tr('Record Supplier Purchase Return', 'سپلائر واپسی مال')}
-                </h3>
-                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  {tr('Dexie.js atomic multi-table transaction with automatic stock reconciliation', 'خودکار اسٹاک، یارڈ اور کھاتہ ایڈجسٹمنٹ')}
-                </span>
+            <div className="app-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div
+                  className="app-modal-icon-badge"
+                  style={{
+                    background: modalMode === 'Factory Wastage' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    boxShadow: modalMode === 'Factory Wastage' ? '0 4px 12px rgba(239, 68, 68, 0.25)' : '0 4px 12px rgba(37, 99, 235, 0.25)'
+                  }}
+                >
+                  <RotateCcw size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">
+                    {modalMode === 'Factory Wastage'
+                      ? tr('Log Factory Cutting Wastage', 'فیکٹری کٹائی نقصان درج کریں')
+                      : modalMode === 'Sales Return'
+                        ? tr('Record Customer Sales Return', 'گاہک واپسی مال ریکارڈ کریں')
+                        : tr('Record Supplier Purchase Return', 'سپلائر واپسی مال')}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {tr('Dexie.js atomic multi-table transaction with automatic stock reconciliation', 'خودکار اسٹاک، یارڈ اور کھاتہ ایڈجسٹمنٹ')}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
+                className="app-modal-close-btn"
                 onClick={() => setIsModalOpen(false)}
-                style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer' }}
+                aria-label="Close"
               >
                 <X size={20} />
               </button>
@@ -1248,11 +1185,9 @@ export default function ReturnsView({ settings }) {
             <div
               style={{
                 display: 'flex',
-                gap: '6px',
-                marginBottom: '16px',
-                background: 'var(--bg-primary, #f8fafc)',
-                padding: '4px',
-                borderRadius: '10px'
+                gap: '8px',
+                padding: '14px 20px 0 20px',
+                background: '#ffffff'
               }}
             >
               {[
@@ -1267,14 +1202,15 @@ export default function ReturnsView({ settings }) {
                   style={{
                     flex: 1,
                     padding: '8px 6px',
-                    fontSize: '0.78rem',
+                    fontSize: '0.8rem',
                     fontWeight: 700,
-                    borderRadius: '8px',
-                    border: 'none',
+                    borderRadius: '10px',
+                    border: '1px solid',
+                    borderColor: modalMode === m.id ? (m.id === 'Factory Wastage' ? '#ef4444' : '#2563eb') : '#e2e8f0',
                     cursor: 'pointer',
-                    background: modalMode === m.id ? (m.id === 'Factory Wastage' ? '#ef4444' : '#2563eb') : 'transparent',
+                    background: modalMode === m.id ? (m.id === 'Factory Wastage' ? '#ef4444' : '#2563eb') : '#f8fafc',
                     color: modalMode === m.id ? '#ffffff' : '#64748b',
-                    boxShadow: modalMode === m.id ? '0 2px 6px rgba(0,0,0,0.12)' : 'none',
+                    boxShadow: modalMode === m.id ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
                     transition: 'all 0.15s ease'
                   }}
                 >
@@ -1283,401 +1219,317 @@ export default function ReturnsView({ settings }) {
               ))}
             </div>
 
-            <form onSubmit={handleSaveReturn} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {/* Option to Link Existing Invoice for Customer Return */}
-              {modalMode === 'Sales Return' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                    {tr('Link Existing Bill / Invoice (بل سے منسلک کریں)', 'بل نمبر منتخب کریں (اختیاری)')}
-                  </label>
-                  <select
-                    value={selectedInvoiceNo}
-                    onChange={(e) => handleInvoiceSelect(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '38px',
-                      padding: '0 10px',
-                      fontSize: '0.84rem',
-                      background: 'var(--bg-primary, #f8fafc)',
-                      border: '1px solid var(--border-color, #cbd5e1)',
-                      borderRadius: '8px',
-                      color: 'var(--text-primary, #0f172a)',
-                      outline: 'none'
-                    }}
-                  >
-                    <option value="">-- {tr('Manual / Walk-in Return without Bill', 'بغیر بل کے براہِ راست واپسی')} --</option>
-                    {recentInvoices.map((inv) => (
-                      <option key={inv.id} value={inv.invoiceNo}>
-                        {inv.invoiceNo} - {inv.customerName} ({rs(inv.grandTotal)})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Customer Selection */}
-              {modalMode === 'Sales Return' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      {tr('Customer Khata', 'گاہک کھاتہ')}
+            <form onSubmit={handleSaveReturn} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+              <div className="app-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Option to Link Existing Invoice for Customer Return */}
+                {modalMode === 'Sales Return' && (
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      {tr('Link Existing Bill / Invoice (بل سے منسلک کریں)', 'بل نمبر منتخب کریں (اختیاری)')}
                     </label>
+                    <div className="app-input-wrapper">
+                      <Receipt size={16} className="app-input-icon" />
+                      <select
+                        value={selectedInvoiceNo}
+                        onChange={(e) => handleInvoiceSelect(e.target.value)}
+                        className="app-form-select"
+                        style={{ fontWeight: 600 }}
+                      >
+                        <option value="">-- {tr('Manual / Walk-in Return without Bill', 'بغیر بل کے براہِ راست واپسی')} --</option>
+                        {recentInvoices.map((inv) => (
+                          <option key={inv.id} value={inv.invoiceNo}>
+                            {inv.invoiceNo} - {inv.customerName} ({rs(inv.grandTotal)})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Customer Selection */}
+                {modalMode === 'Sales Return' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '12px' }}>
+                    <div className="app-form-group">
+                      <label className="app-form-label">
+                        {tr('Customer Khata', 'گاہک کھاتہ')}
+                      </label>
+                      <div className="app-input-wrapper">
+                        <User size={16} className="app-input-icon" />
+                        <select
+                          value={selectedCustomerId}
+                          onChange={(e) => {
+                            setSelectedCustomerId(e.target.value);
+                            const c = customers.find((x) => x.id === parseInt(e.target.value, 10));
+                            if (c) setCustomerName(c.name);
+                          }}
+                          className="app-form-select"
+                        >
+                          <option value="">-- {tr('Walk-in Customer', 'عام گاہک')} --</option>
+                          {customers.map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name} (Due: {rs(c.balanceDue)})
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown size={14} className="app-input-chevron" />
+                      </div>
+                    </div>
+
+                    <div className="app-form-group">
+                      <label className="app-form-label">
+                        {tr('Customer Name', 'گاہک کا نام')}
+                      </label>
+                      <div className="app-input-wrapper">
+                        <User size={16} className="app-input-icon" />
+                        <input
+                          type="text"
+                          value={customerName}
+                          onChange={(e) => setCustomerName(e.target.value)}
+                          placeholder="e.g. Tariq Mehmood"
+                          className="app-form-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Supplier Selection for Purchase Return */}
+                {modalMode === 'Purchase Return' && (
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      {tr('Select Supplier', 'سپلائر منتخب کریں')} <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <Building size={16} className="app-input-icon" />
+                      <select
+                        value={selectedSupplierId}
+                        onChange={(e) => setSelectedSupplierId(e.target.value)}
+                        className="app-form-select"
+                      >
+                        {suppliers.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.company || s.name} (Payable: {rs(s.balancePayable)})
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Machine / Source Selection for Factory Wastage */}
+                {modalMode === 'Factory Wastage' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '12px' }}>
+                    <div className="app-form-group">
+                      <label className="app-form-label">
+                        {tr('Wastage Machine / Source', 'کٹائی نقصان کا ذریعہ')}
+                      </label>
+                      <div className="app-input-wrapper">
+                        <Hammer size={16} className="app-input-icon" />
+                        <select
+                          value={wastageSource}
+                          onChange={(e) => setWastageSource(e.target.value)}
+                          className="app-form-select"
+                        >
+                          <option value="Bridge-Cutter Cutting Loss">Bridge-Cutter Cutting Loss (برج کٹر کٹائی)</option>
+                          <option value="Gangsaw Slab Sawing Crack">Gangsaw Slab Sawing Crack (گینگ سا ٹوٹ پھوٹ)</option>
+                          <option value="Polish & Edge Trimming Chipping">Polish & Edge Chipping (پالش و کنارہ نقصان)</option>
+                          <option value="Yard Loading & Transit Breakage">Yard Loading & Transit (لوڈنگ ان لوڈنگ)</option>
+                        </select>
+                        <ChevronDown size={14} className="app-input-chevron" />
+                      </div>
+                    </div>
+                    <div className="app-form-group">
+                      <label className="app-form-label">
+                        {tr('Cutter Master / Operator', 'کٹائی ماسٹر یا ملازم')}
+                      </label>
+                      <div className="app-input-wrapper">
+                        <User size={16} className="app-input-icon" />
+                        <input
+                          type="text"
+                          value={operatorName}
+                          onChange={(e) => setOperatorName(e.target.value)}
+                          placeholder="e.g. Master Aslam"
+                          className="app-form-input"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Stone Item Selection */}
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    {tr('Marble / Stone Item', 'ماربل یا پتھر کا انتخاب')} <span className="app-form-label-required">*</span>
+                  </label>
+                  <div className="app-input-wrapper">
+                    <Layers size={16} className="app-input-icon" />
                     <select
-                      value={selectedCustomerId}
-                      onChange={(e) => {
-                        setSelectedCustomerId(e.target.value);
-                        const c = customers.find((x) => x.id === parseInt(e.target.value, 10));
-                        if (c) setCustomerName(c.name);
-                      }}
-                      style={{
-                        width: '100%',
-                        height: '38px',
-                        padding: '0 10px',
-                        fontSize: '0.84rem',
-                        background: 'var(--bg-primary, #f8fafc)',
-                        border: '1px solid var(--border-color, #cbd5e1)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary, #0f172a)',
-                        outline: 'none'
-                      }}
+                      value={selectedItemId}
+                      onChange={(e) => handleItemSelect(e.target.value)}
+                      className="app-form-select"
                     >
-                      <option value="">-- {tr('Walk-in Customer', 'عام گاہک')} --</option>
-                      {customers.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} (Due: {rs(c.balanceDue)})
+                      {items.map((it) => (
+                        <option key={it.id} value={it.id}>
+                          {it.name} - {it.category} ({it.stockSqFt || 0} SqFt in Yard)
                         </option>
                       ))}
                     </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      {tr('Customer Name', 'گاہک کا نام')}
-                    </label>
-                    <input
-                      type="text"
-                      value={customerName}
-                      onChange={(e) => setCustomerName(e.target.value)}
-                      placeholder="e.g. Tariq Mehmood"
-                      style={{
-                        width: '100%',
-                        height: '38px',
-                        padding: '0 10px',
-                        fontSize: '0.84rem',
-                        background: 'var(--bg-primary, #f8fafc)',
-                        border: '1px solid var(--border-color, #cbd5e1)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary, #0f172a)',
-                        outline: 'none'
-                      }}
-                    />
+                    <ChevronDown size={14} className="app-input-chevron" />
                   </div>
                 </div>
-              )}
 
-              {/* Supplier Selection for Purchase Return */}
-              {modalMode === 'Purchase Return' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                    {tr('Select Supplier', 'سپلائر منتخب کریں')}
-                  </label>
-                  <select
-                    value={selectedSupplierId}
-                    onChange={(e) => setSelectedSupplierId(e.target.value)}
+                {/* Quantity (Sq. Ft.) and Rate */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      {tr('Quantity (Sq. Ft.)', 'مقدار (مربع فٹ)')} <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={returnSqFt}
+                        onChange={(e) => setReturnSqFt(e.target.value)}
+                        required
+                        className="app-form-input font-mono"
+                        placeholder="0.0"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      {modalMode === 'Factory Wastage'
+                        ? tr('Unit Cost (Rs/SqFt)', 'لاگت فی فٹ')
+                        : tr('Return Rate (Rs/SqFt)', 'ریٹ فی مربع فٹ')} <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <DollarSign size={16} className="app-input-icon" />
+                      <input
+                        type="number"
+                        value={returnRate}
+                        onChange={(e) => setReturnRate(e.target.value)}
+                        required
+                        className="app-form-input font-mono"
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Live Calculation Preview */}
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}
+                >
+                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    {modalMode === 'Factory Wastage'
+                      ? tr('Estimated Financial Loss:', 'کٹائی نقصان کی مالیاتی رقم:')
+                      : tr('Total Return Credit Value:', 'کل واپسی مالیت:')}
+                  </span>
+                  <span
                     style={{
-                      width: '100%',
-                      height: '38px',
-                      padding: '0 10px',
-                      fontSize: '0.84rem',
-                      background: 'var(--bg-primary, #f8fafc)',
-                      border: '1px solid var(--border-color, #cbd5e1)',
-                      borderRadius: '8px',
-                      color: 'var(--text-primary, #0f172a)',
-                      outline: 'none'
+                      fontSize: '1.25rem',
+                      fontWeight: 800,
+                      color: modalMode === 'Factory Wastage' ? '#ef4444' : '#2563eb',
+                      fontFamily: 'var(--font-mono)'
                     }}
                   >
-                    {suppliers.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.company || s.name} (Payable: {rs(s.balancePayable)})
-                      </option>
-                    ))}
-                  </select>
+                    {rs((parseFloat(returnSqFt) || 0) * (parseFloat(returnRate) || 0))}
+                  </span>
                 </div>
-              )}
 
-              {/* Machine / Source Selection for Factory Wastage */}
-              {modalMode === 'Factory Wastage' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      {tr('Wastage Machine / Source', 'کٹائی نقصان کا ذریعہ')}
-                    </label>
-                    <select
-                      value={wastageSource}
-                      onChange={(e) => setWastageSource(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: '38px',
-                        padding: '0 10px',
-                        fontSize: '0.84rem',
-                        background: 'var(--bg-primary, #f8fafc)',
-                        border: '1px solid var(--border-color, #cbd5e1)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary, #0f172a)',
-                        outline: 'none'
-                      }}
-                    >
-                      <option value="Bridge-Cutter Cutting Loss">Bridge-Cutter Cutting Loss (برج کٹر کٹائی)</option>
-                      <option value="Gangsaw Slab Sawing Crack">Gangsaw Slab Sawing Crack (گینگ سا ٹوٹ پھوٹ)</option>
-                      <option value="Polish & Edge Trimming Chipping">Polish & Edge Chipping (پالش و کنارہ نقصان)</option>
-                      <option value="Yard Loading & Transit Breakage">Yard Loading & Transit (لوڈنگ ان لوڈنگ)</option>
-                    </select>
+                {/* Condition & Settlement for Sales Return */}
+                {modalMode === 'Sales Return' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div className="app-form-group">
+                      <label className="app-form-label">
+                        {tr('Stone Condition', 'مال کی حالت')}
+                      </label>
+                      <div className="app-input-wrapper">
+                        <select
+                          value={condition}
+                          onChange={(e) => setCondition(e.target.value)}
+                          className="app-form-select"
+                        >
+                          <option value="Good - Return to Yard Stock">Good - Restock to Yard (ٹھیک مال)</option>
+                          <option value="Damaged - Scrap">Damaged - Scrap (خراب / سکریپ)</option>
+                        </select>
+                        <ChevronDown size={14} className="app-input-chevron" />
+                      </div>
+                    </div>
+                    <div className="app-form-group">
+                      <label className="app-form-label">
+                        {tr('Refund Method', 'رقم کا طریقہ کار')}
+                      </label>
+                      <div className="app-input-wrapper">
+                        <select
+                          value={refundMethod}
+                          onChange={(e) => setRefundMethod(e.target.value)}
+                          className="app-form-select"
+                        >
+                          <option value="Deduct from Khata Due Balance">Deduct from Khata Balance (ادھار سے کٹوتی)</option>
+                          <option value="Cash Refund">Cash Refund from Drawer (نقد ادائیگی)</option>
+                        </select>
+                        <ChevronDown size={14} className="app-input-chevron" />
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      {tr('Cutter Master / Operator', 'کٹائی ماسٹر یا ملازم')}
-                    </label>
+                )}
+
+                {/* Reason / Remarks Notes */}
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    {tr('Reason & Remarks', 'وجہ و تفصیل')}
+                  </label>
+                  <div className="app-input-wrapper">
+                    <FileText size={16} className="app-input-icon" />
                     <input
                       type="text"
-                      value={operatorName}
-                      onChange={(e) => setOperatorName(e.target.value)}
-                      placeholder="e.g. Master Aslam"
-                      style={{
-                        width: '100%',
-                        height: '38px',
-                        padding: '0 10px',
-                        fontSize: '0.84rem',
-                        background: 'var(--bg-primary, #f8fafc)',
-                        border: '1px solid var(--border-color, #cbd5e1)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary, #0f172a)',
-                        outline: 'none'
-                      }}
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="e.g. Leftover tiles, edge cracked during cutting, etc."
+                      className="app-form-input"
                     />
                   </div>
                 </div>
-              )}
 
-              {/* Stone Item Selection */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                  {tr('Marble / Stone Item', 'ماربل یا پتھر کا انتخاب')}
-                </label>
-                <select
-                  value={selectedItemId}
-                  onChange={(e) => handleItemSelect(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    padding: '0 10px',
-                    fontSize: '0.84rem',
-                    background: 'var(--bg-primary, #f8fafc)',
-                    border: '1px solid var(--border-color, #cbd5e1)',
-                    borderRadius: '8px',
-                    color: 'var(--text-primary, #0f172a)',
-                    outline: 'none'
-                  }}
-                >
-                  {items.map((it) => (
-                    <option key={it.id} value={it.id}>
-                      {it.name} - {it.category} ({it.stockSqFt || 0} SqFt in Yard)
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Quantity (Sq. Ft.) and Rate */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                    {tr('Quantity (Sq. Ft.)', 'مقدار (مربع فٹ)')}
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={returnSqFt}
-                    onChange={(e) => setReturnSqFt(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      height: '38px',
-                      padding: '0 10px',
-                      fontSize: '0.84rem',
-                      background: 'var(--bg-primary, #f8fafc)',
-                      border: '1px solid var(--border-color, #cbd5e1)',
-                      borderRadius: '8px',
-                      color: 'var(--text-primary, #0f172a)',
-                      outline: 'none',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 700
-                    }}
-                  />
+                {/* Notice banner */}
+                <div className="app-form-notice">
+                  <Info size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                  <span>All fields marked with <b style={{ color: '#ef4444' }}>*</b> are required.</span>
                 </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                    {modalMode === 'Factory Wastage'
-                      ? tr('Unit Cost (Rs/SqFt)', 'لاگت فی فٹ')
-                      : tr('Return Rate (Rs/SqFt)', 'ریٹ فی مربع فٹ')}
-                  </label>
-                  <input
-                    type="number"
-                    value={returnRate}
-                    onChange={(e) => setReturnRate(e.target.value)}
-                    required
-                    style={{
-                      width: '100%',
-                      height: '38px',
-                      padding: '0 10px',
-                      fontSize: '0.84rem',
-                      background: 'var(--bg-primary, #f8fafc)',
-                      border: '1px solid var(--border-color, #cbd5e1)',
-                      borderRadius: '8px',
-                      color: 'var(--text-primary, #0f172a)',
-                      outline: 'none',
-                      fontFamily: 'var(--font-mono)',
-                      fontWeight: 700
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Live Calculation Preview */}
-              <div
-                style={{
-                  background: 'var(--bg-primary, #f8fafc)',
-                  border: '1px solid var(--border-color, #cbd5e1)',
-                  borderRadius: '10px',
-                  padding: '10px 14px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}
-              >
-                <span style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 600 }}>
-                  {modalMode === 'Factory Wastage'
-                    ? tr('Estimated Financial Loss:', 'کٹائی نقصان کی مالیاتی رقم:')
-                    : tr('Total Return Credit Value:', 'کل واپسی مالیت:')}
-                </span>
-                <span
-                  style={{
-                    fontSize: '1.15rem',
-                    fontWeight: 800,
-                    color: modalMode === 'Factory Wastage' ? '#ef4444' : '#2563eb',
-                    fontFamily: 'var(--font-mono)'
-                  }}
-                >
-                  {rs((parseFloat(returnSqFt) || 0) * (parseFloat(returnRate) || 0))}
-                </span>
-              </div>
-
-              {/* Condition & Settlement for Sales Return */}
-              {modalMode === 'Sales Return' && (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      {tr('Stone Condition', 'مال کی حالت')}
-                    </label>
-                    <select
-                      value={condition}
-                      onChange={(e) => setCondition(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: '38px',
-                        padding: '0 10px',
-                        fontSize: '0.82rem',
-                        background: 'var(--bg-primary, #f8fafc)',
-                        border: '1px solid var(--border-color, #cbd5e1)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary, #0f172a)',
-                        outline: 'none'
-                      }}
-                    >
-                      <option value="Good - Return to Yard Stock">Good - Restock to Yard (ٹھیک مال)</option>
-                      <option value="Damaged - Scrap">Damaged - Scrap (خراب / سکریپ)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                      {tr('Refund Method', 'رقم کا طریقہ کار')}
-                    </label>
-                    <select
-                      value={refundMethod}
-                      onChange={(e) => setRefundMethod(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: '38px',
-                        padding: '0 10px',
-                        fontSize: '0.82rem',
-                        background: 'var(--bg-primary, #f8fafc)',
-                        border: '1px solid var(--border-color, #cbd5e1)',
-                        borderRadius: '8px',
-                        color: 'var(--text-primary, #0f172a)',
-                        outline: 'none'
-                      }}
-                    >
-                      <option value="Deduct from Khata Due Balance">Deduct from Khata Balance (ادھار سے کٹوتی)</option>
-                      <option value="Cash Refund">Cash Refund from Drawer (نقد ادائیگی)</option>
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* Reason / Remarks Notes */}
-              <div>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-                  {tr('Reason & Remarks', 'وجہ و تفصیل')}
-                </label>
-                <input
-                  type="text"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  placeholder="e.g. Leftover tiles, edge cracked during cutting, etc."
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    padding: '0 10px',
-                    fontSize: '0.84rem',
-                    background: 'var(--bg-primary, #f8fafc)',
-                    border: '1px solid var(--border-color, #cbd5e1)',
-                    borderRadius: '8px',
-                    color: 'var(--text-primary, #0f172a)',
-                    outline: 'none'
-                  }}
-                />
               </div>
 
               {/* Modal Action Buttons */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '8px' }}>
+              <div className="app-modal-footer">
                 <button
                   type="button"
+                  className="app-btn-cancel"
                   onClick={() => setIsModalOpen(false)}
-                  style={{
-                    padding: '9px 18px',
-                    borderRadius: '8px',
-                    background: 'transparent',
-                    border: '1px solid var(--border-color, #cbd5e1)',
-                    color: 'var(--text-primary, #0f172a)',
-                    fontSize: '0.84rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
                 >
+                  <X size={16} />
                   {tr('Cancel', 'منسوخ')}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
+                  className="app-btn-submit"
                   style={{
-                    padding: '9px 22px',
-                    borderRadius: '8px',
-                    background: modalMode === 'Factory Wastage' ? '#ef4444' : '#2563eb',
-                    border: 'none',
-                    color: '#ffffff',
-                    fontSize: '0.84rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    background: modalMode === 'Factory Wastage' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    boxShadow: modalMode === 'Factory Wastage' ? '0 4px 12px rgba(239, 68, 68, 0.25)' : '0 4px 12px rgba(37, 99, 235, 0.25)'
                   }}
                 >
+                  <Save size={16} />
                   {submitting ? tr('Saving...', 'محفوظ ہو رہا ہے...') : tr('Save & Reconcile', 'محفوظ کریں')}
                 </button>
               </div>

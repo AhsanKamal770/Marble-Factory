@@ -1585,212 +1585,303 @@ export default function StockSheetView({ settings }) {
       {/* 6. ADD / EDIT STOCK ITEM MODAL                                             */}
       {/* ------------------------------------------------------------------------- */}
       {isModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
+        <div className="app-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div
-            className="modal-content"
+            className="app-modal-card"
+            style={{ maxWidth: "620px" }}
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: "620px", width: "100%", maxHeight: "88vh", display: "flex", flexDirection: "column" }}
           >
             {/* Modal Header */}
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <Boxes size={18} style={{ color: "#2563eb" }} />
-                <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800 }}>
-                  {editingItem ? "Edit Stock Item" : "Register New Stock Entry"}
-                </h3>
+            <div className="app-modal-header">
+              <div className="app-modal-header-left">
+                <div className="app-modal-icon-badge">
+                  <Boxes size={22} strokeWidth={2.4} />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">
+                    {editingItem ? "Edit Stock Item" : "Register New Stock Entry"}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {editingItem ? "Update item specifications, prices and thresholds" : "Add new stock entry to your inventory"}
+                  </p>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="btn btn-ghost btn-sm"
-                style={{ padding: "4px", color: "#64748b" }}
+                className="app-modal-close-btn"
+                title="Close"
               >
-                <X size={18} />
+                <X size={17} />
               </button>
             </div>
 
             {/* Modal Form */}
             <form onSubmit={handleSaveItem} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-              <div style={{ padding: "18px 20px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "12px" }}>
-                {/* Row 1: Code & Name */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "10px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Item Code *</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.code}
-                      onChange={(e) => setFormData(p => ({ ...p, code: e.target.value }))}
-                      className="form-control font-mono"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Product Name *</label>
+              <div className="app-modal-body">
+                {/* Product / Variety Name */}
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    Product / Variety Name <span className="app-form-label-required">*</span>
+                  </label>
+                  <div className="app-input-wrapper">
+                    <span className="app-input-icon">
+                      <Search size={16} />
+                    </span>
                     <input
                       type="text"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-                      placeholder="e.g. Jet Black Granite Slab"
-                      className="form-control"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
+                      placeholder="Search product, variety..."
+                      className="app-form-input has-icon"
+                      autoFocus
                     />
                   </div>
                 </div>
 
-                {/* Row 2: Category & Unit */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Category *</label>
-                    <select
-                      value={formData.category}
-                      onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
-                      className="form-control"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    >
-                      <option value="Marble">Marble</option>
-                      <option value="Granite">Granite</option>
-                      <option value="Porcelain Tiles">Porcelain Tiles</option>
-                      <option value="Ceramic Tiles">Ceramic Tiles</option>
-                      <option value="Flowers">Flowers (Medallions)</option>
-                      <option value="Borders">Borders / Patti</option>
-                      <option value="Panels">Panels (Mashallah / 3D)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Stock Unit *</label>
-                    <select
-                      value={formData.unit}
-                      onChange={(e) => setFormData(p => ({ ...p, unit: e.target.value }))}
-                      className="form-control"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    >
-                      <option value="Sq. Ft.">Sq. Ft. (مربع فٹ)</option>
-                      <option value="Boxes">Boxes (ڈبے)</option>
-                      <option value="Pieces">Pieces (تھان / سلیب)</option>
-                      <option value="Running Feet">Running Feet (رننگ فٹ)</option>
-                    </select>
+                {/* Item Code */}
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    Item Code <span className="app-form-label-required">*</span>
+                  </label>
+                  <div className="app-input-wrapper">
+                    <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem", fontWeight: 700 }}>
+                      #
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      value={formData.code}
+                      onChange={(e) => setFormData(p => ({ ...p, code: e.target.value }))}
+                      className="app-form-input has-icon font-mono"
+                      placeholder="e.g. MB-8084"
+                    />
                   </div>
                 </div>
 
-                {/* Row 3: Sutar Thickness & Standard Size */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Sutar Thickness</label>
-                    <select
-                      value={formData.sutarThickness}
-                      onChange={(e) => setFormData(p => ({ ...p, sutarThickness: e.target.value }))}
-                      className="form-control"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    >
-                      <option value="4">4 Sutar (Standard 1/2")</option>
-                      <option value="6">6 Sutar (Kitchen & Stairs 3/4")</option>
-                      <option value="9">9 Sutar (Heavy Flooring 1.1")</option>
-                      <option value="14">14 Sutar (Industrial/Thick)</option>
-                      <option value="">Other / Custom</option>
-                    </select>
+                {/* Category & Sutar Thickness */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Category Type <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon">
+                        <Layers size={16} />
+                      </span>
+                      <select
+                        value={formData.category}
+                        onChange={(e) => setFormData(p => ({ ...p, category: e.target.value }))}
+                        className="app-form-select has-icon has-chevron"
+                      >
+                        <option value="Marble">Marble Slabs & Tiles</option>
+                        <option value="Granite">Granite</option>
+                        <option value="Porcelain Tiles">Porcelain Tiles</option>
+                        <option value="Ceramic Tiles">Ceramic Tiles</option>
+                        <option value="Flowers">Flowers (Medallions)</option>
+                        <option value="Borders">Borders / Patti</option>
+                        <option value="Panels">Panels (Mashallah / 3D)</option>
+                      </select>
+                      <span className="app-input-chevron">
+                        <ChevronDown size={15} />
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Standard Size</label>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Sutar Thickness
+                    </label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
+                        ✎
+                      </span>
+                      <select
+                        value={formData.sutarThickness}
+                        onChange={(e) => setFormData(p => ({ ...p, sutarThickness: e.target.value }))}
+                        className="app-form-select has-icon has-chevron"
+                      >
+                        <option value="4">4 Sutar (12×12, 12×24, 6×12, 6×2)</option>
+                        <option value="6">6 Sutar (Kitchen & Stairs 3/4")</option>
+                        <option value="9">9 Sutar (Heavy Flooring 1.1")</option>
+                        <option value="14">14 Sutar (Industrial/Thick)</option>
+                        <option value="">Other / Custom</option>
+                      </select>
+                      <span className="app-input-chevron">
+                        <ChevronDown size={15} />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dimensions / Standard Size */}
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    Dimensions / Standard Size
+                  </label>
+                  <div className="app-input-wrapper">
+                    <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
+                      ⤢
+                    </span>
                     <input
                       type="text"
                       value={formData.standardSize}
                       onChange={(e) => setFormData(p => ({ ...p, standardSize: e.target.value }))}
                       placeholder="e.g. 12 × 12, 12 × 24, 24 × 24"
-                      className="form-control"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
+                      className="app-form-input has-icon"
                     />
                   </div>
                 </div>
 
-                {/* Row 4: Stock Quantity & Rates */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Initial Stock *</label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={formData.unit === "Boxes" ? formData.stockBoxes : formData.unit === "Pieces" ? formData.stockPieces : formData.stockSqFt}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (formData.unit === "Boxes") setFormData(p => ({ ...p, stockBoxes: val }));
-                        else if (formData.unit === "Pieces") setFormData(p => ({ ...p, stockPieces: val }));
-                        else setFormData(p => ({ ...p, stockSqFt: val }));
-                      }}
-                      className="form-control font-mono"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    />
+                {/* Stock Unit & Selling Rate */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Stock Unit <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon">
+                        <Boxes size={16} />
+                      </span>
+                      <select
+                        value={formData.unit}
+                        onChange={(e) => setFormData(p => ({ ...p, unit: e.target.value }))}
+                        className="app-form-select has-icon has-chevron"
+                      >
+                        <option value="Sq. Ft.">Sq. Ft.</option>
+                        <option value="Boxes">Boxes</option>
+                        <option value="Pieces">Pieces</option>
+                        <option value="Running Feet">Running Feet</option>
+                      </select>
+                      <span className="app-input-chevron">
+                        <ChevronDown size={15} />
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Cost Rate (Rs) *</label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={formData.costPerSqFt}
-                      onChange={(e) => setFormData(p => ({ ...p, costPerSqFt: e.target.value }))}
-                      className="form-control font-mono"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Sale Rate (Rs) *</label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={formData.ratePerSqFt}
-                      onChange={(e) => setFormData(p => ({ ...p, ratePerSqFt: e.target.value }))}
-                      className="form-control font-mono"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    />
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Selling Rate (Rs) <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
+                        ₨
+                      </span>
+                      <input
+                        type="number"
+                        step="any"
+                        required
+                        value={formData.ratePerSqFt}
+                        onChange={(e) => setFormData(p => ({ ...p, ratePerSqFt: e.target.value }))}
+                        className="app-form-input has-icon font-mono"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Row 5: Lot No & Location */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Lot / Block #</label>
-                    <input
-                      type="text"
-                      value={formData.lotNo}
-                      onChange={(e) => setFormData(p => ({ ...p, lotNo: e.target.value }))}
-                      placeholder="e.g. LOT-2026-A"
-                      className="form-control"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    />
+                {/* Cost Rate & Stock Quantity */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Cost Rate (Rs) <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
+                        ₨
+                      </span>
+                      <input
+                        type="number"
+                        step="any"
+                        required
+                        value={formData.costPerSqFt}
+                        onChange={(e) => setFormData(p => ({ ...p, costPerSqFt: e.target.value }))}
+                        className="app-form-input has-icon font-mono"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.76rem", fontWeight: 700, marginBottom: "4px" }}>Min Stock Alert</label>
-                    <input
-                      type="number"
-                      value={formData.minStockAlert}
-                      onChange={(e) => setFormData(p => ({ ...p, minStockAlert: e.target.value }))}
-                      className="form-control font-mono"
-                      style={{ padding: "8px 10px", fontSize: "0.84rem" }}
-                    />
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Stock Quantity <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
+                        ⛁
+                      </span>
+                      <input
+                        type="number"
+                        step="any"
+                        required
+                        value={formData.unit === "Boxes" ? formData.stockBoxes : formData.unit === "Pieces" ? formData.stockPieces : formData.stockSqFt}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (formData.unit === "Boxes") setFormData(p => ({ ...p, stockBoxes: val }));
+                          else if (formData.unit === "Pieces") setFormData(p => ({ ...p, stockPieces: val }));
+                          else setFormData(p => ({ ...p, stockSqFt: val }));
+                        }}
+                        className="app-form-input has-icon font-mono"
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
+                </div>
+
+                {/* Lot / Location & Min Stock Alert */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">Yard Location / Lot #</label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
+                        📍
+                      </span>
+                      <input
+                        type="text"
+                        value={formData.lotNo}
+                        onChange={(e) => setFormData(p => ({ ...p, lotNo: e.target.value }))}
+                        placeholder="e.g. Yard Shed 1"
+                        className="app-form-input has-icon"
+                      />
+                    </div>
+                  </div>
+                  <div className="app-form-group">
+                    <label className="app-form-label">Low Stock Alert Threshold</label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
+                        🔔
+                      </span>
+                      <input
+                        type="number"
+                        value={formData.minStockAlert}
+                        onChange={(e) => setFormData(p => ({ ...p, minStockAlert: e.target.value }))}
+                        className="app-form-input has-icon font-mono"
+                        placeholder="100"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notice */}
+                <div className="app-form-notice">
+                  <span style={{ fontSize: "14px" }}>ℹ</span>
+                  <span>All fields marked with * are required.</span>
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div style={{ padding: "14px 20px", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "flex-end", gap: "10px", background: "var(--bg-primary)" }}>
+              <div className="app-modal-footer">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="btn btn-secondary btn-sm"
-                  style={{ padding: "8px 16px" }}
+                  className="app-btn-cancel"
                 >
-                  Cancel
+                  <X size={15} />
+                  <span>Cancel</span>
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary btn-sm"
-                  style={{ padding: "8px 20px" }}
+                  className="app-btn-submit"
                 >
-                  {editingItem ? "Update Item" : "Save Stock Entry"}
+                  <span>{editingItem ? "Update Item" : "Create Item"}</span>
                 </button>
               </div>
             </form>

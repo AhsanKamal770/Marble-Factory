@@ -50,6 +50,43 @@ export const employeesPayrollService = {
     }
   },
 
+  // Advance Operations
+  async getAllAdvances() {
+    try {
+      if (db.employee_advances) {
+        return await db.employee_advances.toArray();
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching advances:', error);
+      throw error;
+    }
+  },
+
+  async addAdvance(advanceData) {
+    try {
+      if (db.employee_advances) {
+        return await db.employee_advances.add(advanceData);
+      }
+      throw new Error('employee_advances store is not defined');
+    } catch (error) {
+      console.error('Error adding advance:', error);
+      throw error;
+    }
+  },
+
+  async deleteAdvance(id) {
+    try {
+      if (db.employee_advances) {
+        return await db.employee_advances.delete(id);
+      }
+      throw new Error('employee_advances store is not defined');
+    } catch (error) {
+      console.error('Error deleting advance:', error);
+      throw error;
+    }
+  },
+
   // Payroll Operations
   async getAllPayrolls() {
     try {

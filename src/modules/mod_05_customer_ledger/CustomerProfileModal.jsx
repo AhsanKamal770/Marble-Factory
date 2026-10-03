@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { X, Save, User, Phone, MapPin, CreditCard } from "lucide-react";
+import {
+  X, Save, User, Phone, MapPin, CreditCard,
+  Building, DollarSign, FileText, Info, Coins, Database
+} from "lucide-react";
 
 export default function CustomerProfileModal({ customer, onClose, onSave }) {
   const [formData, setFormData] = useState({
@@ -30,165 +33,164 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
   };
 
   return (
-    <div className="modal-overlay" style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(15, 23, 42, 0.75)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 9999,
-      padding: '20px'
-    }}>
-      <div className="modal-card" style={{
-        maxWidth: "520px",
-        width: "100%",
-        background: "var(--bg-card)",
-        borderRadius: "16px",
-        boxShadow: "var(--shadow-lg)",
-        border: "1px solid var(--border-color)",
-        overflow: "hidden",
-        display: "flex",
-        flexDirection: "column"
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: "18px 24px",
-          borderBottom: "1px solid var(--border-color)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center"
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <User size={18} style={{ color: 'var(--accent-blue)' }} />
-            <h3 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 800, color: "var(--text-primary)" }}>
-              {customer ? "Edit Customer Khata Profile" : "Register New Customer Khata"}
-            </h3>
+    <div className="app-modal-overlay" onClick={onClose}>
+      <div
+        className="app-modal-card"
+        style={{ maxWidth: "560px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Modal Header */}
+        <div className="app-modal-header">
+          <div className="app-modal-header-left">
+            <div className="app-modal-icon-badge">
+              <User size={22} strokeWidth={2.4} />
+            </div>
+            <div>
+              <h3 className="app-modal-title">
+                {customer ? "Edit Customer Khata Profile" : "Register New Customer"}
+              </h3>
+              <p className="app-modal-subtitle">
+                Add customer profile to ledger, billing and accounts
+              </p>
+            </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="btn btn-ghost btn-sm"
-            style={{ padding: "4px", color: "var(--text-muted)" }}
+            className="app-modal-close-btn"
+            title="Close"
           >
-            <X size={18} />
+            <X size={17} />
           </button>
         </div>
-        
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: "14px", maxHeight: '72vh', overflowY: 'auto' }}>
+
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
+          <div className="app-modal-body">
             {/* Customer Name */}
-            <div>
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                Customer / Party Name *
+            <div className="app-form-group">
+              <label className="app-form-label">
+                Customer / Party Name <span className="app-form-label-required">*</span>
               </label>
-              <input
-                required
-                type="text"
-                value={formData.name}
-                onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
-                className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.9rem" }}
-                placeholder="e.g. Chaudhry Tariq (Builder)"
-                autoFocus
-              />
+              <div className="app-input-wrapper">
+                <span className="app-input-icon">
+                  <User size={16} />
+                </span>
+                <input
+                  required
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
+                  className="app-form-input has-icon"
+                  placeholder="e.g. Chaudhry Tariq (Builder)"
+                  autoFocus
+                />
+              </div>
             </div>
 
             {/* Phone & CNIC */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  value={formData.phone}
-                  onChange={e => setFormData(p => ({ ...p, phone: e.target.value }))}
-                  className="form-control font-mono"
-                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                  placeholder="0300-8456123"
-                />
+              <div className="app-form-group">
+                <label className="app-form-label">Phone Number</label>
+                <div className="app-input-wrapper">
+                  <span className="app-input-icon">
+                    <Phone size={16} />
+                  </span>
+                  <input
+                    type="text"
+                    value={formData.phone}
+                    onChange={(e) => setFormData((p) => ({ ...p, phone: e.target.value }))}
+                    className="app-form-input has-icon font-mono"
+                    placeholder="0300-8456123"
+                  />
+                </div>
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                  CNIC No (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.cnic}
-                  onChange={e => setFormData(p => ({ ...p, cnic: e.target.value }))}
-                  className="form-control font-mono"
-                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                  placeholder="33102-1234567-1"
-                />
+              <div className="app-form-group">
+                <label className="app-form-label">CNIC No (Optional)</label>
+                <div className="app-input-wrapper">
+                  <span className="app-input-icon">
+                    <CreditCard size={16} />
+                  </span>
+                  <input
+                    type="text"
+                    value={formData.cnic}
+                    onChange={(e) => setFormData((p) => ({ ...p, cnic: e.target.value }))}
+                    className="app-form-input has-icon font-mono"
+                    placeholder="33102-1234567-1"
+                  />
+                </div>
               </div>
             </div>
 
             {/* City & Address */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                  City / Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.city}
-                  onChange={e => setFormData(p => ({ ...p, city: e.target.value }))}
-                  className="form-control"
-                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                  placeholder="Karachi / Faisalabad"
-                />
+              <div className="app-form-group">
+                <label className="app-form-label">City / Location</label>
+                <div className="app-input-wrapper">
+                  <span className="app-input-icon">
+                    <MapPin size={16} />
+                  </span>
+                  <input
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData((p) => ({ ...p, city: e.target.value }))}
+                    className="app-form-input has-icon"
+                    placeholder="Karachi / Faisalabad"
+                  />
+                </div>
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                  Site / Delivery Address
-                </label>
-                <input
-                  type="text"
-                  value={formData.address}
-                  onChange={e => setFormData(p => ({ ...p, address: e.target.value }))}
-                  className="form-control"
-                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                  placeholder="Plot #, Street, Area"
-                />
+              <div className="app-form-group">
+                <label className="app-form-label">Site / Delivery Address</label>
+                <div className="app-input-wrapper">
+                  <span className="app-input-icon">
+                    <Building size={16} />
+                  </span>
+                  <input
+                    type="text"
+                    value={formData.address}
+                    onChange={(e) => setFormData((p) => ({ ...p, address: e.target.value }))}
+                    className="app-form-input has-icon"
+                    placeholder="Plot #, Street, Area"
+                  />
+                </div>
               </div>
             </div>
 
             {/* Credit Limit & Opening Balance */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                  Credit Limit (Rs.)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={formData.creditLimit}
-                  onChange={e => setFormData(p => ({ ...p, creditLimit: Number(e.target.value) }))}
-                  className="form-control font-mono"
-                  style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                  placeholder="500000"
-                />
+              <div className="app-form-group">
+                <label className="app-form-label">Credit Limit (Rs)</label>
+                <div className="app-input-wrapper">
+                  <span className="app-input-icon">
+                    <DollarSign size={16} />
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.creditLimit}
+                    onChange={(e) => setFormData((p) => ({ ...p, creditLimit: Number(e.target.value) }))}
+                    className="app-form-input has-icon font-mono"
+                    placeholder="500000"
+                  />
+                </div>
               </div>
-              <div>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                  Opening Balance (Rs.)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  disabled={!!customer}
-                  value={formData.balanceDue}
-                  onChange={e => setFormData(p => ({ ...p, balanceDue: Number(e.target.value) }))}
-                  className="form-control font-mono"
-                  style={{ padding: "10px 12px", fontSize: "0.88rem", background: !!customer ? "var(--bg-primary)" : "var(--bg-card)" }}
-                  placeholder="0"
-                />
+              <div className="app-form-group">
+                <label className="app-form-label">Opening Balance (Rs)</label>
+                <div className="app-input-wrapper">
+                  <span className="app-input-icon">
+                    <Coins size={16} />
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    disabled={!!customer}
+                    value={formData.balanceDue}
+                    onChange={(e) => setFormData((p) => ({ ...p, balanceDue: Number(e.target.value) }))}
+                    className="app-form-input has-icon font-mono"
+                    style={{ background: !!customer ? "var(--bg-primary)" : "var(--bg-card)" }}
+                    placeholder="0"
+                  />
+                </div>
                 {!!customer && (
                   <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "3px" }}>
                     Khata balance updates via Bills & Receipts.
@@ -198,45 +200,45 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
             </div>
 
             {/* Notes */}
-            <div>
-              <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "5px" }}>
-                Khata Remarks / Special Terms
-              </label>
-              <input
-                type="text"
-                value={formData.notes}
-                onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
-                className="form-control"
-                style={{ padding: "10px 12px", fontSize: "0.88rem" }}
-                placeholder="Payment terms, bank details, etc."
-              />
+            <div className="app-form-group">
+              <label className="app-form-label">Khata Remarks / Notes</label>
+              <div className="app-input-wrapper">
+                <span className="app-input-icon" style={{ top: "18px" }}>
+                  <FileText size={16} />
+                </span>
+                <textarea
+                  rows={2}
+                  value={formData.notes}
+                  onChange={(e) => setFormData((p) => ({ ...p, notes: e.target.value }))}
+                  className="app-form-textarea has-icon"
+                  placeholder="Write any special payment terms, bank details, or delivery notes..."
+                />
+              </div>
+            </div>
+
+            {/* Notice */}
+            <div className="app-form-notice">
+              <Info size={16} style={{ flexShrink: 0 }} />
+              <span>All fields marked with * are required.</span>
             </div>
           </div>
-          
-          {/* Footer */}
-          <div style={{
-            padding: "16px 24px",
-            borderTop: "1px solid var(--border-color)",
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: "10px",
-            background: "var(--bg-primary)",
-            borderRadius: "0 0 16px 16px"
-          }}>
+
+          {/* Modal Footer */}
+          <div className="app-modal-footer">
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-secondary btn-sm"
+              className="app-btn-cancel"
             >
-              Cancel
+              <X size={15} />
+              <span>Cancel</span>
             </button>
             <button
               type="submit"
-              className="btn btn-primary btn-sm"
-              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              className="app-btn-submit"
             >
-              <Save size={15} />
-              <span>Save Customer Khata</span>
+              <Save size={16} />
+              <span>{customer ? "Save Changes" : "Create Customer"}</span>
             </button>
           </div>
         </form>

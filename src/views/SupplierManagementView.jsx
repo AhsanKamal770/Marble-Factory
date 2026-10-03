@@ -26,7 +26,10 @@ import {
   ArrowUpDown,
   UserCheck,
   CreditCard,
-  MapPin
+  MapPin,
+  User,
+  Save,
+  Info
 } from 'lucide-react';
 import { db, adjustItemStock, logStockMovement } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
@@ -1593,121 +1596,164 @@ export default function SupplierManagementView({ settings }) {
       {/* ------------------------------------------------------------------------- */}
       {/* 7. RECORD INWARD STOCK SHIPMENT MODAL                                      */}
       {/* ------------------------------------------------------------------------- */}
+      {/* ------------------------------------------------------------------------- */}
+      {/* 7. RECORD INWARD STOCK SHIPMENT MODAL                                      */}
+      {/* ------------------------------------------------------------------------- */}
       {isPurchaseModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsPurchaseModalOpen(false)}>
+        <div className="app-modal-overlay" onClick={() => setIsPurchaseModalOpen(false)}>
           <div
-            className="modal-content"
+            className="app-modal-card"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '680px', width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: '580px' }}
           >
             {/* Modal Header */}
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Truck size={18} style={{ color: '#2563eb' }} />
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>Record Inward Stock Shipment (Stock Intake)</h3>
+            <div className="app-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div className="app-modal-icon-badge">
+                  <Truck size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">Record Inward Stock Shipment</h3>
+                  <p className="app-modal-subtitle">Receive stock & update inventory from supplier</p>
+                </div>
               </div>
-              <button type="button" onClick={() => setIsPurchaseModalOpen(false)} className="btn btn-ghost btn-sm" style={{ padding: '4px', color: '#64748b' }}>
-                <X size={18} />
+              <button
+                type="button"
+                onClick={() => setIsPurchaseModalOpen(false)}
+                className="app-modal-close-btn"
+                aria-label="Close"
+              >
+                <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSavePurchase} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-              <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {/* Row 1: Supplier, Challan, Truck */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Supplier / Quarry *</label>
+              <div className="app-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Supplier Selection */}
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    Supplier / Quarry <span className="app-form-label-required">*</span>
+                  </label>
+                  <div className="app-input-wrapper">
+                    <Building size={16} className="app-input-icon" />
                     <select
-                      className="form-control"
+                      className="app-form-select"
                       value={selectedSupplierId}
                       onChange={(e) => setSelectedSupplierId(e.target.value)}
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
                     >
                       {suppliers.map((s) => (
                         <option key={s.id} value={s.id}>{s.name} ({s.company || s.city})</option>
                       ))}
                     </select>
+                    <ChevronDown size={14} className="app-input-chevron" />
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Challan / Bilty # *</label>
-                    <input
-                      type="text"
-                      required
-                      className="form-control font-mono"
-                      value={challanNo}
-                      onChange={(e) => setChallanNo(e.target.value)}
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                    />
+                </div>
+
+                {/* Row: Challan & Truck */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Challan / Bilty # <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <FileText size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        required
+                        className="app-form-input font-mono"
+                        value={challanNo}
+                        onChange={(e) => setChallanNo(e.target.value)}
+                        placeholder="e.g. CH-9901"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Truck / Vehicle # *</label>
-                    <input
-                      type="text"
-                      required
-                      className="form-control font-mono"
-                      value={vehicleNo}
-                      onChange={(e) => setVehicleNo(e.target.value)}
-                      placeholder="e.g. TK-9022"
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                    />
+
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Truck / Vehicle # <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <Truck size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        required
+                        className="app-form-input font-mono"
+                        value={vehicleNo}
+                        onChange={(e) => setVehicleNo(e.target.value)}
+                        placeholder="e.g. TK-9022"
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Items Received into Yard */}
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                    <label className="app-form-label" style={{ margin: 0, fontWeight: 700, color: '#1e293b' }}>
                       Stock Items Received into Yard
                     </label>
-                    <button type="button" className="btn btn-secondary btn-sm" onClick={handleAddPurchaseItem} style={{ padding: '4px 10px', fontSize: '0.76rem' }}>
-                      <Plus size={13} /> Add Item Row
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleAddPurchaseItem}
+                      style={{ padding: '5px 12px', fontSize: '0.78rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}
+                    >
+                      <Plus size={14} /> Add Item Row
                     </button>
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {purchaseItems.map((it, idx) => (
-                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1.2fr auto', gap: '8px', alignItems: 'center', background: 'var(--bg-primary, #f8fafc)', padding: '10px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                        <select
-                          className="form-control"
-                          value={it.itemId}
-                          onChange={(e) => handleUpdatePurchaseItem(idx, 'itemId', e.target.value)}
-                          style={{ padding: '7px 8px', fontSize: '0.8rem' }}
-                        >
-                          {items.map((i) => (
-                            <option key={i.id} value={i.id}>{i.name} [{i.category}]</option>
-                          ))}
-                        </select>
+                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1.2fr auto', gap: '8px', alignItems: 'center', background: '#ffffff', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                        <div className="app-input-wrapper">
+                          <Layers size={14} className="app-input-icon" />
+                          <select
+                            className="app-form-select"
+                            value={it.itemId}
+                            onChange={(e) => handleUpdatePurchaseItem(idx, 'itemId', e.target.value)}
+                            style={{ padding: '7px 10px 7px 32px', fontSize: '0.82rem', height: '36px' }}
+                          >
+                            {items.map((i) => (
+                              <option key={i.id} value={i.id}>{i.name} [{i.category}]</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={12} className="app-input-chevron" />
+                        </div>
 
-                        <input
-                          type="number"
-                          step="0.1"
-                          placeholder="Sq.Ft"
-                          className="form-control font-mono"
-                          value={it.totalSqFt}
-                          onChange={(e) => handleUpdatePurchaseItem(idx, 'totalSqFt', e.target.value)}
-                          style={{ padding: '7px 8px', fontSize: '0.8rem' }}
-                        />
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="0.1"
+                            placeholder="Sq.Ft"
+                            className="app-form-input font-mono"
+                            value={it.totalSqFt}
+                            onChange={(e) => handleUpdatePurchaseItem(idx, 'totalSqFt', e.target.value)}
+                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px' }}
+                          />
+                        </div>
 
-                        <input
-                          type="number"
-                          placeholder="Rate/SqFt"
-                          className="form-control font-mono"
-                          value={it.ratePerSqFt}
-                          onChange={(e) => handleUpdatePurchaseItem(idx, 'ratePerSqFt', e.target.value)}
-                          style={{ padding: '7px 8px', fontSize: '0.8rem' }}
-                        />
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            placeholder="Rate/SqFt"
+                            className="app-form-input font-mono"
+                            value={it.ratePerSqFt}
+                            onChange={(e) => handleUpdatePurchaseItem(idx, 'ratePerSqFt', e.target.value)}
+                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px' }}
+                          />
+                        </div>
 
-                        <div className="font-mono" style={{ fontWeight: 800, textAlign: 'right', color: '#2563eb', fontSize: '0.84rem' }}>
+                        <div className="font-mono" style={{ fontWeight: 800, textAlign: 'right', color: '#2563eb', fontSize: '0.86rem', paddingRight: '4px' }}>
                           Rs. {Number(it.amount || 0).toLocaleString()}
                         </div>
 
                         <button
                           type="button"
                           className="btn btn-ghost btn-sm"
-                          style={{ color: '#ef4444', padding: '4px' }}
+                          style={{ color: '#ef4444', padding: '6px', borderRadius: '6px' }}
                           onClick={() => handleRemovePurchaseItem(idx)}
                         >
-                          <X size={15} />
+                          <X size={16} />
                         </button>
                       </div>
                     ))}
@@ -1715,52 +1761,64 @@ export default function SupplierManagementView({ settings }) {
                 </div>
 
                 {/* Freight & Payment */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Freight / Fare (Rs.)</label>
-                    <input
-                      type="number"
-                      className="form-control font-mono"
-                      value={freightCharges}
-                      onChange={(e) => setFreightCharges(e.target.value)}
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                    />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">Freight / Fare (Rs.)</label>
+                    <div className="app-input-wrapper">
+                      <DollarSign size={16} className="app-input-icon" />
+                      <input
+                        type="number"
+                        className="app-form-input font-mono"
+                        value={freightCharges}
+                        onChange={(e) => setFreightCharges(e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Paid Now (Rs.)</label>
-                    <input
-                      type="number"
-                      className="form-control font-mono"
-                      style={{ color: '#059669', fontWeight: 800, padding: '8px 10px', fontSize: '0.84rem' }}
-                      value={paidAmount}
-                      onChange={(e) => setPaidAmount(e.target.value)}
-                    />
+
+                  <div className="app-form-group">
+                    <label className="app-form-label">Paid Now (Rs.)</label>
+                    <div className="app-input-wrapper">
+                      <DollarSign size={16} className="app-input-icon" />
+                      <input
+                        type="number"
+                        className="app-form-input font-mono"
+                        style={{ color: '#059669', fontWeight: 700 }}
+                        value={paidAmount}
+                        onChange={(e) => setPaidAmount(e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Payment Mode</label>
-                    <select
-                      className="form-control"
-                      value={purchasePaymentMethod}
-                      onChange={(e) => setPurchasePaymentMethod(e.target.value)}
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                    >
-                      <option value="Bank Transfer">Bank Transfer / IBFT</option>
-                      <option value="Cash">Cash (Naqad)</option>
-                      <option value="Cheque">Cheque</option>
-                    </select>
+
+                  <div className="app-form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label className="app-form-label">Payment Mode</label>
+                    <div className="app-input-wrapper">
+                      <CreditCard size={16} className="app-input-icon" />
+                      <select
+                        className="app-form-select"
+                        value={purchasePaymentMethod}
+                        onChange={(e) => setPurchasePaymentMethod(e.target.value)}
+                      >
+                        <option value="Bank Transfer">Bank Transfer / IBFT</option>
+                        <option value="Cash">Cash (Naqad)</option>
+                        <option value="Cheque">Cheque</option>
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
                   </div>
                 </div>
 
                 {/* Totals Summary Banner */}
-                <div style={{ padding: '14px', background: 'var(--bg-primary, #f8fafc)', border: '1px solid var(--border-color)', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '14px 18px', background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', border: '1px solid #e2e8f0', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Grand Total Purchase:</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Grand Total Purchase:</span>
                     <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb' }} className="font-mono">
                       Rs. {purchaseGrandTotal.toLocaleString()}
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600 }}>Balance Payable to Supplier:</span>
+                    <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Balance Payable:</span>
                     <div style={{ fontSize: '1.25rem', fontWeight: 800, color: purchaseBalanceDue > 0 ? '#dc2626' : '#059669' }} className="font-mono">
                       Rs. {purchaseBalanceDue.toLocaleString()}
                     </div>
@@ -1770,9 +1828,9 @@ export default function SupplierManagementView({ settings }) {
                       style={{
                         background: purchaseStatus === 'Paid' ? '#dcfce7' : purchaseStatus === 'Half Paid' ? 'rgba(37, 99, 235, 0.12)' : 'rgba(239, 68, 68, 0.12)',
                         color: purchaseStatus === 'Paid' ? '#15803d' : purchaseStatus === 'Half Paid' ? '#2563eb' : '#dc2626',
-                        padding: '4px 10px',
+                        padding: '6px 14px',
                         borderRadius: '20px',
-                        fontSize: '0.75rem',
+                        fontSize: '0.78rem',
                         fontWeight: 700
                       }}
                     >
@@ -1780,12 +1838,29 @@ export default function SupplierManagementView({ settings }) {
                     </span>
                   </div>
                 </div>
+
+                {/* Required Notice Banner */}
+                <div className="app-form-notice">
+                  <Info size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                  <span>All fields marked with <b style={{ color: '#ef4444' }}>*</b> are required.</span>
+                </div>
               </div>
 
               {/* Modal Footer */}
-              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setIsPurchaseModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" style={{ background: '#2563eb' }}>
+              <div className="app-modal-footer">
+                <button
+                  type="button"
+                  className="app-btn-cancel"
+                  onClick={() => setIsPurchaseModalOpen(false)}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="app-btn-submit"
+                >
+                  <Save size={16} />
                   Receive Stock & Update Inventory
                 </button>
               </div>
@@ -1798,95 +1873,141 @@ export default function SupplierManagementView({ settings }) {
       {/* 8. ADD / EDIT SUPPLIER MODAL                                               */}
       {/* ------------------------------------------------------------------------- */}
       {isAddSupplierModalOpen && (
-        <div className="modal-backdrop" onClick={() => setIsAddSupplierModalOpen(false)}>
+        <div className="app-modal-overlay" onClick={() => setIsAddSupplierModalOpen(false)}>
           <div
-            className="modal-content"
+            className="app-modal-card"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '520px', width: '100%', maxHeight: '88vh', display: 'flex', flexDirection: 'column' }}
+            style={{ maxWidth: '560px' }}
           >
             {/* Modal Header */}
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Building size={18} style={{ color: '#2563eb' }} />
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
-                  {editingSupplier ? 'Edit Supplier Details' : 'Register New Marble Supplier / Quarry'}
-                </h3>
+            <div className="app-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div className="app-modal-icon-badge">
+                  <Building size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">
+                    {editingSupplier ? 'Edit Marble Supplier / Quarry' : 'Register Marble Supplier'}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {editingSupplier ? 'Update supplier information and quarry details' : 'Add new quarry supplier to your supply chain'}
+                  </p>
+                </div>
               </div>
-              <button type="button" onClick={() => setIsAddSupplierModalOpen(false)} className="btn btn-ghost btn-sm" style={{ padding: '4px', color: '#64748b' }}>
-                <X size={18} />
+              <button
+                type="button"
+                onClick={() => setIsAddSupplierModalOpen(false)}
+                className="app-modal-close-btn"
+                aria-label="Close"
+              >
+                <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSaveSupplier} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-              <div style={{ padding: '18px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Supplier / Quarry Name *</label>
-                  <input
-                    type="text"
-                    required
-                    className="form-control"
-                    value={supplierFormData.name}
-                    onChange={(e) => setSupplierFormData({ ...supplierFormData, name: e.target.value })}
-                    placeholder="e.g. Balochistan Mining Corp"
-                    style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Contact Person</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={supplierFormData.contactPerson}
-                      onChange={(e) => setSupplierFormData({ ...supplierFormData, contactPerson: e.target.value })}
-                      placeholder="e.g. Mir Khan"
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Phone # *</label>
+              <div className="app-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="app-form-group">
+                  <label className="app-form-label">
+                    Supplier / Quarry Name <span className="app-form-label-required">*</span>
+                  </label>
+                  <div className="app-input-wrapper">
+                    <Building size={16} className="app-input-icon" />
                     <input
                       type="text"
                       required
-                      className="form-control"
-                      value={supplierFormData.phone}
-                      onChange={(e) => setSupplierFormData({ ...supplierFormData, phone: e.target.value })}
-                      placeholder="0300-1234567"
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
+                      className="app-form-input"
+                      value={supplierFormData.name}
+                      onChange={(e) => setSupplierFormData({ ...supplierFormData, name: e.target.value })}
+                      placeholder="e.g. Balochistan Mining Corp"
                     />
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>Company / Quarry</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={supplierFormData.company}
-                      onChange={(e) => setSupplierFormData({ ...supplierFormData, company: e.target.value })}
-                      placeholder="e.g. Ziarat Quarry Hub"
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                    />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">Contact Person</label>
+                    <div className="app-input-wrapper">
+                      <User size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        className="app-form-input"
+                        value={supplierFormData.contactPerson}
+                        onChange={(e) => setSupplierFormData({ ...supplierFormData, contactPerson: e.target.value })}
+                        placeholder="e.g. Mir Khan"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, marginBottom: '4px' }}>City / Location</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      value={supplierFormData.city}
-                      onChange={(e) => setSupplierFormData({ ...supplierFormData, city: e.target.value })}
-                      style={{ padding: '8px 10px', fontSize: '0.84rem' }}
-                    />
+
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Phone # <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <Phone size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        required
+                        className="app-form-input"
+                        value={supplierFormData.phone}
+                        onChange={(e) => setSupplierFormData({ ...supplierFormData, phone: e.target.value })}
+                        placeholder="0300-1234567"
+                      />
+                    </div>
                   </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">Company / Quarry</label>
+                    <div className="app-input-wrapper">
+                      <Layers size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        className="app-form-input"
+                        value={supplierFormData.company}
+                        onChange={(e) => setSupplierFormData({ ...supplierFormData, company: e.target.value })}
+                        placeholder="e.g. Ziarat Quarry Hub"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="app-form-group">
+                    <label className="app-form-label">City / Location</label>
+                    <div className="app-input-wrapper">
+                      <MapPin size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        className="app-form-input"
+                        value={supplierFormData.city}
+                        onChange={(e) => setSupplierFormData({ ...supplierFormData, city: e.target.value })}
+                        placeholder="e.g. Quetta / Karachi"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Required Notice Banner */}
+                <div className="app-form-notice">
+                  <Info size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                  <span>All fields marked with <b style={{ color: '#ef4444' }}>*</b> are required.</span>
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setIsAddSupplierModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" style={{ background: '#2563eb' }}>
+              <div className="app-modal-footer">
+                <button
+                  type="button"
+                  className="app-btn-cancel"
+                  onClick={() => setIsAddSupplierModalOpen(false)}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="app-btn-submit"
+                >
+                  <Save size={16} />
                   {editingSupplier ? 'Update Supplier' : 'Save Supplier'}
                 </button>
               </div>

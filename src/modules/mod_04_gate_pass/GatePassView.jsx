@@ -5,7 +5,8 @@ import {
   ChevronDown, SlidersHorizontal, MapPin, User,
   Phone, FileText, CheckCircle2, RefreshCw,
   Layers, RotateCcw, Calendar, Eye, Trash2,
-  PackageCheck, ArrowRight, ExternalLink
+  PackageCheck, ArrowRight, ExternalLink,
+  Info, DollarSign, CreditCard, Save
 } from "lucide-react";
 import {
   createGatePass,
@@ -1357,320 +1358,326 @@ export default function GatePassView() {
 
       {/* ── ISSUE NEW GATE PASS MODAL FORM ─────────────────────────────── */}
       {isModalOpen && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(15, 23, 42, 0.75)",
-            backdropFilter: "blur(6px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 9999,
-            padding: "20px"
-          }}
-          onClick={() => setIsModalOpen(false)}
-        >
+        <div className="app-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div
-            className="modal-card"
-            style={{
-              background: "var(--bg-card)",
-              borderRadius: "14px",
-              width: "100%",
-              maxWidth: "920px",
-              maxHeight: "92vh",
-              display: "flex",
-              flexDirection: "column",
-              boxShadow: "0 24px 48px rgba(0,0,0,0.2)",
-              overflow: "hidden",
-              border: "1px solid var(--border-color)"
-            }}
+            className="app-modal-card"
+            style={{ maxWidth: "580px" }}
             onClick={e => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div style={{ padding: "18px 24px", borderBottom: "1px solid var(--border-divider)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--bg-primary)" }}>
-              <div>
-                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-                  {tr("Issue New Rickshaw Gate Pass", "نیا رکشہ گیٹ پاس جاری کریں")}
-                </h2>
-                <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
-                  {tr("Link with Invoice Bill or record manual dispatch manifest", "بل بک سے لنک کریں یا دستی ڈسپیچ پرچی بنائیں")}
-                </p>
+            <div className="app-modal-header">
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                <div className="app-modal-icon-badge">
+                  <Truck size={24} color="#ffffff" />
+                </div>
+                <div>
+                  <h3 className="app-modal-title">
+                    {tr("Issue Delivery / Rickshaw Gate Pass", "نیا رکشہ گیٹ پاس جاری کریں")}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {tr("Link with invoice bill or record manual dispatch manifest for factory exit", "بل بک سے لنک کریں یا دستی ڈسپیچ پرچی بنائیں")}
+                  </p>
+                </div>
               </div>
-              <button onClick={() => setIsModalOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}>
+              <button
+                type="button"
+                className="app-modal-close-btn"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Close"
+              >
                 <X size={20} />
               </button>
             </div>
 
             {/* Modal Form Body */}
             <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-              <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: "20px" }}>
+              <div className="app-modal-body" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
 
                 {/* 1. Link with Invoice */}
-                <div style={{ background: "var(--bg-primary)", padding: "16px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
-                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px" }}>
+                <div className="app-form-group" style={{ background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <label className="app-form-label" style={{ marginBottom: "6px" }}>
                     {tr("Link Existing Invoice Bill (Optional)", "بل بک سے انوائس منتخب کریں (اختیاری)")}
                   </label>
-                  <select
-                    value={formData.invoiceId}
-                    onChange={e => handleInvoiceSelect(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "9px 12px",
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border-color)",
-                      borderRadius: "8px",
-                      color: "var(--text-primary)",
-                      outline: "none"
-                    }}
-                  >
-                    <option value="">{tr("-- Manual Dispatch (No Linked Bill) --", "-- دستی ڈسپیچ (بغیر انوائس) --")}</option>
-                    {invoices.map(inv => (
-                      <option key={inv.id} value={inv.id}>
-                        #{inv.invoiceNo} — {inv.customerName} ({inv.items?.length || 0} items, Rs. {Number(inv.totalAmount || 0).toLocaleString()})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="app-input-wrapper">
+                    <FileText size={16} className="app-input-icon" />
+                    <select
+                      value={formData.invoiceId}
+                      onChange={e => handleInvoiceSelect(e.target.value)}
+                      className="app-form-select"
+                      style={{ fontWeight: 600 }}
+                    >
+                      <option value="">{tr("-- Manual Dispatch (No Linked Bill) --", "-- دستی ڈسپیچ (بغیر انوائس) --")}</option>
+                      {invoices.map(inv => (
+                        <option key={inv.id} value={inv.id}>
+                          #{inv.invoiceNo} — {inv.customerName} ({inv.items?.length || 0} items, Rs. {Number(inv.totalAmount || 0).toLocaleString()})
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="app-input-chevron" />
+                  </div>
                 </div>
 
                 {/* 2. Customer & Destination */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "14px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
-                      {tr("Customer Name *", "خریدار کا نام *")}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      {tr("Customer Name", "خریدار کا نام")} <span className="app-form-label-required">*</span>
                     </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.customerName}
-                      onChange={e => setFormData({ ...formData, customerName: e.target.value })}
-                      placeholder="e.g. Tariq Mehmood"
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    />
+                    <div className="app-input-wrapper">
+                      <User size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        required
+                        value={formData.customerName}
+                        onChange={e => setFormData({ ...formData, customerName: e.target.value })}
+                        placeholder="e.g. Tariq Mehmood"
+                        className="app-form-input"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
                       {tr("Customer Mobile", "گاہک کا فون")}
                     </label>
-                    <input
-                      type="text"
-                      value={formData.customerPhone}
-                      onChange={e => setFormData({ ...formData, customerPhone: e.target.value })}
-                      placeholder="0300-1234567"
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    />
+                    <div className="app-input-wrapper">
+                      <Phone size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        value={formData.customerPhone}
+                        onChange={e => setFormData({ ...formData, customerPhone: e.target.value })}
+                        placeholder="0300-1234567"
+                        className="app-form-input"
+                      />
+                    </div>
                   </div>
 
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                  <div className="app-form-group" style={{ gridColumn: "1 / -1" }}>
+                    <label className="app-form-label">
                       {tr("Delivery Destination / Site Address", "منزل کا پتہ")}
                     </label>
-                    <input
-                      type="text"
-                      value={formData.destination}
-                      onChange={e => setFormData({ ...formData, destination: e.target.value })}
-                      placeholder="e.g. House #14, Street 5, Eden Gardens, Faisalabad"
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    />
+                    <div className="app-input-wrapper">
+                      <MapPin size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        value={formData.destination}
+                        onChange={e => setFormData({ ...formData, destination: e.target.value })}
+                        placeholder="e.g. House #14, Street 5, Eden Gardens, Faisalabad"
+                        className="app-form-input"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* 3. Vehicle & Driver Details */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px", background: "var(--bg-primary)", padding: "16px", borderRadius: "10px", border: "1px solid var(--border-color)" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                {/* 3. Vehicle & Driver Details (2x2 Grid) */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", background: "#f8fafc", padding: "12px 14px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label" style={{ fontSize: "0.74rem" }}>
                       {tr("Vehicle Type", "گاڑی کی قسم")}
                     </label>
-                    <select
-                      value={formData.vehicleType}
-                      onChange={e => setFormData({ ...formData, vehicleType: e.target.value })}
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontWeight: 600, background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    >
-                      {VEHICLE_TYPES.filter(v => v !== "All Vehicles").map(v => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
+                    <div className="app-input-wrapper">
+                      <Truck size={14} className="app-input-icon" />
+                      <select
+                        value={formData.vehicleType}
+                        onChange={e => setFormData({ ...formData, vehicleType: e.target.value })}
+                        className="app-form-select"
+                        style={{ fontSize: "0.82rem", padding: "7px 10px 7px 32px", height: "36px" }}
+                      >
+                        {VEHICLE_TYPES.filter(v => v !== "All Vehicles").map(v => (
+                          <option key={v} value={v}>{v}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={12} className="app-input-chevron" />
+                    </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label" style={{ fontSize: "0.74rem" }}>
                       {tr("Vehicle Reg #", "گاڑی نمبر")}
                     </label>
-                    <input
-                      type="text"
-                      value={formData.vehicleRegNo}
-                      onChange={e => setFormData({ ...formData, vehicleRegNo: e.target.value.toUpperCase() })}
-                      placeholder="e.g. FSD-8492"
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontFamily: "var(--font-mono)", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    />
+                    <div className="app-input-wrapper">
+                      <input
+                        type="text"
+                        value={formData.vehicleRegNo}
+                        onChange={e => setFormData({ ...formData, vehicleRegNo: e.target.value.toUpperCase() })}
+                        placeholder="e.g. FSD-8492"
+                        className="app-form-input font-mono"
+                        style={{ fontSize: "0.82rem", height: "36px" }}
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label" style={{ fontSize: "0.74rem" }}>
                       {tr("Driver Name", "ڈرائیور کا نام")}
                     </label>
-                    <input
-                      type="text"
-                      value={formData.driverName}
-                      onChange={e => setFormData({ ...formData, driverName: e.target.value })}
-                      placeholder="e.g. Muhammad Aslam"
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    />
+                    <div className="app-input-wrapper">
+                      <User size={14} className="app-input-icon" />
+                      <input
+                        type="text"
+                        value={formData.driverName}
+                        onChange={e => setFormData({ ...formData, driverName: e.target.value })}
+                        placeholder="e.g. Aslam"
+                        className="app-form-input"
+                        style={{ fontSize: "0.82rem", padding: "7px 10px 7px 32px", height: "36px" }}
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label" style={{ fontSize: "0.74rem" }}>
                       {tr("Driver Mobile", "ڈرائیور موبائل")}
                     </label>
-                    <input
-                      type="text"
-                      value={formData.driverPhone}
-                      onChange={e => setFormData({ ...formData, driverPhone: e.target.value })}
-                      placeholder="0321-7654321"
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", background: "var(--bg-card)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    />
+                    <div className="app-input-wrapper">
+                      <Phone size={14} className="app-input-icon" />
+                      <input
+                        type="text"
+                        value={formData.driverPhone}
+                        onChange={e => setFormData({ ...formData, driverPhone: e.target.value })}
+                        placeholder="0321-7654321"
+                        className="app-form-input"
+                        style={{ fontSize: "0.82rem", padding: "7px 10px 7px 32px", height: "36px" }}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* 4. Carriage Charges & Payment Mode */}
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
                       {tr("Carriage / Kiraya (Rs.)", "کرایہ رقم")}
                     </label>
-                    <input
-                      type="number"
-                      value={formData.carriageCharges}
-                      onChange={e => setFormData({ ...formData, carriageCharges: e.target.value })}
-                      placeholder="0"
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontFamily: "var(--font-mono)", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    />
+                    <div className="app-input-wrapper">
+                      <DollarSign size={16} className="app-input-icon" />
+                      <input
+                        type="number"
+                        value={formData.carriageCharges}
+                        onChange={e => setFormData({ ...formData, carriageCharges: e.target.value })}
+                        placeholder="0"
+                        className="app-form-input font-mono"
+                      />
+                    </div>
                   </div>
 
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
                       {tr("Carriage Paid By", "کرایہ ادائیگی کی ذمہ داری")}
                     </label>
-                    <select
-                      value={formData.carriagePaidBy}
-                      onChange={e => setFormData({ ...formData, carriagePaidBy: e.target.value })}
-                      style={{ width: "100%", padding: "9px 12px", fontSize: "0.85rem", fontWeight: 600, background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none" }}
-                    >
-                      {CARRIAGE_PAID_OPTIONS.map(opt => (
-                        <option key={opt} value={opt}>{opt}</option>
-                      ))}
-                    </select>
+                    <div className="app-input-wrapper">
+                      <CreditCard size={16} className="app-input-icon" />
+                      <select
+                        value={formData.carriagePaidBy}
+                        onChange={e => setFormData({ ...formData, carriagePaidBy: e.target.value })}
+                        className="app-form-select"
+                      >
+                        {CARRIAGE_PAID_OPTIONS.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
                   </div>
                 </div>
 
                 {/* 5. Dispatch Manifest Items */}
-                <div>
+                <div style={{ background: "#f8fafc", padding: "14px", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                    <label style={{ fontSize: "0.85rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                    <label className="app-form-label" style={{ margin: 0, fontWeight: 700, color: "#1e293b" }}>
                       {tr("Dispatch Manifest / Marble Items", "روانہ کردہ مال کی فہرست")}
                     </label>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={handleAddManifestRow}
-                      style={{ fontSize: "0.75rem", padding: "4px 10px" }}
+                      style={{ padding: "5px 12px", fontSize: "0.78rem", borderRadius: "8px", display: "flex", alignItems: "center", gap: "4px", fontWeight: 600 }}
                     >
-                      <Plus size={13} /> {tr("Add Row", "نئی لائن شامل کریں")}
+                      <Plus size={14} /> {tr("Add Row", "نئی لائن شامل کریں")}
                     </button>
                   </div>
 
-                  <div style={{ border: "1px solid var(--border-color)", borderRadius: "10px", overflow: "hidden" }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.82rem" }}>
-                      <thead>
-                        <tr style={{ background: "var(--bg-primary)", borderBottom: "1px solid var(--border-color)" }}>
-                          <th style={{ padding: "8px 10px", textAlign: "left", color: "var(--text-muted)" }}>Item Description</th>
-                          <th style={{ padding: "8px 10px", textAlign: "center", width: "90px", color: "var(--text-muted)" }}>Sutar</th>
-                          <th style={{ padding: "8px 10px", textAlign: "left", width: "130px", color: "var(--text-muted)" }}>Size / Cut</th>
-                          <th style={{ padding: "8px 10px", textAlign: "center", width: "80px", color: "var(--text-muted)" }}>Pcs</th>
-                          <th style={{ padding: "8px 10px", textAlign: "right", width: "90px", color: "var(--text-muted)" }}>Sq.Ft</th>
-                          <th style={{ padding: "8px 10px", width: "40px" }}></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {formData.manifestItems.map((item, idx) => (
-                          <tr key={idx} style={{ borderBottom: "1px solid var(--border-divider)" }}>
-                            <td style={{ padding: "6px 10px" }}>
-                              <input
-                                type="text"
-                                required
-                                value={item.name}
-                                onChange={e => handleManifestChange(idx, "name", e.target.value)}
-                                placeholder="e.g. Ziarat White Slabs"
-                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
-                              />
-                            </td>
-                            <td style={{ padding: "6px 10px" }}>
-                              <select
-                                value={item.thicknessSutar}
-                                onChange={e => handleManifestChange(idx, "thicknessSutar", e.target.value)}
-                                style={{ width: "100%", padding: "6px 4px", fontSize: "0.82rem", fontWeight: 700, background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", textAlign: "center", outline: "none" }}
-                              >
-                                {SUTAR_OPTIONS.map(s => (
-                                  <option key={s} value={s}>{s} Sutar</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td style={{ padding: "6px 10px" }}>
-                              <input
-                                type="text"
-                                value={item.size}
-                                onChange={e => handleManifestChange(idx, "size", e.target.value)}
-                                placeholder="12×12 or 2×4"
-                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
-                              />
-                            </td>
-                            <td style={{ padding: "6px 10px" }}>
-                              <input
-                                type="number"
-                                value={item.pieces}
-                                onChange={e => handleManifestChange(idx, "pieces", e.target.value)}
-                                placeholder="0"
-                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", textAlign: "center", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
-                              />
-                            </td>
-                            <td style={{ padding: "6px 10px" }}>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.sqFt}
-                                onChange={e => handleManifestChange(idx, "sqFt", e.target.value)}
-                                placeholder="0.00"
-                                style={{ width: "100%", padding: "6px 8px", fontSize: "0.82rem", textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 700, background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "6px", color: "var(--text-primary)", outline: "none" }}
-                              />
-                            </td>
-                            <td style={{ padding: "6px 10px", textAlign: "center" }}>
-                              {formData.manifestItems.length > 1 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveManifestRow(idx)}
-                                  style={{ background: "none", border: "none", color: "#fb7185", cursor: "pointer", padding: "4px" }}
-                                >
-                                  <X size={15} />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {formData.manifestItems.map((item, idx) => (
+                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "2.2fr 1fr 1.2fr 0.9fr 1fr auto", gap: "8px", alignItems: "center", background: "#ffffff", padding: "8px 10px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                        <div className="app-input-wrapper">
+                          <Layers size={14} className="app-input-icon" />
+                          <input
+                            type="text"
+                            required
+                            value={item.name}
+                            onChange={e => handleManifestChange(idx, "name", e.target.value)}
+                            placeholder="e.g. Ziarat White Slabs"
+                            className="app-form-input"
+                            style={{ padding: "7px 10px 7px 32px", fontSize: "0.82rem", height: "36px" }}
+                          />
+                        </div>
+
+                        <div className="app-input-wrapper">
+                          <select
+                            value={item.thicknessSutar}
+                            onChange={e => handleManifestChange(idx, "thicknessSutar", e.target.value)}
+                            className="app-form-select"
+                            style={{ padding: "7px 20px 7px 8px", fontSize: "0.82rem", height: "36px", fontWeight: 700 }}
+                          >
+                            {SUTAR_OPTIONS.map(s => (
+                              <option key={s} value={s}>{s} Sutar</option>
+                            ))}
+                          </select>
+                          <ChevronDown size={12} className="app-input-chevron" />
+                        </div>
+
+                        <div className="app-input-wrapper">
+                          <input
+                            type="text"
+                            value={item.size}
+                            onChange={e => handleManifestChange(idx, "size", e.target.value)}
+                            placeholder="12×12 / 2×4"
+                            className="app-form-input"
+                            style={{ padding: "7px 10px", fontSize: "0.82rem", height: "36px" }}
+                          />
+                        </div>
+
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            value={item.pieces}
+                            onChange={e => handleManifestChange(idx, "pieces", e.target.value)}
+                            placeholder="Pcs"
+                            className="app-form-input font-mono"
+                            style={{ padding: "7px 8px", fontSize: "0.82rem", height: "36px", textAlign: "center" }}
+                          />
+                        </div>
+
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={item.sqFt}
+                            onChange={e => handleManifestChange(idx, "sqFt", e.target.value)}
+                            placeholder="Sq.Ft"
+                            className="app-form-input font-mono"
+                            style={{ padding: "7px 8px", fontSize: "0.82rem", height: "36px", textAlign: "right", fontWeight: 700 }}
+                          />
+                        </div>
+
+                        {formData.manifestItems.length > 1 && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{ color: "#ef4444", padding: "6px", borderRadius: "6px" }}
+                            onClick={() => handleRemoveManifestRow(idx)}
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
                 {/* 6. Notes */}
-                <div>
-                  <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: "6px" }}>
+                <div className="app-form-group">
+                  <label className="app-form-label">
                     {tr("Notes / Dispatch Remarks", "خصوصی ہدایات یا ریمارکس")}
                   </label>
                   <textarea
@@ -1678,26 +1685,34 @@ export default function GatePassView() {
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                     placeholder="e.g. Fragile load, handle with care."
-                    style={{ width: "100%", padding: "8px 12px", fontSize: "0.85rem", background: "var(--bg-primary)", border: "1px solid var(--border-color)", borderRadius: "8px", color: "var(--text-primary)", outline: "none", resize: "vertical" }}
+                    className="app-form-textarea"
+                    style={{ minHeight: "60px" }}
                   />
+                </div>
+
+                {/* Notice banner */}
+                <div className="app-form-notice">
+                  <Info size={16} color="#2563eb" style={{ flexShrink: 0 }} />
+                  <span>All fields marked with <b style={{ color: '#ef4444' }}>*</b> are required.</span>
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div style={{ padding: "16px 24px", borderTop: "1px solid var(--border-divider)", background: "var(--bg-primary)", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <div className="app-modal-footer">
                 <button
                   type="button"
-                  className="btn btn-secondary"
+                  className="app-btn-cancel"
                   onClick={() => setIsModalOpen(false)}
                 >
+                  <X size={16} />
                   {tr("Cancel", "منسوخ")}
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
-                  style={{ display: "flex", alignItems: "center", gap: "6px", padding: "10px 20px" }}
+                  className="app-btn-submit"
                 >
-                  <Printer size={15} /> {tr("Save & Print Gate Slip", "محفوظ کریں اور پرنٹ کریں")}
+                  <Printer size={16} />
+                  {tr("Save & Print Gate Slip", "محفوظ کریں اور پرنٹ کریں")}
                 </button>
               </div>
             </form>
