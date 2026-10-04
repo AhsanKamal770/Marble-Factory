@@ -16,7 +16,7 @@ export default function RemoteUpdateCard() {
   const tr = (en, ur) => (language === 'ur' ? ur : en);
 
   const [status, setStatus] = useState('IDLE'); // 'IDLE' | 'CHECKING' | 'UPDATE_AVAILABLE' | 'DOWNLOADING' | 'UPDATE_DOWNLOADED' | 'UP_TO_DATE' | 'ERROR'
-  const [currentVersion, setCurrentVersion] = useState('1.0.0');
+  const [currentVersion, setCurrentVersion] = useState('1.0.2');
   const [updateInfo, setUpdateInfo] = useState(null);
   const [progress, setProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');

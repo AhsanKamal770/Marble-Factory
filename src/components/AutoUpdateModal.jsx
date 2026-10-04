@@ -19,7 +19,7 @@ export default function AutoUpdateModal() {
   const [progress, setProgress] = useState(0);
   const [downloadSpeed, setDownloadSpeed] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [currentVersion, setCurrentVersion] = useState('1.0.0');
+  const [currentVersion, setCurrentVersion] = useState('1.0.2');
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
