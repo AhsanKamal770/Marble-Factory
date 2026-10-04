@@ -44,7 +44,13 @@ export const ITEM_TAXONOMY = {
   tiles: {
     label: "Tiles",
     icon: Grid3X3,
-    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"]
+    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"],
+    accessories: [
+      { name: "Border", desc: "Patti Strip" },
+      { name: "Filling", desc: "20kg Grout Bag" },
+      { name: "Spacer", desc: "3mm Cross Pack" },
+      { name: "Gola", desc: "8ft Chamfer Gola" }
+    ]
   },
   flowers: {
     label: "Flowers",
@@ -469,7 +475,7 @@ function CascadingTypeFilter({ filter, onChange }) {
                 overflow: "hidden"
               }}
             >
-              {ITEM_TAXONOMY.marble.sutars[0].sizes.map((sz) => (
+              {(ITEM_TAXONOMY.marble?.sutars?.[0]?.sizes || []).map((sz) => (
                 <button
                   key={sz}
                   type="button"
@@ -525,7 +531,7 @@ function CascadingTypeFilter({ filter, onChange }) {
               }}
             >
               <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Tile Sizes</div>
-              {ITEM_TAXONOMY.tiles.sizes.map((sz) => (
+              {(ITEM_TAXONOMY.tiles?.sizes || []).map((sz) => (
                 <button
                   key={sz}
                   type="button"
@@ -547,25 +553,28 @@ function CascadingTypeFilter({ filter, onChange }) {
 
               <div style={{ borderTop: "1px solid #f1f5f9", margin: "4px 0" }} />
               <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Other Tile Items</div>
-              {ITEM_TAXONOMY.tiles.accessories.map((acc) => (
-                <button
-                  key={acc.name}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Tiles", sub: acc.name })}
-                  style={{
-                    width: "100%",
-                    padding: "6px 14px",
-                    border: "none",
-                    background: "none",
-                    textAlign: "left",
-                    fontSize: "0.83rem",
-                    color: "var(--text-primary)",
-                    cursor: "pointer"
-                  }}
-                >
-                  {acc.name}
-                </button>
-              ))}
+              {(ITEM_TAXONOMY.tiles?.accessories || []).map((acc) => {
+                const name = typeof acc === 'string' ? acc : acc.name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => selectFilter({ type: "Tiles", sub: name })}
+                    style={{
+                      width: "100%",
+                      padding: "6px 14px",
+                      border: "none",
+                      background: "none",
+                      textAlign: "left",
+                      fontSize: "0.83rem",
+                      color: "var(--text-primary)",
+                      cursor: "pointer"
+                    }}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
 
               <button
                 type="button"
@@ -618,7 +627,7 @@ function CascadingTypeFilter({ filter, onChange }) {
                 overflow: "hidden"
               }}
             >
-              {ITEM_TAXONOMY.flowers.sizes.map((sz) => (
+              {(ITEM_TAXONOMY.flowers?.sizes || []).map((sz) => (
                 <button
                   key={sz}
                   type="button"
@@ -672,7 +681,7 @@ function CascadingTypeFilter({ filter, onChange }) {
               }}
             >
               <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Standard Border</div>
-              {ITEM_TAXONOMY.borders.standard.map((sz) => (
+              {(ITEM_TAXONOMY.borders?.standard || []).map((sz) => (
                 <button
                   key={sz}
                   type="button"
@@ -694,7 +703,7 @@ function CascadingTypeFilter({ filter, onChange }) {
 
               <div style={{ borderTop: "1px solid #f1f5f9", margin: "4px 0" }} />
               <div style={{ padding: "4px 12px", fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Black Border (Kali Patti)</div>
-              {ITEM_TAXONOMY.borders.blackBorder.map((sz) => (
+              {(ITEM_TAXONOMY.borders?.blackBorder || []).map((sz) => (
                 <button
                   key={sz}
                   type="button"
@@ -764,7 +773,7 @@ function CascadingTypeFilter({ filter, onChange }) {
               >
                 All Panels
               </button>
-              {ITEM_TAXONOMY.panels.types.map((p) => (
+              {(ITEM_TAXONOMY.panels?.types || []).map((p) => (
                 <button
                   key={p}
                   type="button"

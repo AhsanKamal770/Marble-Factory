@@ -49,7 +49,8 @@ const TAXONOMY = {
   },
   tiles: {
     label: "Tiles",
-    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"]
+    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"],
+    accessories: ["Border", "Filling", "Spacer", "Gola"]
   },
   flowers: {
     label: "Flowers",
@@ -344,7 +345,7 @@ function CascadingTypeFilter({ filter, onChange }) {
                 All Tiles
               </button>
               <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Standard Sizes</div>
-              {TAXONOMY.tiles.sizes.map((sz) => (
+              {(TAXONOMY.tiles?.sizes || []).map((sz) => (
                 <button
                   key={sz}
                   type="button"
@@ -355,16 +356,19 @@ function CascadingTypeFilter({ filter, onChange }) {
                 </button>
               ))}
               <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", borderTop: "1px solid #f1f5f9", marginTop: "4px" }}>Tile Accessories</div>
-              {TAXONOMY.tiles.accessories.map((acc) => (
-                <button
-                  key={acc}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Tiles", sub: acc })}
-                  style={{ width: "100%", padding: "6px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                >
-                  {acc}
-                </button>
-              ))}
+              {(TAXONOMY.tiles?.accessories || []).map((acc) => {
+                const name = typeof acc === 'string' ? acc : acc.name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => selectFilter({ type: "Tiles", sub: name })}
+                    style={{ width: "100%", padding: "6px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
+                  >
+                    {name}
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -387,7 +391,7 @@ function CascadingTypeFilter({ filter, onChange }) {
               >
                 All Flowers
               </button>
-              {TAXONOMY.flowers.sizes.map((sz) => (
+              {(TAXONOMY.flowers?.sizes || []).map((sz) => (
                 <button
                   key={sz}
                   type="button"
@@ -420,7 +424,7 @@ function CascadingTypeFilter({ filter, onChange }) {
                 All Borders
               </button>
               <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Standard Borders</div>
-              {TAXONOMY.borders.standard.map((b) => (
+              {(TAXONOMY.borders?.standard || []).map((b) => (
                 <button
                   key={b}
                   type="button"
@@ -431,7 +435,7 @@ function CascadingTypeFilter({ filter, onChange }) {
                 </button>
               ))}
               <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", borderTop: "1px solid #f1f5f9", marginTop: "4px" }}>Kali Patti</div>
-              {TAXONOMY.borders.blackBorder.map((b) => (
+              {(TAXONOMY.borders?.blackBorder || []).map((b) => (
                 <button
                   key={b}
                   type="button"
@@ -463,7 +467,7 @@ function CascadingTypeFilter({ filter, onChange }) {
               >
                 All Panels
               </button>
-              {TAXONOMY.panels.types.map((p) => (
+              {(TAXONOMY.panels?.types || []).map((p) => (
                 <button
                   key={p}
                   type="button"
