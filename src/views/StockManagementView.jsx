@@ -26,34 +26,25 @@ export const ITEM_TAXONOMY = {
       },
       {
         sutar: "6 Sutar",
-        sizes: ["Stairs & Kitchen Slabs", "3ft Step + Riser", "4ft Step + Riser", "Kitchen Countertop (Custom)"],
-        desc: "Only 6 Sutar is specially used for Kitchen & Stairs"
+        sizes: ["12 × 12"],
+        desc: "6 Sutar (Kitchen & Stairs)"
       },
       {
         sutar: "9 Sutar",
-        sizes: ["Heavy Flooring Slabs", "Cut-to-Size Slabs"],
-        desc: "Heavy duty flooring marble"
+        sizes: ["12 × 12"],
+        desc: "9 Sutar standard size"
       },
       {
         sutar: "14 Sutar",
-        sizes: ["Industrial / Thick Slabs", "Foundation Slabs"],
-        desc: "Extra thick structural marble"
+        sizes: ["12 × 12"],
+        desc: "14 Sutar standard size"
       }
     ]
   },
   tiles: {
     label: "Tiles",
     icon: Grid3X3,
-    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"],
-    accessories: [
-      { name: "Border", unit: "Running Feet" },
-      { name: "Filling / Grout", unit: "Bags" },
-      { name: "Spacer", unit: "Pieces" },
-      { name: "Gola / Chamfer", unit: "Running Feet" }
-    ],
-    panels: [
-      { name: "Mashallah / Islamic Calligraphy Panels", note: "Rate is higher than simple tiles" }
-    ]
+    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"]
   },
   flowers: {
     label: "Flowers",
@@ -117,6 +108,8 @@ const INITIAL_FORM = {
   subCategory: "",
   sutarThickness: "4",
   standardSize: "12 × 12",
+  length: 1,
+  width: 1,
   finish: "Polished",
   grade: "Grade A",
   thicknessMm: 12,
@@ -1108,14 +1101,102 @@ export default function StockManagementView() {
   };
 
   // Action Handlers
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = (categoryArg = 'Marble') => {
+    const cat = (typeof categoryArg === 'string' && categoryArg) ? categoryArg : 'Marble';
     setEditingItem(null);
     setFormData({
       ...INITIAL_FORM,
-      code: `MB-${Date.now().toString().slice(-4)}`,
+      category: cat,
+      sutarThickness: cat === 'Marble' ? '4' : '',
+      standardSize: cat === 'Marble' ? '12 × 12' : (cat === 'Tiles' ? '12 × 24' : (cat === 'Borders' ? '3 inch' : (cat === 'Kali Patti' ? '2 inch' : (cat === 'Panels' ? '24 × 48' : '12 × 12')))),
+      length: cat === 'Tiles' ? 2 : (cat === 'Borders' || cat === 'Kali Patti' ? 10 : (cat === 'Panels' ? 4 : 1)),
+      width: cat === 'Tiles' ? 1 : (cat === 'Borders' ? 0.25 : (cat === 'Kali Patti' ? 0.166 : (cat === 'Panels' ? 2 : 1))),
+      unit: cat === 'Flowers' || cat === 'Panels' ? 'Pieces' : (cat === 'Borders' || cat === 'Kali Patti' ? 'Running Feet' : (cat === 'Tiles' ? 'Boxes' : 'Sq. Ft.')),
+      code: `${cat === 'Tiles' ? 'TL' : cat === 'Flowers' ? 'FL' : cat === 'Borders' ? 'BR' : cat === 'Kali Patti' ? 'KP' : cat === 'Panels' ? 'PN' : cat === 'Accessories' ? 'AC' : cat === 'Granite' ? 'GR' : 'MB'}-${Date.now().toString().slice(-4)}`,
       lotNo: `LOT-${new Date().getFullYear()}`
     });
     setIsModalOpen(true);
+  };
+
+  const handleCategoryChange = (catArg) => {
+    const newCat = (typeof catArg === 'string' && catArg) ? catArg : 'Marble';
+    let defaultUnit = "Sq. Ft.";
+    let defaultSutar = "";
+    let defaultSize = "12 × 12";
+    let defaultLen = 1;
+    let defaultWid = 1;
+    let defaultCodePrefix = "MB";
+
+    if (newCat === "Marble") {
+      defaultUnit = "Sq. Ft.";
+      defaultSutar = "4";
+      defaultSize = "12 × 12";
+      defaultLen = 1;
+      defaultWid = 1;
+      defaultCodePrefix = "MB";
+    } else if (newCat === "Tiles") {
+      defaultUnit = "Boxes";
+      defaultSutar = "";
+      defaultSize = "12 × 24";
+      defaultLen = 2;
+      defaultWid = 1;
+      defaultCodePrefix = "TL";
+    } else if (newCat === "Flowers") {
+      defaultUnit = "Pieces";
+      defaultSutar = "";
+      defaultSize = "12 × 12";
+      defaultLen = 1;
+      defaultWid = 1;
+      defaultCodePrefix = "FL";
+    } else if (newCat === "Borders") {
+      defaultUnit = "Running Feet";
+      defaultSutar = "";
+      defaultSize = "3 inch";
+      defaultLen = 10;
+      defaultWid = 0.25;
+      defaultCodePrefix = "BR";
+    } else if (newCat === "Kali Patti") {
+      defaultUnit = "Running Feet";
+      defaultSutar = "";
+      defaultSize = "2 inch";
+      defaultLen = 10;
+      defaultWid = 0.166;
+      defaultCodePrefix = "KP";
+    } else if (newCat === "Panels") {
+      defaultUnit = "Pieces";
+      defaultSutar = "";
+      defaultSize = "24 × 48";
+      defaultLen = 4;
+      defaultWid = 2;
+      defaultCodePrefix = "PN";
+    } else if (newCat === "Accessories") {
+      defaultUnit = "Pieces";
+      defaultSutar = "";
+      defaultSize = "Border";
+      defaultLen = 10;
+      defaultWid = 0.25;
+      defaultCodePrefix = "AC";
+    } else if (newCat === "Granite") {
+      defaultUnit = "Sq. Ft.";
+      defaultSutar = "";
+      defaultSize = "Kitchen Slab (8×2)";
+      defaultLen = 8;
+      defaultWid = 2;
+      defaultCodePrefix = "GR";
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      category: newCat,
+      sutarThickness: defaultSutar,
+      standardSize: defaultSize,
+      length: defaultLen,
+      width: defaultWid,
+      unit: defaultUnit,
+      code: prev.code?.startsWith('MB-') || prev.code?.startsWith('TL-') || prev.code?.startsWith('FL-') || prev.code?.startsWith('BR-') || prev.code?.startsWith('KP-') || prev.code?.startsWith('PN-') || prev.code?.startsWith('AC-') || prev.code?.startsWith('GR-')
+        ? `${defaultCodePrefix}-${Date.now().toString().slice(-4)}`
+        : prev.code
+    }));
   };
 
   const handleOpenEditModal = (item) => {
@@ -1129,6 +1210,8 @@ export default function StockManagementView() {
     try {
       const payload = {
         ...formData,
+        length: parseFloat(formData.length) || 1,
+        width: parseFloat(formData.width) || 1,
         ratePerSqFt: parseFloat(formData.ratePerSqFt) || 0,
         costPerSqFt: parseFloat(formData.costPerSqFt) || 0,
         stockSqFt: parseFloat(formData.stockSqFt) || 0,
@@ -1276,7 +1359,7 @@ export default function StockManagementView() {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={handleOpenAddModal}
+            onClick={() => handleOpenAddModal('Marble')}
             style={{
               background: '#2563eb',
               borderColor: '#2563eb',
@@ -1550,7 +1633,7 @@ export default function StockManagementView() {
       {/* 4. STOCK DATA TABLE (Consistent with Bills & Invoices Table Styling)       */}
       {/* ------------------------------------------------------------------------- */}
       <div className="global-table-container">
-        
+
         {/* Table Header Strip with Total Counter & Page Size */}
         <div style={{
           padding: "16px 20px",
@@ -1824,21 +1907,21 @@ export default function StockManagementView() {
         <div className="app-modal-overlay" onClick={() => setIsModalOpen(false)}>
           <div
             className="app-modal-card"
-            style={{ maxWidth: "620px" }}
+            style={{ maxWidth: "620px", maxHeight: "90vh", overflowY: "auto" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
             <div className="app-modal-header">
-              <div className="app-modal-header-left">
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
                 <div className="app-modal-icon-badge">
-                  <Package size={22} strokeWidth={2.4} />
+                  <Layers size={24} color="#ffffff" />
                 </div>
                 <div>
                   <h3 className="app-modal-title">
                     {editingItem ? "Edit Stock Item" : "Register New Stock Entry"}
                   </h3>
                   <p className="app-modal-subtitle">
-                    {editingItem ? "Update item specifications, prices and thresholds" : "Add new stock entry to your inventory"}
+                    {editingItem ? "Update item specifications, prices and thresholds" : "Filter category, select dimensions & configure stock specifications"}
                   </p>
                 </div>
               </div>
@@ -1848,248 +1931,502 @@ export default function StockManagementView() {
                 className="app-modal-close-btn"
                 title="Close"
               >
-                <X size={17} />
+                <X size={20} />
               </button>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSaveItem} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
-              <div className="app-modal-body">
-                
-                {/* Product / Variety Name */}
+              <div className="app-modal-body" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+
+                {/* 1. Category Dropdown & Item Code (2-Column Grid) */}
+                <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      <Filter size={14} style={{ display: "inline", verticalAlign: "middle", marginRight: "4px" }} />
+                      Select Category <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <Layers size={16} className="app-input-icon" />
+                      <select
+                        value={formData.category}
+                        onChange={e => handleCategoryChange(e.target.value)}
+                        className="app-form-select has-icon has-chevron"
+                        style={{ fontWeight: 700 }}
+                      >
+                        <option value="Marble">Marble (Slabs & Tiles)</option>
+                        <option value="Tiles">Tiles (Porcelain & Ceramic)</option>
+                        <option value="Flowers">Flowers (Medallions)</option>
+                        <option value="Borders">Borders (Patti / Strips)</option>
+                        <option value="Kali Patti">Kali Patti (Black Border)</option>
+                        <option value="Panels">Panels (Mashallah / 3D)</option>
+                        <option value="Granite">Granite (Slabs & Tops)</option>
+                        <option value="Accessories">Accessories (Gola, Spacer, Filling)</option>
+                      </select>
+                      <ChevronDown size={14} className="app-input-chevron" />
+                    </div>
+                  </div>
+
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Item Code <span className="app-form-label-required">*</span>
+                    </label>
+                    <div className="app-input-wrapper">
+                      <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem", fontWeight: 700 }}>
+                        #
+                      </span>
+                      <input
+                        required
+                        type="text"
+                        value={formData.code}
+                        onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
+                        className="app-form-input has-icon font-mono"
+                        placeholder="e.g. MB-8084"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Product / Variety Name */}
                 <div className="app-form-group">
                   <label className="app-form-label">
                     Product / Variety Name <span className="app-form-label-required">*</span>
                   </label>
                   <div className="app-input-wrapper">
-                    <span className="app-input-icon">
-                      <Search size={16} />
-                    </span>
+                    <Search size={16} className="app-input-icon" />
                     <input
                       required
                       type="text"
                       value={formData.name}
                       onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
                       className="app-form-input has-icon"
-                      placeholder="Search product, variety..."
+                      placeholder="e.g. Sunny Grey, Badal Grey, Ziarat White, Master Tile..."
                       autoFocus
                     />
                   </div>
                 </div>
 
-                {/* Item Code */}
-                <div className="app-form-group">
-                  <label className="app-form-label">
-                    Item Code <span className="app-form-label-required">*</span>
-                  </label>
-                  <div className="app-input-wrapper">
-                    <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem", fontWeight: 700 }}>
-                      #
+                {/* 3. DYNAMIC CATEGORY CLASSIFICATION CARDS (Identical to BillingView) */}
+                {formData.category === "Marble" ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                    {/* Marble Sutar Thickness Cards */}
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                        <label className="app-form-label" style={{ margin: 0, fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Ruler size={14} style={{ color: "#2563eb" }} />
+                          Sutar Thickness (سوتر موٹائی) <span className="app-form-label-required">*</span>
+                        </label>
+                        {formData.sutarThickness === "6" && (
+                          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#d97706", background: "rgba(217, 119, 6, 0.1)", padding: "2px 8px", borderRadius: "4px" }}>
+                            ⚡ صرف کچن اور سیڑھیوں کے لیے (Kitchen & Stairs Only)
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+                        {[
+                          { sutar: "4", label: "4 Sutar", mm: "12mm (Floor)", defSize: "12 × 12", length: 1, width: 1 },
+                          { sutar: "6", label: "6 Sutar", mm: "18mm", isKitchen: true, defSize: "12 × 12", length: 1, width: 1 },
+                          { sutar: "9", label: "9 Sutar", mm: "28mm (Steps)", defSize: "12 × 12", length: 1, width: 1 },
+                          { sutar: "14", label: "14 Sutar", mm: "42mm (Base)", defSize: "12 × 12", length: 1, width: 1 }
+                        ].map(thick => {
+                          const isSelected = String(formData.sutarThickness) === String(thick.sutar);
+                          return (
+                            <button
+                              key={thick.sutar}
+                              type="button"
+                              onClick={() => setFormData(p => ({
+                                ...p,
+                                sutarThickness: thick.sutar,
+                                standardSize: thick.defSize,
+                                length: thick.length,
+                                width: thick.width
+                              }))}
+                              style={{
+                                padding: "8px 4px",
+                                borderRadius: "10px",
+                                border: isSelected ? "2px solid #2563eb" : "1px solid #e2e8f0",
+                                background: isSelected ? "#eff6ff" : "#ffffff",
+                                color: isSelected ? "#2563eb" : "#334155",
+                                textAlign: "center",
+                                cursor: "pointer",
+                                transition: "all 0.15s ease"
+                              }}
+                            >
+                              <div style={{ fontWeight: 800, fontSize: "0.82rem" }}>{thick.label}</div>
+                              <div style={{ fontSize: "0.66rem", color: thick.isKitchen ? "#d97706" : (isSelected ? "#2563eb" : "#64748b"), fontWeight: thick.isKitchen ? 700 : 500 }}>
+                                {thick.isKitchen ? "Kitchen/Stairs" : thick.mm}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Marble Sutar Size Cards */}
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                        <label className="app-form-label" style={{ margin: 0, fontSize: "0.74rem", color: "#64748b" }}>
+                          Standard Sizes for {formData.sutarThickness || 4} Sutar (معیاری سائز)
+                        </label>
+                        <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
+                          Click to apply dimensions
+                        </span>
+                      </div>
+                      <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gap: "8px"
+                      }}>
+                        {(["6", "9", "14"].includes(String(formData.sutarThickness))
+                          ? [
+                            { label: "12 × 12", sub: "1 ft × 1 ft (1 Sq.Ft)", length: 1, width: 1 }
+                          ]
+                          : [
+                            { label: "12 × 12", sub: "1 ft × 1 ft (1 Sq.Ft)", length: 1, width: 1 },
+                            { label: "12 × 24", sub: "2 ft × 1 ft (2 Sq.Ft)", length: 2, width: 1 },
+                            { label: "6 × 12", sub: "0.5 ft × 1 ft (0.5 Sq.Ft)", length: 1, width: 0.5 },
+                            { label: "6 × 24", sub: "0.5 ft × 2 ft (1 Sq.Ft)", length: 2, width: 0.5 }
+                          ]
+                        ).map(opt => {
+                          const isSelected = formData.standardSize === opt.label;
+                          return (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() => setFormData(p => ({
+                                ...p,
+                                standardSize: opt.label,
+                                length: opt.length !== undefined ? opt.length : p.length,
+                                width: opt.width !== undefined ? opt.width : p.width
+                              }))}
+                              style={{
+                                padding: "8px 4px",
+                                borderRadius: "10px",
+                                border: isSelected ? "2px solid #2563eb" : "1px solid #e2e8f0",
+                                background: isSelected ? "#eff6ff" : "#ffffff",
+                                color: isSelected ? "#2563eb" : "#334155",
+                                textAlign: "center",
+                                cursor: "pointer",
+                                transition: "all 0.15s ease"
+                              }}
+                            >
+                              <div style={{ fontWeight: 800, fontSize: "0.82rem" }}>{opt.label}</div>
+                              <div style={{ fontSize: "0.66rem", color: isSelected ? "#2563eb" : "#64748b", fontWeight: 600 }}>
+                                {opt.sub}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : formData.category === "Tiles" ? (
+                  /* Types of Tiles Only */
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                      <label className="app-form-label" style={{ margin: 0, fontWeight: 700 }}>
+                        Types of Tiles (ٹائلز کے معیاری سائز)
+                      </label>
+                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                        Click to apply format
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
+                      {[
+                        { label: "12 × 24", sub: '12" × 24" (2 Sq.Ft)', length: 2, width: 1 },
+                        { label: "24 × 24", sub: '24" × 24" (4 Sq.Ft)', length: 2, width: 2 },
+                        { label: "24 × 48", sub: '24" × 48" (8 Sq.Ft)', length: 4, width: 2 },
+                        { label: "16 × 16", sub: '16" × 16" (1.77 Sq.Ft)', length: 1.33, width: 1.33 }
+                      ].map(opt => {
+                        const isSelected = formData.standardSize === opt.label;
+                        return (
+                          <button
+                            key={opt.label}
+                            type="button"
+                            onClick={() => setFormData(p => ({
+                              ...p,
+                              standardSize: opt.label,
+                              length: opt.length,
+                              width: opt.width
+                            }))}
+                            style={{
+                              padding: "8px 4px",
+                              borderRadius: "10px",
+                              border: isSelected ? "2px solid #2563eb" : "1px solid #e2e8f0",
+                              background: isSelected ? "#eff6ff" : "#ffffff",
+                              color: isSelected ? "#2563eb" : "#334155",
+                              textAlign: "center",
+                              cursor: "pointer",
+                              transition: "all 0.15s ease"
+                            }}
+                          >
+                            <div style={{ fontWeight: 800, fontSize: "0.82rem" }}>{opt.label}</div>
+                            <div style={{ fontSize: "0.66rem", color: isSelected ? "#2563eb" : "#64748b", fontWeight: 600 }}>
+                              {opt.sub}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  /* Other Non-Marble Categories (Flowers, Borders, Kali Patti, Panels, Granite, Accessories) */
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                      <label className="app-form-label" style={{ margin: 0, fontWeight: 700 }}>
+                        {formData.category === "Flowers"
+                          ? "Types of Flower (پھول کے سائز)"
+                          : formData.category === "Borders"
+                            ? "Types of Border (بارڈر پٹی کے سائز)"
+                            : formData.category === "Kali Patti"
+                              ? "Types of Black Border / Kali Patti (کالی پٹی کے سائز)"
+                              : formData.category === "Panels"
+                                ? "Panel Types - Higher Rate (وال پینل)"
+                                : `${String(formData.category || '')} Standard Sizes`}
+                      </label>
+                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
+                        Click to apply dimensions
+                      </span>
+                    </div>
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: (formData.category === "Flowers" || formData.category === "Panels" || formData.category === "Granite") ? "repeat(3, 1fr)" : (formData.category === "Borders" || formData.category === "Kali Patti") ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+                      gap: "8px"
+                    }}>
+                      {(formData.category === "Flowers"
+                        ? [
+                          { label: "12 × 12", sub: "1 ft × 1 ft (1 Sq.Ft)", length: 1, width: 1 },
+                          { label: "24 × 24", sub: "2 ft × 2 ft (4 Sq.Ft)", length: 2, width: 2 },
+                          { label: "3 × 3", sub: "3 ft × 3 ft (9 Sq.Ft)", length: 3, width: 3 }
+                        ]
+                        : formData.category === "Borders"
+                          ? [
+                            { label: "3 inch", sub: '3" width (10 R.Ft)', length: 10, width: 0.25 },
+                            { label: "6 inch", sub: '6" width (10 R.Ft)', length: 10, width: 0.5 }
+                          ]
+                          : formData.category === "Kali Patti"
+                            ? [
+                              { label: "2 inch", sub: '2" Kali Patti (10 R.Ft)', length: 10, width: 0.166 },
+                              { label: "3 inch", sub: '3" Kali Patti (10 R.Ft)', length: 10, width: 0.25 }
+                            ]
+                            : formData.category === "Panels"
+                              ? [
+                                { label: "24 × 48", sub: "Mashallah (2ft × 4ft)", length: 4, width: 2 },
+                                { label: "3 × 3", sub: "Calligraphy (3ft × 3ft)", length: 3, width: 3 },
+                                { label: "3 × 5", sub: "Elevation (3ft × 5ft)", length: 5, width: 3 }
+                              ]
+                              : formData.category === "Granite"
+                                ? [
+                                  { label: "Kitchen Slab", sub: "8ft × 2ft (16 Sq.Ft)", length: 8, width: 2 },
+                                  { label: "Flooring Slab", sub: "6ft × 2ft (12 Sq.Ft)", length: 6, width: 2 },
+                                  { label: "Stair Step", sub: "4ft × 1ft (4 Sq.Ft)", length: 4, width: 1 }
+                                ]
+                                : [
+                                  { label: "Border", sub: "Tile Patti Strip", length: 10, width: 0.25 },
+                                  { label: "Filling", sub: "Joint Filling / Bond", length: 1, width: 1 },
+                                  { label: "Spacer", sub: "3mm Cross Spacers", length: 1, width: 1 },
+                                  { label: "Gola", sub: "8ft Chamfer Gola", length: 8, width: 1 }
+                                ]
+                      ).map(opt => {
+                        const isSelected = formData.standardSize === opt.label;
+                        return (
+                          <button
+                            key={opt.label}
+                            type="button"
+                            onClick={() => setFormData(p => ({
+                              ...p,
+                              standardSize: opt.label,
+                              length: opt.length !== undefined ? opt.length : p.length,
+                              width: opt.width !== undefined ? opt.width : p.width
+                            }))}
+                            style={{
+                              padding: "8px 4px",
+                              borderRadius: "10px",
+                              border: isSelected ? "2px solid #2563eb" : "1px solid #e2e8f0",
+                              background: isSelected ? "#eff6ff" : "#ffffff",
+                              color: isSelected ? "#2563eb" : "#334155",
+                              textAlign: "center",
+                              cursor: "pointer",
+                              transition: "all 0.15s ease"
+                            }}
+                          >
+                            <div style={{ fontWeight: 800, fontSize: "0.82rem" }}>{opt.label}</div>
+                            <div style={{ fontSize: "0.66rem", color: isSelected ? "#2563eb" : "#64748b", fontWeight: 600 }}>
+                              {opt.sub}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. Dimensions Box & Unit Configuration */}
+                <div style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "12px",
+                  padding: "14px"
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "#1e293b" }}>
+                      Dimensions & Unit Configuration (پیمائش اور یونٹ کی ترتیب)
                     </span>
-                    <input
-                      required
-                      type="text"
-                      value={formData.code}
-                      onChange={e => setFormData(p => ({ ...p, code: e.target.value }))}
-                      className="app-form-input has-icon font-mono"
-                      placeholder="e.g. MB-8084"
-                    />
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.1fr", gap: "10px" }}>
+                    {/* Length (ft) */}
+                    <div className="app-form-group">
+                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                        Length (ft) / لمبائی
+                      </label>
+                      <div className="app-input-wrapper">
+                        <input
+                          type="number"
+                          step="any"
+                          value={formData.length !== undefined ? formData.length : ""}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setFormData(p => {
+                              const nextLen = val;
+                              const w = p.width;
+                              let newSize = p.standardSize;
+                              if (nextLen && w) {
+                                newSize = `${nextLen} × ${w}`;
+                              } else if (nextLen) {
+                                newSize = `${nextLen} ft`;
+                              }
+                              return { ...p, length: nextLen, standardSize: newSize };
+                            });
+                          }}
+                          placeholder="ft (e.g. 1, 2, 4)"
+                          className="app-form-input has-icon font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Width (ft) */}
+                    <div className="app-form-group">
+                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                        Width (ft) / چوڑائی
+                      </label>
+                      <div className="app-input-wrapper">
+                        <input
+                          type="number"
+                          step="any"
+                          value={formData.width !== undefined ? formData.width : ""}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setFormData(p => {
+                              const l = p.length;
+                              const nextWidth = val;
+                              let newSize = p.standardSize;
+                              if (l && nextWidth) {
+                                newSize = `${l} × ${nextWidth}`;
+                              } else if (nextWidth) {
+                                newSize = `${nextWidth} ft`;
+                              }
+                              return { ...p, width: nextWidth, standardSize: newSize };
+                            });
+                          }}
+                          placeholder="ft (e.g. 1, 2, 0.5)"
+                          className="app-form-input has-icon font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Stock Unit */}
+                    <div className="app-form-group">
+                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                        Stock Unit <span className="app-form-label-required">*</span>
+                      </label>
+                      <div className="app-input-wrapper">
+                        <Boxes size={16} className="app-input-icon" />
+                        <select
+                          value={formData.unit}
+                          onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))}
+                          className="app-form-select has-icon has-chevron"
+                          style={{ fontWeight: 600 }}
+                        >
+                          <option value="Sq. Ft.">Sq. Ft.</option>
+                          <option value="Boxes">Boxes</option>
+                          <option value="Pieces">Pieces</option>
+                          <option value="Running Feet">Running Feet</option>
+                        </select>
+                        <ChevronDown size={14} className="app-input-chevron" />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Category Type & Sutar Thickness */}
+                {/* 5. Pricing Rates (2-Column Grid) */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div className="app-form-group">
                     <label className="app-form-label">
-                      Category Type <span className="app-form-label-required">*</span>
+                      Selling Rate (Rs / {formData.unit || "Unit"}) <span className="app-form-label-required">*</span>
                     </label>
                     <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <Layers size={16} />
-                      </span>
-                      <select
-                        value={formData.category}
-                        onChange={e => {
-                          const newCat = e.target.value;
-                          let defaultUnit = "Sq. Ft.";
-                          if (newCat === "Flowers" || newCat === "Flower Medallions" || newCat === "Panels") defaultUnit = "Pieces";
-                          if (newCat === "Borders" || newCat === "Borders & Patti") defaultUnit = "Running Feet";
-                          if (newCat === "Porcelain & Panels") defaultUnit = "Boxes";
-                          setFormData(p => ({ ...p, category: newCat, unit: defaultUnit }));
-                        }}
-                        className="app-form-select has-icon has-chevron"
-                      >
-                        <option value="Marble">Marble Slabs & Tiles</option>
-                        <option value="Porcelain & Panels">Tiles (Porcelain / Ceramic)</option>
-                        <option value="Flower Medallions">Flowers (Flower Medallions)</option>
-                        <option value="Borders & Patti">Borders & Patti</option>
-                        <option value="Panels">Panels (Mashallah / 3D)</option>
-                        <option value="Granite">Granite</option>
-                        <option value="Accessories">Accessories (Gola, Spacer, Filling)</option>
-                      </select>
-                      <span className="app-input-chevron">
-                        <ChevronDown size={15} />
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Sutar Thickness */}
-                  <div className="app-form-group">
-                    <label className="app-form-label">
-                      Sutar Thickness
-                    </label>
-                    <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <Ruler size={16} />
-                      </span>
-                      <select
-                        value={formData.sutarThickness}
-                        onChange={e => setFormData(p => ({ ...p, sutarThickness: e.target.value }))}
-                        className="app-form-select has-icon has-chevron"
-                      >
-                        <option value="4">4 Sutar (12×12, 12×24, 6×12, 6×24)</option>
-                        <option value="6">6 Sutar (Kitchen & Stairs Only)</option>
-                        <option value="9">9 Sutar (Heavy Flooring)</option>
-                        <option value="14">14 Sutar (Thick Industrial)</option>
-                      </select>
-                      <span className="app-input-chevron">
-                        <ChevronDown size={15} />
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Dimensions / Standard Size */}
-                <div className="app-form-group">
-                  <label className="app-form-label">
-                    Dimensions / Standard Size
-                  </label>
-                  <div className="app-input-wrapper">
-                    <span className="app-input-icon font-mono" style={{ fontSize: "0.85rem" }}>
-                      ⤢
-                    </span>
-                    <input
-                      type="text"
-                      value={formData.standardSize}
-                      onChange={e => setFormData(p => ({ ...p, standardSize: e.target.value }))}
-                      className="app-form-input has-icon"
-                      placeholder="e.g. 12 × 12, 24 × 24, 3 inch, 6 inch"
-                    />
-                  </div>
-                </div>
-
-                {/* Stock Unit & Selling Rate */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="app-form-group">
-                    <label className="app-form-label">
-                      Stock Unit
-                    </label>
-                    <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <Package size={16} />
-                      </span>
-                      <select
-                        value={formData.unit}
-                        onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))}
-                        className="app-form-select has-icon has-chevron"
-                      >
-                        <option value="Sq. Ft.">Sq. Ft.</option>
-                        <option value="Boxes">Boxes</option>
-                        <option value="Pieces">Pieces</option>
-                        <option value="Running Feet">Running Feet</option>
-                      </select>
-                      <span className="app-input-chevron">
-                        <ChevronDown size={15} />
-                      </span>
-                    </div>
-                  </div>
-                  <div className="app-form-group">
-                    <label className="app-form-label">
-                      Selling Rate (Rs)
-                    </label>
-                    <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <DollarSign size={16} />
-                      </span>
+                      <DollarSign size={16} className="app-input-icon" />
                       <input
                         type="number"
                         step="any"
+                        required
                         value={formData.ratePerSqFt}
                         onChange={e => setFormData(p => ({ ...p, ratePerSqFt: e.target.value }))}
                         className="app-form-input has-icon font-mono"
                         placeholder="0"
+                        style={{ fontWeight: 700 }}
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* Cost Rate & Stock Quantity */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div className="app-form-group">
                     <label className="app-form-label">
-                      Cost Rate (Rs)
+                      Cost Rate (Rs / {formData.unit || "Unit"}) <span className="app-form-label-required">*</span>
                     </label>
                     <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <DollarSign size={16} />
-                      </span>
+                      <DollarSign size={16} className="app-input-icon" />
                       <input
                         type="number"
                         step="any"
+                        required
                         value={formData.costPerSqFt}
                         onChange={e => setFormData(p => ({ ...p, costPerSqFt: e.target.value }))}
                         className="app-form-input has-icon font-mono"
                         placeholder="0"
-                      />
-                    </div>
-                  </div>
-                  <div className="app-form-group">
-                    <label className="app-form-label">
-                      Stock Quantity
-                    </label>
-                    <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <Boxes size={16} />
-                      </span>
-                      <input
-                        type="number"
-                        step="any"
-                        value={formData.stockSqFt}
-                        onChange={e => setFormData(p => ({ ...p, stockSqFt: e.target.value, stockPieces: e.target.value }))}
-                        className="app-form-input has-icon font-mono"
-                        placeholder="0"
+                        style={{ fontWeight: 700 }}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Yard Location & Low Stock Alert */}
+                {/* 6. Stock Quantity & Low Stock Alert (2-Column Grid) */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div className="app-form-group">
                     <label className="app-form-label">
-                      Yard Location
+                      Initial Stock ({formData.unit || "Sq. Ft."}) <span className="app-form-label-required">*</span>
                     </label>
                     <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <MapPin size={16} />
-                      </span>
+                      <Boxes size={16} className="app-input-icon" />
                       <input
-                        type="text"
-                        value={formData.location}
-                        onChange={e => setFormData(p => ({ ...p, location: e.target.value }))}
-                        className="app-form-input has-icon"
-                        placeholder="e.g. Yard Shed 1"
+                        type="number"
+                        step="any"
+                        required
+                        value={formData.stockSqFt}
+                        onChange={e => setFormData(p => ({ ...p, stockSqFt: e.target.value, stockPieces: e.target.value, stockBoxes: e.target.value }))}
+                        className="app-form-input has-icon font-mono"
+                        placeholder="0"
+                        style={{ fontWeight: 700 }}
                       />
                     </div>
                   </div>
+
                   <div className="app-form-group">
                     <label className="app-form-label">
                       Low Stock Alert Threshold
                     </label>
                     <div className="app-input-wrapper">
-                      <span className="app-input-icon">
-                        <AlertTriangle size={16} />
-                      </span>
+                      <AlertTriangle size={16} className="app-input-icon" />
                       <input
                         type="number"
                         value={formData.minStockAlert}
@@ -2101,29 +2438,45 @@ export default function StockManagementView() {
                   </div>
                 </div>
 
-                {/* Remarks / Notes */}
-                <div className="app-form-group">
-                  <label className="app-form-label">
-                    Remarks / Notes
-                  </label>
-                  <div className="app-input-wrapper">
-                    <span className="app-input-icon" style={{ top: "18px" }}>
-                      <Tag size={16} />
-                    </span>
-                    <textarea
-                      rows={2}
-                      value={formData.notes}
-                      onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
-                      className="app-form-textarea has-icon"
-                      placeholder="Write any special notes, details, polish finish, usage instructions..."
-                    />
+                {/* 7. Yard Storage Location & Remarks */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Yard Storage Location
+                    </label>
+                    <div className="app-input-wrapper">
+                      <MapPin size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        value={formData.location}
+                        onChange={e => setFormData(p => ({ ...p, location: e.target.value }))}
+                        className="app-form-input has-icon"
+                        placeholder="e.g. Yard Shed 1, Row B"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="app-form-group">
+                    <label className="app-form-label">
+                      Remarks / Finish Notes
+                    </label>
+                    <div className="app-input-wrapper">
+                      <Tag size={16} className="app-input-icon" />
+                      <input
+                        type="text"
+                        value={formData.notes}
+                        onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
+                        className="app-form-input has-icon"
+                        placeholder="e.g. Polished, Honed, Premium Lot"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Notice */}
+                {/* Notice banner */}
                 <div className="app-form-notice">
                   <HelpCircle size={16} style={{ flexShrink: 0 }} />
-                  <span>All fields marked with * are required.</span>
+                  <span>All fields marked with <b style={{ color: "#ef4444" }}>*</b> are required.</span>
                 </div>
               </div>
 
@@ -2134,7 +2487,7 @@ export default function StockManagementView() {
                   onClick={() => setIsModalOpen(false)}
                   className="app-btn-cancel"
                 >
-                  <X size={15} />
+                  <X size={16} />
                   <span>Cancel</span>
                 </button>
                 <button
@@ -2142,7 +2495,7 @@ export default function StockManagementView() {
                   className="app-btn-submit"
                 >
                   <PackagePlus size={16} />
-                  <span>{editingItem ? "Save Changes" : "Create Item"}</span>
+                  <span>{editingItem ? "Update Item" : "Add Stock Item"}</span>
                 </button>
               </div>
             </form>

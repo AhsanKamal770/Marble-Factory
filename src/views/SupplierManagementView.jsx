@@ -71,6 +71,7 @@ export default function SupplierManagementView({ settings }) {
 
   // Modals & Drawers
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
+  const [editingPurchase, setEditingPurchase] = useState(null);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -255,6 +256,7 @@ export default function SupplierManagementView({ settings }) {
       setIsAddSupplierModalOpen(true);
       return;
     }
+    setEditingPurchase(null);
     setSelectedSupplierId(suppliers[0].id.toString());
     setChallanNo(`CH-${Date.now().toString().slice(-4)}`);
     setVehicleNo('TK-');
@@ -279,6 +281,92 @@ export default function SupplierManagementView({ settings }) {
       setPurchaseItems([]);
     }
     setIsPurchaseModalOpen(true);
+  };
+
+  const handleOpenEditPurchase = (pur) => {
+    setEditingPurchase(pur);
+    setSelectedSupplierId(String(pur.supplierId || (suppliers[0]?.id || '')));
+    setChallanNo(pur.challanNo || '');
+    setVehicleNo(pur.vehicleNo || '');
+    setFreightCharges(pur.freightCharges || 0);
+    setPaidAmount(pur.paidAmount || 0);
+    setPurchasePaymentMethod(pur.paymentMethod || 'Bank Transfer');
+    setPurchaseNotes(pur.notes || '');
+
+    if (pur.items && pur.items.length > 0) {
+      setPurchaseItems(JSON.parse(JSON.stringify(pur.items)));
+    } else if (items.length > 0) {
+      const defaultItem = items[0];
+      setPurchaseItems([
+        {
+          itemId: defaultItem.id,
+          name: defaultItem.name,
+          category: defaultItem.category,
+          totalSqFt: 500,
+          ratePerSqFt: defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200,
+          amount: 500 * (defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200)
+        }
+      ]);
+    } else {
+      setPurchaseItems([]);
+    }
+    setIsPurchaseModalOpen(true);
+  };
+
+  const handleDeletePurchase = async (pur) => {
+    if (!window.confirm(`Delete Inward Shipment #${pur.purchaseNo} (Challan #${pur.challanNo})?\n\nThis will safely reverse the stock added to your yard and adjust supplier ${pur.supplierName}'s ledger balance.`)) {
+      return;
+    }
+
+    try {
+      await db.transaction('rw', [db.supplier_purchases, db.suppliers, db.items, db.stock_movements, db.supplier_payments], async () => {
+        // 1. Reverse stock for each inward item
+        if (pur.items && Array.isArray(pur.items)) {
+          for (const it of pur.items) {
+            if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
+              const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+              await adjustItemStock(
+                finalItemId,
+                -(parseFloat(it.totalSqFt) || 0),
+                0,
+                0,
+                'Adjustment',
+                pur.purchaseNo,
+                `Stock reversed due to deletion of Purchase #${pur.purchaseNo}`
+              );
+            }
+          }
+        }
+
+        // 2. Adjust supplier balance
+        const sup = await db.suppliers.get(pur.supplierId);
+        if (sup) {
+          const newTotalPurchased = Math.max(0, (Number(sup.totalPurchased) || 0) - (Number(pur.grandTotal) || 0));
+          const newTotalPaid = Math.max(0, (Number(sup.totalPaid) || 0) - (Number(pur.paidAmount) || 0));
+          const newBalancePayable = Math.max(0, (Number(sup.balancePayable) || 0) - (Number(pur.balanceDue) || 0));
+
+          await db.suppliers.update(sup.id, {
+            totalPurchased: newTotalPurchased,
+            totalPaid: newTotalPaid,
+            balancePayable: newBalancePayable,
+            updatedAt: new Date().toISOString()
+          });
+        }
+
+        // 3. Remove associated payment records
+        const linkedPayments = await db.supplier_payments.where('purchaseId').equals(pur.id).toArray();
+        for (const p of linkedPayments) {
+          await db.supplier_payments.delete(p.id);
+        }
+
+        // 4. Delete the purchase record
+        await db.supplier_purchases.delete(pur.id);
+      });
+
+      if (drawerPurchase?.id === pur.id) setDrawerPurchase(null);
+    } catch (err) {
+      alert('Error deleting purchase: ' + err.message);
+    }
   };
 
   const handleAddPurchaseItem = () => {
@@ -361,73 +449,197 @@ export default function SupplierManagementView({ settings }) {
     if (!sup) return;
 
     try {
-      const purchaseNo = `PUR-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+      if (editingPurchase) {
+        // ─── EDIT MODE ───
+        const oldPur = editingPurchase;
+        const purchaseNo = oldPur.purchaseNo;
 
-      await db.transaction('rw', [db.supplier_purchases, db.suppliers, db.items, db.stock_movements, db.supplier_payments], async () => {
-        const purchaseData = {
-          purchaseNo,
-          challanNo,
-          vehicleNo,
-          date: new Date().toISOString(),
-          supplierId: sup.id,
-          supplierName: sup.name,
-          items: purchaseItems,
-          subtotal: purchaseSubtotal,
-          freightCharges: parseFloat(freightCharges) || 0,
-          grandTotal: purchaseGrandTotal,
-          paidAmount: numPaid,
-          balanceDue: purchaseBalanceDue,
-          paymentStatus: purchaseStatus,
-          paymentMethod: purchasePaymentMethod,
-          notes: purchaseNotes,
-          createdAt: new Date().toISOString()
-        };
-
-        const purId = await db.supplier_purchases.add(purchaseData);
-
-        // Add stock to yard inventory and log stock movement
-        for (const it of purchaseItems) {
-          if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
-            const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
-            await adjustItemStock(
-              finalItemId,
-              parseFloat(it.totalSqFt) || 0,
-              0,
-              0,
-              'Purchase',
-              purchaseNo,
-              `Inward from ${sup.name} (Challan #${challanNo})`
-            );
+        await db.transaction('rw', [db.supplier_purchases, db.suppliers, db.items, db.stock_movements, db.supplier_payments], async () => {
+          // 1. Revert previous stock movements
+          if (oldPur.items && Array.isArray(oldPur.items)) {
+            for (const oldIt of oldPur.items) {
+              if (oldIt.itemId) {
+                const finalId = !isNaN(Number(oldIt.itemId)) ? Number(oldIt.itemId) : oldIt.itemId;
+                await adjustItemStock(
+                  finalId,
+                  -(parseFloat(oldIt.totalSqFt) || 0),
+                  0,
+                  0,
+                  'Adjustment',
+                  purchaseNo,
+                  `Revert old stock for edited Purchase #${purchaseNo}`
+                );
+              }
+            }
           }
-        }
 
-        // Update supplier balance
-        const newTotalPurchased = (Number(sup.totalPurchased) || 0) + purchaseGrandTotal;
-        const newTotalPaid = (Number(sup.totalPaid) || 0) + numPaid;
-        const newBalancePayable = (Number(sup.balancePayable) || 0) + purchaseBalanceDue;
+          // 2. Add new updated stock
+          for (const it of purchaseItems) {
+            if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
+              const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+              await adjustItemStock(
+                finalItemId,
+                parseFloat(it.totalSqFt) || 0,
+                0,
+                0,
+                'Purchase',
+                purchaseNo,
+                `Updated inward from ${sup.name} (Challan #${challanNo})`
+              );
+            }
+          }
 
-        await db.suppliers.update(sup.id, {
-          totalPurchased: newTotalPurchased,
-          totalPaid: newTotalPaid,
-          balancePayable: newBalancePayable,
-          updatedAt: new Date().toISOString()
-        });
+          // 3. Update Supplier Balance
+          if (oldPur.supplierId === sup.id) {
+            const diffPurchased = purchaseGrandTotal - (Number(oldPur.grandTotal) || 0);
+            const diffPaid = numPaid - (Number(oldPur.paidAmount) || 0);
+            const diffDue = purchaseBalanceDue - (Number(oldPur.balanceDue) || 0);
 
-        if (numPaid > 0) {
-          await db.supplier_payments.add({
-            paymentNo: `SPAY-${Date.now().toString().slice(-6)}`,
-            purchaseId: purId,
+            await db.suppliers.update(sup.id, {
+              totalPurchased: Math.max(0, (Number(sup.totalPurchased) || 0) + diffPurchased),
+              totalPaid: Math.max(0, (Number(sup.totalPaid) || 0) + diffPaid),
+              balancePayable: Math.max(0, (Number(sup.balancePayable) || 0) + diffDue),
+              updatedAt: new Date().toISOString()
+            });
+          } else {
+            // Revert old supplier and update new supplier
+            const oldSup = await db.suppliers.get(oldPur.supplierId);
+            if (oldSup) {
+              await db.suppliers.update(oldSup.id, {
+                totalPurchased: Math.max(0, (Number(oldSup.totalPurchased) || 0) - (Number(oldPur.grandTotal) || 0)),
+                totalPaid: Math.max(0, (Number(oldSup.totalPaid) || 0) - (Number(oldPur.paidAmount) || 0)),
+                balancePayable: Math.max(0, (Number(oldSup.balancePayable) || 0) - (Number(oldPur.balanceDue) || 0)),
+                updatedAt: new Date().toISOString()
+              });
+            }
+            await db.suppliers.update(sup.id, {
+              totalPurchased: (Number(sup.totalPurchased) || 0) + purchaseGrandTotal,
+              totalPaid: (Number(sup.totalPaid) || 0) + numPaid,
+              balancePayable: (Number(sup.balancePayable) || 0) + purchaseBalanceDue,
+              updatedAt: new Date().toISOString()
+            });
+          }
+
+          // 4. Update the Purchase Record
+          await db.supplier_purchases.update(oldPur.id, {
+            challanNo,
+            vehicleNo,
             supplierId: sup.id,
             supplierName: sup.name,
-            date: new Date().toISOString(),
-            amount: numPaid,
+            items: purchaseItems,
+            subtotal: purchaseSubtotal,
+            freightCharges: parseFloat(freightCharges) || 0,
+            grandTotal: purchaseGrandTotal,
+            paidAmount: numPaid,
+            balanceDue: purchaseBalanceDue,
+            paymentStatus: purchaseStatus,
             paymentMethod: purchasePaymentMethod,
-            referenceNo: purchaseNo,
-            notes: `Advance/Payment for Inward Purchase #${purchaseNo}`,
-            createdAt: new Date().toISOString()
+            notes: purchaseNotes,
+            updatedAt: new Date().toISOString()
           });
-        }
-      });
+
+          // 5. Update or recreate payment record
+          const linkedPayments = await db.supplier_payments.where('purchaseId').equals(oldPur.id).toArray();
+          if (linkedPayments.length > 0) {
+            if (numPaid > 0) {
+              await db.supplier_payments.update(linkedPayments[0].id, {
+                amount: numPaid,
+                supplierId: sup.id,
+                supplierName: sup.name,
+                paymentMethod: purchasePaymentMethod,
+                notes: `Payment for Inward Purchase #${purchaseNo}`,
+                updatedAt: new Date().toISOString()
+              });
+            } else {
+              await db.supplier_payments.delete(linkedPayments[0].id);
+            }
+          } else if (numPaid > 0) {
+            await db.supplier_payments.add({
+              paymentNo: `SPAY-${Date.now().toString().slice(-6)}`,
+              purchaseId: oldPur.id,
+              supplierId: sup.id,
+              supplierName: sup.name,
+              date: new Date().toISOString(),
+              amount: numPaid,
+              paymentMethod: purchasePaymentMethod,
+              referenceNo: purchaseNo,
+              notes: `Payment for Inward Purchase #${purchaseNo}`,
+              createdAt: new Date().toISOString()
+            });
+          }
+        });
+
+        setEditingPurchase(null);
+      } else {
+        // ─── CREATE NEW MODE ───
+        const purchaseNo = `PUR-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+
+        await db.transaction('rw', [db.supplier_purchases, db.suppliers, db.items, db.stock_movements, db.supplier_payments], async () => {
+          const purchaseData = {
+            purchaseNo,
+            challanNo,
+            vehicleNo,
+            date: new Date().toISOString(),
+            supplierId: sup.id,
+            supplierName: sup.name,
+            items: purchaseItems,
+            subtotal: purchaseSubtotal,
+            freightCharges: parseFloat(freightCharges) || 0,
+            grandTotal: purchaseGrandTotal,
+            paidAmount: numPaid,
+            balanceDue: purchaseBalanceDue,
+            paymentStatus: purchaseStatus,
+            paymentMethod: purchasePaymentMethod,
+            notes: purchaseNotes,
+            createdAt: new Date().toISOString()
+          };
+
+          const purId = await db.supplier_purchases.add(purchaseData);
+
+          // Add stock to yard inventory and log stock movement
+          for (const it of purchaseItems) {
+            if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
+              const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+              await adjustItemStock(
+                finalItemId,
+                parseFloat(it.totalSqFt) || 0,
+                0,
+                0,
+                'Purchase',
+                purchaseNo,
+                `Inward from ${sup.name} (Challan #${challanNo})`
+              );
+            }
+          }
+
+          // Update supplier balance
+          const newTotalPurchased = (Number(sup.totalPurchased) || 0) + purchaseGrandTotal;
+          const newTotalPaid = (Number(sup.totalPaid) || 0) + numPaid;
+          const newBalancePayable = (Number(sup.balancePayable) || 0) + purchaseBalanceDue;
+
+          await db.suppliers.update(sup.id, {
+            totalPurchased: newTotalPurchased,
+            totalPaid: newTotalPaid,
+            balancePayable: newBalancePayable,
+            updatedAt: new Date().toISOString()
+          });
+
+          if (numPaid > 0) {
+            await db.supplier_payments.add({
+              paymentNo: `SPAY-${Date.now().toString().slice(-6)}`,
+              purchaseId: purId,
+              supplierId: sup.id,
+              supplierName: sup.name,
+              date: new Date().toISOString(),
+              amount: numPaid,
+              paymentMethod: purchasePaymentMethod,
+              referenceNo: purchaseNo,
+              notes: `Advance/Payment for Inward Purchase #${purchaseNo}`,
+              createdAt: new Date().toISOString()
+            });
+          }
+        });
+      }
 
       setIsPurchaseModalOpen(false);
     } catch (err) {
@@ -1120,7 +1332,7 @@ export default function SupplierManagementView({ settings }) {
                   <th style={{ width: '95px', textAlign: 'right', padding: '10px 6px' }}>PAID</th>
                   <th style={{ width: '105px', textAlign: 'right', padding: '10px 6px' }}>BALANCE</th>
                   <th style={{ width: '85px', textAlign: 'center', padding: '10px 4px' }}>STATUS</th>
-                  <th style={{ width: '80px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
+                  <th style={{ width: '110px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -1232,6 +1444,46 @@ export default function SupplierManagementView({ settings }) {
                               title="View Shipment Details"
                             >
                               <Eye size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditPurchase(pur)}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: '#f0fdf4',
+                                color: '#16a34a',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                              title="Edit Inward Shipment"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePurchase(pur)}
+                              style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '50%',
+                                border: 'none',
+                                background: '#fff1f2',
+                                color: '#e11d48',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                              title="Delete Inward Shipment"
+                            >
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         </td>
@@ -1762,8 +2014,12 @@ export default function SupplierManagementView({ settings }) {
                   <Truck size={24} color="#ffffff" />
                 </div>
                 <div>
-                  <h3 className="app-modal-title">Record Inward Stock Shipment</h3>
-                  <p className="app-modal-subtitle">Receive stock & update inventory from quarry or supplier</p>
+                  <h3 className="app-modal-title">
+                    {editingPurchase ? `Edit Inward Shipment (${editingPurchase.purchaseNo})` : 'Record Inward Stock Shipment'}
+                  </h3>
+                  <p className="app-modal-subtitle">
+                    {editingPurchase ? 'Update received stock materials, quantities, rates and supplier balance' : 'Receive stock & update inventory from quarry or supplier'}
+                  </p>
                 </div>
               </div>
               <button
@@ -2034,7 +2290,7 @@ export default function SupplierManagementView({ settings }) {
                   className="app-btn-submit"
                 >
                   <Save size={16} />
-                  Receive Stock & Update Inventory
+                  {editingPurchase ? 'Update Stock Shipment' : 'Receive Stock & Update Inventory'}
                 </button>
               </div>
             </form>

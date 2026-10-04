@@ -213,7 +213,7 @@ export default function BillingView({ setActiveView, settings }) {
   // -------------------------------------------------------------
   const subtotal = lineItems.reduce((acc, item) => acc + (parseFloat(item.amount) || 0), 0);
   const totalCharges = Object.values(charges).reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
-  
+
   let netDiscount = 0;
   if (discount.type === 'percentage') {
     netDiscount = Math.round((subtotal * (parseFloat(discount.value) || 0)) / 100);
@@ -240,7 +240,7 @@ export default function BillingView({ setActiveView, settings }) {
   // -------------------------------------------------------------
   // Customer Handlers
   // -------------------------------------------------------------
-  const filteredCustomers = customers.filter(c => 
+  const filteredCustomers = customers.filter(c =>
     c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
     (c.phone && c.phone.includes(customerSearch))
   );
@@ -369,25 +369,53 @@ export default function BillingView({ setActiveView, settings }) {
   const handleItemSelectInModal = (selectedItem) => {
     const rate = selectedItem.ratePerSqFt || 180;
     const isKitchen = (selectedItem.subCategory && selectedItem.subCategory.includes('Kitchen')) ||
-                      (selectedItem.name && selectedItem.name.includes('Kitchen')) ||
-                      selectedItem.sutarThickness === 6;
+      (selectedItem.name && selectedItem.name.includes('Kitchen')) ||
+      selectedItem.sutarThickness === 6;
     const sutar = selectedItem.sutarThickness || (isKitchen ? 6 : 4);
     const avail = Number(selectedItem.stockSqFt || selectedItem.stockPieces || selectedItem.stockBoxes || 0);
 
-    setSelectedSizePreset(null);
+    let itemL = 1;
+    let itemW = 1;
+    let itemPreset = '12 × 12';
+
+    if (selectedItem.category === 'Flower') {
+      itemL = 1; itemW = 1; itemPreset = '12 × 12';
+    } else if (selectedItem.category === 'Border') {
+      itemL = 10; itemW = 0.25; itemPreset = '3 inch';
+    } else if (selectedItem.category === 'Kali Patti') {
+      itemL = 10; itemW = 0.166; itemPreset = '2 inch';
+    } else if (selectedItem.category === 'Tiles') {
+      itemL = 2; itemW = 1; itemPreset = '12 × 24';
+    } else if (selectedItem.category === 'Panels') {
+      itemL = 4; itemW = 2; itemPreset = '24 × 48';
+    } else if (selectedItem.category === 'Accessories') {
+      itemL = 10; itemW = 0.25; itemPreset = 'Border';
+    } else {
+      // Marble (4, 6, 9, 14 Sutar)
+      itemL = 1; itemW = 1; itemPreset = '12 × 12';
+    }
+
+    if (selectedItem.length !== undefined && selectedItem.length !== null && Number(selectedItem.length) > 0) {
+      itemL = Number(selectedItem.length);
+    }
+    if (selectedItem.width !== undefined && selectedItem.width !== null && Number(selectedItem.width) > 0) {
+      itemW = Number(selectedItem.width);
+    }
+
+    setSelectedSizePreset(itemPreset);
     setItemModalForm(prev => {
-      const l = prev.length || 1;
-      const w = prev.width || 1;
       const p = prev.pieces || 10;
-      const sqft = Math.round(l * w * p * 100) / 100;
+      const sqft = Math.round(itemL * itemW * p * 100) / 100;
       return {
         ...prev,
         itemId: selectedItem.id,
         name: selectedItem.name,
-        category: selectedItem.category,
+        category: selectedItem.category || 'Marble',
         subCategory: selectedItem.subCategory || '',
         thicknessSutar: sutar,
         usageTag: isKitchen ? 'Kitchen / Stairs (صرف کچن اور سیڑھیاں)' : (sutar === 6 ? 'Kitchen / Stairs (صرف کچن اور سیڑھیاں)' : (sutar === 9 ? 'Heavy Steps' : (sutar === 14 ? 'Heavy Base' : 'Standard Floor'))),
+        length: itemL,
+        width: itemW,
         ratePerSqFt: rate,
         availableStock: avail,
         unit: selectedItem.unit || 'Sq. Ft.',
@@ -435,31 +463,30 @@ export default function BillingView({ setActiveView, settings }) {
     let newL = 1;
     let newW = 1;
     let defaultPreset = '12 × 12';
-    if (sutarValue === 6) {
-      newL = 8;
-      newW = 2;
-      defaultPreset = 'Kitchen Top';
-    } else if (sutarValue === 9) {
-      newL = 4;
-      newW = 1.25;
-      defaultPreset = 'Heavy Step';
-    } else if (sutarValue === 14) {
-      newL = 6;
-      newW = 3;
-      defaultPreset = 'Heavy Base';
-    }
+
+    const matchingSutarItem = inStockItems.find(it => 
+      matchItemToFilter(it, 'Marble') && (Number(it.sutarThickness) === Number(sutarValue) || (sutarValue === 6 && (it.name?.includes('Kitchen') || it.subCategory?.includes('Kitchen'))))
+    );
+
     setSelectedSizePreset(defaultPreset);
     setItemModalForm(prev => {
       const p = prev.pieces || 10;
       const sqft = Math.round(newL * newW * p * 100) / 100;
+      const currentRate = matchingSutarItem ? (matchingSutarItem.ratePerSqFt || prev.ratePerSqFt) : prev.ratePerSqFt;
       return {
         ...prev,
+        itemId: matchingSutarItem ? matchingSutarItem.id : prev.itemId,
+        name: matchingSutarItem ? matchingSutarItem.name : prev.name,
+        category: 'Marble',
+        subCategory: matchingSutarItem ? (matchingSutarItem.subCategory || '') : prev.subCategory,
+        ratePerSqFt: currentRate,
+        availableStock: matchingSutarItem ? Number(matchingSutarItem.stockSqFt || matchingSutarItem.stockPieces || matchingSutarItem.stockBoxes || 0) : prev.availableStock,
         thicknessSutar: sutarValue,
         usageTag: usageTag,
         length: newL,
         width: newW,
         totalSqFt: sqft,
-        amount: Math.round(sqft * prev.ratePerSqFt)
+        amount: Math.round(sqft * currentRate)
       };
     });
   };
@@ -487,12 +514,12 @@ export default function BillingView({ setActiveView, settings }) {
 
     if (cat === 'Flower') {
       return {
-        title: isUrdu ? 'پھول کے سائز اور اقسام (Types of Flower)' : 'Types of Flower',
+        title: isUrdu ? 'پھول کے سائز (Types of Flower)' : 'Types of Flower',
         subtitle: isUrdu ? 'مطلوبہ پھول کا سائز منتخب کریں' : 'Select flower medallion size',
         options: [
-          { label: '12 × 12', length: 1, width: 1, sub: '1 ft × 1 ft', tag: 'Mosaic Medallion' },
-          { label: '24 × 24', length: 2, width: 2, sub: '2 ft × 2 ft', tag: 'Royal Center Flower' },
-          { label: '3 × 3', length: 3, width: 3, sub: '3 ft × 3 ft', tag: 'Grand Drawing Room' }
+          { label: '12 × 12', length: 1, width: 1, sub: '1 ft × 1 ft', tag: '1.0 Sq.Ft' },
+          { label: '24 × 24', length: 2, width: 2, sub: '2 ft × 2 ft', tag: '4.0 Sq.Ft' },
+          { label: '3 × 3', length: 3, width: 3, sub: '3 ft × 3 ft', tag: '9.0 Sq.Ft' }
         ]
       };
     }
@@ -502,8 +529,8 @@ export default function BillingView({ setActiveView, settings }) {
         title: isUrdu ? 'بارڈر پٹی کے سائز (Types of Border)' : 'Types of Border',
         subtitle: isUrdu ? 'بارڈر پٹی کی مطلوبہ چوڑائی منتخب کریں' : 'Select border patti width',
         options: [
-          { label: '3 inch', length: 10, width: 0.25, sub: '0.25 ft Width', tag: 'Standard Floor Border' },
-          { label: '6 inch', length: 10, width: 0.5, sub: '0.50 ft Width', tag: 'Wide Boundary Border' }
+          { label: '3 inch', length: 10, width: 0.25, sub: '3" Width', tag: '10 R.Ft' },
+          { label: '6 inch', length: 10, width: 0.5, sub: '6" Width', tag: '10 R.Ft' }
         ]
       };
     }
@@ -513,28 +540,40 @@ export default function BillingView({ setActiveView, settings }) {
         title: isUrdu ? 'کالی پٹی کے سائز (Types of Black Border)' : 'Types of Black Border (Kali Patti)',
         subtitle: isUrdu ? 'کالی پٹی کی مطلوبہ چوڑائی منتخب کریں' : 'Select Kali Patti black border width',
         options: [
-          { label: '2 inch', length: 10, width: 0.166, sub: '0.166 ft Width', tag: '2-Inch Jet Black' },
-          { label: '3 inch', length: 10, width: 0.25, sub: '0.250 ft Width', tag: '3-Inch Jet Black' }
+          { label: '2 inch', length: 10, width: 0.166, sub: '2" Jet Black', tag: '10 R.Ft' },
+          { label: '3 inch', length: 10, width: 0.25, sub: '3" Jet Black', tag: '10 R.Ft' }
         ]
       };
     }
 
     if (cat === 'Tiles') {
       return {
-        title: isUrdu ? 'ٹائلز کے سائز (Types of Tiles)' : 'Types of Tiles',
-        subtitle: isUrdu ? 'ٹائلز کا مطلوبہ فارمیٹ سائز منتخب کریں' : 'Select tile dimension format',
-        options: [
+        title: isUrdu ? 'ٹائلز کے سائز اور متعلقہ اشیاء (Types of Tiles)' : 'Types of Tiles & Accessories',
+        subtitle: isUrdu ? 'ٹائلز سائز، متعلقہ اشیاء یا پینل منتخب کریں' : 'Select standard tiles, accessories or wall panels',
+        isTiles: true,
+        tileSizes: [
           { label: '12 × 24', length: 2, width: 1, sub: '1 ft × 2 ft', tag: '2.0 Sq.Ft / Tile' },
           { label: '24 × 24', length: 2, width: 2, sub: '2 ft × 2 ft', tag: '4.0 Sq.Ft / Porcelain' },
           { label: '24 × 48', length: 4, width: 2, sub: '2 ft × 4 ft', tag: '8.0 Sq.Ft / Jumbo Tile' },
           { label: '16 × 16', length: 1.33, width: 1.33, sub: '1.33 × 1.33 ft', tag: '1.77 Sq.Ft / Ceramic' }
+        ],
+        otherItems: [
+          { label: 'Border', length: 10, width: 0.25, sub: 'Patti', tag: 'Decorative Border' },
+          { label: 'Filling', length: 1, width: 1, sub: '20kg Bag', tag: 'Joint Filling / Bond' },
+          { label: 'Spacer', length: 1, width: 1, sub: '3mm Pack', tag: 'Tile Cross Spacers' },
+          { label: 'Gola', length: 8, width: 1, sub: '8 Feet', tag: 'Corner Chamfer Gola' }
+        ],
+        panels: [
+          { label: '24 × 48', length: 4, width: 2, sub: 'Mashallah Panel', tag: '⚡ High Rate Panel' },
+          { label: '3 × 3', length: 3, width: 3, sub: 'Calligraphy Panel', tag: '⚡ High Rate Panel' },
+          { label: '3 × 5', length: 5, width: 3, sub: 'Elevation Panel', tag: '⚡ High Rate Panel' }
         ]
       };
     }
 
     if (cat === 'Accessories') {
       return {
-        title: isUrdu ? 'ٹائلز کے ساتھ دیگر اشیاء (Other Items with Tiles)' : 'Other Items Only with Tiles',
+        title: isUrdu ? 'ٹائلز کے ساتھ دیگر اشیاء (Other Items Only with Tiles)' : 'Other Items Only with Tiles',
         subtitle: isUrdu ? 'ٹائلز کی اضافی اشیاء منتخب کریں' : 'Select tile accessory item',
         options: [
           { label: 'Border', length: 10, width: 0.25, sub: 'Patti', tag: 'Decorative Border' },
@@ -547,7 +586,7 @@ export default function BillingView({ setActiveView, settings }) {
 
     if (cat === 'Panels') {
       return {
-        title: isUrdu ? 'پینل کی اقسام (Panel Types - High Rate)' : 'Panel Types (Like Mashallah - Higher Rate)',
+        title: isUrdu ? 'پینل کی اقسام (Panel Types - Higher Rate)' : 'Panel Types (Like Mashallah - Higher Rate)',
         subtitle: isUrdu ? 'ماشاء اللہ و قرآنی وال پینل منتخب کریں' : 'Select premium decorative wall panel',
         options: [
           { label: '24 × 48', length: 4, width: 2, sub: '2 ft × 4 ft', tag: 'Mashallah Gold Panel' },
@@ -559,7 +598,7 @@ export default function BillingView({ setActiveView, settings }) {
 
     // Default / Marble
     return {
-      title: isUrdu ? 'ماربل سوتر موٹائی (Sutar Thickness Classification)' : 'Sutar Thickness Classification',
+      title: isUrdu ? 'ماربل سوتر موٹائی (Types of Marble - Sutar)' : 'Types of Marble - Sutar Thickness',
       subtitle: isUrdu ? 'ماربل کی موٹائی / سوتر منتخب کریں' : 'Select marble sutar thickness',
       isMarble: true,
       sutarOptions: [
@@ -571,19 +610,10 @@ export default function BillingView({ setActiveView, settings }) {
       sutarSizeOptions: currentSutar === 4 ? [
         { label: '12 × 12', length: 1, width: 1, sub: '1 ft × 1 ft', tag: '1.0 Sq.Ft Tile' },
         { label: '12 × 24', length: 2, width: 1, sub: '2 ft × 1 ft', tag: '2.0 Sq.Ft Tile' },
-        { label: '6 × 12', length: 1, width: 0.5, sub: '1 ft × 0.5 ft', tag: '0.5 Sq.Ft Skirt' },
-        { label: '6 × 24', length: 2, width: 0.5, sub: '2 ft × 0.5 ft', tag: '1.0 Sq.Ft Strip' }
-      ] : currentSutar === 6 ? [
-        { label: 'Kitchen Top', length: 8, width: 2, sub: '8ft × 2ft', tag: '16 Sq.Ft Counter' },
-        { label: 'Kitchen Counter', length: 6, width: 2, sub: '6ft × 2ft', tag: '12 Sq.Ft Counter' },
-        { label: 'Stair Step', length: 4, width: 1, sub: '4ft × 1ft', tag: '4 Sq.Ft Tread' },
-        { label: 'Stair Riser', length: 4, width: 0.67, sub: '4ft × 0.67ft', tag: '2.68 Sq.Ft Riser' }
-      ] : currentSutar === 9 ? [
-        { label: 'Heavy Step', length: 4, width: 1.25, sub: '4ft × 1.25ft', tag: '5.0 Sq.Ft Step' },
-        { label: 'Heavy Slab', length: 5, width: 2.5, sub: '5ft × 2.5ft', tag: '12.5 Sq.Ft Slab' }
+        { label: '6 × 12', length: 1, width: 0.5, sub: '1 ft × 0.5 ft', tag: '0.5 Sq.Ft Tile' },
+        { label: '6 × 24', length: 2, width: 0.5, sub: '2 ft × 0.5 ft', tag: '1.0 Sq.Ft Tile' }
       ] : [
-        { label: 'Heavy Base', length: 6, width: 3, sub: '6ft × 3ft', tag: '18.0 Sq.Ft Base' },
-        { label: 'Foundation', length: 5, width: 3, sub: '5ft × 3ft', tag: '15.0 Sq.Ft Base' }
+        { label: '12 × 12', length: 1, width: 1, sub: '1 ft × 1 ft', tag: '1.0 Sq.Ft Tile' }
       ]
     };
   };
@@ -648,30 +678,10 @@ export default function BillingView({ setActiveView, settings }) {
       ];
     }
 
-    // 7. Marble Sutar 6 (Kitchen & Stairs Only)
-    if (sutar === 6) {
+    // 7. Marble Sutar 6, 9, 14
+    if (sutar === 6 || sutar === 9 || sutar === 14) {
       return [
-        { label: 'Kitchen Top (8 × 2 ft)', length: 8, width: 2, desc: 'Kitchen Counter (16 Sq.Ft)' },
-        { label: 'Kitchen Top (6 × 2 ft)', length: 6, width: 2, desc: 'Kitchen Counter (12 Sq.Ft)' },
-        { label: 'Stair Step (4 × 1 ft)', length: 4, width: 1, desc: 'Stair Tread (4 Sq.Ft)' },
-        { label: 'Stair Riser (4 × 0.67 ft)', length: 4, width: 0.67, desc: 'Stair Riser 8" (2.68 Sq.Ft)' },
-        { label: 'Stair Step (3.5 × 1 ft)', length: 3.5, width: 1, desc: 'Stair Step (3.5 Sq.Ft)' }
-      ];
-    }
-
-    // 8. Marble Sutar 9
-    if (sutar === 9) {
-      return [
-        { label: 'Heavy Step (4 × 1.25 ft)', length: 4, width: 1.25, desc: 'Main Grand Stairs' },
-        { label: 'Heavy Slab (5 × 2.5 ft)', length: 5, width: 2.5, desc: 'Heavy Duty Marble' }
-      ];
-    }
-
-    // 9. Marble Sutar 14
-    if (sutar === 14) {
-      return [
-        { label: 'Heavy Base (6 × 3 ft)', length: 6, width: 3, desc: 'Extra Thick Base' },
-        { label: 'Foundation (5 × 3 ft)', length: 5, width: 3, desc: 'Structural Base' }
+        { label: '12 × 12', length: 1, width: 1, sub: '1 ft × 1 ft', tag: '1.0 Sq.Ft Tile' },
       ];
     }
 
@@ -921,7 +931,7 @@ export default function BillingView({ setActiveView, settings }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '32px' }}>
-      
+
       {/* ------------------------------------------------------------------------- */}
       {/* 1. SEAMLESS HERO HEADER SECTION (with general_background)                 */}
       {/* ------------------------------------------------------------------------- */}
@@ -1365,9 +1375,9 @@ export default function BillingView({ setActiveView, settings }) {
                 </div>
               </div>
             ) : (
-              <div style={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
                 gap: '10px',
                 height: '420px',
                 overflowY: 'auto',
@@ -1513,7 +1523,7 @@ export default function BillingView({ setActiveView, settings }) {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div ref={chargesMenuRef} style={{ position: 'relative' }}>
                     <button
                       type="button"
@@ -1683,7 +1693,7 @@ export default function BillingView({ setActiveView, settings }) {
               <FileText size={18} style={{ color: 'var(--accent-blue)' }} />
               <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{isUrdu ? 'بل سمری' : 'Bill Summary'}</span>
             </div>
-            
+
             {/* BILL TOTAL */}
             <div style={{
               background: 'rgba(37,99,235,0.05)',
@@ -1911,7 +1921,7 @@ export default function BillingView({ setActiveView, settings }) {
             </div>
 
             <div className="app-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              
+
               {/* 1. CATEGORY DROPDOWN & SELECT IN-STOCK ITEM DROPDOWN (2-Column Grid) */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.25fr', gap: '12px' }}>
                 {/* Category Dropdown */}
@@ -2097,7 +2107,132 @@ export default function BillingView({ setActiveView, settings }) {
                   );
                 }
 
-                // Non-Marble Categories (Flower, Border, Kali Patti, Tiles, Accessories, Panels)
+                if (classData.isTiles) {
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {/* Section 1: Types of Tiles (Standard Sizes) */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label className="app-form-label" style={{ margin: 0, fontWeight: 700 }}>
+                            {isUrdu ? 'ٹائلز کے سائز (Types of Tiles)' : 'Types of Tiles'}
+                          </label>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {isUrdu ? 'معیاری سائز منتخب کریں' : 'Standard Dimensions'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                          {classData.tileSizes.map(opt => {
+                            const isSelected = selectedSizePreset === opt.label ||
+                              (Number(itemModalForm.length) === Number(opt.length) && Number(itemModalForm.width) === Number(opt.width));
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => handleApplySizePreset(opt)}
+                                style={{
+                                  padding: '8px 4px',
+                                  borderRadius: '10px',
+                                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                                  background: isSelected ? '#eff6ff' : '#ffffff',
+                                  color: isSelected ? '#2563eb' : '#334155',
+                                  textAlign: 'center',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>{opt.label}</div>
+                                <div style={{ fontSize: '0.66rem', color: isSelected ? '#2563eb' : '#64748b', fontWeight: 600 }}>
+                                  {opt.sub}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Section 2: Other Items only with tiles */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label className="app-form-label" style={{ margin: 0, fontWeight: 700, color: '#334155' }}>
+                            {isUrdu ? 'ٹائلز کے ساتھ دیگر اشیاء (Other Items only with tiles)' : 'Other Items only with tiles'}
+                          </label>
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            Border, Filling, Spacer, Gola
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                          {classData.otherItems.map(opt => {
+                            const isSelected = selectedSizePreset === opt.label;
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => handleApplySizePreset(opt)}
+                                style={{
+                                  padding: '8px 4px',
+                                  borderRadius: '10px',
+                                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                                  background: isSelected ? '#eff6ff' : '#ffffff',
+                                  color: isSelected ? '#2563eb' : '#334155',
+                                  textAlign: 'center',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>{opt.label}</div>
+                                <div style={{ fontSize: '0.66rem', color: isSelected ? '#2563eb' : '#64748b', fontWeight: 600 }}>
+                                  {opt.sub}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Section 3: Panels like Mashallah (Higher Rate) */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                          <label className="app-form-label" style={{ margin: 0, fontWeight: 700, color: '#b45309' }}>
+                            {isUrdu ? 'وال پینل (Panel like Mashallah)' : 'Wall Panels (Like Mashallah)'}
+                          </label>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b45309', background: 'rgba(217, 119, 6, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                            ⚡ {isUrdu ? 'پینل کا ریٹ عام ٹائلز سے زیادہ ہے' : 'Rate Higher than Simple Tiles'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                          {classData.panels.map(opt => {
+                            const isSelected = selectedSizePreset === opt.label ||
+                              (Number(itemModalForm.length) === Number(opt.length) && Number(itemModalForm.width) === Number(opt.width));
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                onClick={() => handleApplySizePreset(opt)}
+                                style={{
+                                  padding: '8px 4px',
+                                  borderRadius: '10px',
+                                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                                  background: isSelected ? '#eff6ff' : '#ffffff',
+                                  color: isSelected ? '#2563eb' : '#334155',
+                                  textAlign: 'center',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>{opt.label}</div>
+                                <div style={{ fontSize: '0.66rem', color: isSelected ? '#2563eb' : '#d97706', fontWeight: 600 }}>
+                                  {opt.sub}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Non-Marble / Non-Tiles Categories (Flower, Border, Kali Patti, Accessories, Panels)
                 return (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -2110,10 +2245,10 @@ export default function BillingView({ setActiveView, settings }) {
                     </div>
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: classData.options.length === 2 ? 'repeat(2, 1fr)' : (classData.options.length === 3 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)'),
+                      gridTemplateColumns: classData.options?.length === 2 ? 'repeat(2, 1fr)' : (classData.options?.length === 3 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)'),
                       gap: '8px'
                     }}>
-                      {classData.options.map(opt => {
+                      {(classData.options || []).map(opt => {
                         const isSelected = selectedSizePreset === opt.label ||
                           (Number(itemModalForm.length) === Number(opt.length) && Number(itemModalForm.width) === Number(opt.width));
                         return (
@@ -2629,7 +2764,7 @@ export default function BillingView({ setActiveView, settings }) {
             </div>
 
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              
+
               {/* Financial Summary Box */}
               <div style={{
                 background: 'var(--bg-primary)',
