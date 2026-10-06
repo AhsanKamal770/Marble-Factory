@@ -11,7 +11,7 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
     cnic: "",
     city: "Karachi",
     address: "",
-    creditLimit: 0,
+    creditLimit: 50000,
     balanceDue: 0,
     notes: ""
   });
@@ -20,7 +20,7 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
     if (customer) {
       setFormData({
         ...customer,
-        creditLimit: Number(customer.creditLimit || 0),
+        creditLimit: customer.creditLimit !== undefined && customer.creditLimit !== null ? Number(customer.creditLimit) : 50000,
         balanceDue: Number(customer.balanceDue || 0)
       });
     }
@@ -29,7 +29,11 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name.trim()) return;
-    onSave(formData);
+    const rawLimit = formData.creditLimit === "" || formData.creditLimit === null || formData.creditLimit === undefined
+      ? 50000
+      : Number(formData.creditLimit);
+    const finalCreditLimit = isNaN(rawLimit) || rawLimit <= 0 ? 50000 : rawLimit;
+    onSave({ ...formData, creditLimit: finalCreditLimit });
   };
 
   return (
@@ -166,12 +170,19 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                   </span>
                   <input
                     type="number"
-                    min="0"
-                    value={formData.creditLimit}
-                    onChange={(e) => setFormData((p) => ({ ...p, creditLimit: Number(e.target.value) }))}
+                    min="50000"
+                    max="500000"
+                    value={formData.creditLimit === "" ? "" : formData.creditLimit}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? "" : Number(e.target.value);
+                      setFormData((p) => ({ ...p, creditLimit: val }));
+                    }}
                     className="app-form-input has-icon font-mono"
-                    placeholder="500000"
+                    placeholder="50000"
                   />
+                </div>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "3px" }}>
+                  Min: Rs. 50,000 | Max: Rs. 500,000 (ڈیفالٹ: 50,000)
                 </div>
               </div>
               <div className="app-form-group">

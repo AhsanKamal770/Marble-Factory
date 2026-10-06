@@ -213,6 +213,7 @@ export default function BillingView({ setActiveView, settings }) {
   // -------------------------------------------------------------
   const subtotal = lineItems.reduce((acc, item) => acc + (parseFloat(item.amount) || 0), 0);
   const totalCharges = Object.values(charges).reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
+  const billTotalBeforeDiscount = subtotal + totalCharges;
 
   let netDiscount = 0;
   if (discount.type === 'percentage') {
@@ -220,8 +221,10 @@ export default function BillingView({ setActiveView, settings }) {
   } else {
     netDiscount = parseFloat(discount.value) || 0;
   }
+  // Cap discount so it cannot exceed the bill total
+  netDiscount = Math.min(billTotalBeforeDiscount, Math.max(0, netDiscount));
 
-  const grandTotal = Math.max(0, subtotal + totalCharges - netDiscount);
+  const grandTotal = Math.max(0, billTotalBeforeDiscount - netDiscount);
   const numPaid = parseFloat(paidAmount) || 0;
   const balanceDue = Math.max(0, grandTotal - numPaid);
 
@@ -307,7 +310,7 @@ export default function BillingView({ setActiveView, settings }) {
         !name.includes('panel') && !name.includes('mashallah') && !cat.includes('accessories') && !sub.includes('spacer') && !sub.includes('gola') && !sub.includes('filling');
     }
     if (filter === 'Accessories') {
-      return cat.includes('accessories') || sub.includes('accessories') || name.includes('spacer') || name.includes('filling') || name.includes('gola') || name.includes('bond') || sub.includes('gola') || sub.includes('spacer') || name.includes('tile border');
+      return cat.includes('accessories') || sub.includes('accessories') || name.includes('spacer') || name.includes('filling') || name.includes('gola') || name.includes('bond') || sub.includes('gola') || sub.includes('spacer');
     }
     if (filter === 'Panels') {
       return name.includes('panel') || cat.includes('panel') || sub.includes('panel') || name.includes('mashallah') || name.includes('ayat');
@@ -356,11 +359,12 @@ export default function BillingView({ setActiveView, settings }) {
   const handleOpenEditItemModal = (index) => {
     const item = lineItems[index];
     const matchItem = items.find(i => i.id === item.itemId);
-    setSelectedSizePreset(null);
+    setSelectedSizePreset(item.selectedSizePreset || null);
     setItemModalForm({
       ...item,
+      runningFeet: item.totalSqFt,
       availableStock: matchItem ? Number(matchItem.stockSqFt || matchItem.stockPieces || matchItem.stockBoxes || 0) : 4500,
-      unit: matchItem ? matchItem.unit : 'Sq. Ft.'
+      unit: item.unit || (matchItem ? matchItem.unit : 'Sq. Ft.')
     });
     setEditingItemIndex(index);
     setIsItemModalOpen(true);
@@ -377,21 +381,21 @@ export default function BillingView({ setActiveView, settings }) {
     let itemL = 1;
     let itemW = 1;
     let itemPreset = '12 × 12';
+    let unit = selectedItem.unit || 'Sq. Ft.';
 
     if (selectedItem.category === 'Flower') {
       itemL = 1; itemW = 1; itemPreset = '12 × 12';
     } else if (selectedItem.category === 'Border') {
-      itemL = 10; itemW = 0.25; itemPreset = '3 inch';
+      itemL = 10; itemW = 0.25; itemPreset = '3 inch'; unit = 'R.Ft.';
     } else if (selectedItem.category === 'Kali Patti') {
-      itemL = 10; itemW = 0.166; itemPreset = '2 inch';
+      itemL = 10; itemW = 0.166; itemPreset = '2 inch'; unit = 'R.Ft.';
     } else if (selectedItem.category === 'Tiles') {
-      itemL = 2; itemW = 1; itemPreset = '12 × 24';
+      itemL = 2; itemW = 1; itemPreset = '12 × 24'; unit = 'Sq. Ft.';
     } else if (selectedItem.category === 'Panels') {
-      itemL = 4; itemW = 2; itemPreset = '24 × 48';
+      itemL = 4; itemW = 2; itemPreset = '24 × 48'; unit = 'Sq. Ft.';
     } else if (selectedItem.category === 'Accessories') {
-      itemL = 10; itemW = 0.25; itemPreset = 'Border';
+      itemL = 1; itemW = 1; itemPreset = 'Filling'; unit = 'Bag';
     } else {
-      // Marble (4, 6, 9, 14 Sutar)
       itemL = 1; itemW = 1; itemPreset = '12 × 12';
     }
 
@@ -404,6 +408,53 @@ export default function BillingView({ setActiveView, settings }) {
 
     setSelectedSizePreset(itemPreset);
     setItemModalForm(prev => {
+      const isRunning = selectedItem.category === 'Border' || selectedItem.category === 'Kali Patti' || unit === 'R.Ft.';
+      const isAccessory = selectedItem.category === 'Accessories';
+
+      if (isRunning) {
+        const inch = itemPreset === '6 inch' ? 6 : (itemPreset === '3 inch' ? 3 : 2);
+        const rft = 10;
+        const pcs = Math.ceil((rft * 12) / inch);
+        return {
+          ...prev,
+          itemId: selectedItem.id,
+          name: selectedItem.name,
+          category: selectedItem.category || 'Border',
+          subCategory: selectedItem.subCategory || '',
+          thicknessSutar: inch,
+          usageTag: `${inch} inch Running Patti`,
+          length: rft,
+          width: inch / 12,
+          pieces: pcs,
+          runningFeet: rft,
+          ratePerSqFt: rate,
+          availableStock: avail || 2500,
+          unit: 'R.Ft.',
+          totalSqFt: rft,
+          amount: Math.round(rft * rate)
+        };
+      }
+
+      if (isAccessory) {
+        return {
+          ...prev,
+          itemId: selectedItem.id,
+          name: selectedItem.name,
+          category: 'Accessories',
+          subCategory: selectedItem.subCategory || '',
+          thicknessSutar: 0,
+          usageTag: 'Tile Accessory',
+          length: 1,
+          width: 1,
+          pieces: 1,
+          ratePerSqFt: rate || 450,
+          availableStock: avail || 500,
+          unit: unit || 'Bag',
+          totalSqFt: 1,
+          amount: rate || 450
+        };
+      }
+
       const p = prev.pieces || 10;
       const sqft = Math.round(itemL * itemW * p * 100) / 100;
       return {
@@ -416,9 +467,10 @@ export default function BillingView({ setActiveView, settings }) {
         usageTag: isKitchen ? 'Kitchen / Stairs (صرف کچن اور سیڑھیاں)' : (sutar === 6 ? 'Kitchen / Stairs (صرف کچن اور سیڑھیاں)' : (sutar === 9 ? 'Heavy Steps' : (sutar === 14 ? 'Heavy Base' : 'Standard Floor'))),
         length: itemL,
         width: itemW,
+        pieces: p,
         ratePerSqFt: rate,
-        availableStock: avail,
-        unit: selectedItem.unit || 'Sq. Ft.',
+        availableStock: avail || 3800,
+        unit: unit,
         totalSqFt: sqft,
         amount: Math.round(sqft * rate)
       };
@@ -444,13 +496,13 @@ export default function BillingView({ setActiveView, settings }) {
     if (filterId === 'Flower') {
       handleApplySizePreset({ label: '12 × 12', length: 1, width: 1 });
     } else if (filterId === 'Border') {
-      handleApplySizePreset({ label: '3 inch', length: 10, width: 0.25 });
+      handleApplySizePreset({ label: '3 inch', inch: 3 });
     } else if (filterId === 'Kali Patti') {
-      handleApplySizePreset({ label: '2 inch', length: 10, width: 0.166 });
+      handleApplySizePreset({ label: '2 inch', inch: 2 });
     } else if (filterId === 'Tiles') {
       handleApplySizePreset({ label: '12 × 24', length: 2, width: 1 });
     } else if (filterId === 'Accessories') {
-      handleApplySizePreset({ label: 'Border', length: 10, width: 0.25 });
+      handleApplySizePreset({ label: 'Filling', unit: 'Bag', defaultRate: 450 });
     } else if (filterId === 'Panels') {
       handleApplySizePreset({ label: '24 × 48', length: 4, width: 2 });
     } else if (filterId === 'Marble') {
@@ -485,6 +537,7 @@ export default function BillingView({ setActiveView, settings }) {
         usageTag: usageTag,
         length: newL,
         width: newW,
+        unit: 'Sq. Ft.',
         totalSqFt: sqft,
         amount: Math.round(sqft * currentRate)
       };
@@ -494,12 +547,51 @@ export default function BillingView({ setActiveView, settings }) {
   const handleApplySizePreset = (preset) => {
     setSelectedSizePreset(preset.label);
     setItemModalForm(prev => {
+      const isRunning = itemCategoryFilter === 'Border' || itemCategoryFilter === 'Kali Patti';
+      const isAccessory = itemCategoryFilter === 'Accessories';
+
+      if (isRunning) {
+        const inch = preset.inch || (preset.label.includes('6') ? 6 : (preset.label.includes('3') ? 3 : 2));
+        const rft = parseFloat(prev.runningFeet || prev.totalSqFt || 10) || 10;
+        const pcs = Math.ceil((rft * 12) / inch);
+        const rate = prev.ratePerSqFt || 120;
+        return {
+          ...prev,
+          unit: 'R.Ft.',
+          selectedSizePreset: preset.label,
+          thicknessSutar: inch,
+          runningFeet: rft,
+          totalSqFt: rft,
+          pieces: pcs,
+          length: rft,
+          width: inch / 12,
+          ratePerSqFt: rate,
+          amount: Math.round(rft * rate)
+        };
+      }
+
+      if (isAccessory) {
+        const qty = prev.pieces || 1;
+        const rate = preset.defaultRate || prev.ratePerSqFt || 450;
+        return {
+          ...prev,
+          unit: preset.unit || 'Bag',
+          selectedSizePreset: preset.label,
+          pieces: qty,
+          totalSqFt: qty,
+          ratePerSqFt: rate,
+          amount: Math.round(qty * rate)
+        };
+      }
+
       const l = preset.length !== undefined ? preset.length : prev.length;
       const w = preset.width !== undefined ? preset.width : prev.width;
       const p = prev.pieces || 10;
       const sqft = Math.round(l * w * p * 100) / 100;
       return {
         ...prev,
+        unit: 'Sq. Ft.',
+        selectedSizePreset: preset.label,
         length: l,
         width: w,
         totalSqFt: sqft,
@@ -526,60 +618,52 @@ export default function BillingView({ setActiveView, settings }) {
 
     if (cat === 'Border') {
       return {
-        title: isUrdu ? 'بارڈر پٹی کے سائز (Types of Border)' : 'Types of Border',
-        subtitle: isUrdu ? 'بارڈر پٹی کی مطلوبہ چوڑائی منتخب کریں' : 'Select border patti width',
+        title: isUrdu ? 'بارڈر پٹی کے سائز (Border Patti - Per Running Feet)' : 'Border Patti (Per Running Feet)',
+        subtitle: isUrdu ? 'پٹی کا سائز منتخب کریں (3 انچ یا 6 انچ)' : 'Select border patti size (3 inch or 6 inch)',
+        isRunningFeet: true,
         options: [
-          { label: '3 inch', length: 10, width: 0.25, sub: '3" Width', tag: '10 R.Ft' },
-          { label: '6 inch', length: 10, width: 0.5, sub: '6" Width', tag: '10 R.Ft' }
+          { label: '3 inch', inch: 3, sub: '3" Patti Length', tag: 'Per Running Foot' },
+          { label: '6 inch', inch: 6, sub: '6" Patti Length', tag: 'Per Running Foot' }
         ]
       };
     }
 
     if (cat === 'Kali Patti') {
       return {
-        title: isUrdu ? 'کالی پٹی کے سائز (Types of Black Border)' : 'Types of Black Border (Kali Patti)',
-        subtitle: isUrdu ? 'کالی پٹی کی مطلوبہ چوڑائی منتخب کریں' : 'Select Kali Patti black border width',
+        title: isUrdu ? 'کالی پٹی کے سائز (Kali Patti - Per Running Feet)' : 'Kali Patti (Black Border - Per Running Feet)',
+        subtitle: isUrdu ? 'کالی پٹی کا سائز منتخب کریں (2 انچ یا 3 انچ)' : 'Select Kali Patti size (2 inch or 3 inch)',
+        isRunningFeet: true,
         options: [
-          { label: '2 inch', length: 10, width: 0.166, sub: '2" Jet Black', tag: '10 R.Ft' },
-          { label: '3 inch', length: 10, width: 0.25, sub: '3" Jet Black', tag: '10 R.Ft' }
+          { label: '2 inch', inch: 2, sub: '2" Jet Black', tag: 'Per Running Foot' },
+          { label: '3 inch', inch: 3, sub: '3" Jet Black', tag: 'Per Running Foot' }
         ]
       };
     }
 
     if (cat === 'Tiles') {
       return {
-        title: isUrdu ? 'ٹائلز کے سائز اور متعلقہ اشیاء (Types of Tiles)' : 'Types of Tiles & Accessories',
-        subtitle: isUrdu ? 'ٹائلز سائز، متعلقہ اشیاء یا پینل منتخب کریں' : 'Select standard tiles, accessories or wall panels',
-        isTiles: true,
-        tileSizes: [
+        title: isUrdu ? 'ٹائلز کے معیاری سائز (Types of Tiles)' : 'Types of Tiles',
+        subtitle: isUrdu ? 'مطلوبہ ٹائل سائز منتخب کریں' : 'Select standard tile size',
+        options: [
           { label: '12 × 24', length: 2, width: 1, sub: '1 ft × 2 ft', tag: '2.0 Sq.Ft / Tile' },
           { label: '24 × 24', length: 2, width: 2, sub: '2 ft × 2 ft', tag: '4.0 Sq.Ft / Porcelain' },
           { label: '24 × 48', length: 4, width: 2, sub: '2 ft × 4 ft', tag: '8.0 Sq.Ft / Jumbo Tile' },
-          { label: '16 × 16', length: 1.33, width: 1.33, sub: '1.33 × 1.33 ft', tag: '1.77 Sq.Ft / Ceramic' }
-        ],
-        otherItems: [
-          { label: 'Border', length: 10, width: 0.25, sub: 'Patti', tag: 'Decorative Border' },
-          { label: 'Filling', length: 1, width: 1, sub: '20kg Bag', tag: 'Joint Filling / Bond' },
-          { label: 'Spacer', length: 1, width: 1, sub: '3mm Pack', tag: 'Tile Cross Spacers' },
-          { label: 'Gola', length: 8, width: 1, sub: '8 Feet', tag: 'Corner Chamfer Gola' }
-        ],
-        panels: [
-          { label: '24 × 48', length: 4, width: 2, sub: 'Mashallah Panel', tag: '⚡ High Rate Panel' },
-          { label: '3 × 3', length: 3, width: 3, sub: 'Calligraphy Panel', tag: '⚡ High Rate Panel' },
-          { label: '3 × 5', length: 5, width: 3, sub: 'Elevation Panel', tag: '⚡ High Rate Panel' }
+          { label: '16 × 16', length: 1.33, width: 1.33, sub: '1.33 × 1.33 ft', tag: '1.77 Sq.Ft / Ceramic' },
+          { label: '12 × 36', length: 3, width: 1, sub: '1 ft × 3 ft', tag: '3.0 Sq.Ft' }
         ]
       };
     }
 
     if (cat === 'Accessories') {
       return {
-        title: isUrdu ? 'ٹائلز کے ساتھ دیگر اشیاء (Other Items Only with Tiles)' : 'Other Items Only with Tiles',
-        subtitle: isUrdu ? 'ٹائلز کی اضافی اشیاء منتخب کریں' : 'Select tile accessory item',
+        title: isUrdu ? 'ٹائلز کی اضافی اشیاء (Tile Accessories)' : 'Tile Accessories (Bond, Filling & Spacers)',
+        subtitle: isUrdu ? 'فلنگ، بانڈ، سپیسر یا کارنر گولا منتخب کریں' : 'Select accessory item',
+        isAccessories: true,
         options: [
-          { label: 'Border', length: 10, width: 0.25, sub: 'Patti', tag: 'Decorative Border' },
-          { label: 'Filling', length: 1, width: 1, sub: '20kg Bag', tag: 'Joint Filling / Bond' },
-          { label: 'Spacer', length: 1, width: 1, sub: '3mm Pack', tag: 'Tile Cross Spacers' },
-          { label: 'Gola', length: 8, width: 1, sub: '8 Feet', tag: 'Corner Chamfer Gola' }
+          { label: 'Filling', unit: 'Bag', sub: '20kg Bag', tag: 'Joint Filling / پاؤڈر', defaultRate: 450 },
+          { label: 'Spacer', unit: 'Pack', sub: '3mm / 5mm Pack', tag: 'Tile Cross Spacers', defaultRate: 250 },
+          { label: 'Gola', unit: 'Piece', sub: '8 Feet Piece', tag: 'Chamfer Corner Gola', defaultRate: 350 },
+          { label: 'Tile Bond', unit: 'Bag', sub: '20kg Bag', tag: 'Tile Adhesive Bond', defaultRate: 650 }
         ]
       };
     }
@@ -636,36 +720,37 @@ export default function BillingView({ setActiveView, settings }) {
     // 2. Borders (3 inch, 6 inch)
     if (itemCategoryFilter === 'Border' || (cat.includes('border') && !name.includes('kali') && !cat.includes('kali'))) {
       return [
-        { label: '3 inch', length: 10, width: 0.25, desc: '3 inch width (10 R.Ft)' },
-        { label: '6 inch', length: 10, width: 0.5, desc: '6 inch width (10 R.Ft)' }
+        { label: '3 inch', inch: 3, desc: '3 inch piece (Per Running Foot)' },
+        { label: '6 inch', inch: 6, desc: '6 inch piece (Per Running Foot)' }
       ];
     }
 
     // 3. Black Border / Kali Patti (2 inch, 3 inch)
     if (itemCategoryFilter === 'Kali Patti' || name.includes('kali') || sub.includes('kali') || cat.includes('kali')) {
       return [
-        { label: '2 inch', length: 10, width: 0.166, desc: '2 inch Kali Patti (10 R.Ft)' },
-        { label: '3 inch', length: 10, width: 0.25, desc: '3 inch Kali Patti (10 R.Ft)' }
+        { label: '2 inch', inch: 2, desc: '2 inch piece (Per Running Foot)' },
+        { label: '3 inch', inch: 3, desc: '3 inch piece (Per Running Foot)' }
       ];
     }
 
-    // 4. Tiles (12×24, 24×24, 24×48, 16×16)
+    // 4. Tiles (12×24, 24×24, 24×48, 16×16, 12×36)
     if (itemCategoryFilter === 'Tiles' || cat.includes('tile') || sub.includes('tile')) {
       return [
         { label: '12 × 24', length: 2, width: 1, desc: '12" × 24" (2 Sq.Ft)' },
         { label: '24 × 24', length: 2, width: 2, desc: '24" × 24" (4 Sq.Ft)' },
         { label: '24 × 48', length: 4, width: 2, desc: '24" × 48" (8 Sq.Ft)' },
-        { label: '16 × 16', length: 1.33, width: 1.33, desc: '16" × 16" (1.77 Sq.Ft)' }
+        { label: '16 × 16', length: 1.33, width: 1.33, desc: '16" × 16" (1.77 Sq.Ft)' },
+        { label: '12 × 36', length: 3, width: 1, desc: '12" × 36" (3 Sq.Ft)' }
       ];
     }
 
-    // 5. Tile Accessories (Border, Filling, Spacer, Gola)
+    // 5. Tile Accessories (Filling, Spacer, Gola, Tile Bond)
     if (itemCategoryFilter === 'Accessories' || cat.includes('accessories') || sub.includes('accessories')) {
       return [
-        { label: 'Border', length: 10, width: 0.25, desc: 'Tile Border Patti' },
-        { label: 'Filling', length: 1, width: 1, desc: 'Joint Filling / Bond' },
-        { label: 'Spacer', length: 1, width: 1, desc: 'Tile Cross Spacers' },
-        { label: 'Gola', length: 8, width: 1, desc: 'Chamfer Corner Gola (8ft)' }
+        { label: 'Filling', unit: 'Bag', desc: 'Joint Filling (20kg Bag)' },
+        { label: 'Spacer', unit: 'Pack', desc: 'Tile Cross Spacers' },
+        { label: 'Gola', unit: 'Piece', desc: 'Chamfer Corner Gola (8ft)' },
+        { label: 'Tile Bond', unit: 'Bag', desc: 'Adhesive Tile Bond (20kg Bag)' }
       ];
     }
 
@@ -695,9 +780,43 @@ export default function BillingView({ setActiveView, settings }) {
   };
 
   const handleRecalculateItemModal = (field, val) => {
-    setSelectedSizePreset(null);
     setItemModalForm(prev => {
       const next = { ...prev, [field]: val };
+      const isRunning = itemCategoryFilter === 'Border' || itemCategoryFilter === 'Kali Patti' || next.unit === 'R.Ft.';
+      const isAccessory = itemCategoryFilter === 'Accessories' || next.category === 'Accessories';
+
+      if (isRunning) {
+        const rft = parseFloat(field === 'runningFeet' ? val : (next.runningFeet || next.totalSqFt || 10)) || 0;
+        let inch = 3;
+        if (itemCategoryFilter === 'Border') {
+          inch = selectedSizePreset === '6 inch' ? 6 : 3;
+        } else if (itemCategoryFilter === 'Kali Patti') {
+          inch = selectedSizePreset === '3 inch' ? 3 : 2;
+        } else {
+          inch = Number(next.thicknessSutar) || 3;
+        }
+        const pcs = inch > 0 ? Math.ceil((rft * 12) / inch) : 0;
+        const rate = parseFloat(field === 'ratePerSqFt' ? val : next.ratePerSqFt) || 0;
+        next.runningFeet = rft;
+        next.totalSqFt = rft;
+        next.pieces = pcs;
+        next.length = rft;
+        next.width = inch / 12;
+        next.ratePerSqFt = rate;
+        next.amount = Math.round(rft * rate);
+        return next;
+      }
+
+      if (isAccessory) {
+        const qty = parseInt(field === 'pieces' ? val : (next.pieces || 1), 10) || 0;
+        const rate = parseFloat(field === 'ratePerSqFt' ? val : next.ratePerSqFt) || 0;
+        next.pieces = qty;
+        next.totalSqFt = qty;
+        next.ratePerSqFt = rate;
+        next.amount = Math.round(qty * rate);
+        return next;
+      }
+
       if (['length', 'width', 'pieces'].includes(field)) {
         const l = parseFloat(field === 'length' ? val : next.length) || 0;
         const w = parseFloat(field === 'width' ? val : next.width) || 0;
@@ -718,16 +837,18 @@ export default function BillingView({ setActiveView, settings }) {
       id: editingItemIndex !== null ? lineItems[editingItemIndex].id : `item-${Date.now()}`,
       itemId: itemModalForm.itemId,
       name: itemModalForm.name,
-      category: itemModalForm.category,
+      category: itemModalForm.category || itemCategoryFilter,
       subCategory: itemModalForm.subCategory,
       thicknessSutar: itemModalForm.thicknessSutar,
       usageTag: itemModalForm.usageTag,
+      selectedSizePreset: selectedSizePreset,
       length: itemModalForm.length,
       width: itemModalForm.width,
       pieces: itemModalForm.pieces,
-      boxes: itemModalForm.boxes,
+      boxes: itemModalForm.boxes || 0,
       totalSqFt: itemModalForm.totalSqFt,
       ratePerSqFt: itemModalForm.ratePerSqFt,
+      unit: itemModalForm.unit || 'Sq. Ft.',
       amount: Math.round(itemModalForm.totalSqFt * itemModalForm.ratePerSqFt)
     };
 
@@ -832,13 +953,38 @@ export default function BillingView({ setActiveView, settings }) {
       setIsSaving(true);
       setErrorMessage('');
 
-      const customerName = selectedCustomer ? selectedCustomer.name : (isUrdu ? 'عام خریدار (نقد)' : 'Walk-in Cash Sale');
-      const customerPhone = selectedCustomer ? selectedCustomer.phone : '';
+      // Determine customer (from selected dropdown or typed search name)
+      let effectiveCustomer = selectedCustomer;
+      if (!effectiveCustomer && customerSearch.trim()) {
+        const queryName = customerSearch.trim();
+        const allCust = await db.customers.toArray();
+        const match = allCust.find(c => c.name?.trim().toLowerCase() === queryName.toLowerCase());
+        if (match) {
+          effectiveCustomer = match;
+        } else {
+          // Auto-create registered customer in DB so their Khata is immediately created!
+          const newCustId = await db.customers.add({
+            name: queryName,
+            phone: '',
+            city: 'Faisalabad / Jhumra',
+            totalBilled: 0,
+            totalPaid: 0,
+            balanceDue: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          effectiveCustomer = await db.customers.get(newCustId);
+        }
+      }
+
+      const customerName = effectiveCustomer ? effectiveCustomer.name : (isUrdu ? 'عام خریدار (نقد)' : 'Walk-in Cash Sale');
+      const customerPhone = effectiveCustomer ? (effectiveCustomer.phone || '') : '';
+      const customerId = effectiveCustomer ? effectiveCustomer.id : null;
 
       const invoiceData = {
         invoiceNo,
         date: new Date().toISOString(),
-        customerId: selectedCustomer ? selectedCustomer.id : null,
+        customerId,
         customerName,
         customerPhone,
         carrier: carrierDetails
@@ -879,32 +1025,43 @@ export default function BillingView({ setActiveView, settings }) {
         }
 
         // 3. Update customer ledger if registered customer
-        if (selectedCustomer) {
-          const newBilled = (Number(selectedCustomer.totalBilled) || 0) + grandTotal;
-          const newPaid = (Number(selectedCustomer.totalPaid) || 0) + numPaid;
-          const newDue = (Number(selectedCustomer.balanceDue) || 0) + balanceDue;
+        if (effectiveCustomer) {
+          let freshCust = await db.customers.get(effectiveCustomer.id);
+          if (!freshCust && typeof effectiveCustomer.id === 'string') {
+            freshCust = await db.customers.get(Number(effectiveCustomer.id));
+          }
+          if (!freshCust) {
+            const allCust = await db.customers.toArray();
+            freshCust = allCust.find(c => String(c.id) === String(effectiveCustomer.id));
+          }
 
-          await db.customers.update(selectedCustomer.id, {
-            totalBilled: newBilled,
-            totalPaid: newPaid,
-            balanceDue: newDue,
-            updatedAt: new Date().toISOString()
-          });
+          if (freshCust) {
+            const newBilled = (Number(freshCust.totalBilled) || 0) + grandTotal;
+            const newPaid = (Number(freshCust.totalPaid) || 0) + numPaid;
+            const newDue = (Number(freshCust.balanceDue) || 0) + balanceDue;
 
-          // 4. Record customer payment voucher
-          if (numPaid > 0) {
-            await db.customer_payments.add({
-              paymentNo: `PAY-${Date.now().toString().slice(-6)}`,
-              invoiceId: invId,
-              customerId: selectedCustomer.id,
-              customerName: selectedCustomer.name,
-              date: new Date().toISOString(),
-              amount: numPaid,
-              paymentMethod,
-              referenceNo: invoiceNo,
-              notes: `POS Cash Collection for Invoice #${invoiceNo}`,
-              createdAt: new Date().toISOString()
+            await db.customers.update(freshCust.id, {
+              totalBilled: newBilled,
+              totalPaid: newPaid,
+              balanceDue: newDue,
+              updatedAt: new Date().toISOString()
             });
+
+            // 4. Record customer payment voucher
+            if (numPaid > 0) {
+              await db.customer_payments.add({
+                paymentNo: `PAY-${Date.now().toString().slice(-6)}`,
+                invoiceId: invId,
+                customerId: freshCust.id,
+                customerName: freshCust.name,
+                date: new Date().toISOString(),
+                amount: numPaid,
+                paymentMethod,
+                referenceNo: invoiceNo,
+                notes: `POS Cash Collection for Invoice #${invoiceNo}`,
+                createdAt: new Date().toISOString()
+              });
+            }
           }
         }
       });
@@ -1405,11 +1562,20 @@ export default function BillingView({ setActiveView, settings }) {
                         </div>
                         {/* Subordinate product metadata */}
                         <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                          {item.thicknessSutar} Sutar • {item.usageTag || 'Standard'}
+                          {item.unit === 'R.Ft.'
+                            ? `${item.thicknessSutar || 3}" Patti • Running Feet`
+                            : (item.category === 'Accessories'
+                              ? `${item.unit || 'Unit'} • Tile Accessory`
+                              : `${item.thicknessSutar || 4} Sutar • ${item.usageTag || 'Standard'}`)}
                         </div>
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          {item.totalSqFt} Sq.Ft × Rs. {item.ratePerSqFt}
-                          {item.length && item.width ? ` (${item.length}ft × ${item.width}ft • ${item.pieces} slabs)` : ''}
+                          {item.unit === 'R.Ft.' ? (
+                            `${item.totalSqFt} R.Ft. × Rs. ${item.ratePerSqFt} (${item.thicknessSutar || 3}" Patti • ${item.pieces} Pieces)`
+                          ) : item.category === 'Accessories' ? (
+                            `${item.pieces} ${item.unit || 'Pack/Bag'} × Rs. ${item.ratePerSqFt}`
+                          ) : (
+                            `${item.totalSqFt} Sq.Ft × Rs. ${item.ratePerSqFt}${item.length && item.width ? ` (${item.length}ft × ${item.width}ft • ${item.pieces} slabs)` : ''}`
+                          )}
                         </div>
                       </div>
 
@@ -1762,6 +1928,42 @@ export default function BillingView({ setActiveView, settings }) {
               })}
             </div>
 
+            {/* DIRECT DISCOUNT (RS) */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {isUrdu ? 'رعایت / ڈسکاؤنٹ' : 'Discount (Rs.)'}
+                </label>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  Max: Rs. {billTotalBeforeDiscount.toLocaleString()}
+                </span>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="number"
+                  min="0"
+                  max={billTotalBeforeDiscount}
+                  value={discount.value === 0 ? '' : discount.value}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw === '') {
+                      setDiscount({ type: 'fixed', value: 0, reason: '' });
+                    } else {
+                      const val = parseFloat(raw) || 0;
+                      const cappedVal = Math.min(billTotalBeforeDiscount, Math.max(0, val));
+                      setDiscount({ type: 'fixed', value: cappedVal, reason: 'Direct Bill Discount' });
+                    }
+                  }}
+                  className="form-control font-mono"
+                  style={{ paddingLeft: '16px', paddingRight: '40px', fontSize: '1rem', fontWeight: 600, color: '#dc2626', height: '44px', borderRadius: '8px', background: 'var(--bg-primary)' }}
+                  placeholder="0"
+                />
+                <span style={{ position: 'absolute', right: '16px', top: '12px', fontSize: '0.85rem', color: '#dc2626', fontWeight: 700 }}>
+                  Rs.
+                </span>
+              </div>
+            </div>
+
             {/* AMOUNT PAYING */}
             <div>
               <label style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px', display: 'block' }}>
@@ -2107,132 +2309,7 @@ export default function BillingView({ setActiveView, settings }) {
                   );
                 }
 
-                if (classData.isTiles) {
-                  return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {/* Section 1: Types of Tiles (Standard Sizes) */}
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <label className="app-form-label" style={{ margin: 0, fontWeight: 700 }}>
-                            {isUrdu ? 'ٹائلز کے سائز (Types of Tiles)' : 'Types of Tiles'}
-                          </label>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            {isUrdu ? 'معیاری سائز منتخب کریں' : 'Standard Dimensions'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                          {classData.tileSizes.map(opt => {
-                            const isSelected = selectedSizePreset === opt.label ||
-                              (Number(itemModalForm.length) === Number(opt.length) && Number(itemModalForm.width) === Number(opt.width));
-                            return (
-                              <button
-                                key={opt.label}
-                                type="button"
-                                onClick={() => handleApplySizePreset(opt)}
-                                style={{
-                                  padding: '8px 4px',
-                                  borderRadius: '10px',
-                                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                                  background: isSelected ? '#eff6ff' : '#ffffff',
-                                  color: isSelected ? '#2563eb' : '#334155',
-                                  textAlign: 'center',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>{opt.label}</div>
-                                <div style={{ fontSize: '0.66rem', color: isSelected ? '#2563eb' : '#64748b', fontWeight: 600 }}>
-                                  {opt.sub}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Section 2: Other Items only with tiles */}
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <label className="app-form-label" style={{ margin: 0, fontWeight: 700, color: '#334155' }}>
-                            {isUrdu ? 'ٹائلز کے ساتھ دیگر اشیاء (Other Items only with tiles)' : 'Other Items only with tiles'}
-                          </label>
-                          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            Border, Filling, Spacer, Gola
-                          </span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-                          {classData.otherItems.map(opt => {
-                            const isSelected = selectedSizePreset === opt.label;
-                            return (
-                              <button
-                                key={opt.label}
-                                type="button"
-                                onClick={() => handleApplySizePreset(opt)}
-                                style={{
-                                  padding: '8px 4px',
-                                  borderRadius: '10px',
-                                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                                  background: isSelected ? '#eff6ff' : '#ffffff',
-                                  color: isSelected ? '#2563eb' : '#334155',
-                                  textAlign: 'center',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>{opt.label}</div>
-                                <div style={{ fontSize: '0.66rem', color: isSelected ? '#2563eb' : '#64748b', fontWeight: 600 }}>
-                                  {opt.sub}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      {/* Section 3: Panels like Mashallah (Higher Rate) */}
-                      <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                          <label className="app-form-label" style={{ margin: 0, fontWeight: 700, color: '#b45309' }}>
-                            {isUrdu ? 'وال پینل (Panel like Mashallah)' : 'Wall Panels (Like Mashallah)'}
-                          </label>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b45309', background: 'rgba(217, 119, 6, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
-                            ⚡ {isUrdu ? 'پینل کا ریٹ عام ٹائلز سے زیادہ ہے' : 'Rate Higher than Simple Tiles'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                          {classData.panels.map(opt => {
-                            const isSelected = selectedSizePreset === opt.label ||
-                              (Number(itemModalForm.length) === Number(opt.length) && Number(itemModalForm.width) === Number(opt.width));
-                            return (
-                              <button
-                                key={opt.label}
-                                type="button"
-                                onClick={() => handleApplySizePreset(opt)}
-                                style={{
-                                  padding: '8px 4px',
-                                  borderRadius: '10px',
-                                  border: isSelected ? '2px solid #2563eb' : '1px solid #e2e8f0',
-                                  background: isSelected ? '#eff6ff' : '#ffffff',
-                                  color: isSelected ? '#2563eb' : '#334155',
-                                  textAlign: 'center',
-                                  cursor: 'pointer',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>{opt.label}</div>
-                                <div style={{ fontSize: '0.66rem', color: isSelected ? '#2563eb' : '#d97706', fontWeight: 600 }}>
-                                  {opt.sub}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                // Non-Marble / Non-Tiles Categories (Flower, Border, Kali Patti, Accessories, Panels)
+                // All other categories: Tiles, Flower, Border, Kali Patti, Accessories, Panels
                 return (
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
@@ -2245,12 +2322,11 @@ export default function BillingView({ setActiveView, settings }) {
                     </div>
                     <div style={{
                       display: 'grid',
-                      gridTemplateColumns: classData.options?.length === 2 ? 'repeat(2, 1fr)' : (classData.options?.length === 3 ? 'repeat(3, 1fr)' : 'repeat(4, 1fr)'),
+                      gridTemplateColumns: classData.options?.length === 2 ? 'repeat(2, 1fr)' : (classData.options?.length === 3 ? 'repeat(3, 1fr)' : (classData.options?.length === 4 ? 'repeat(4, 1fr)' : 'repeat(5, 1fr)')),
                       gap: '8px'
                     }}>
                       {(classData.options || []).map(opt => {
-                        const isSelected = selectedSizePreset === opt.label ||
-                          (Number(itemModalForm.length) === Number(opt.length) && Number(itemModalForm.width) === Number(opt.width));
+                        const isSelected = selectedSizePreset === opt.label;
                         return (
                           <button
                             key={opt.label}
@@ -2279,98 +2355,239 @@ export default function BillingView({ setActiveView, settings }) {
                 );
               })()}
 
-              {/* 5. DIMENSIONS (Length, Width, Slabs / Quantity) */}
-              <div style={{
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '12px',
-                padding: '14px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
-                    {isUrdu ? 'پیمائش اور تعداد (فٹ اور تھان / پیس)' : 'Dimensions & Slab / Piece Count (Feet)'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsCalcOpen(true)}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#2563eb',
-                      fontSize: '0.76rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
+              {/* 5. DIMENSIONS SECTION BASED ON CATEGORY */}
+              {(() => {
+                const isRunning = itemCategoryFilter === 'Border' || itemCategoryFilter === 'Kali Patti' || itemModalForm.unit === 'R.Ft.';
+                const isAccessory = itemCategoryFilter === 'Accessories' || itemModalForm.category === 'Accessories';
+
+                if (isRunning) {
+                  return (
+                    <div style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '14px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
+                          {isUrdu ? 'پیمائش رننگ فٹ و ٹکڑے (Border Patti Running Feet)' : 'Dimensions & Running Feet Count (Feet)'}
+                        </span>
+                        <span style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 700 }}>
+                          📏 12" = 1 R.Ft
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1fr', gap: '10px' }}>
+                        <div className="app-form-group">
+                          <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                            {isUrdu ? 'پٹی سائز (Length)' : 'Patti Size (Inches)'}
+                          </label>
+                          <div className="app-form-input font-mono" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', fontWeight: 700, color: '#334155' }}>
+                            {selectedSizePreset || `${itemModalForm.thicknessSutar || 3} inch`}
+                          </div>
+                        </div>
+                        <div className="app-form-group">
+                          <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                            {isUrdu ? 'مطلوبہ رننگ فٹ (No. of Feets)' : 'Required Running Feet (ft)'} <span className="app-form-label-required">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="0.5"
+                            className="app-form-input font-mono"
+                            value={itemModalForm.runningFeet || itemModalForm.totalSqFt}
+                            onChange={(e) => handleRecalculateItemModal('runningFeet', e.target.value)}
+                            style={{ fontWeight: 700 }}
+                          />
+                        </div>
+                        <div className="app-form-group">
+                          <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                            {isUrdu ? 'تعداد ٹکڑے (Pieces)' : 'Calculated Pieces'}
+                          </label>
+                          <div className="app-form-input font-mono" style={{ background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#0369a1' }}>
+                            {itemModalForm.pieces} Pcs
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: '10px',
+                        paddingTop: '10px',
+                        borderTop: '1px solid #e2e8f0',
+                        fontSize: '0.82rem'
+                      }}>
+                        <span style={{ color: '#64748b', fontWeight: 600 }}>
+                          {isUrdu ? 'کل رننگ فٹ (Total Running Feet):' : 'Total Running Feet:'}
+                        </span>
+                        <span className="font-mono" style={{ fontWeight: 800, color: '#2563eb', fontSize: '1rem' }}>
+                          {itemModalForm.totalSqFt} R.Ft. <span style={{ fontSize: '0.8rem', color: '#64748b' }}>({itemModalForm.pieces} Pieces)</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (isAccessory) {
+                  return (
+                    <div style={{
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '14px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
+                          {isUrdu ? 'تعداد اور پیکنگ (Quantity & Packaging Unit)' : 'Quantity & Packaging Unit'}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
+                        <div className="app-form-group">
+                          <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                            {isUrdu ? 'تعداد / بوری / پیکٹ' : 'Quantity / Count'} <span className="app-form-label-required">*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="1"
+                            min="1"
+                            className="app-form-input font-mono"
+                            value={itemModalForm.pieces}
+                            onChange={(e) => handleRecalculateItemModal('pieces', e.target.value)}
+                            style={{ fontWeight: 700 }}
+                          />
+                        </div>
+                        <div className="app-form-group">
+                          <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                            {isUrdu ? 'پیکنگ یونٹ' : 'Unit / Packaging'}
+                          </label>
+                          <div className="app-form-input" style={{ background: '#f1f5f9', display: 'flex', alignItems: 'center', fontWeight: 700, color: '#334155' }}>
+                            {itemModalForm.unit || 'Bag'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: '10px',
+                        paddingTop: '10px',
+                        borderTop: '1px solid #e2e8f0',
+                        fontSize: '0.82rem'
+                      }}>
+                        <span style={{ color: '#64748b', fontWeight: 600 }}>
+                          {isUrdu ? 'کل تعداد (Total Quantity):' : 'Total Quantity:'}
+                        </span>
+                        <span className="font-mono" style={{ fontWeight: 800, color: '#2563eb', fontSize: '1rem' }}>
+                          {itemModalForm.pieces} {itemModalForm.unit || 'Bag'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Standard Marble / Tiles / Flower / Panels
+                return (
+                  <div style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '12px',
+                    padding: '14px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
+                        {isUrdu ? 'پیمائش اور تعداد (فٹ اور تھان / پیس)' : 'Dimensions & Slab / Piece Count (Feet)'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsCalcOpen(true)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#2563eb',
+                          fontSize: '0.76rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          padding: 0
+                        }}
+                      >
+                        <Calculator size={14} />
+                        <span>{isUrdu ? 'کیلکولیٹر' : 'Calculator'}</span>
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                          {isUrdu ? 'لمبائی (Length ft)' : 'Length (ft)'}
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="app-form-input font-mono"
+                          value={itemModalForm.length}
+                          onChange={(e) => handleRecalculateItemModal('length', e.target.value)}
+                        />
+                      </div>
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                          {isUrdu ? 'چوڑائی (Width ft)' : 'Width (ft)'}
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="app-form-input font-mono"
+                          value={itemModalForm.width}
+                          onChange={(e) => handleRecalculateItemModal('width', e.target.value)}
+                        />
+                      </div>
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
+                          {isUrdu ? 'تعداد (Quantity)' : 'Quantity (slabs/pcs)'}
+                        </label>
+                        <input
+                          type="number"
+                          step="1"
+                          className="app-form-input font-mono"
+                          value={itemModalForm.pieces}
+                          onChange={(e) => handleRecalculateItemModal('pieces', e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      padding: 0
-                    }}
-                  >
-                    <Calculator size={14} />
-                    <span>{isUrdu ? 'کیلکولیٹر' : 'Calculator'}</span>
-                  </button>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                  <div className="app-form-group">
-                    <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
-                      {isUrdu ? 'لمبائی (Length ft)' : 'Length (ft)'}
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="app-form-input font-mono"
-                      value={itemModalForm.length}
-                      onChange={(e) => handleRecalculateItemModal('length', e.target.value)}
-                    />
+                      justifyContent: 'space-between',
+                      marginTop: '10px',
+                      paddingTop: '10px',
+                      borderTop: '1px solid #e2e8f0',
+                      fontSize: '0.82rem'
+                    }}>
+                      <span style={{ color: '#64748b', fontWeight: 600 }}>{isUrdu ? 'کل رقبہ (Total Area):' : 'Total Calculated Area:'}</span>
+                      <span className="font-mono" style={{ fontWeight: 800, color: '#2563eb', fontSize: '1rem' }}>
+                        {itemModalForm.totalSqFt} Sq.Ft
+                      </span>
+                    </div>
                   </div>
-                  <div className="app-form-group">
-                    <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
-                      {isUrdu ? 'چوڑائی (Width ft)' : 'Width (ft)'}
-                    </label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="app-form-input font-mono"
-                      value={itemModalForm.width}
-                      onChange={(e) => handleRecalculateItemModal('width', e.target.value)}
-                    />
-                  </div>
-                  <div className="app-form-group">
-                    <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
-                      {isUrdu ? 'تعداد (Quantity)' : 'Quantity (slabs/pcs)'}
-                    </label>
-                    <input
-                      type="number"
-                      step="1"
-                      className="app-form-input font-mono"
-                      value={itemModalForm.pieces}
-                      onChange={(e) => handleRecalculateItemModal('pieces', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginTop: '10px',
-                  paddingTop: '10px',
-                  borderTop: '1px solid #e2e8f0',
-                  fontSize: '0.82rem'
-                }}>
-                  <span style={{ color: '#64748b', fontWeight: 600 }}>{isUrdu ? 'کل رقبہ (Total Area):' : 'Total Calculated Area:'}</span>
-                  <span className="font-mono" style={{ fontWeight: 800, color: '#2563eb', fontSize: '1rem' }}>
-                    {itemModalForm.totalSqFt} Sq.Ft
-                  </span>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* 6. RATE & LINE TOTAL */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div className="app-form-group">
                   <label className="app-form-label">
-                    {isUrdu ? 'ریٹ فی فٹ (Rs.)' : 'Rate / Sq.Ft (Rs.)'} <span className="app-form-label-required">*</span>
+                    {itemCategoryFilter === 'Border' || itemCategoryFilter === 'Kali Patti' || itemModalForm.unit === 'R.Ft.'
+                      ? (isUrdu ? 'ریٹ فی رننگ فٹ (Rs.)' : 'Rate / R.Ft (Rs.)')
+                      : (itemCategoryFilter === 'Accessories'
+                        ? (isUrdu ? `ریٹ فی ${itemModalForm.unit || 'یونٹ'} (Rs.)` : `Rate / ${itemModalForm.unit || 'Unit'} (Rs.)`)
+                        : (isUrdu ? 'ریٹ فی فٹ (Rs.)' : 'Rate / Sq.Ft (Rs.)'))} <span className="app-form-label-required">*</span>
                   </label>
                   <div className="app-input-wrapper">
                     <DollarSign size={16} className="app-input-icon" />
@@ -2420,7 +2637,9 @@ export default function BillingView({ setActiveView, settings }) {
                 }}>
                   <AlertTriangle size={16} style={{ flexShrink: 0 }} />
                   <span>
-                    {isUrdu ? `صرف ${itemModalForm.availableStock} فٹ اسٹاک میں ہے۔ مطلوبہ: ${itemModalForm.totalSqFt} فٹ` : `Only ${itemModalForm.availableStock} Sq.Ft in stock. Requested: ${itemModalForm.totalSqFt} Sq.Ft.`}
+                    {isUrdu
+                      ? `صرف ${itemModalForm.availableStock} ${itemModalForm.unit || 'فٹ'} اسٹاک میں ہے۔ مطلوبہ: ${itemModalForm.totalSqFt} ${itemModalForm.unit || 'فٹ'}`
+                      : `Only ${itemModalForm.availableStock} ${itemModalForm.unit || 'Sq.Ft'} in stock. Requested: ${itemModalForm.totalSqFt} ${itemModalForm.unit || 'Sq.Ft'}.`}
                   </span>
                 </div>
               )}

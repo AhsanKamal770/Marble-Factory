@@ -136,57 +136,139 @@ export default function DashboardView({ setActiveView, settings }) {
     };
   }, [items]);
 
-  // Sales Trend & Collection Time Filter
-  const [salesTimeFilter, setSalesTimeFilter] = useState('week'); // 'today' | 'week' | 'month'
+  // Sales Trend & Collection Time Filter ('today' | 'week' | 'month')
+  const [salesTimeFilter, setSalesTimeFilter] = useState('week');
+  const [hoveredChartPoint, setHoveredChartPoint] = useState(null);
 
-  const salesTrendSummary = useMemo(() => {
+  // Dynamic Chart & Summary Data for Selected Time Horizon
+  const { chartTrendData, salesTrendSummary } = useMemo(() => {
+    // 1. TODAY: Hourly / Time of Day Breakdown
     if (salesTimeFilter === 'today') {
+      const timeSlots = [
+        { labelEn: '8 AM', labelUr: '8 بجے', minHour: 0, maxHour: 9, sales: 0, wasooli: 0 },
+        { labelEn: '10 AM', labelUr: '10 بجے', minHour: 10, maxHour: 11, sales: 0, wasooli: 0 },
+        { labelEn: '12 PM', labelUr: '12 بجے', minHour: 12, maxHour: 13, sales: 0, wasooli: 0 },
+        { labelEn: '2 PM', labelUr: '2 بجے', minHour: 14, maxHour: 15, sales: 0, wasooli: 0 },
+        { labelEn: '4 PM', labelUr: '4 بجے', minHour: 16, maxHour: 17, sales: 0, wasooli: 0 },
+        { labelEn: '6 PM', labelUr: '6 بجے', minHour: 18, maxHour: 19, sales: 0, wasooli: 0 },
+        { labelEn: '8 PM', labelUr: '8 بجے', minHour: 20, maxHour: 21, sales: 0, wasooli: 0 },
+        { labelEn: '10 PM', labelUr: '10 بجے', minHour: 22, maxHour: 23, sales: 0, wasooli: 0 }
+      ];
+
       let todaySales = 0;
       let todayWasooli = 0;
+
       invoices.forEach((inv) => {
-        if ((inv.createdAt || inv.date || '').slice(0, 10) === todayDate) {
-          todaySales += Number(inv.grandTotal || 0);
-          if (!inv.customerId) {
-            todayWasooli += Number(inv.paidAmount || 0);
-          }
+        const dateStr = (inv.createdAt || inv.date || '').slice(0, 10);
+        if (dateStr === todayDate) {
+          const grandTotal = Number(inv.grandTotal || 0);
+          const paidAmt = !inv.customerId ? Number(inv.paidAmount || 0) : 0;
+          todaySales += grandTotal;
+          todayWasooli += paidAmt;
+
+          const invDate = new Date(inv.createdAt || inv.date || Date.now());
+          const h = isNaN(invDate.getHours()) ? 12 : invDate.getHours();
+          const slot = timeSlots.find((s) => h >= s.minHour && h <= s.maxHour) || timeSlots[2];
+          slot.sales += grandTotal;
+          slot.wasooli += paidAmt;
         }
       });
+
       customerPayments.forEach((pay) => {
-        if ((pay.date || pay.createdAt || '').slice(0, 10) === todayDate) {
-          todayWasooli += Number(pay.amount || 0);
+        const dateStr = (pay.date || pay.createdAt || '').slice(0, 10);
+        if (dateStr === todayDate) {
+          const amount = Number(pay.amount || 0);
+          todayWasooli += amount;
+
+          const payDate = new Date(pay.date || pay.createdAt || Date.now());
+          const h = isNaN(payDate.getHours()) ? 12 : payDate.getHours();
+          const slot = timeSlots.find((s) => h >= s.minHour && h <= s.maxHour) || timeSlots[2];
+          slot.wasooli += amount;
         }
       });
-      return { periodSales: todaySales, periodWasooli: todayWasooli };
+
+      const trend = timeSlots.map((s) => ({
+        label: language === 'ur' ? s.labelUr : s.labelEn,
+        labelEn: s.labelEn,
+        labelUr: s.labelUr,
+        sales: s.sales,
+        wasooli: s.wasooli
+      }));
+
+      return {
+        chartTrendData: trend,
+        salesTrendSummary: { periodSales: todaySales, periodWasooli: todayWasooli }
+      };
     }
 
+    // 2. THIS MONTH: Multi-interval / Weekly Distribution of Current Month
     if (salesTimeFilter === 'month') {
-      const currentMonth = todayDate.slice(0, 7);
+      const now = new Date();
+      const currentMonthStr = todayDate.slice(0, 7); // 'YYYY-MM'
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+      const monthBuckets = [
+        { labelEn: '1-7', labelUr: '1-7 تاریخ', startDay: 1, endDay: 7, sales: 0, wasooli: 0 },
+        { labelEn: '8-14', labelUr: '8-14 تاریخ', startDay: 8, endDay: 14, sales: 0, wasooli: 0 },
+        { labelEn: '15-21', labelUr: '15-21 تاریخ', startDay: 15, endDay: 21, sales: 0, wasooli: 0 },
+        { labelEn: '22-28', labelUr: '22-28 تاریخ', startDay: 22, endDay: 28, sales: 0, wasooli: 0 },
+        { labelEn: `29-${daysInMonth}`, labelUr: `29-${daysInMonth} تاریخ`, startDay: 29, endDay: daysInMonth, sales: 0, wasooli: 0 }
+      ];
+
       let monthSales = 0;
       let monthWasooli = 0;
+
       invoices.forEach((inv) => {
-        if ((inv.createdAt || inv.date || '').slice(0, 7) === currentMonth) {
-          monthSales += Number(inv.grandTotal || 0);
-          if (!inv.customerId) {
-            monthWasooli += Number(inv.paidAmount || 0);
-          }
+        const rawDate = inv.createdAt || inv.date || '';
+        if (rawDate.slice(0, 7) === currentMonthStr) {
+          const grandTotal = Number(inv.grandTotal || 0);
+          const paidAmt = !inv.customerId ? Number(inv.paidAmount || 0) : 0;
+          monthSales += grandTotal;
+          monthWasooli += paidAmt;
+
+          const invDate = new Date(rawDate || Date.now());
+          const d = isNaN(invDate.getDate()) ? 1 : invDate.getDate();
+          const bucket = monthBuckets.find((b) => d >= b.startDay && d <= b.endDay) || monthBuckets[monthBuckets.length - 1];
+          bucket.sales += grandTotal;
+          bucket.wasooli += paidAmt;
         }
       });
+
       customerPayments.forEach((pay) => {
-        if ((pay.date || pay.createdAt || '').slice(0, 7) === currentMonth) {
-          monthWasooli += Number(pay.amount || 0);
+        const rawDate = pay.date || pay.createdAt || '';
+        if (rawDate.slice(0, 7) === currentMonthStr) {
+          const amount = Number(pay.amount || 0);
+          monthWasooli += amount;
+
+          const payDate = new Date(rawDate || Date.now());
+          const d = isNaN(payDate.getDate()) ? 1 : payDate.getDate();
+          const bucket = monthBuckets.find((b) => d >= b.startDay && d <= b.endDay) || monthBuckets[monthBuckets.length - 1];
+          bucket.wasooli += amount;
         }
       });
-      return { periodSales: monthSales, periodWasooli: monthWasooli };
+
+      const trend = monthBuckets.map((b) => ({
+        label: language === 'ur' ? b.labelUr : b.labelEn,
+        labelEn: b.labelEn,
+        labelUr: b.labelUr,
+        sales: b.sales,
+        wasooli: b.wasooli
+      }));
+
+      return {
+        chartTrendData: trend,
+        salesTrendSummary: { periodSales: monthSales, periodWasooli: monthWasooli }
+      };
     }
 
-    // Default: Total / Week
-    return { periodSales: totalSales, periodWasooli: totalReceived };
-  }, [salesTimeFilter, invoices, customerPayments, todayDate, totalSales, totalReceived]);
-
-  // Real 7-Day Trend Points
-  const weeklyTrendData = useMemo(() => {
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    // 3. THIS WEEK (DEFAULT): Last 7 Days Daily Breakdown
+    const dayNamesEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayNamesUr = ['اتوار', 'پیر', 'منگل', 'بدھ', 'جمعرات', 'جمعہ', 'ہفتہ'];
     const trend = [];
+    let weekSales = 0;
+    let weekWasooli = 0;
 
     for (let i = 6; i >= 0; i--) {
       const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000);
@@ -196,10 +278,10 @@ export default function DashboardView({ setActiveView, settings }) {
 
       invoices.forEach((inv) => {
         if ((inv.createdAt || inv.date || '').slice(0, 10) === dStr) {
-          sAmt += Number(inv.grandTotal || 0);
-          if (!inv.customerId) {
-            wAmt += Number(inv.paidAmount || 0);
-          }
+          const grandTotal = Number(inv.grandTotal || 0);
+          const paidAmt = !inv.customerId ? Number(inv.paidAmount || 0) : 0;
+          sAmt += grandTotal;
+          wAmt += paidAmt;
         }
       });
 
@@ -209,16 +291,25 @@ export default function DashboardView({ setActiveView, settings }) {
         }
       });
 
+      weekSales += sAmt;
+      weekWasooli += wAmt;
+
+      const dayIdx = d.getDay();
       trend.push({
-        day: dayNames[d.getDay()],
+        label: language === 'ur' ? dayNamesUr[dayIdx] : dayNamesEn[dayIdx],
+        labelEn: dayNamesEn[dayIdx],
+        labelUr: dayNamesUr[dayIdx],
         dateStr: dStr,
         sales: sAmt,
         wasooli: wAmt
       });
     }
 
-    return trend;
-  }, [invoices, customerPayments]);
+    return {
+      chartTrendData: trend,
+      salesTrendSummary: { periodSales: weekSales, periodWasooli: weekWasooli }
+    };
+  }, [salesTimeFilter, invoices, customerPayments, todayDate, language]);
 
   // Real Activity Stream
   const activityFeed = useMemo(() => {
@@ -334,7 +425,7 @@ export default function DashboardView({ setActiveView, settings }) {
     if (!payAmount || payAmount <= 0 || !targetCustId) return;
 
     try {
-      await db.transaction('rw', [db.customers, db.customer_payments], async () => {
+      await db.transaction('rw', [db.customers, db.customer_payments, db.invoices], async () => {
         const customer = await db.customers.get(targetCustId);
         if (!customer) return;
 
@@ -360,6 +451,32 @@ export default function DashboardView({ setActiveView, settings }) {
           totalPaid: newPaid,
           updatedAt: new Date().toISOString()
         });
+
+        // FIFO Waterfall: Automatically allocate payment to customer's oldest unpaid invoices
+        const allInvoices = await db.invoices.toArray();
+        const customerInvoices = allInvoices
+          .filter((inv) => String(inv.customerId) === String(customer.id))
+          .sort((a, b) => new Date(a.date || a.createdAt || 0) - new Date(b.date || b.createdAt || 0));
+
+        let remainingToAllocate = payAmount;
+        for (const inv of customerInvoices) {
+          if (remainingToAllocate <= 0) break;
+          const invDue = Number(inv.balanceDue || 0);
+          if (invDue > 0) {
+            const alloc = Math.min(invDue, remainingToAllocate);
+            const newInvPaid = (Number(inv.paidAmount) || 0) + alloc;
+            const newInvDue = Math.max(0, invDue - alloc);
+            const newStatus = newInvDue <= 0 ? 'Paid' : (newInvPaid > 0 ? 'Half Paid' : 'Pending');
+
+            await db.invoices.update(inv.id, {
+              paidAmount: newInvPaid,
+              balanceDue: newInvDue,
+              paymentStatus: newStatus
+            });
+
+            remainingToAllocate -= alloc;
+          }
+        }
       });
 
       setWasooliSuccessMsg(language === 'ur' ? 'وصولی درج ہوگئی' : 'Payment received');
@@ -784,39 +901,209 @@ export default function DashboardView({ setActiveView, settings }) {
           </div>
         </div>
 
-        {/* Wide SVG Trend Chart */}
-        <div style={{ width: '100%', overflowX: 'auto', padding: '6px 0' }}>
+        {/* Wide SVG Trend Chart with Floating Interactive Tooltip Card */}
+        <div
+          style={{ width: '100%', padding: '10px 0 8px', position: 'relative', overflow: 'visible' }}
+          onMouseLeave={() => setHoveredChartPoint(null)}
+        >
           {(() => {
-            const maxVal = Math.max(...weeklyTrendData.map((d) => Math.max(d.sales, d.wasooli)), 1000);
-            const totalDays = weeklyTrendData.length;
-            const step = totalDays > 1 ? 680 / (totalDays - 1) : 100;
-            const salesPoints = weeklyTrendData.map((d, i) => `${40 + i * step},${125 - (d.sales / maxVal) * 95}`).join(' ');
-            const wasooliPoints = weeklyTrendData.map((d, i) => `${40 + i * step},${125 - (d.wasooli / maxVal) * 95}`).join(' ');
+            const maxVal = Math.max(...chartTrendData.map((d) => Math.max(d.sales, d.wasooli)), 1000);
+            const totalPoints = chartTrendData.length;
+            const step = totalPoints > 1 ? 680 / (totalPoints - 1) : 100;
+            const salesPoints = chartTrendData.map((d, i) => `${40 + i * step},${125 - (d.sales / maxVal) * 95}`).join(' ');
+            const wasooliPoints = chartTrendData.map((d, i) => `${40 + i * step},${125 - (d.wasooli / maxVal) * 95}`).join(' ');
 
             return (
-              <svg viewBox="0 0 760 155" style={{ width: '100%', height: '155px', overflow: 'visible' }}>
-                <line x1="30" y1="30" x2="730" y2="30" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
-                <line x1="30" y1="78" x2="730" y2="78" stroke="var(--border-subtle)" strokeDasharray="3 3" opacity="0.8" />
-                <line x1="30" y1="125" x2="730" y2="125" stroke="var(--border-color)" />
+              <div style={{ position: 'relative', width: '100%', overflow: 'visible' }}>
+                <svg viewBox="0 0 760 155" style={{ width: '100%', height: '160px', overflow: 'visible' }}>
+                  {/* Grid Lines */}
+                  <line x1="30" y1="30" x2="730" y2="30" stroke="var(--border-subtle, #e2e8f0)" strokeDasharray="3 3" opacity="0.8" />
+                  <line x1="30" y1="78" x2="730" y2="78" stroke="var(--border-subtle, #e2e8f0)" strokeDasharray="3 3" opacity="0.8" />
+                  <line x1="30" y1="125" x2="730" y2="125" stroke="var(--border-color, #cbd5e1)" />
 
-                <polyline points={salesPoints} fill="none" stroke="var(--accent-blue)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                <polyline points={wasooliPoints} fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  {/* Polylines */}
+                  <polyline points={salesPoints} fill="none" stroke="var(--accent-blue, #2563eb)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points={wasooliPoints} fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 
-                {weeklyTrendData.map((d, i) => {
-                  const cx = 40 + i * step;
-                  const cySales = 125 - (d.sales / maxVal) * 95;
-                  const cyWasooli = 125 - (d.wasooli / maxVal) * 95;
+                  {/* Vertical Guide Line when Hovered */}
+                  {hoveredChartPoint && (
+                    <line
+                      x1={hoveredChartPoint.cx}
+                      y1="15"
+                      x2={hoveredChartPoint.cx}
+                      y2="132"
+                      stroke="var(--accent-blue, #2563eb)"
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                      opacity="0.5"
+                    />
+                  )}
+
+                  {/* Interactive Points & Broad Hit Areas */}
+                  {chartTrendData.map((d, i) => {
+                    const cx = 40 + i * step;
+                    const cySales = 125 - (d.sales / maxVal) * 95;
+                    const cyWasooli = 125 - (d.wasooli / maxVal) * 95;
+                    const isHovered = hoveredChartPoint?.index === i;
+
+                    return (
+                      <g key={i}>
+                        {/* Invisible Column Hit-Box for Smooth Hover Activation */}
+                        <rect
+                          x={cx - step / 2}
+                          y="5"
+                          width={step}
+                          height="145"
+                          fill="transparent"
+                          style={{ cursor: 'pointer' }}
+                          onMouseEnter={() => setHoveredChartPoint({ ...d, index: i, cx, cySales, cyWasooli })}
+                          onTouchStart={() => setHoveredChartPoint({ ...d, index: i, cx, cySales, cyWasooli })}
+                        />
+
+                        {/* Sales Dot */}
+                        <circle
+                          cx={cx}
+                          cy={cySales}
+                          r={isHovered ? 6.5 : 4.5}
+                          fill="var(--accent-blue, #2563eb)"
+                          stroke="#ffffff"
+                          strokeWidth={isHovered ? 2.5 : 1.5}
+                          style={{ transition: 'all 0.15s ease', pointerEvents: 'none' }}
+                        />
+
+                        {/* Wasooli Dot */}
+                        <circle
+                          cx={cx}
+                          cy={cyWasooli}
+                          r={isHovered ? 6.5 : 4.5}
+                          fill="#059669"
+                          stroke="#ffffff"
+                          strokeWidth={isHovered ? 2.5 : 1.5}
+                          style={{ transition: 'all 0.15s ease', pointerEvents: 'none' }}
+                        />
+
+                        {/* X-Axis Label */}
+                        <text
+                          x={cx}
+                          y="145"
+                          textAnchor="middle"
+                          fontSize="11.5"
+                          fill={isHovered ? 'var(--text-primary, #0f172a)' : 'var(--text-secondary, #64748b)'}
+                          fontWeight={isHovered ? 800 : 600}
+                          style={{ pointerEvents: 'none' }}
+                        >
+                          {d.label}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+
+                {/* Floating Interactive Tooltip Card */}
+                {hoveredChartPoint && (() => {
+                  const isRightSide = hoveredChartPoint.cx > 520;
+                  const isBottomSide = Math.min(hoveredChartPoint.cySales, hoveredChartPoint.cyWasooli) > 75;
+
+                  // Anchor cursor to top-left of card by default; flip gracefully on boundaries
+                  let transform = 'translate(12px, 6px)';
+                  if (isRightSide && isBottomSide) {
+                    transform = 'translate(-105%, -85%)';
+                  } else if (isRightSide) {
+                    transform = 'translate(-105%, 6px)';
+                  } else if (isBottomSide) {
+                    transform = 'translate(12px, -85%)';
+                  }
+
+                  const topPos = Math.min(hoveredChartPoint.cySales, hoveredChartPoint.cyWasooli);
+
                   return (
-                    <g key={i}>
-                      <circle cx={cx} cy={cySales} r="4.5" fill="var(--accent-blue)" stroke="#ffffff" strokeWidth="1.5" />
-                      <circle cx={cx} cy={cyWasooli} r="4.5" fill="#059669" stroke="#ffffff" strokeWidth="1.5" />
-                      <text x={cx} y="145" textAnchor="middle" fontSize="12" fill="var(--text-secondary)" fontWeight="700">
-                        {d.day}
-                      </text>
-                    </g>
+                    <div
+                      style={{
+                        position: 'absolute',
+                        left: `${(hoveredChartPoint.cx / 760) * 100}%`,
+                        top: `${topPos}px`,
+                        transform,
+                        background: 'var(--bg-card, #ffffff)',
+                        border: '1px solid var(--border-color, #e2e8f0)',
+                        borderRadius: '10px',
+                        padding: '8px 12px',
+                        boxShadow: '0 10px 25px -3px rgba(15,23,42,0.22), 0 4px 6px -2px rgba(15,23,42,0.08)',
+                        zIndex: 50,
+                        pointerEvents: 'none',
+                        minWidth: '165px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '5px',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        animation: 'fadeIn 0.12s ease-out'
+                      }}
+                    >
+                      {/* Header: Localized Label */}
+                      <div style={{
+                        fontWeight: 800,
+                        color: 'var(--text-primary, #1e293b)',
+                        borderBottom: '1px solid var(--border-color, #f1f5f9)',
+                        paddingBottom: '4px',
+                        marginBottom: '2px',
+                        fontSize: '0.78rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                      }}>
+                        <span>
+                          {language === 'ur'
+                            ? (hoveredChartPoint.labelUr || hoveredChartPoint.label)
+                            : (hoveredChartPoint.labelEn || hoveredChartPoint.label)}
+                        </span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)', fontWeight: 500 }}>
+                          {salesTimeFilter === 'today'
+                            ? (language === 'ur' ? 'آج' : 'Today')
+                            : salesTimeFilter === 'month'
+                            ? (language === 'ur' ? 'ماہانہ' : 'Monthly')
+                            : (language === 'ur' ? 'ہفتہ وار' : 'Weekly')}
+                        </span>
+                      </div>
+
+                      {/* Blue Color Sales Metric */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                        <span style={{
+                          color: 'var(--accent-blue, #2563eb)',
+                          fontWeight: 700,
+                          fontSize: '0.78rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-blue, #2563eb)' }}></span>
+                          {language === 'ur' ? 'سیلز:' : 'Sales:'}
+                        </span>
+                        <span className="font-mono" style={{ color: 'var(--accent-blue, #2563eb)', fontWeight: 800, fontSize: '0.84rem' }}>
+                          Rs. {Number(hoveredChartPoint.sales || 0).toLocaleString()}
+                        </span>
+                      </div>
+
+                      {/* Green Color Received Metric */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                        <span style={{
+                          color: '#059669',
+                          fontWeight: 700,
+                          fontSize: '0.78rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#059669' }}></span>
+                          {language === 'ur' ? 'وصول شدہ:' : 'Received:'}
+                        </span>
+                        <span className="font-mono" style={{ color: '#059669', fontWeight: 800, fontSize: '0.84rem' }}>
+                          Rs. {Number(hoveredChartPoint.wasooli || 0).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
                   );
-                })}
-              </svg>
+                })()}
+              </div>
             );
           })()}
         </div>
@@ -1215,15 +1502,15 @@ export default function DashboardView({ setActiveView, settings }) {
       {/* Modal 2: Quick Wasooli */}
       {isQuickWasooliOpen && (
         <div className="modal-overlay" onClick={() => setIsQuickWasooliOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal-card" style={{ maxWidth: '420px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3 className="modal-title" style={{ fontSize: '0.98rem', fontWeight: 800 }}>
                 {language === 'ur' ? 'ادھار وصولی' : 'Receive Payment'}
               </h3>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsQuickWasooliOpen(false)}>✕</button>
             </div>
-            <form onSubmit={handleSaveQuickWasooli}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <form onSubmit={handleSaveQuickWasooli} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1 }}>
                 {wasooliSuccessMsg && (
                   <div style={{ padding: '6px 10px', background: 'rgba(5, 150, 105, 0.1)', color: '#059669', fontSize: '0.8rem', fontWeight: 700, borderRadius: '4px', textAlign: 'center' }}>
                     ✓ {wasooliSuccessMsg}
@@ -1281,7 +1568,7 @@ export default function DashboardView({ setActiveView, settings }) {
                   </select>
                 </div>
               </div>
-              <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+              <div className="modal-footer" style={{ justifyContent: 'space-between', flexShrink: 0 }}>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsQuickWasooliOpen(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary btn-sm" disabled={customersWithDues.length === 0}>
                   Confirm Payment
@@ -1295,15 +1582,15 @@ export default function DashboardView({ setActiveView, settings }) {
       {/* Modal 3: Quick Expense */}
       {isQuickExpenseOpen && (
         <div className="modal-overlay" onClick={() => setIsQuickExpenseOpen(false)}>
-          <div className="modal-card" style={{ maxWidth: '400px' }} onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+          <div className="modal-card" style={{ maxWidth: '420px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ flexShrink: 0 }}>
               <h3 className="modal-title" style={{ fontSize: '0.98rem', fontWeight: 800 }}>
                 {language === 'ur' ? 'روزانہ خرچ درج کریں' : 'Record Expense'}
               </h3>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsQuickExpenseOpen(false)}>✕</button>
             </div>
-            <form onSubmit={handleSaveQuickExpense}>
-              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <form onSubmit={handleSaveQuickExpense} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+              <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1 }}>
                 {expenseSuccessMsg && (
                   <div style={{ padding: '6px 10px', background: 'rgba(5, 150, 105, 0.1)', color: '#059669', fontSize: '0.8rem', fontWeight: 700, borderRadius: '4px', textAlign: 'center' }}>
                     ✓ {expenseSuccessMsg}
@@ -1349,7 +1636,7 @@ export default function DashboardView({ setActiveView, settings }) {
                   />
                 </div>
               </div>
-              <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+              <div className="modal-footer" style={{ justifyContent: 'space-between', flexShrink: 0 }}>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsQuickExpenseOpen(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary btn-sm" style={{ background: '#dc2626', borderColor: '#dc2626' }}>Save Expense</button>
               </div>

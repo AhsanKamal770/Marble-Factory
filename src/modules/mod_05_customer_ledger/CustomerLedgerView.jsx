@@ -73,7 +73,7 @@ export default function CustomerLedgerView() {
     if (!selectedCustomerId && customers.length > 0) {
       return customers[0];
     }
-    return customers.find(c => c.id === selectedCustomerId) || customers[0] || null;
+    return customers.find(c => String(c.id) === String(selectedCustomerId)) || customers[0] || null;
   }, [customers, selectedCustomerId]);
 
   // Live Timeline for Selected Customer
@@ -82,7 +82,7 @@ export default function CustomerLedgerView() {
       if (!selectedCustomer) return [];
       return getCustomerTimeline(selectedCustomer.id);
     },
-    [selectedCustomer?.id, invoices, customerPayments]
+    [selectedCustomer?.id, invoices.length, customerPayments.length, rawCustomers]
   ) || [];
 
   // ---------------------------------------------------------------------------
@@ -191,10 +191,34 @@ export default function CustomerLedgerView() {
   };
 
   const handleDeleteCustomer = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this customer account?")) return;
+    const cust = customers.find((c) => String(c.id) === String(id)) || selectedCustomer;
+    if (!cust) return;
+
+    const balanceDue = Math.round(Number(cust.balanceDue || 0));
+
+    // 1. If Khata is not clear (balance > 0)
+    if (balanceDue > 0) {
+      const unclearedMsg = language === 'ur'
+        ? `کھاتہ کلیئر نہیں ہے! ${cust.name} کا بقایا ادھار Rs. ${balanceDue.toLocaleString()} ہے۔ پہلے تمام ادھار وصول کریں پھر کھاتہ ڈیلیٹ کیا جا سکتا ہے۔`
+        : `Khata not cleared! ${cust.name} has an outstanding balance of Rs. ${balanceDue.toLocaleString()}. You cannot delete an account with pending dues.`;
+      alert(unclearedMsg);
+      return;
+    }
+
+    // 2. If Khata is cleared (balance <= 0)
+    const confirmMsg = language === 'ur'
+      ? `کیا آپ واقعی ${cust.name} کا کھاتہ اور اس کے تمام پرانے بل (Invoices) و وصولیاں ہمیشہ کے لیے ڈیلیٹ کرنا چاہتے ہیں؟`
+      : `Are you sure you want to delete ${cust.name}'s account along with all related invoices and payment history? This action cannot be undone.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
     try {
       await deleteCustomer(id);
       setSelectedCustomerId(null);
+      const successMsg = language === 'ur'
+        ? `${cust.name} کا کھاتہ اور اس کا تمام متعلقہ ڈیٹا (بشمول بل) کامیابی سے ڈیلیٹ ہو گیا۔`
+        : `${cust.name}'s account and all related invoices/payments deleted successfully.`;
+      alert(successMsg);
     } catch (err) {
       alert(err.message);
     }
@@ -502,7 +526,7 @@ export default function CustomerLedgerView() {
                   </tr>
                 ) : (
                   paginatedCustomers.map((c, idx) => {
-                    const isSelected = selectedCustomer?.id === c.id;
+                    const isSelected = String(selectedCustomer?.id) === String(c.id);
                     const due = Number(c.balanceDue || 0);
                     const status = getStatusBadge(c);
 
@@ -815,7 +839,7 @@ export default function CustomerLedgerView() {
                     Credit Limit
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
-                    Rs. {Number(selectedCustomer.creditLimit || 500000).toLocaleString()}
+                    Rs. {Number(selectedCustomer.creditLimit || 50000).toLocaleString()}
                   </div>
                 </div>
               </div>

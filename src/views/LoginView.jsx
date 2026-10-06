@@ -328,7 +328,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
           spread: 60,
           origin: { y: 0.6 }
         });
-      } catch (_) {}
+      } catch (_) { }
 
       setSuccessMsg(
         tr(
@@ -736,7 +736,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <Sparkles size={13} style={{ color: '#0f3b73' }} />
                   <span style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 600 }}>
-                    Demo: <strong style={{ color: '#0f3b73' }}>admin</strong> / <strong style={{ color: '#0f3b73' }}>admin</strong>
+                    <strong style={{ color: '#0f3b73' }}>Login Credentials Auto-filled</strong>
                   </span>
                 </div>
                 <span

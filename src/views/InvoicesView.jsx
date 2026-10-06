@@ -197,7 +197,10 @@ export default function InvoicesView({ settings }) {
     if (inv.customerId) {
       const cust = await db.customers.get(inv.customerId);
       if (cust) {
-        setSelectedCustomerForPayment(cust);
+        setSelectedCustomerForPayment({
+          ...cust,
+          invoiceId: inv.id
+        });
         setIsPaymentOpen(true);
         return;
       }
@@ -205,39 +208,39 @@ export default function InvoicesView({ settings }) {
     // For walk-in customer
     setSelectedCustomerForPayment({
       id: null,
-      name: inv.customerName,
+      name: inv.customerName || 'Walk-in Cash Sale',
       balanceDue: inv.balanceDue,
       totalBilled: inv.grandTotal,
-      totalPaid: inv.paidAmount
+      totalPaid: inv.paidAmount,
+      invoiceId: inv.id
     });
     setIsPaymentOpen(true);
   };
 
   const handleDeleteInvoice = async (inv) => {
+    const invBalance = Math.round(Number(inv.balanceDue || 0));
+    const isPaid = (inv.paymentStatus || '').toLowerCase() === 'paid' || invBalance <= 0;
+
+    // Block deletion if invoice has pending dues / not paid
+    if (!isPaid) {
+      const unclearedMsg = language === 'ur'
+        ? `بل کلیئر نہیں ہے! (Bill not cleared)\nبل نمبر #${inv.invoiceNo} پر Rs. ${invBalance.toLocaleString()} بقایا (Due) ہے۔ صرف ادا شدہ (Paid) بل ہی ڈیلیٹ کیے جا سکتے ہیں۔`
+        : `Bill not cleared!\nInvoice #${inv.invoiceNo} has an outstanding balance of Rs. ${invBalance.toLocaleString()}. Only fully paid invoices can be deleted/voided.`;
+      alert(unclearedMsg);
+      return;
+    }
+
     const msg = language === 'ur'
-      ? `کیا آپ واقعی بل نمبر #${inv.invoiceNo} منسوخ کرنا چاہتے ہیں؟ اس سے تمام آئٹمز کا اسٹاک واپس گودام میں جمع ہو جائے گا۔`
-      : `Are you sure you want to void invoice #${inv.invoiceNo}? This will return all ${inv.items?.length || 0} items back to inventory stock.`;
+      ? `کیا آپ واقعی ادا شدہ بل نمبر #${inv.invoiceNo} ڈیلیٹ کرنا چاہتے ہیں؟ (نوٹ: انوینٹری اسٹاک میں کوئی چیز واپس جمع نہیں ہوگی)`
+      : `Are you sure you want to delete paid invoice #${inv.invoiceNo}? (Note: No items will be returned to inventory stock).`;
     
     if (!window.confirm(msg)) return;
 
     try {
-      await db.transaction('rw', [db.invoices, db.items, db.customers, db.stock_movements], async () => {
-        // Return stock back to inventory
-        for (const item of inv.items || []) {
-          if (item.itemId) {
-            await adjustItemStock(
-              item.itemId,
-              Number(item.totalSqFt || item.sqFt || 0),
-              Number(item.boxes || 0),
-              Number(item.pieces || 0),
-              'Adjustment',
-              inv.invoiceNo,
-              `Voided Invoice #${inv.invoiceNo} - Stock Restored`
-            );
-          }
-        }
+      await db.transaction('rw', [db.invoices, db.customers, db.customer_payments], async () => {
+        // Note: Inventory stock is NOT returned/modified as per requirement
 
-        // Adjust customer balance
+        // Adjust customer ledger if customerId is linked
         if (inv.customerId) {
           const cust = await db.customers.get(inv.customerId);
           if (cust) {
@@ -246,6 +249,12 @@ export default function InvoicesView({ settings }) {
               totalPaid: Math.max(0, (Number(cust.totalPaid) || 0) - Number(inv.paidAmount || 0)),
               balanceDue: Math.max(0, (Number(cust.balanceDue) || 0) - Number(inv.balanceDue || 0))
             });
+          }
+
+          // Delete customer payment records linked to this invoice
+          const linkedPayments = await db.customer_payments.where('invoiceId').equals(inv.id).toArray();
+          if (linkedPayments.length > 0) {
+            await db.customer_payments.bulkDelete(linkedPayments.map(p => p.id));
           }
         }
 
@@ -911,7 +920,7 @@ export default function InvoicesView({ settings }) {
                           <button
                             type="button"
                             onClick={() => handleDeleteInvoice(inv)}
-                            title={language === 'ur' ? 'بل منسوخ کریں (اسٹاک واپس)' : 'Void invoice & restore inventory stock'}
+                            title={language === 'ur' ? 'بل ڈیلیٹ کریں (اسٹاک تبدیل نہیں ہوگا)' : 'Delete paid invoice (No stock return)'}
                             style={{
                               width: '26px',
                               height: '26px',
