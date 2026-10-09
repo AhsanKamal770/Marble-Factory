@@ -5,7 +5,7 @@ export async function exportDatabaseToJson() {
   const data = {
     version: 4,
     exportedAt: new Date().toISOString(),
-    system: "Rana Shahab Marble Factory ERP",
+    system: "Rana Abdullah Siddique Marble Factory ERP",
     settings: await db.settings.toArray(),
     users: await db.users.toArray(),
     items: await db.items.toArray(),

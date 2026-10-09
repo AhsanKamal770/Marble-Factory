@@ -567,7 +567,7 @@ async function runAllTests() {
   // 1. Export JSON Backup
   const exportRes = await exportDatabaseToJson();
   assert(exportRes.success === true, 'Backup: Database exported to JSON successfully');
-  assert(exportRes.jsonData && exportRes.jsonData.includes('Rana Shahab'), 'Backup: Export contains system header and tables');
+  assert(exportRes.jsonData && exportRes.jsonData.includes('Rana Abdullah Siddique'), 'Backup: Export contains system header and tables');
 
   // 2. Test Clean Reset
   await resetDatabaseToClean();

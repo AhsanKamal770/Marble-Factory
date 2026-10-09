@@ -530,7 +530,7 @@ export default function EmployeesPayrollModule() {
       <div style={{ display: 'none' }} className="print-target">
         <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
-            رانا شہاب ماربل فیکٹری اینڈ ٹائلز (Rana Shahab Marble Factory)
+            رانا عبداللہ صدیق ماربل فیکٹری (Rana Abdullah Siddique Marble Factory)
           </h2>
           <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
             Workforce Payroll & Advance Audit Statement (ملازمین، تنخواہ و پیشگی کھاتہ رپورٹ)
@@ -2112,11 +2112,13 @@ export default function EmployeesPayrollModule() {
         }
         summaryRows={[
           {
-            label: "کل ماہانہ تنخواہ بجٹ (Total Monthly Payroll)",
+            label: "Total Monthly Payroll Budget",
+            labelUrdu: "کل ماہانہ تنخواہ بجٹ",
             value: `Rs. ${employees.reduce((acc, e) => acc + Number(e.baseSalary || e.basicSalary || 0), 0).toLocaleString()}`
           },
           {
-            label: "کل واجب الادا ایڈوانس (Total Outstanding Advances)",
+            label: "Total Outstanding Advances",
+            labelUrdu: "کل واجب الادا ایڈوانس",
             value: `Rs. ${employees.reduce((acc, e) => acc + Number(e.advanceBalance || e.currentAdvance || 0), 0).toLocaleString()}`
           }
         ]}

@@ -38,7 +38,7 @@ export default function DailyExpensesView() {
   // Live Query: Fetch factory settings
   const settings = useLiveQuery(async () => {
     const list = await db.settings.toArray();
-    return list[0] || { companyName: "Rana Shahab Marble Factory", openingCashBalance: 0 };
+    return list[0] || { companyName: "Rana Abdullah Siddique Marble Factory", companyNameUrdu: "رانا عبداللہ صدیق ماربل فیکٹری", openingCashBalance: 0 };
   }, []);
 
   // Live Query: Fetch expenses for selected date

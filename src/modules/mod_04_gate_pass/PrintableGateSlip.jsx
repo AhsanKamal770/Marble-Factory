@@ -79,11 +79,11 @@ export default function PrintableGateSlip({
     : new Date().toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", hour12: true }));
 
   // Settings & Branding
-  const companyNameEn = factorySettings?.companyNameEnglish || "Rana Shahab Marble";
-  const companyNameUr = factorySettings?.companyNameUrdu || factorySettings?.companyName || "رانا شہاب ماربل ٹائلز";
-  const companyTagline = factorySettings?.tagline || "معیاری ماربل اور گرینائٹ کا بھرپور انتخاب";
-  const phone = factorySettings?.phone || "0300-8456123 | 0321-6606645";
-  const address = factorySettings?.city || factorySettings?.address || "کراچی ، پاکستان";
+  const companyNameEn = factorySettings?.companyNameEnglish || factorySettings?.companyName || "Rana Abdullah Siddique Marble Factory";
+  const companyNameUr = factorySettings?.companyNameUrdu || "رانا عبداللہ صدیق ماربل فیکٹری";
+  const companyTagline = factorySettings?.tagline || "معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز";
+  const phone = factorySettings?.phone || "0321-6606645 | 0300-6664187";
+  const address = factorySettings?.address || "جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد";
 
   // Customer & Driver Details
   const customerName = gatePass.customerName || linkedInvoice?.customerName || "محمد علی خان";
@@ -332,7 +332,7 @@ export default function PrintableGateSlip({
               }}
             >
               <Download size={13} />
-              <span>Save PDF (پی ڈی ایف)</span>
+              <span>Save PDF</span>
             </button>
 
             <button
@@ -355,7 +355,7 @@ export default function PrintableGateSlip({
               }}
             >
               <Printer size={14} />
-              <span>Print Now (پرنٹ)</span>
+              <span>Print</span>
             </button>
 
             <button

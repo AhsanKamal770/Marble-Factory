@@ -441,7 +441,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
     setError('');
   };
 
-  const companyName = settings?.companyName || 'Rana Shahab Marble';
+  const companyName = settings?.companyName || 'Rana Abdullah Siddique Marble Factory';
 
   return (
     <div

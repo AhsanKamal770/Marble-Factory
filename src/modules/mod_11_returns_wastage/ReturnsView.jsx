@@ -413,8 +413,8 @@ export default function ReturnsView({ settings }) {
 
   const handleCopyWhatsAppSlip = (rec) => {
     if (!rec) return;
-    const company = dbSettings?.companyName || 'رانا شہاب ماربل فیکٹری اینڈ ٹائلز';
-    const phone = dbSettings?.phone || '0300-7708899 / 0321-6606645';
+    const company = dbSettings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری';
+    const phone = dbSettings?.phone || '0321-6606645 / 0300-6664187';
     const it = rec.items?.[0] || {};
 
     const lines = [
@@ -486,7 +486,7 @@ export default function ReturnsView({ settings }) {
       <div style={{ display: 'none' }} className="print-target">
         <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
-            {dbSettings?.companyName || 'رانا شہاب ماربل فیکٹری اینڈ ٹائلز'}
+            {dbSettings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}
           </h2>
           <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
             Returns, Breakage & Wastage Audit Report (واپسی و نقصان رپورٹ)
@@ -1754,14 +1754,20 @@ export default function ReturnsView({ settings }) {
             >
               {/* Slip Header */}
               <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '10px', marginBottom: '14px' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 900, margin: 0 }}>
-                  {dbSettings?.companyName || 'رانا شہاب ماربل فیکٹری اینڈ ٹائلز'}
-                </h2>
-                <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
-                  {dbSettings?.address || 'جھمرہ سٹی، بالمقابل ریلوے پھاٹک، فیصل آباد روڈ'}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 900, color: '#0f172a', letterSpacing: '0.02em' }}>
+                      {dbSettings?.companyNameEnglish || 'Rana Abdullah Siddique Marble Factory'}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }} dir="rtl">
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#0f172a' }}>
+                      {dbSettings?.companyNameUrdu || dbSettings?.companyName || 'رانا عبداللہ صدیق ماربل فیکٹری'}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                  Phone: {dbSettings?.phone || '0300-7708899 / 0321-6606645'}
+                <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
+                  {dbSettings?.address || 'جھمرہ سٹی، بالمقابل ریلوے پھاٹک، فیصل آباد روڈ'} | فون: {dbSettings?.phone || '0321-6606645 / 0300-6664187'}
                 </div>
                 <div
                   style={{
@@ -2025,8 +2031,8 @@ export default function ReturnsView({ settings }) {
         ]}
         data={filteredReturns}
         summaryRows={[
-          { label: 'کل واپسی مالیت (Total Returns Value)', value: rs(totalSalesReturnValue) },
-          { label: 'کل خالص مالی نقصان (Net Financial Loss)', value: rs(totalFinancialWastageLoss) }
+          { label: 'Total Returns Value', labelUrdu: 'کل کسٹمر واپسی مالیت', value: rs(totalSalesReturnValue) },
+          { label: 'Net Financial Loss', labelUrdu: 'کل خالص مالی نقصان', value: rs(totalFinancialWastageLoss) }
         ]}
       />
 

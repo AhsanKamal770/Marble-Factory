@@ -215,7 +215,7 @@ export default function SalesReportsView() {
       <div style={{ display: 'none' }} className="print-target">
         <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
-            رانا شہاب ماربل فیکٹری اینڈ ٹائلز (Rana Shahab Marble Factory)
+            رانا عبداللہ صدیق ماربل فیکٹری (Rana Abdullah Siddique Marble Factory)
           </h2>
           <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
             Executive Sales, Cost & Profit Audit Report (سیلز، لاگت و خالص منافع رپورٹ)
@@ -1564,9 +1564,9 @@ export default function SalesReportsView() {
             : categoryBreakdown
         }
         summaryRows={[
-          { label: 'کل نقد وصولی (Cash Collected)', value: rs(summary?.cashCollected) },
-          { label: 'واجب الوصول بقایا (Unpaid Receivables)', value: rs(summary?.unpaidReceivables) },
-          { label: 'کل بلز تعداد (Invoices Count)', value: `${summary?.invoiceCount || 0}` }
+          { label: 'Cash Collected', labelUrdu: 'کل نقد وصولی', value: rs(summary?.cashCollected) },
+          { label: 'Unpaid Receivables', labelUrdu: 'واجب الوصول بقایا جات', value: rs(summary?.unpaidReceivables) },
+          { label: 'Invoices Count', labelUrdu: 'کل بلز تعداد', value: `${summary?.invoiceCount || 0}` }
         ]}
       />
     </div>

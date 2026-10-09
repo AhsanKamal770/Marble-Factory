@@ -60,8 +60,30 @@ export default function BillPrintModal({
   };
 
   const formatItemDimension = (item) => {
+    const isTile = item.unit === 'Meter' || (item.category && item.category.toLowerCase().includes('tile') && !item.category.toLowerCase().includes('accessories'));
+    const isRunning = item.unit === 'R.Ft.' || item.category === 'Border' || item.category === 'Kali Patti';
+    const isGola = item.unit === 'Box' || (item.name && item.name.toLowerCase().includes('gola'));
+    const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories';
+
+    if (isTile) {
+      const m = item.meters || item.billedQuantity || (item.pieces ? Math.round((item.pieces / 5) * 100) / 100 : item.totalSqFt);
+      const pcs = item.pieces || Math.round(m * 5);
+      return `${m} میٹر (${pcs} پیس)`;
+    }
+    if (isRunning) {
+      const rft = item.runningFeet || item.billedQuantity || item.totalSqFt;
+      return `${rft} رننگ فٹ (${item.pieces || '-'} پیس)`;
+    }
+    if (isGola) {
+      const b = item.boxes || item.billedQuantity || item.pieces || 1;
+      return `${b} بکس / ڈبہ`;
+    }
+    if (isPiece) {
+      const p = item.pieces || item.billedQuantity || 1;
+      return `${p} عدد (${item.selectedSizePreset || 'پیس'})`;
+    }
     if (item.length && item.width) {
-      const qtyPrefix = item.quantity && Number(item.quantity) > 1 ? `${item.quantity} × ` : '';
+      const qtyPrefix = item.pieces && Number(item.pieces) > 1 ? `${item.pieces} × ` : (item.quantity && Number(item.quantity) > 1 ? `${item.quantity} × ` : '');
       const sqFtSuffix = item.totalSqFt ? ` = ${item.totalSqFt} فٹ` : '';
       return `${qtyPrefix}${item.length} × ${item.width}${sqFtSuffix}`;
     }
@@ -71,16 +93,16 @@ export default function BillPrintModal({
     if (item.totalSqFt) {
       return `${item.totalSqFt} فٹ`;
     }
-    if (item.quantity) {
-      return `${item.quantity} عدد`;
+    if (item.quantity || item.pieces) {
+      return `${item.quantity || item.pieces} عدد`;
     }
     return '-';
   };
 
   const handleCopyWhatsApp = () => {
     const lines = [
-      `*${settings?.companyNameUrdu || settings?.companyName || 'رانا شہاب ماربل ٹائلز'}*`,
-      `_معیاری ماربل اور گرینائٹ کا بھروسہ مند انتخاب_`,
+      `*${settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}*`,
+      `_معیاری ماربل اور گرینائٹ کا بااعتماد مرکز_`,
       `---------------------------------`,
       `*بل نمبر / Bill #:* ${invoice.invoiceNo}`,
       `*خریدار / Customer:* ${invoice.customerName}`,
@@ -103,7 +125,7 @@ export default function BillPrintModal({
       `*ادائیگی شدہ رقم:* Rs. ${Number(invoice.paidAmount || 0).toLocaleString()}`,
       `*باقی رقم:* Rs. ${Number(invoice.balanceDue || 0).toLocaleString()}`,
       `---------------------------------`,
-      `شکریہ! رابطہ: ${settings?.phone || '0300-8456123 | 0321-6606645'}`
+      `شکریہ! رابطہ: ${settings?.phone || '0321-6606645 | 0300-6664187'}`
     ].filter(Boolean);
 
     navigator.clipboard.writeText(lines.join('\n'));
@@ -123,8 +145,8 @@ export default function BillPrintModal({
   const customerAddress = invoice.customerAddress || invoice.address || customer?.address || (invoice.carrier ? `بذریعہ: ${invoice.carrier}` : 'فیکٹری گیٹ ڈلیوری');
   const customerCity = invoice.city || customer?.city || '';
 
-  const factoryPhone = settings?.phone || '0300-8456123 | 0321-6606645';
-  const factoryAddress = settings?.address || 'جھمرہ روڈ، بالمقابل ریلوے پھاٹک';
+  const factoryPhone = settings?.phone || '0321-6606645 | 0300-6664187';
+  const factoryAddress = settings?.address || 'جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد';
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -176,21 +198,22 @@ export default function BillPrintModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Control Bar (Hidden on Print) */}
-        <div className="modal-header print-hide" style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {language === 'ur' ? 'بل پرنٹ ٹیمپلیٹ' : 'Invoice Print Template'}
+        {/* Header Control Bar (English Buttons Only, Clean Alignment, Hidden on Print) */}
+        <div className="modal-header print-hide" style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FileText size={16} style={{ color: 'var(--accent-blue, #2563eb)' }} />
+              <span>Invoice Print Preview</span>
             </span>
 
-            {/* Print Format Switcher */}
+            {/* Print Format Switcher (English Only) */}
             <div style={{ display: 'flex', background: 'var(--bg-primary)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
               <button
                 type="button"
                 onClick={() => setPrintFormat('a4')}
                 style={{
-                  padding: '3px 10px',
-                  fontSize: '0.74rem',
+                  padding: '4px 10px',
+                  fontSize: '0.76rem',
                   fontWeight: 700,
                   border: 'none',
                   borderRadius: '4px',
@@ -210,8 +233,8 @@ export default function BillPrintModal({
                 type="button"
                 onClick={() => setPrintFormat('thermal')}
                 style={{
-                  padding: '3px 10px',
-                  fontSize: '0.74rem',
+                  padding: '4px 10px',
+                  fontSize: '0.76rem',
                   fontWeight: 700,
                   border: 'none',
                   borderRadius: '4px',
@@ -235,9 +258,9 @@ export default function BillPrintModal({
               className="btn btn-secondary btn-sm"
               onClick={handleCopyWhatsApp}
               title="Copy WhatsApp Summary"
-              style={{ fontSize: '0.74rem', padding: '4px 8px' }}
+              style={{ fontSize: '0.76rem', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600 }}
             >
-              {copied ? <Check size={12} style={{ color: '#059669' }} /> : <Share2 size={12} />}
+              {copied ? <Check size={13} style={{ color: '#059669' }} /> : <Share2 size={13} />}
               <span>{copied ? 'Copied!' : 'WhatsApp'}</span>
             </button>
 
@@ -248,8 +271,8 @@ export default function BillPrintModal({
               disabled={isPrinting}
               title="Save as PDF directly"
               style={{
-                fontSize: '0.74rem',
-                padding: '4px 10px',
+                fontSize: '0.76rem',
+                padding: '5px 12px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '5px',
@@ -259,8 +282,8 @@ export default function BillPrintModal({
                 background: 'rgba(16, 185, 129, 0.08)'
               }}
             >
-              <Download size={12} />
-              <span>Save PDF (پی ڈی ایف)</span>
+              <Download size={13} />
+              <span>Save PDF</span>
             </button>
 
             <button
@@ -268,14 +291,14 @@ export default function BillPrintModal({
               className="btn btn-primary btn-sm"
               onClick={handlePrint}
               disabled={isPrinting}
-              style={{ fontSize: '0.76rem', padding: '5px 12px', background: 'var(--accent-blue, #2563eb)', borderColor: 'var(--accent-blue, #2563eb)', display: 'flex', alignItems: 'center', gap: '5px' }}
+              style={{ fontSize: '0.76rem', padding: '5px 14px', background: 'var(--accent-blue, #2563eb)', borderColor: 'var(--accent-blue, #2563eb)', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, color: '#ffffff' }}
             >
               <Printer size={13} />
-              <span>Print (پرنٹ)</span>
+              <span>Print</span>
             </button>
 
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} style={{ padding: '3px 6px' }}>
-              <X size={15} />
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} style={{ padding: '4px 6px' }}>
+              <X size={16} />
             </button>
           </div>
         </div>
@@ -284,7 +307,7 @@ export default function BillPrintModal({
         <div className="modal-body" style={{ background: '#f8fafc', padding: '12px 14px', overflowY: 'auto', flex: 1 }}>
           <div ref={printRef} className="print-target">
             {/* ------------------------------------------------------------- */}
-            {/* FORMAT 1: EXACT A4 URDU BILL TEMPLATE                         */}
+            {/* FORMAT 1: EXACT A4 URDU BILL TEMPLATE WITH BILINGUAL HEADER   */}
             {/* ------------------------------------------------------------- */}
             {printFormat === 'a4' && (
               <div
@@ -296,19 +319,19 @@ export default function BillPrintModal({
                   boxShadow: '0 2px 14px rgba(37,99,235,0.06)',
                   border: '1px solid #bfdbfe',
                   fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif',
-                  maxWidth: '660px',
+                  maxWidth: '700px',
                   margin: '0 auto',
                   overflow: 'hidden',
                   WebkitPrintColorAdjust: 'exact',
                   printColorAdjust: 'exact'
                 }}
               >
-                {/* 1. TOP HEADER BAR (Distinct Separated Lines With No Collision) */}
+                {/* 1. TOP HEADER BAR (Bilingual Factory Name: English Left, Urdu Right) */}
                 <div
                   style={{
                     background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
                     color: '#ffffff',
-                    padding: '12px 16px',
+                    padding: '12px 18px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -316,39 +339,43 @@ export default function BillPrintModal({
                     printColorAdjust: 'exact'
                   }}
                 >
-                  {/* Left Slogan (Flex column with clear gap) */}
+                  {/* Left: English Factory Name & Details */}
                   <div
+                    dir="ltr"
                     style={{
-                      borderRight: '2px solid rgba(255,255,255,0.3)',
+                      borderRight: '2px solid rgba(255,255,255,0.25)',
                       paddingRight: '14px',
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '5px',
-                      textAlign: 'right'
+                      gap: '2px',
+                      textAlign: 'left'
                     }}
                   >
-                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#ffffff', lineHeight: 1.5 }}>
-                      معیاری ماربل اور گرینائٹ
+                    <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#ffffff', fontFamily: 'system-ui, sans-serif', letterSpacing: '-0.2px' }}>
+                      {settings?.companyNameEnglish || 'Rana Abdullah Siddique Marble Factory'}
                     </div>
-                    <div style={{ fontSize: '0.80rem', color: '#dbeafe', lineHeight: 1.5 }}>
-                      کا بھروسہ مند انتخاب
+                    <div style={{ fontSize: '0.74rem', color: '#dbeafe', fontFamily: 'system-ui, sans-serif' }}>
+                      Ph: {factoryPhone}
+                    </div>
+                    <div style={{ fontSize: '0.70rem', color: '#bfdbfe', fontFamily: 'system-ui, sans-serif' }}>
+                      {factoryAddress}
                     </div>
                   </div>
 
-                  {/* Center / Right Factory Name & Subtitle (Flex column with clear gap) */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.30rem', fontWeight: 800, color: '#ffffff', lineHeight: 1.45, letterSpacing: '0.01em' }}>
-                        {settings?.companyNameUrdu || settings?.companyName || 'رانا شہاب ماربل ٹائلز'}
+                  {/* Right: Urdu Factory Name & Slogan */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
+                      <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.35, letterSpacing: '0.01em' }}>
+                        {settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: '#bfdbfe', fontWeight: 600, lineHeight: 1.4 }}>
-                        فیکٹری مینجمنٹ سسٹم
+                      <div style={{ fontSize: '0.76rem', color: '#bfdbfe', fontWeight: 600, lineHeight: 1.3 }}>
+                        معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز
                       </div>
                     </div>
 
                     {/* Peak Geometric Logo */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="42" height="32" viewBox="0 0 54 40" fill="none">
+                      <svg width="38" height="30" viewBox="0 0 54 40" fill="none">
                         <polygon points="4,38 22,6 38,38" fill="#1d4ed8" />
                         <polygon points="18,38 34,2 50,38" fill="#38bdf8" opacity="0.95" />
                         <polygon points="14,38 26,14 40,38" fill="#93c5fd" opacity="0.85" />
@@ -761,7 +788,7 @@ export default function BillPrintModal({
                     {/* Factory Signature */}
                     <div style={{ textAlign: 'center', width: '190px', display: 'flex', flexDirection: 'column', gap: '3px', alignItems: 'center' }}>
                       <div style={{ borderBottom: '1.2px dashed #93c5fd', width: '100%', height: '8px' }} />
-                      <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.4 }}>دستخط برائے رانا شہاب ماربل فیکٹری</div>
+                      <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.4 }}>دستخط برائے {companyUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}</div>
                       <div style={{ fontSize: '0.68rem', color: '#2563eb', lineHeight: 1.3 }}>(مجاز نمائندہ)</div>
                     </div>
                   </div>
@@ -815,9 +842,9 @@ export default function BillPrintModal({
                 }}
               >
                 <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '6px', marginBottom: '8px' }}>
-                  <div style={{ fontWeight: 800, fontSize: '14px' }}>{settings?.companyName || 'RANA SHAHAB MARBLE'}</div>
-                  <div style={{ fontSize: '10px' }}>MARBLE & TILES KARKHANA</div>
-                  <div style={{ fontSize: '9px' }}>{factoryAddress} | Ph: {factoryPhone}</div>
+                  <div style={{ fontWeight: 900, fontSize: '14px', fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>{settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}</div>
+                  <div style={{ fontWeight: 800, fontSize: '11px' }}>{settings?.companyNameEnglish || settings?.companyName || 'RANA ABDULLAH SIDDIQUE MARBLE FACTORY'}</div>
+                  <div style={{ fontSize: '9.5px', marginTop: '2px' }}>{factoryAddress} | Ph: {factoryPhone}</div>
                   <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: 700 }}>
                     {invoice.invoiceNo}
                   </div>

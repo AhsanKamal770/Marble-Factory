@@ -65,11 +65,11 @@ export default function UniversalReportPrintModal({
     hour12: true
   });
 
-  const companyNameEn = factorySettings?.companyNameEnglish || factorySettings?.companyName || 'Rana Shahab Marble Industry';
-  const companyNameUr = factorySettings?.companyNameUrdu || factorySettings?.companyName || 'رانا شہاب ماربل فیکٹری اینڈ ٹائلز';
+  const companyNameEn = factorySettings?.companyNameEnglish || factorySettings?.companyName || 'Rana Abdullah Siddique Marble Factory';
+  const companyNameUr = factorySettings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری';
   const companyTagline = factorySettings?.tagline || 'معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز';
-  const phone = factorySettings?.phone || '0300-8456123 | 0321-6606645';
-  const address = factorySettings?.address || 'جھمرہ روڈ، بالمقابل ریلوے پھاٹک، فیصل آباد';
+  const phone = factorySettings?.phone || '0321-6606645 | 0300-6664187';
+  const address = factorySettings?.address || 'جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد';
 
   const handlePrint = async () => {
     setIsPrinting(true);
@@ -106,13 +106,13 @@ export default function UniversalReportPrintModal({
       `---------------------------------`,
       `*📑 ${titleUrdu} (${title})*`,
       subtitle ? `*فلٹر/پیریڈ:* ${subtitle}` : null,
-      `*تاریخ:* ${currentDateEn} (${currentTime})`,
+      `*تاریخ:* ${currentDateUr} (${currentDateEn} ${currentTime})`,
       `---------------------------------`,
       `*خلاصہ / SUMMARY:*`,
       ...kpis.map((k) => `• *${k.labelUrdu || k.label}:* ${k.value}`),
       `---------------------------------`,
       `*کل ریکارڈز:* ${data.length}`,
-      ...summaryRows.map((sr) => `• *${sr.label}:* ${sr.value}`),
+      ...summaryRows.map((sr) => `• *${sr.labelUrdu || sr.label}:* ${sr.value}`),
       `---------------------------------`,
       `شکریہ! رابطہ: ${phone}`
     ].filter(Boolean);
@@ -178,7 +178,7 @@ export default function UniversalReportPrintModal({
       <div
         className="modal-card"
         style={{
-          maxWidth: printFormat === 'a4' ? '900px' : '440px',
+          maxWidth: printFormat === 'a4' ? '920px' : '440px',
           width: '96%',
           maxHeight: '94vh',
           transition: 'max-width 0.2s ease',
@@ -192,7 +192,7 @@ export default function UniversalReportPrintModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Control Bar (Hidden on Print) */}
+        {/* Header Control Bar (English Buttons Only, Clean Alignment, Hidden on Print) */}
         <div
           className="modal-header print-hide"
           style={{
@@ -212,14 +212,14 @@ export default function UniversalReportPrintModal({
               <span>{title}</span>
             </span>
 
-            {/* Print Format Switcher */}
+            {/* Print Format Switcher (English Only) */}
             <div style={{ display: 'flex', background: 'var(--bg-primary, #ffffff)', padding: '3px', borderRadius: '8px', border: '1px solid var(--border-color, #cbd5e1)' }}>
               <button
                 type="button"
                 onClick={() => setPrintFormat('a4')}
                 style={{
-                  padding: '4px 12px',
-                  fontSize: '0.76rem',
+                  padding: '5px 12px',
+                  fontSize: '0.78rem',
                   fontWeight: 700,
                   border: 'none',
                   borderRadius: '6px',
@@ -233,15 +233,15 @@ export default function UniversalReportPrintModal({
                 }}
               >
                 <FileText size={13} />
-                <span>A4 Sheet (مکمل صفحہ)</span>
+                <span>A4 Sheet</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPrintFormat('thermal')}
                 style={{
-                  padding: '4px 12px',
-                  fontSize: '0.76rem',
+                  padding: '5px 12px',
+                  fontSize: '0.78rem',
                   fontWeight: 700,
                   border: 'none',
                   borderRadius: '6px',
@@ -255,7 +255,7 @@ export default function UniversalReportPrintModal({
                 }}
               >
                 <Receipt size={13} />
-                <span>80mm Slip (تھرمل سلپ)</span>
+                <span>80mm Slip</span>
               </button>
             </div>
           </div>
@@ -266,7 +266,7 @@ export default function UniversalReportPrintModal({
               className="btn btn-secondary btn-sm"
               onClick={handleCopyWhatsApp}
               title="Copy WhatsApp Summary"
-              style={{ fontSize: '0.76rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+              style={{ fontSize: '0.78rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
             >
               {copied ? <Check size={14} style={{ color: '#059669' }} /> : <Share2 size={14} />}
               <span>{copied ? 'Copied!' : 'WhatsApp'}</span>
@@ -291,7 +291,7 @@ export default function UniversalReportPrintModal({
               }}
             >
               <Download size={14} />
-              <span>Save PDF (پی ڈی ایف)</span>
+              <span>Save PDF</span>
             </button>
 
             <button
@@ -312,7 +312,7 @@ export default function UniversalReportPrintModal({
               }}
             >
               <Printer size={14} />
-              <span>Print (پرنٹ کریں)</span>
+              <span>Print</span>
             </button>
 
             <button
@@ -338,10 +338,11 @@ export default function UniversalReportPrintModal({
         >
           <div ref={printRef} className="print-target">
             {/* ══════════════════════════════════════════════════════════════════ */}
-            {/* FORMAT 1: A4 DETAILED AUDIT SHEET                              */}
+            {/* FORMAT 1: A4 DETAILED AUDIT SHEET (PURE URDU WITH BILINGUAL HEADER) */}
             {/* ══════════════════════════════════════════════════════════════════ */}
             {printFormat === 'a4' && (
               <div
+                dir="rtl"
                 style={{
                   background: '#ffffff',
                   color: '#0f172a',
@@ -349,49 +350,71 @@ export default function UniversalReportPrintModal({
                   boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
                   border: '1px solid #cbd5e1',
                   padding: '24px 28px',
-                  fontFamily: 'system-ui, -apple-system, sans-serif'
+                  fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", "Jameel Noori Nastaleeq", system-ui, sans-serif'
                 }}
               >
-                {/* 1. TOP HEADER BANNER */}
-                <div style={{ textAlign: 'center', borderBottom: '2px solid #2563eb', paddingBottom: '14px', marginBottom: '16px' }}>
-                  <div style={{ fontSize: '0.86rem', color: '#64748b', fontWeight: 600, letterSpacing: '0.5px', marginBottom: '2px' }}>
+                {/* 1. TOP HEADER BANNER (English Left, Urdu Right, Bismillah Center) */}
+                <div style={{ borderBottom: '2px solid #2563eb', paddingBottom: '14px', marginBottom: '16px' }}>
+                  <div style={{ textAlign: 'center', fontSize: '0.90rem', color: '#64748b', fontWeight: 700, letterSpacing: '0.5px', marginBottom: '6px' }}>
                     بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                    <div style={{ textAlign: 'left' }}>
-                      <h1 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 900, color: '#1e3a8a', letterSpacing: '-0.3px' }}>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+                    {/* Right: Urdu Factory Name */}
+                    <div style={{ textAlign: 'right', flex: 1 }}>
+                      <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 900, color: '#1e3a8a', lineHeight: 1.4 }}>
+                        {companyNameUr}
+                      </h2>
+                      <div style={{ fontSize: '0.78rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>
+                        {companyTagline}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '2px' }}>
+                        تاریخ رپورٹ: <strong>{currentDateUr}</strong> ({currentDateEn})
+                      </div>
+                    </div>
+
+                    {/* Center Icon Badge */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '0 10px' }}>
+                      <div
+                        style={{
+                          width: '42px',
+                          height: '42px',
+                          borderRadius: '10px',
+                          background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#ffffff',
+                          boxShadow: '0 4px 10px rgba(37,99,235,0.2)'
+                        }}
+                      >
+                        <Building2 size={22} />
+                      </div>
+                    </div>
+
+                    {/* Left: English Factory Name & Details */}
+                    <div dir="ltr" style={{ textAlign: 'left', flex: 1 }}>
+                      <h1 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900, color: '#1e3a8a', fontFamily: 'system-ui, -apple-system, sans-serif', letterSpacing: '-0.2px' }}>
                         {companyNameEn}
                       </h1>
-                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '0.76rem', color: '#475569', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'system-ui, sans-serif' }}>
                         <MapPin size={12} style={{ color: '#2563eb' }} />
                         <span>{address}</span>
                       </div>
-                      <div style={{ fontSize: '0.78rem', color: '#475569', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <div style={{ fontSize: '0.76rem', color: '#475569', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'system-ui, sans-serif' }}>
                         <Phone size={12} style={{ color: '#2563eb' }} />
                         <span>{phone}</span>
                       </div>
                     </div>
-
-                    <div style={{ textAlign: 'right' }}>
-                      <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: '#1e3a8a', fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>
-                        {companyNameUr}
-                      </h2>
-                      <div style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 700, marginTop: '2px' }}>
-                        {companyTagline}
-                      </div>
-                      <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
-                        تاریخ: <strong>{currentDateUr}</strong> ({currentDateEn})
-                      </div>
-                    </div>
                   </div>
 
-                  {/* Document Title Badge */}
+                  {/* Document Title Ribbon */}
                   <div
                     style={{
-                      marginTop: '12px',
+                      marginTop: '14px',
                       background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
                       color: '#ffffff',
-                      padding: '8px 16px',
+                      padding: '8px 18px',
                       borderRadius: '6px',
                       display: 'flex',
                       justifyContent: 'space-between',
@@ -401,20 +424,20 @@ export default function UniversalReportPrintModal({
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '1rem', fontWeight: 800 }}>{title}</span>
-                      <span style={{ fontSize: '0.9rem', opacity: 0.9 }}>•</span>
-                      <span style={{ fontSize: '0.96rem', fontWeight: 800, fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>{titleUrdu}</span>
+                      <FileText size={17} />
+                      <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>{titleUrdu}</span>
+                      <span style={{ fontSize: '0.85rem', opacity: 0.85, fontFamily: 'system-ui, sans-serif' }}>({title})</span>
                     </div>
 
                     {subtitle && (
-                      <div style={{ fontSize: '0.78rem', background: 'rgba(255,255,255,0.2)', padding: '2px 10px', borderRadius: '4px', fontWeight: 600 }}>
+                      <div style={{ fontSize: '0.78rem', background: 'rgba(255,255,255,0.2)', padding: '3px 12px', borderRadius: '4px', fontWeight: 700 }}>
                         {subtitle}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* 2. KPI METRICS CARDS */}
+                {/* 2. KPI METRICS CARDS (Pure Urdu Labels) */}
                 {kpis.length > 0 && (
                   <div
                     style={{
@@ -430,17 +453,19 @@ export default function UniversalReportPrintModal({
                         style={{
                           background: '#f8fafc',
                           border: '1px solid #e2e8f0',
+                          borderRight: `4px solid ${kpi.color || '#2563eb'}`,
                           borderRadius: '8px',
                           padding: '10px 14px',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '2px'
+                          gap: '2px',
+                          textAlign: 'right'
                         }}
                       >
-                        <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-                          {kpi.label} {kpi.labelUrdu && <span style={{ fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>({kpi.labelUrdu})</span>}
+                        <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 800 }}>
+                          {kpi.labelUrdu || kpi.label}
                         </div>
-                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: kpi.color || '#1e293b' }}>
+                        <div style={{ fontSize: '1.10rem', fontWeight: 900, color: kpi.color || '#1e293b' }}>
                           {kpi.value}
                         </div>
                       </div>
@@ -448,36 +473,31 @@ export default function UniversalReportPrintModal({
                   </div>
                 )}
 
-                {/* 3. ITEM DATA TABLE */}
+                {/* 3. ITEM DATA TABLE (Pure Urdu Columns) */}
                 <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
                   <table
                     style={{
                       width: '100%',
                       borderCollapse: 'collapse',
-                      fontSize: '0.78rem',
+                      fontSize: '0.80rem',
                       color: '#0f172a'
                     }}
                   >
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderTop: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>
-                        <th style={{ padding: '8px 10px', textAlign: 'center', width: '36px', fontWeight: 800, color: '#334155' }}>#</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'center', width: '40px', fontWeight: 800, color: '#1e3a8a' }}>#</th>
                         {columns.map((col, idx) => (
                           <th
                             key={idx}
                             style={{
                               padding: '8px 10px',
-                              textAlign: col.align || 'left',
+                              textAlign: col.align || 'right',
                               width: col.width || 'auto',
                               fontWeight: 800,
-                              color: '#334155'
+                              color: '#1e3a8a'
                             }}
                           >
-                            <div>{col.label}</div>
-                            {col.labelUrdu && (
-                              <div style={{ fontSize: '0.70rem', color: '#64748b', fontWeight: 600, fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>
-                                {col.labelUrdu}
-                              </div>
-                            )}
+                            <div>{col.labelUrdu || col.label}</div>
                           </th>
                         ))}
                       </tr>
@@ -498,7 +518,7 @@ export default function UniversalReportPrintModal({
                               borderBottom: '1px solid #e2e8f0'
                             }}
                           >
-                            <td style={{ padding: '7px 10px', textAlign: 'center', color: '#64748b', fontWeight: 700 }}>
+                            <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b', fontWeight: 700 }}>
                               {rIdx + 1}
                             </td>
                             {columns.map((col, cIdx) => {
@@ -507,9 +527,9 @@ export default function UniversalReportPrintModal({
                                 <td
                                   key={cIdx}
                                   style={{
-                                    padding: '7px 10px',
-                                    textAlign: col.align || 'left',
-                                    fontWeight: col.bold ? 700 : 500,
+                                    padding: '8px 10px',
+                                    textAlign: col.align || 'right',
+                                    fontWeight: col.bold ? 800 : 500,
                                     color: col.color ? col.color(row) : 'inherit',
                                     whiteSpace: col.nowrap ? 'nowrap' : 'normal'
                                   }}
@@ -541,13 +561,13 @@ export default function UniversalReportPrintModal({
                       marginBottom: '20px'
                     }}
                   >
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>
-                      کل ریکارڈز / Total Records: <span style={{ color: '#2563eb', fontWeight: 800 }}>{data.length}</span>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#475569' }}>
+                      کل ریکارڈز: <span style={{ color: '#2563eb', fontWeight: 900 }}>{data.length}</span>
                     </div>
                     <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
                       {summaryRows.map((sr, idx) => (
-                        <div key={idx} style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1e293b' }}>
-                          <span style={{ color: '#64748b' }}>{sr.label}: </span>
+                        <div key={idx} style={{ fontSize: '0.84rem', fontWeight: 800, color: '#1e293b' }}>
+                          <span style={{ color: '#64748b' }}>{sr.labelUrdu || sr.label}: </span>
                           <span style={{ color: sr.color || '#2563eb', fontWeight: 900 }}>{sr.value}</span>
                         </div>
                       ))}
@@ -560,21 +580,21 @@ export default function UniversalReportPrintModal({
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '20px', marginBottom: '18px' }}>
                     <div style={{ textAlign: 'center', width: '160px' }}>
                       <div style={{ borderBottom: '1px solid #94a3b8', height: '30px', marginBottom: '4px' }}></div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569' }}>تیار کنندہ (Prepared By)</div>
+                      <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569' }}>تیار کنندہ (Prepared By)</div>
                     </div>
                     <div style={{ textAlign: 'center', width: '160px' }}>
                       <div style={{ borderBottom: '1px solid #94a3b8', height: '30px', marginBottom: '4px' }}></div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#475569' }}>تصدیق کنندہ (Verified By)</div>
+                      <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#475569' }}>تصدیق کنندہ (Verified By)</div>
                     </div>
                     <div style={{ textAlign: 'center', width: '180px' }}>
                       <div style={{ borderBottom: '1px solid #94a3b8', height: '30px', marginBottom: '4px' }}></div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#1e3a8a' }}>دستخط منیجر / مالک (Authorized)</div>
+                      <div style={{ fontSize: '0.74rem', fontWeight: 800, color: '#1e3a8a' }}>دستخط مجاز / مالک (Authorized Sign)</div>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.70rem', color: '#94a3b8' }}>
-                    <span>پرنٹ وقت: {currentDateEn} {currentTime}</span>
-                    <span>یہ کمپیوٹرائزڈ آڈٹ رپورٹ برائے فیکٹری ریکارڈ ہے۔ | Rana Shahab ERP</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.72rem', color: '#94a3b8' }}>
+                    <span>پرنٹ وقت: {currentDateUr} ({currentDateEn} {currentTime})</span>
+                    <span>یہ کمپیوٹرائزڈ آڈٹ رپورٹ برائے فیکٹری ریکارڈ ہے۔ | Rana Abdullah Siddique Marble Factory ERP</span>
                   </div>
                 </div>
               </div>
@@ -606,17 +626,17 @@ export default function UniversalReportPrintModal({
                     {companyNameEn}
                   </div>
                   <div style={{ fontSize: '0.70rem', color: '#333333' }}>
-                    {phone}
+                    Ph: {phone}
                   </div>
                   <div style={{ fontSize: '0.70rem', color: '#333333' }}>
                     {address}
                   </div>
                   <div style={{ borderTop: '1px dashed #000000', margin: '8px 0' }}></div>
-                  <div style={{ fontSize: '0.85rem', fontWeight: 900, textTransform: 'uppercase' }}>
-                    {title}
-                  </div>
-                  <div style={{ fontSize: '0.80rem', fontWeight: 700, fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 900, fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>
                     {titleUrdu}
+                  </div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>
+                    {title}
                   </div>
                   {subtitle && (
                     <div style={{ fontSize: '0.68rem', color: '#555555', marginTop: '2px' }}>
@@ -633,11 +653,11 @@ export default function UniversalReportPrintModal({
                 {kpis.length > 0 && (
                   <div style={{ marginBottom: '10px' }}>
                     <div style={{ fontSize: '0.72rem', fontWeight: 900, textDecoration: 'underline', marginBottom: '4px' }}>
-                      AUDIT HIGHLIGHTS / خلاصہ:
+                      خلاصہ / AUDIT HIGHLIGHTS:
                     </div>
                     {kpis.map((kpi, idx) => (
                       <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', marginBottom: '2px' }}>
-                        <span>{kpi.label}:</span>
+                        <span>{kpi.labelUrdu || kpi.label}:</span>
                         <strong>{kpi.value}</strong>
                       </div>
                     ))}
@@ -660,7 +680,7 @@ export default function UniversalReportPrintModal({
                     return (
                       <div key={idx} style={{ fontSize: '0.68rem', marginBottom: '4px', borderBottom: '1px dotted #cccccc', paddingBottom: '2px' }}>
                         <div style={{ fontWeight: 700 }}>
-                          {idx + 1}. {row.name || row.itemName || row.employeeName || row.beneficiaryName || row.supplierName || col1 || '-'}
+                          {idx + 1}. {row.name || row.itemName || row.employeeName || row.recipientName || row.beneficiaryName || row.supplierName || col1 || '-'}
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#333333' }}>
                           <span>{row.category || row.type || row.role || col2 || ''}</span>
@@ -680,12 +700,12 @@ export default function UniversalReportPrintModal({
                 {/* Summary & Totals */}
                 <div style={{ marginBottom: '12px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', fontWeight: 900 }}>
-                    <span>TOTAL RECORDS:</span>
+                    <span>کل ریکارڈز / TOTAL RECORDS:</span>
                     <span>{data.length}</span>
                   </div>
                   {summaryRows.map((sr, idx) => (
                     <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', fontWeight: 900, marginTop: '2px' }}>
-                      <span>{sr.label}:</span>
+                      <span>{sr.labelUrdu || sr.label}:</span>
                       <span>{sr.value}</span>
                     </div>
                   ))}
@@ -694,7 +714,7 @@ export default function UniversalReportPrintModal({
                 {/* Footer Stamp */}
                 <div style={{ textAlign: 'center', fontSize: '0.66rem', color: '#444444', borderTop: '1px dashed #000000', paddingTop: '8px' }}>
                   <div>*** END OF AUDIT SLIP ***</div>
-                  <div style={{ marginTop: '2px' }}>Rana Shahab POS System</div>
+                  <div style={{ marginTop: '2px' }}>Rana Abdullah Siddique Marble Factory ERP</div>
                 </div>
               </div>
             )}

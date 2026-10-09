@@ -97,5 +97,16 @@
     - Safe document rollback mechanism restoring physical inventory and Khata balances.
     - Instant invoice linking helper for 1-click return populating.
   - Created authentic Rana Shahab sample seed data for returns and bridge-cutter wastage in `seedData.js`.
-  - Upgraded and re-routed `SalesReportsView.jsx` and `ReturnsView.jsx` into modular architectures with interactive B2B SaaS UIs, Confetti feedback, and dual Urdu/English localization.
+- **2026-10-08:**
+  - Designed and implemented **Admin Bill Profit Report & PDF System (`BillProfitPrintModal.jsx`)**:
+    - Dual format: Authentic A4 replica and 80mm thermal slip with emerald confidential theme (`CONFIDENTIAL ADMIN PROFIT AUDIT`).
+    - Category-wise stone and accessories profit breakdown with item-level cost (COGS), sale revenue, net profit in PKR, and margin percentage.
+    - Category subtotal summaries and executive net profit ribbon with collection/udhar reconciliation.
+    - 1-click **Save PDF** via Electron desktop API / web print engine, plus thermal slip and WhatsApp summary.
+  - Upgraded **New Bill (POS) Module (`BillingView.jsx`)**:
+    - Added aligned, high-contrast action button: `Bill Profit Report (Admin PDF)` in emerald green `#059669` alongside `Save & Print Bill`.
+    - Integrated real-time item cost tracking and live profit preview in review modal.
+  - Upgraded **Invoices Register (`InvoicesView.jsx`)**:
+    - Added dedicated `TrendingUp` Admin Profit action button to view and save PDF profit audits for any past invoice.
   - Verified clean production build with Vite (`npm run build`).
+

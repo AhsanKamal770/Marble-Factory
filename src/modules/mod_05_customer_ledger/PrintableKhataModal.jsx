@@ -36,8 +36,9 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
     }
   };
 
-  const companyName = settings?.companyName || 'Rana Shahab Marble Factory';
-  const tagline = settings?.tagline || 'نام ہی کافی ہے - دوسرے شہروں سے مناسب ریٹ اور اعلیٰ معیار کی گارنٹی';
+  const companyName = settings?.companyNameEnglish || settings?.companyName || 'Rana Abdullah Siddique Marble Factory';
+  const companyNameUrdu = settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری';
+  const tagline = settings?.tagline || 'معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز';
   const phone = settings?.phone || '0321-6606645';
   const phoneSecondary = settings?.phoneSecondary || '0300-6664187';
   const address = settings?.address || 'Faisalabad Road near PSO Petrol Pump, Jhumra City';
@@ -111,11 +112,11 @@ export default function PrintableKhataModal({ isOpen, onClose, customer, timelin
           }}>
             {/* Header */}
             <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '10px', marginBottom: '10px' }}>
-              <div style={{ fontSize: '15px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em' }}>
-                {companyName}
+              <div style={{ fontSize: '14px', fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif', fontWeight: 900 }}>
+                {companyNameUrdu}
               </div>
-              <div style={{ fontSize: '11px', fontFamily: 'var(--font-urdu)', marginTop: '2px', fontWeight: 700 }}>
-                رانا شہاب ماربل، گرینائٹ اینڈ ٹائلز
+              <div style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.02em', marginTop: '2px' }}>
+                {companyName}
               </div>
               <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
                 {address}

@@ -6,8 +6,8 @@ const LanguageContext = createContext();
 export const TRANSLATIONS = {
   // Navigation & Branding
   brand_title: {
-    en: "Rana Shahab Marble Factory",
-    ur: "رانا شہاب ماربل فیکٹری"
+    en: "Rana Abdullah Siddique Marble Factory",
+    ur: "رانا عبداللہ صدیق ماربل فیکٹری"
   },
   brand_subtitle: {
     en: "Granite & Tiles ERP",
@@ -106,8 +106,8 @@ export const TRANSLATIONS = {
 
   // Dashboard Specific
   dash_badge: {
-    en: "RANA SHAHAB FACTORY",
-    ur: "رانا شہاب ماربل فیکٹری"
+    en: "RANA ABDULLAH SIDDIQUE FACTORY",
+    ur: "رانا عبداللہ صدیق ماربل فیکٹری"
   },
   dash_title: {
     en: "Marble Karkhana Overview",

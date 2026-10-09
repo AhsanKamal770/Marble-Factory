@@ -17,10 +17,12 @@ import {
   ChevronRight,
   Wallet,
   Phone,
-  Filter
+  Filter,
+  TrendingUp
 } from 'lucide-react';
 import { db, adjustItemStock } from '../db/index';
 import BillPrintModal from '../components/BillPrintModal';
+import BillProfitPrintModal from '../components/BillProfitPrintModal';
 import PaymentCollectionModal from '../components/PaymentCollectionModal';
 import GlobalPagination from '../components/GlobalPagination';
 import { useLanguage } from '../context/LanguageContext';
@@ -44,6 +46,8 @@ export default function InvoicesView({ settings }) {
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [selectedInvoiceForProfit, setSelectedInvoiceForProfit] = useState(null);
+  const [isProfitModalOpen, setIsProfitModalOpen] = useState(false);
   const [selectedCustomerForPayment, setSelectedCustomerForPayment] = useState(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
@@ -876,7 +880,7 @@ export default function InvoicesView({ settings }) {
                           <button
                             type="button"
                             onClick={() => handlePrint(inv)}
-                            title={language === 'ur' ? 'پرنٹ کریں (A4 / 80mm)' : 'Print invoice receipt'}
+                            title={language === 'ur' ? 'کسٹمر بل پرنٹ کریں (A4 / 80mm)' : 'Print customer invoice receipt'}
                             style={{
                               width: '26px',
                               height: '26px',
@@ -891,6 +895,30 @@ export default function InvoicesView({ settings }) {
                             }}
                           >
                             <Printer size={12} />
+                          </button>
+
+                          {/* Admin Profit Report Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedInvoiceForProfit(inv);
+                              setIsProfitModalOpen(true);
+                            }}
+                            title={language === 'ur' ? 'ایڈمن منافع رپورٹ (پی ڈی ایف سیو)' : 'Admin Profit Report (Save PDF)'}
+                            style={{
+                              width: '26px',
+                              height: '26px',
+                              borderRadius: '6px',
+                              border: '1px solid #a7f3d0',
+                              background: '#ecfdf5',
+                              color: '#059669',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <TrendingUp size={12} />
                           </button>
 
                           {/* Collect Payment Button */}
@@ -966,6 +994,19 @@ export default function InvoicesView({ settings }) {
           isOpen={isPrintModalOpen}
           onClose={() => setIsPrintModalOpen(false)}
           invoice={selectedInvoice}
+          settings={settings}
+        />
+      )}
+
+      {/* Admin Bill Profit Report Modal */}
+      {isProfitModalOpen && selectedInvoiceForProfit && (
+        <BillProfitPrintModal
+          isOpen={isProfitModalOpen}
+          onClose={() => {
+            setIsProfitModalOpen(false);
+            setSelectedInvoiceForProfit(null);
+          }}
+          invoice={selectedInvoiceForProfit}
           settings={settings}
         />
       )}

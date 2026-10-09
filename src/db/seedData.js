@@ -2,18 +2,20 @@ import { db, logStockMovement } from './index.js';
 
 // 1. Default Official Factory Settings
 export const defaultSettings = {
-  companyName: "Rana Shahab Marble Factory",
-  tagline: "نام ہی کافی ہے - دوسرے شہروں سے مناسب ریٹ اور اعلیٰ معیار کی گارنٹی",
+  companyName: "Rana Abdullah Siddique Marble Factory",
+  companyNameEnglish: "Rana Abdullah Siddique Marble Factory",
+  companyNameUrdu: "رانا عبداللہ صدیق ماربل فیکٹری",
+  tagline: "معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز",
   phone: "0321-6606645",
   phoneSecondary: "0300-6664187",
-  proprietor1: "Rana Haji Ghulam Akbar (0300-6664187)",
-  proprietor2: "Rana Ghulam Abbas (0300-7995171)",
-  email: "ranashahab.marble@gmail.com",
+  proprietor1: "Rana Abdullah Siddique (0321-6606645)",
+  proprietor2: "Rana Haji Ghulam Akbar (0300-6664187)",
+  email: "ranaabdullahsiddique.marble@gmail.com",
   address: "Faisalabad Road near PSO Petrol Pump, Jhumra City",
   city: "Jhumra",
-  ntnNo: "NTN-33102-RSMF",
+  ntnNo: "NTN-33102-RASMF",
   currency: "PKR",
-  receiptHeader: "RANA SHAHAB MARBLE GRANITE & TILES",
+  receiptHeader: "RANA ABDULLAH SIDDIQUE MARBLE FACTORY",
   receiptFooter: "مال موقع پر چیک کریں۔ بعد میں کٹوتی یا شکایت قابل قبول نہ ہوگی۔",
   thermalWidthMm: 80,
   defaultTaxPercent: 0,
@@ -41,8 +43,27 @@ export async function initializeDatabaseWithSeedData() {
   const settingsList = await db.settings.toArray();
   if (settingsList.length === 0) {
     await db.settings.add(defaultSettings);
-  } else if (settingsList[0].openingCashBalance === 35000 || settingsList[0].openingCashBalance === 25000) {
-    await db.settings.update(settingsList[0].id, { openingCashBalance: 0 });
+  } else {
+    const current = settingsList[0];
+    const updates = {};
+    if (!current.companyName || current.companyName.includes('Rana Shahab')) {
+      updates.companyName = "Rana Abdullah Siddique Marble Factory";
+    }
+    if (!current.companyNameEnglish || current.companyNameEnglish.includes('Rana Shahab')) {
+      updates.companyNameEnglish = "Rana Abdullah Siddique Marble Factory";
+    }
+    if (!current.companyNameUrdu || current.companyNameUrdu.includes('شہاب')) {
+      updates.companyNameUrdu = "رانا عبداللہ صدیق ماربل فیکٹری";
+    }
+    if (!current.receiptHeader || current.receiptHeader.includes('SHAHAB')) {
+      updates.receiptHeader = "RANA ABDULLAH SIDDIQUE MARBLE FACTORY";
+    }
+    if (current.openingCashBalance === 35000 || current.openingCashBalance === 25000) {
+      updates.openingCashBalance = 0;
+    }
+    if (Object.keys(updates).length > 0) {
+      await db.settings.update(current.id, updates);
+    }
   }
 
   // Initialize admin user if missing

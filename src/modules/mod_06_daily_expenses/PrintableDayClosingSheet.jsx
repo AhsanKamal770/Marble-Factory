@@ -40,9 +40,10 @@ export default function PrintableDayClosingSheet({
   const dateFormatted = dateObj.toLocaleDateString("en-PK", { day: "2-digit", month: "short", year: "numeric" });
   const timeFormatted = new Date().toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", hour12: true });
 
-  const companyName = factorySettings?.companyName || "رانا شہاب ماربل فیکٹری اینڈ ٹائلز";
-  const phone = factorySettings?.phone || "0300-7708899 / 0321-6606645";
-  const address = factorySettings?.address || "جھمرہ سٹی، بالمقابل ریلوے پھاٹک، فیصل آباد روڈ";
+  const companyName = factorySettings?.companyNameUrdu || "رانا عبداللہ صدیق ماربل فیکٹری";
+  const companyNameEn = factorySettings?.companyNameEnglish || factorySettings?.companyName || "Rana Abdullah Siddique Marble Factory";
+  const phone = factorySettings?.phone || "0321-6606645 / 0300-6664187";
+  const address = factorySettings?.address || "جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد";
 
   const handlePrint = async () => {
     setIsPrinting(true);
@@ -75,6 +76,7 @@ export default function PrintableDayClosingSheet({
   const handleCopyWhatsApp = () => {
     const lines = [
       `*${companyName}*`,
+      `_${companyNameEn}_`,
       `_روزنامہ روزنامچہ و کیش کلوزنگ رپورٹ_`,
       `---------------------------------`,
       `*تاریخ:* ${dateFormatted} (${timeFormatted})`,
@@ -93,7 +95,7 @@ export default function PrintableDayClosingSheet({
       `*تفصیل اخراجات:*`,
       ...expenses.map((e, idx) => `${idx + 1}. ${e.category} - Rs.${Number(e.amount).toLocaleString()} (${e.paidTo || 'خود خرچ'})`),
       `---------------------------------`,
-      `رپورٹ برائے ریکارڈ و آڈٹ | جھمرہ سٹی`
+      `رپورٹ برائے ریکارڈ و آڈٹ | رابطہ: ${phone}`
     ].filter(Boolean);
 
     navigator.clipboard.writeText(lines.join("\n"));
@@ -160,8 +162,8 @@ export default function PrintableDayClosingSheet({
                 type="button"
                 onClick={() => setPrintFormat("a4")}
                 style={{
-                  padding: "4px 10px",
-                  fontSize: "0.76rem",
+                  padding: "5px 12px",
+                  fontSize: "0.78rem",
                   fontWeight: 700,
                   border: "none",
                   borderRadius: "4px",
@@ -174,15 +176,15 @@ export default function PrintableDayClosingSheet({
                 }}
               >
                 <FileText size={13} />
-                <span>A4 کلوزنگ شیٹ</span>
+                <span>A4 Sheet</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setPrintFormat("thermal")}
                 style={{
-                  padding: "4px 10px",
-                  fontSize: "0.76rem",
+                  padding: "5px 12px",
+                  fontSize: "0.78rem",
                   fontWeight: 700,
                   border: "none",
                   borderRadius: "4px",
@@ -195,7 +197,7 @@ export default function PrintableDayClosingSheet({
                 }}
               >
                 <Receipt size={13} />
-                <span>80mm تھرمل پرچی</span>
+                <span>80mm Slip</span>
               </button>
             </div>
           </div>
@@ -206,13 +208,13 @@ export default function PrintableDayClosingSheet({
               onClick={handleCopyWhatsApp}
               title="Copy WhatsApp Summary"
               style={{
-                fontSize: "0.75rem",
+                fontSize: "0.78rem",
                 padding: "6px 12px",
                 borderRadius: "6px",
                 border: "1px solid var(--border-color)",
                 background: "var(--bg-card)",
                 color: "var(--text-primary)",
-                fontWeight: 700,
+                fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
                 gap: "5px",
@@ -220,7 +222,7 @@ export default function PrintableDayClosingSheet({
               }}
             >
               {copied ? <Check size={13} style={{ color: "#059669" }} /> : <Share2 size={13} />}
-              <span>{copied ? "کاپی ہو گیا" : "واٹس ایپ"}</span>
+              <span>{copied ? "Copied!" : "WhatsApp"}</span>
             </button>
 
             <button
@@ -229,7 +231,7 @@ export default function PrintableDayClosingSheet({
               disabled={isPrinting}
               title="Save as PDF directly"
               style={{
-                fontSize: "0.75rem",
+                fontSize: "0.78rem",
                 padding: "6px 14px",
                 borderRadius: "6px",
                 border: "1px solid #10b981",
@@ -243,7 +245,7 @@ export default function PrintableDayClosingSheet({
               }}
             >
               <Download size={13} />
-              <span>پی ڈی ایف (Save PDF)</span>
+              <span>Save PDF</span>
             </button>
 
             <button
@@ -251,8 +253,8 @@ export default function PrintableDayClosingSheet({
               onClick={handlePrint}
               disabled={isPrinting}
               style={{
-                fontSize: "0.75rem",
-                padding: "6px 14px",
+                fontSize: "0.78rem",
+                padding: "6px 16px",
                 borderRadius: "6px",
                 border: "none",
                 background: "linear-gradient(135deg, #1e40af 0%, #1d4ed8 100%)",
@@ -266,7 +268,7 @@ export default function PrintableDayClosingSheet({
               }}
             >
               <Printer size={13} />
-              <span>پرنٹ کریں</span>
+              <span>Print</span>
             </button>
 
             <button
@@ -332,15 +334,17 @@ export default function PrintableDayClosingSheet({
                   direction: "rtl"
                 }}
               >
-                {/* Traditional Bill Book Top Header */}
+                {/* Traditional Bill Book Top Header (Bilingual Factory Name) */}
                 <div style={{ borderBottom: "2px solid #0f172a", paddingBottom: "12px", marginBottom: "14px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ textAlign: "center", fontSize: "0.85rem", color: "#64748b", fontWeight: 700, marginBottom: "4px" }}>
+                    بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", flexWrap: "wrap" }}>
                     {/* Urdu Factory Title & Slogan */}
                     <div style={{ flex: 1, textAlign: "right" }}>
-                      <div style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: 700 }}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
                       <h1
                         style={{
-                          fontSize: "1.45rem",
+                          fontSize: "1.40rem",
                           fontWeight: 900,
                           color: "#1e3a8a",
                           margin: "2px 0 0 0",
@@ -349,11 +353,24 @@ export default function PrintableDayClosingSheet({
                       >
                         {companyName}
                       </h1>
-                      <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "#0f172a", fontFamily: "var(--font-urdu)", marginTop: "2px" }}>
-                        نام ہی کافی ہے — رانا شہاب
+                      <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#059669", fontFamily: "var(--font-urdu)", marginTop: "2px" }}>
+                        معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز
                       </div>
                       <div style={{ fontSize: "0.76rem", color: "#475569", marginTop: "3px" }}>
                         {address} | فون: {phone}
+                      </div>
+                    </div>
+
+                    {/* Left: English Factory Name */}
+                    <div dir="ltr" style={{ flex: 1, textAlign: "left" }}>
+                      <div style={{ fontSize: "1.05rem", fontWeight: 900, color: "#1e3a8a", fontFamily: "system-ui, sans-serif" }}>
+                        {companyNameEn}
+                      </div>
+                      <div style={{ fontSize: "0.76rem", color: "#475569", marginTop: "2px", fontFamily: "system-ui, sans-serif" }}>
+                        Faisalabad Road, Jhumra City
+                      </div>
+                      <div style={{ fontSize: "0.76rem", color: "#475569", fontFamily: "system-ui, sans-serif" }}>
+                        Ph: {phone}
                       </div>
                     </div>
 
@@ -365,7 +382,7 @@ export default function PrintableDayClosingSheet({
                         border: "1px solid #cbd5e1",
                         padding: "8px 14px",
                         borderRadius: "6px",
-                        minWidth: "175px"
+                        minWidth: "165px"
                       }}
                     >
                       <div style={{ fontSize: "0.78rem", color: "#1e3a8a", fontWeight: 800, fontFamily: "var(--font-urdu)" }}>
@@ -661,10 +678,11 @@ export default function PrintableDayClosingSheet({
               >
                 {/* Thermal Header */}
                 <div style={{ textAlign: "center", borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontSize: "13px", fontWeight: "bold" }}>{companyName}</div>
-                  <div style={{ fontSize: "10px" }}>{address}</div>
-                  <div style={{ fontSize: "10px" }}>فون: {phone}</div>
-                  <div style={{ fontSize: "12px", fontWeight: "bold", margin: "4px 0 2px 0", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "2px 0" }}>
+                  <div style={{ fontSize: "13px", fontWeight: "bold", fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>{companyName}</div>
+                  <div style={{ fontSize: "10px", fontWeight: "bold" }}>{companyNameEn}</div>
+                  <div style={{ fontSize: "9px" }}>{address}</div>
+                  <div style={{ fontSize: "9.5px" }}>Ph: {phone}</div>
+                  <div style={{ fontSize: "11px", fontWeight: "bold", margin: "4px 0 2px 0", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "2px 0" }}>
                     روزنامچہ کلوزنگ رپورٹ (80mm)
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", marginTop: "4px" }}>

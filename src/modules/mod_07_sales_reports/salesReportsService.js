@@ -511,7 +511,7 @@ export function exportSalesReportToCSV(report) {
   const lines = [];
 
   // Metadata Header
-  lines.push(`"Rana Shahab Marble Factory - Sales & P&L Analytics Report"`);
+  lines.push(`"Rana Abdullah Siddique Marble Factory - Sales & P&L Analytics Report"`);
   lines.push(`"Horizon: ${report.label}"`);
   lines.push(`"Generated At: ${new Date().toLocaleString()}"`);
   lines.push('');

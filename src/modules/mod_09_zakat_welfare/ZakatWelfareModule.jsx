@@ -219,7 +219,7 @@ export default function ZakatWelfareModule() {
       <div style={{ display: 'none' }} className="print-target">
         <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
           <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
-            رانا شہاب ماربل فیکٹری اینڈ ٹائلز (Rana Shahab Marble Factory)
+            رانا عبداللہ صدیق ماربل فیکٹری (Rana Abdullah Siddique Marble Factory)
           </h2>
           <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
             Zakat & Welfare Charity Fund Audit Statement (زکوٰۃ و فلاحی فنڈ آڈٹ رپورٹ)
@@ -906,15 +906,15 @@ export default function ZakatWelfareModule() {
             labelUrdu: "فنڈ کیٹیگری",
             render: (r) =>
               r.category === "Zakat"
-                ? "زکوٰۃ فنڈ (Zakat)"
+                ? "زکوٰۃ فنڈ"
                 : r.category === "Ration"
-                ? "راشن فنڈ (Ration)"
-                : "ویلفیئر امداد (Welfare)"
+                ? "راشن فنڈ"
+                : "ویلفیئر امداد"
           },
           {
             key: "amount",
             label: "Amount (Rs.)",
-            labelUrdu: "رقم",
+            labelUrdu: "امداد رقم",
             align: "right",
             bold: true,
             render: (r) => `Rs. ${Number(r.amount || 0).toLocaleString()}`
@@ -924,12 +924,13 @@ export default function ZakatWelfareModule() {
         ]}
         data={filteredRecords}
         summaryRows={[
-          { label: "کل زکوٰۃ تقسیم (Total Zakat Disbursed)", value: `Rs. ${totals.zakat.toLocaleString()}` },
+          { label: "Total Zakat Disbursed", labelUrdu: "کل زکوٰۃ تقسیم", value: `Rs. ${totals.zakat.toLocaleString()}` },
           {
-            label: "کل ویلفیئر فنڈ (Total Welfare Disbursed)",
+            label: "Total Welfare Disbursed",
+            labelUrdu: "کل ویلفیئر فنڈ تقسیم",
             value: `Rs. ${(totals.welfare + totals.ration).toLocaleString()}`
           },
-          { label: "گرینڈ ٹوٹل امداد (Grand Total Disbursed)", value: `Rs. ${totals.total.toLocaleString()}` }
+          { label: "Grand Total Charity Disbursed", labelUrdu: "گرینڈ ٹوٹل امداد تقسیم", value: `Rs. ${totals.total.toLocaleString()}` }
         ]}
       />
     </div>

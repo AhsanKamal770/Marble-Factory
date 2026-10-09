@@ -65,17 +65,20 @@ export default function ThermalReceiptModal({ isOpen, onClose, invoice, settings
           >
             {/* Header */}
             <div className="thermal-header">
-              <div className="thermal-title">
-                {settings?.companyName || 'AL-MADINA MARBLE & GRANITE'}
+              <div className="thermal-title" style={{ fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif', fontSize: '14px', fontWeight: 900 }}>
+                {settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}
+              </div>
+              <div style={{ fontSize: '11px', fontWeight: 800, marginTop: '2px' }}>
+                {settings?.companyNameEnglish || settings?.companyName || 'RANA ABDULLAH SIDDIQUE MARBLE FACTORY'}
               </div>
               <div style={{ fontSize: '10px', marginTop: '2px', color: '#222' }}>
-                {settings?.tagline || 'Factory & Wholesale Depot'}
+                {settings?.tagline || 'معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز'}
               </div>
               <div style={{ fontSize: '10px', marginTop: '2px' }}>
-                {settings?.address || 'Industrial Area, Karachi'}
+                {settings?.address || 'Faisalabad Road near PSO Petrol Pump, Jhumra City'}
               </div>
               <div style={{ fontSize: '11px', fontWeight: 700, marginTop: '2px' }}>
-                Ph: {settings?.phone || '0300-1234567'}
+                Ph: {settings?.phone || '0321-6606645 | 0300-6664187'}
               </div>
             </div>
 

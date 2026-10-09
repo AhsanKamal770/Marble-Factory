@@ -33,39 +33,7 @@ import { db, adjustItemStock, logStockMovement } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import GlobalPagination from '../components/GlobalPagination';
 import UniversalReportPrintModal from '../components/UniversalReportPrintModal';
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DOMAIN TAXONOMY for Cascading Filter & Form
-// ─────────────────────────────────────────────────────────────────────────────
-const TAXONOMY = {
-  marble: {
-    label: "Marble",
-    sutars: [
-      { sutar: "4 Sutar", sizes: ["12 × 12", "12 × 24", "6 × 12", "6 × 24"] },
-      { sutar: "6 Sutar", sizes: ["12 × 12"] },
-      { sutar: "9 Sutar", sizes: ["12 × 12"] },
-      { sutar: "14 Sutar", sizes: ["12 × 12"] }
-    ]
-  },
-  tiles: {
-    label: "Tiles",
-    sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"],
-    accessories: ["Border", "Filling", "Spacer", "Gola"]
-  },
-  flowers: {
-    label: "Flowers",
-    sizes: ["12 × 12", "24 × 24", "3 × 3"]
-  },
-  borders: {
-    label: "Borders",
-    standard: ["3 inch", "6 inch"],
-    blackBorder: ["2 inch", "3 inch"]
-  },
-  panels: {
-    label: "Panels",
-    types: ["Mashallah Islamic Panels", "3D Wall Panels", "Front Elevation Panels"]
-  }
-};
+import { StockCategoryDropdownTrigger, StockCategoryFilterCard } from '../components/StockCategoryFilterCard';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Stock Display & Helper Calculations
@@ -119,371 +87,6 @@ const INITIAL_FORM = {
   location: "Yard Shed 1",
   notes: ""
 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Cascading "Filter by Item Type" Multi-Level Dropdown
-// ─────────────────────────────────────────────────────────────────────────────
-function CascadingTypeFilter({ filter, onChange }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeL1, setActiveL1] = useState(null);
-  const [activeL2, setActiveL2] = useState(null);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handleOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
-        setIsOpen(false);
-        setActiveL1(null);
-        setActiveL2(null);
-      }
-    };
-    document.addEventListener("mousedown", handleOutside);
-    return () => document.removeEventListener("mousedown", handleOutside);
-  }, []);
-
-  const displayLabel = useMemo(() => {
-    if (!filter || filter.type === "ALL") return "All Categories";
-    let text = filter.type;
-    if (filter.sutar) text += ` > ${filter.sutar}`;
-    if (filter.size) text += ` > ${filter.size}`;
-    if (filter.sub) text += ` > ${filter.sub}`;
-    return text;
-  }, [filter]);
-
-  const selectFilter = (newFilter) => {
-    onChange(newFilter);
-    setIsOpen(false);
-    setActiveL1(null);
-    setActiveL2(null);
-  };
-
-  return (
-    <div ref={ref} style={{ position: "relative" }}>
-      <button
-        type="button"
-        onClick={() => setIsOpen((v) => !v)}
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-start",
-          justifyContent: "center",
-          padding: "6px 14px",
-          minHeight: "44px",
-          minWidth: "170px",
-          background: "var(--bg-primary, #f8fafc)",
-          border: "1px solid var(--border-color, #cbd5e1)",
-          borderRadius: "10px",
-          color: "var(--text-primary, #0f172a)",
-          cursor: "pointer",
-          outline: "none",
-          textAlign: "left"
-        }}
-      >
-        <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-          Filter by Item Type
-        </span>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", gap: "6px" }}>
-          <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-primary, #0f172a)", whiteSpace: "nowrap" }}>
-            {filter?.type === "ALL" ? "All Types" : displayLabel}
-          </span>
-          <ChevronDown size={14} style={{ color: "#64748b" }} />
-        </div>
-      </button>
-
-      {isOpen && (
-        <div
-          style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            zIndex: 999,
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "2px"
-          }}
-        >
-          {/* Level 1: Categories */}
-          <div
-            style={{
-              background: "var(--bg-card, #ffffff)",
-              border: "1px solid var(--border-color, #cbd5e1)",
-              borderRadius: "10px",
-              boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-              padding: "4px 0",
-              minWidth: "150px",
-              overflow: "hidden"
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => selectFilter({ type: "ALL" })}
-              style={{
-                width: "100%",
-                padding: "8px 14px",
-                border: "none",
-                background: filter?.type === "ALL" ? "#eff6ff" : "none",
-                color: filter?.type === "ALL" ? "#2563eb" : "var(--text-primary)",
-                fontWeight: filter?.type === "ALL" ? 700 : 500,
-                fontSize: "0.83rem",
-                textAlign: "left",
-                cursor: "pointer"
-              }}
-              onMouseEnter={() => { setActiveL1(null); setActiveL2(null); }}
-            >
-              All Types
-            </button>
-
-            {["Marble", "Tiles", "Flowers", "Borders", "Panels"].map((cat) => (
-              <div
-                key={cat}
-                onMouseEnter={() => { setActiveL1(cat); setActiveL2(null); }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "8px 14px",
-                  background: activeL1 === cat ? "#eff6ff" : "none",
-                  color: activeL1 === cat ? "#2563eb" : "var(--text-primary)",
-                  cursor: "pointer",
-                  fontSize: "0.83rem",
-                  fontWeight: activeL1 === cat ? 700 : 500
-                }}
-                onClick={() => selectFilter({ type: cat })}
-              >
-                <span>{cat}</span>
-                <ChevronRight size={13} style={{ color: activeL1 === cat ? "#2563eb" : "#94a3b8" }} />
-              </div>
-            ))}
-          </div>
-
-          {/* Level 2 Sub-menu */}
-          {activeL1 === "Marble" && (
-            <div
-              style={{
-                background: "var(--bg-card, #ffffff)",
-                border: "1px solid var(--border-color, #cbd5e1)",
-                borderRadius: "10px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                padding: "4px 0",
-                minWidth: "140px"
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => selectFilter({ type: "Marble" })}
-                style={{ width: "100%", padding: "7px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#2563eb", cursor: "pointer" }}
-                onMouseEnter={() => setActiveL2(null)}
-              >
-                All Marble
-              </button>
-              {TAXONOMY.marble.sutars.map((s) => (
-                <div
-                  key={s.sutar}
-                  onMouseEnter={() => setActiveL2(s.sutar)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "7px 12px",
-                    background: activeL2 === s.sutar ? "#eff6ff" : "none",
-                    color: activeL2 === s.sutar ? "#2563eb" : "var(--text-primary)",
-                    cursor: "pointer",
-                    fontSize: "0.8rem",
-                    fontWeight: activeL2 === s.sutar ? 700 : 500
-                  }}
-                  onClick={() => selectFilter({ type: "Marble", sutar: s.sutar })}
-                >
-                  <span>{s.sutar}</span>
-                  {s.sizes?.length > 0 && <ChevronRight size={12} />}
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Level 3 Sizes for Marble Sutar */}
-          {activeL1 === "Marble" && activeL2 && (
-            <div
-              style={{
-                background: "var(--bg-card, #ffffff)",
-                border: "1px solid var(--border-color, #cbd5e1)",
-                borderRadius: "10px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                padding: "4px 0",
-                minWidth: "130px"
-              }}
-            >
-              {TAXONOMY.marble.sutars.find(s => s.sutar === activeL2)?.sizes.map((sz) => (
-                <button
-                  key={sz}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Marble", sutar: activeL2, size: sz })}
-                  style={{ width: "100%", padding: "7px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                >
-                  {sz}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Level 2 for Tiles */}
-          {activeL1 === "Tiles" && (
-            <div
-              style={{
-                background: "var(--bg-card, #ffffff)",
-                border: "1px solid var(--border-color, #cbd5e1)",
-                borderRadius: "10px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                padding: "4px 0",
-                minWidth: "160px"
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => selectFilter({ type: "Tiles" })}
-                style={{ width: "100%", padding: "7px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#2563eb", cursor: "pointer" }}
-              >
-                All Tiles
-              </button>
-              <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Standard Sizes</div>
-              {(TAXONOMY.tiles?.sizes || []).map((sz) => (
-                <button
-                  key={sz}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Tiles", size: sz })}
-                  style={{ width: "100%", padding: "6px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                >
-                  {sz}
-                </button>
-              ))}
-              <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", borderTop: "1px solid #f1f5f9", marginTop: "4px" }}>Tile Accessories</div>
-              {(TAXONOMY.tiles?.accessories || []).map((acc) => {
-                const name = typeof acc === 'string' ? acc : acc.name;
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    onClick={() => selectFilter({ type: "Tiles", sub: name })}
-                    style={{ width: "100%", padding: "6px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                  >
-                    {name}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Level 2 for Flowers */}
-          {activeL1 === "Flowers" && (
-            <div
-              style={{
-                background: "var(--bg-card, #ffffff)",
-                border: "1px solid var(--border-color, #cbd5e1)",
-                borderRadius: "10px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                padding: "4px 0",
-                minWidth: "130px"
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => selectFilter({ type: "Flowers" })}
-                style={{ width: "100%", padding: "7px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#2563eb", cursor: "pointer" }}
-              >
-                All Flowers
-              </button>
-              {(TAXONOMY.flowers?.sizes || []).map((sz) => (
-                <button
-                  key={sz}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Flowers", size: sz })}
-                  style={{ width: "100%", padding: "7px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                >
-                  {sz}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Level 2 for Borders */}
-          {activeL1 === "Borders" && (
-            <div
-              style={{
-                background: "var(--bg-card, #ffffff)",
-                border: "1px solid var(--border-color, #cbd5e1)",
-                borderRadius: "10px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                padding: "4px 0",
-                minWidth: "150px"
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => selectFilter({ type: "Borders" })}
-                style={{ width: "100%", padding: "7px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#2563eb", cursor: "pointer" }}
-              >
-                All Borders
-              </button>
-              <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase" }}>Standard Borders</div>
-              {(TAXONOMY.borders?.standard || []).map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Borders", sub: `Standard ${b}` })}
-                  style={{ width: "100%", padding: "6px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                >
-                  {b} Border
-                </button>
-              ))}
-              <div style={{ padding: "4px 12px", fontSize: "0.7rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", borderTop: "1px solid #f1f5f9", marginTop: "4px" }}>Kali Patti</div>
-              {(TAXONOMY.borders?.blackBorder || []).map((b) => (
-                <button
-                  key={b}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Borders", sub: `Kali Patti ${b}` })}
-                  style={{ width: "100%", padding: "6px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                >
-                  Kali Patti {b}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Level 2 for Panels */}
-          {activeL1 === "Panels" && (
-            <div
-              style={{
-                background: "var(--bg-card, #ffffff)",
-                border: "1px solid var(--border-color, #cbd5e1)",
-                borderRadius: "10px",
-                boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                padding: "4px 0",
-                minWidth: "170px"
-              }}
-            >
-              <button
-                type="button"
-                onClick={() => selectFilter({ type: "Panels" })}
-                style={{ width: "100%", padding: "7px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", fontWeight: 700, color: "#2563eb", cursor: "pointer" }}
-              >
-                All Panels
-              </button>
-              {(TAXONOMY.panels?.types || []).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => selectFilter({ type: "Panels", sub: p })}
-                  style={{ width: "100%", padding: "6px 12px", border: "none", background: "none", textAlign: "left", fontSize: "0.8rem", cursor: "pointer", color: "var(--text-primary)" }}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN COMPONENT: StockSheetView
@@ -575,33 +178,42 @@ export default function StockSheetView({ settings }) {
       if (statusFilter === "LOW_STOCK" && !isLowStock(item)) return false;
       if (statusFilter === "OUT_STOCK" && !isOutOfStock(item)) return false;
 
-      // Type Filter
+      // Enhanced Cascading Item Type Filter (Marble -> Sutar -> Size)
       if (itemTypeFilter && itemTypeFilter.type !== "ALL") {
         const cat = (item.category || "").toLowerCase();
         const sub = (item.subCategory || "").toLowerCase();
-        const name = (item.name || "").toLowerCase();
         const sz = (item.standardSize || "").toLowerCase();
-        const sutar = (item.sutarThickness || "").toString();
+        const name = (item.name || "").toLowerCase();
+        const sutar = String(item.sutarThickness || "");
 
         if (itemTypeFilter.type === "Marble") {
-          const isMarble = cat.includes("marble") || cat.includes("granite") || sub.includes("marble") || name.includes("marble") || name.includes("granite") || name.includes("slab");
-          if (!isMarble) return false;
+          const isMarble = cat.includes("marble") || sub.includes("marble") || cat.includes("slab") || name.includes("marble") || name.includes("slab") || name.includes("sutar");
+          const isNotOther = !cat.includes("tile") && !cat.includes("flower") && !cat.includes("border") && !cat.includes("panel") && !name.includes("flower");
+          if (!isMarble || !isNotOther) return false;
+
           if (itemTypeFilter.sutar) {
-            const target = itemTypeFilter.sutar.split(" ")[0];
-            if (sutar !== target && !sub.includes(target) && !name.includes(target)) return false;
+            const targetSutar = itemTypeFilter.sutar.split(" ")[0]; // "4", "6", "9", "14"
+            const matchesSutar = sutar === targetSutar ||
+              name.includes(`${targetSutar} sutar`) ||
+              name.includes(`${targetSutar}-sutar`) ||
+              sub.includes(`${targetSutar} sutar`) ||
+              sub.includes(`${targetSutar}-sutar`) ||
+              (targetSutar === "6" && (name.includes("kitchen") || sub.includes("kitchen") || name.includes("stairs")));
+            if (!matchesSutar) return false;
           }
+
           if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
-            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase();
-            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
           }
         } else if (itemTypeFilter.type === "Tiles") {
           const isTile = cat.includes("tile") || cat.includes("porcelain") || sub.includes("tile") || name.includes("tile");
           if (!isTile) return false;
           if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
-            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase();
-            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
           }
           if (itemTypeFilter.sub) {
             const cleanSub = itemTypeFilter.sub.toLowerCase();
@@ -611,9 +223,9 @@ export default function StockSheetView({ settings }) {
           const isFlower = cat.includes("flower") || sub.includes("flower") || name.includes("flower");
           if (!isFlower) return false;
           if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
-            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase();
-            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
           }
         } else if (itemTypeFilter.type === "Borders") {
           const isBorder = cat.includes("border") || sub.includes("border") || sub.includes("patti") || name.includes("border") || name.includes("patti");
@@ -1212,10 +824,10 @@ export default function StockSheetView({ settings }) {
             />
           </div>
 
-          {/* Cascading "Filter by Item Type" Multi-Level Dropdown */}
-          <CascadingTypeFilter
+          {/* Category Dropdown Trigger */}
+          <StockCategoryDropdownTrigger
             filter={itemTypeFilter}
-            onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
+            onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); setMovementPage(1); }}
           />
 
           {/* Date Range Dropdown */}
@@ -1316,7 +928,7 @@ export default function StockSheetView({ settings }) {
               type="button"
               onClick={() => {
                 setSearchTerm('');
-                setItemTypeFilter({ type: 'ALL' });
+                setItemTypeFilter({ type: 'ALL', sutar: null, size: null, sub: null });
                 setStatusFilter('ALL');
                 setDateRange('ALL');
                 setCustomStartDate('');
@@ -1368,6 +980,13 @@ export default function StockSheetView({ settings }) {
           </div>
         )}
       </div>
+
+      {/* Dynamic Drill-Down Card for Sutar & Sizes (No Flyout Dropdowns) */}
+      <StockCategoryFilterCard
+        filter={itemTypeFilter}
+        onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); setMovementPage(1); }}
+        totalMatches={filteredItems.length}
+      />
 
       {/* ------------------------------------------------------------------------- */}
       {/* 4. MAIN DATA TABLE (Zero Horizontal Scroll + Proportional Columns)         */}
@@ -2454,26 +2073,26 @@ export default function StockSheetView({ settings }) {
               { key: 'stockSqFt', label: 'Stock (Sq.Ft)', labelUrdu: 'اسٹاک', align: 'right', render: (r) => `${Number(r.stockSqFt || 0).toLocaleString()} sq.ft` },
               { key: 'ratePerSqFt', label: 'Rate (Rs.)', labelUrdu: 'ریٹ', align: 'right', render: (r) => `Rs.${Number(r.ratePerSqFt || 0).toLocaleString()}` },
               { key: 'valuation', label: 'Valuation (Rs.)', labelUrdu: 'کل مالیت', align: 'right', bold: true, render: (r) => `Rs.${Number((Number(r.stockSqFt || 0) * (Number(r.costPerSqFt) || Number(r.ratePerSqFt) || 0))).toLocaleString()}` },
-              { key: 'status', label: 'Status', labelUrdu: 'حیثیت', align: 'center', render: (r) => isOutOfStock(r) ? 'ختم (Out)' : isLowStock(r) ? 'کم (Low)' : 'موجود (In Stock)' }
+              { key: 'status', label: 'Status', labelUrdu: 'حیثیت', align: 'center', render: (r) => isOutOfStock(r) ? 'ختم اسٹاک' : isLowStock(r) ? 'کم اسٹاک' : 'موجود اسٹاک' }
             ]
             : [
               { key: 'date', label: 'Date', labelUrdu: 'تاریخ', render: (r) => new Date(r.date || r.createdAt || Date.now()).toLocaleDateString('en-PK') },
               { key: 'itemName', label: 'Item Name', labelUrdu: 'آئٹم', bold: true },
-              { key: 'type', label: 'Movement', labelUrdu: 'قسم', align: 'center', render: (r) => r.type },
+              { key: 'type', label: 'Movement', labelUrdu: 'قسم', align: 'center', render: (r) => r.type === 'IN' || r.type === 'PURCHASE' ? 'آمد' : r.type === 'OUT' || r.type === 'SALE' ? 'اخراج' : r.type === 'WASTAGE' ? 'ضیاع' : 'تبدیلی' },
               { key: 'quantity', label: 'Quantity / Sq.Ft', labelUrdu: 'مقدار', align: 'right', render: (r) => `${Number(r.quantity || r.qtySqFt || 0).toLocaleString()} ${r.unit || 'sqft'}` },
               { key: 'reason', label: 'Reason / Notes', labelUrdu: 'وجہ / تفصیل' },
-              { key: 'user', label: 'Authorized By', labelUrdu: 'دستخط', render: (r) => r.createdBy || r.user || 'Admin' }
+              { key: 'user', label: 'Authorized By', labelUrdu: 'مجاز شخص', render: (r) => r.createdBy || r.user || 'Admin' }
             ]
         }
         data={activeTab === 'sheet' ? filteredItems : filteredMovements}
         summaryRows={
           activeTab === 'sheet'
             ? [
-              { label: 'کل اسٹاک مالیت (Total Valuation)', value: `Rs. ${filteredItems.reduce((acc, it) => acc + ((Number(it.stockSqFt) || Number(it.stockPieces) || 0) * (Number(it.costPerSqFt) || Number(it.ratePerSqFt) || 0)), 0).toLocaleString()}` },
-              { label: 'کل مربع فٹ (Total Sq.Ft)', value: `${filteredItems.reduce((acc, it) => acc + (Number(it.stockSqFt) || 0), 0).toLocaleString()} Sq.Ft` }
+              { label: 'Total Valuation', labelUrdu: 'کل اسٹاک مالیت', value: `Rs. ${filteredItems.reduce((acc, it) => acc + ((Number(it.stockSqFt) || Number(it.stockPieces) || 0) * (Number(it.costPerSqFt) || Number(it.ratePerSqFt) || 0)), 0).toLocaleString()}` },
+              { label: 'Total Sq.Ft', labelUrdu: 'کل رقبہ (مربع فٹ)', value: `${filteredItems.reduce((acc, it) => acc + (Number(it.stockSqFt) || 0), 0).toLocaleString()} Sq.Ft` }
             ]
             : [
-              { label: 'کل اندراجات (Total Log Count)', value: `${filteredMovements.length}` }
+              { label: 'Total Log Count', labelUrdu: 'کل موومنٹ اندراجات', value: `${filteredMovements.length}` }
             ]
         }
       />

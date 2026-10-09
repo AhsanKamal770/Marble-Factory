@@ -2739,24 +2739,28 @@ export default function SupplierManagementView({ settings }) {
           activeTab === 'purchases'
             ? [
                 {
-                  label: 'کل خریداری (Total Purchases)',
+                  label: 'Total Purchases',
+                  labelUrdu: 'کل خریداری رقم',
                   value: `Rs. ${filteredPurchases.reduce((acc, p) => acc + (Number(p.grandTotal) || 0), 0).toLocaleString()}`
                 },
                 {
-                  label: 'کل واجب الادا (Total Balance Due)',
+                  label: 'Total Balance Due',
+                  labelUrdu: 'کل واجب الادا بقایا',
                   value: `Rs. ${filteredPurchases.reduce((acc, p) => acc + (Number(p.balanceDue) || 0), 0).toLocaleString()}`
                 }
               ]
             : activeTab === 'suppliers'
             ? [
                 {
-                  label: 'کل بقایا جات (Total Net Payable)',
+                  label: 'Total Net Payable',
+                  labelUrdu: 'کل واجب الادا بقایا جات',
                   value: `Rs. ${filteredSuppliers.reduce((acc, s) => acc + (Number(s.balancePayable) || 0), 0).toLocaleString()}`
                 }
               ]
             : [
                 {
-                  label: 'کل ادا شدہ رقم (Total Disbursed)',
+                  label: 'Total Disbursed',
+                  labelUrdu: 'کل ادا شدہ رقم',
                   value: `Rs. ${filteredPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0).toLocaleString()}`
                 }
               ]

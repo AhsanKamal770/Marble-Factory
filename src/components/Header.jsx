@@ -84,12 +84,12 @@ export default function Header({
     },
     'settings': {
       title: language === 'ur' ? 'فیکٹری ترتیبات و بیک اپ' : 'Factory Settings',
-      subtitle: language === 'ur' ? 'رانا شہاب ماربل پروفائل اور ڈیٹا بیک اپ' : 'Rana Shahab profile, bill book terms & local backup'
+      subtitle: language === 'ur' ? 'رانا عبداللہ صدیق ماربل پروفائل اور ڈیٹا بیک اپ' : 'Rana Abdullah Siddique profile, bill book terms & local backup'
     }
   };
 
   const currentInfo = titles[activeView] || {
-    title: language === 'ur' ? 'رانا شہاب ماربل فیکٹری' : 'Rana Shahab Marble Factory',
+    title: language === 'ur' ? 'رانا عبداللہ صدیق ماربل فیکٹری' : 'Rana Abdullah Siddique Marble Factory',
     subtitle: 'ERP + POS System'
   };
 

@@ -10,6 +10,7 @@ import {
 import { db, adjustItemStock, logStockMovement } from "../db/index";
 import { useLanguage } from "../context/LanguageContext";
 import GlobalPagination from "../components/GlobalPagination";
+import { StockCategoryDropdownTrigger, StockCategoryFilterCard } from "../components/StockCategoryFilterCard";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DOMAIN CONFIGURATION: Hierarchical Marble & Tiles Taxonomy
@@ -1018,56 +1019,77 @@ export default function StockManagementView() {
       if (statusFilter === "LOW_STOCK" && !isLowStock(item)) return false;
       if (statusFilter === "OUT_STOCK" && !isOutOfStock(item)) return false;
 
-      // 4. Cascading Item Type Filter
+      // 4. Enhanced Cascading Item Type Filter (Marble -> Sutar -> Size)
       if (itemTypeFilter && itemTypeFilter.type !== "ALL") {
         const cat = (item.category || "").toLowerCase();
         const sub = (item.subCategory || "").toLowerCase();
         const sz = (item.standardSize || "").toLowerCase();
+        const name = (item.name || "").toLowerCase();
         const sutar = String(item.sutarThickness || "");
 
         if (itemTypeFilter.type === "Marble") {
-          const isMarble = cat.includes("marble") || sub.includes("marble") || cat.includes("slab");
-          if (!isMarble) return false;
+          const isMarble = cat.includes("marble") || sub.includes("marble") || cat.includes("slab") || name.includes("marble") || name.includes("slab") || name.includes("sutar");
+          const isNotOther = !cat.includes("tile") && !cat.includes("flower") && !cat.includes("border") && !cat.includes("panel") && !name.includes("flower");
+          if (!isMarble || !isNotOther) return false;
+
           if (itemTypeFilter.sutar) {
             const targetSutar = itemTypeFilter.sutar.split(" ")[0]; // "4", "6", "9", "14"
-            if (sutar !== targetSutar) return false;
+            const matchesSutar = sutar === targetSutar ||
+              name.includes(`${targetSutar} sutar`) ||
+              name.includes(`${targetSutar}-sutar`) ||
+              sub.includes(`${targetSutar} sutar`) ||
+              sub.includes(`${targetSutar}-sutar`) ||
+              (targetSutar === "6" && (name.includes("kitchen") || sub.includes("kitchen") || name.includes("stairs")));
+            if (!matchesSutar) return false;
           }
+
           if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
-            const cleanItemSz = (sz + " " + sub).replace(/\s+/g, "").toLowerCase();
-            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
           }
         } else if (itemTypeFilter.type === "Tiles") {
-          const isTile = cat.includes("tile") || cat.includes("porcelain") || sub.includes("tile");
+          const isTile = cat.includes("tile") || cat.includes("porcelain") || sub.includes("tile") || name.includes("tile");
           if (!isTile) return false;
+
           if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
-            const cleanItemSz = (sz + " " + sub).replace(/\s+/g, "").toLowerCase();
-            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
           }
-          if (itemTypeFilter.sub) {
-            if (!sub.toLowerCase().includes(itemTypeFilter.sub.toLowerCase()) && !cat.toLowerCase().includes(itemTypeFilter.sub.toLowerCase())) return false;
-          }
-        } else if (itemTypeFilter.type === "Flowers") {
-          const isFlower = cat.includes("flower") || sub.includes("flower") || (item.name || "").toLowerCase().includes("flower");
-          if (!isFlower) return false;
-          if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
-            const cleanItemSz = (sz + " " + sub + " " + item.name).replace(/\s+/g, "").toLowerCase();
-            if (!cleanItemSz.includes(cleanSz) && !cleanItemSz.includes(cleanSz.replace("×", "x"))) return false;
-          }
-        } else if (itemTypeFilter.type === "Borders") {
-          const isBorder = cat.includes("border") || sub.includes("border") || sub.includes("patti") || (item.name || "").toLowerCase().includes("border") || (item.name || "").toLowerCase().includes("patti");
-          if (!isBorder) return false;
-          if (itemTypeFilter.sub) {
-            if (itemTypeFilter.sub.includes("Kali Patti") && !sub.includes("kali patti") && !(item.name || "").toLowerCase().includes("kali patti")) return false;
-          }
-        } else if (itemTypeFilter.type === "Panels") {
-          const isPanel = cat.includes("panel") || sub.includes("panel") || (item.name || "").toLowerCase().includes("panel") || (item.name || "").toLowerCase().includes("mashallah");
-          if (!isPanel) return false;
+
           if (itemTypeFilter.sub) {
             const cleanSub = itemTypeFilter.sub.toLowerCase();
-            if (!sub.includes(cleanSub) && !(item.name || "").toLowerCase().includes(cleanSub)) return false;
+            if (!sub.includes(cleanSub) && !cat.includes(cleanSub) && !name.includes(cleanSub)) return false;
+          }
+        } else if (itemTypeFilter.type === "Flowers") {
+          const isFlower = cat.includes("flower") || sub.includes("flower") || name.includes("flower") || name.includes("phool") || name.includes("medallion");
+          if (!isFlower) return false;
+
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
+          }
+        } else if (itemTypeFilter.type === "Borders") {
+          const isBorder = cat.includes("border") || sub.includes("border") || sub.includes("patti") || name.includes("border") || name.includes("patti");
+          if (!isBorder) return false;
+
+          if (itemTypeFilter.sub) {
+            if (itemTypeFilter.sub.includes("Kali Patti") || itemTypeFilter.sub.includes("Black")) {
+              if (!sub.includes("kali") && !name.includes("kali") && !name.includes("black")) return false;
+            }
+            if (itemTypeFilter.sub.includes("3 inch") && !sz.includes("3") && !name.includes("3") && !sub.includes("3")) return false;
+            if (itemTypeFilter.sub.includes("6 inch") && !sz.includes("6") && !name.includes("6") && !sub.includes("6")) return false;
+            if (itemTypeFilter.sub.includes("2 inch") && !sz.includes("2") && !name.includes("2") && !sub.includes("2")) return false;
+          }
+        } else if (itemTypeFilter.type === "Panels") {
+          const isPanel = cat.includes("panel") || sub.includes("panel") || name.includes("panel") || name.includes("mashallah");
+          if (!isPanel) return false;
+
+          if (itemTypeFilter.sub) {
+            const cleanSub = itemTypeFilter.sub.toLowerCase();
+            if (!sub.includes(cleanSub) && !name.includes(cleanSub)) return false;
           }
         }
       }
@@ -1518,8 +1540,8 @@ export default function StockManagementView() {
             />
           </div>
 
-          {/* Cascading "Filter by Item Type" Multi-Level Dropdown */}
-          <CascadingTypeFilter
+          {/* Category Dropdown Trigger */}
+          <StockCategoryDropdownTrigger
             filter={itemTypeFilter}
             onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
           />
@@ -1622,7 +1644,7 @@ export default function StockManagementView() {
               type="button"
               onClick={() => {
                 setSearchTerm("");
-                setItemTypeFilter({ type: "ALL" });
+                setItemTypeFilter({ type: "ALL", sutar: null, size: null, sub: null });
                 setStatusFilter("ALL");
                 setDateRange("ALL");
                 setCustomStartDate("");
@@ -1637,6 +1659,13 @@ export default function StockManagementView() {
           )}
         </div>
       </div>
+
+      {/* Dynamic Drill-Down Card for Sutar & Sizes (No Flyout Dropdowns) */}
+      <StockCategoryFilterCard
+        filter={itemTypeFilter}
+        onChange={(newFilter) => { setItemTypeFilter(newFilter); setCurrentPage(1); }}
+        totalMatches={filteredItems.length}
+      />
 
       {/* ------------------------------------------------------------------------- */}
       {/* 4. STOCK DATA TABLE (Consistent with Bills & Invoices Table Styling)       */}
