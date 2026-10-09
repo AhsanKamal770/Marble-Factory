@@ -1007,19 +1007,20 @@ export default function StockSheetView({ settings }) {
                   </th>
                   <th style={{ width: '85px', padding: '10px 6px' }}>CODE ↑</th>
                   <th style={{ padding: '10px 8px' }}>PRODUCT NAME</th>
-                  <th style={{ width: '125px', padding: '10px 6px' }}>CATEGORY</th>
-                  <th style={{ width: '140px', padding: '10px 6px' }}>DIMENSIONS / SPECS</th>
-                  <th style={{ width: '95px', textAlign: 'right', padding: '10px 6px' }}>STOCK</th>
-                  <th style={{ width: '85px', textAlign: 'right', padding: '10px 6px' }}>RATE</th>
-                  <th style={{ width: '105px', textAlign: 'right', padding: '10px 6px' }}>TOTAL VALUE</th>
-                  <th style={{ width: '85px', textAlign: 'center', padding: '10px 4px' }}>STATUS</th>
-                  <th className="no-print" style={{ width: '85px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
+                  <th style={{ width: '115px', padding: '10px 6px' }}>CATEGORY</th>
+                  <th style={{ width: '125px', padding: '10px 6px' }}>DIMENSIONS / SPECS</th>
+                  <th style={{ width: '90px', textAlign: 'right', padding: '10px 6px' }}>STOCK</th>
+                  <th style={{ width: '85px', textAlign: 'right', padding: '10px 6px' }}>COST RATE</th>
+                  <th style={{ width: '85px', textAlign: 'right', padding: '10px 6px' }}>SALE RATE</th>
+                  <th style={{ width: '100px', textAlign: 'right', padding: '10px 6px' }}>TOTAL VALUE</th>
+                  <th style={{ width: '80px', textAlign: 'center', padding: '10px 4px' }}>STATUS</th>
+                  <th className="no-print" style={{ width: '80px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedItems.length === 0 ? (
                   <tr>
-                    <td colSpan={10} style={{ textAlign: 'center', padding: '45px 20px', color: '#94a3b8' }}>
+                    <td colSpan={11} style={{ textAlign: 'center', padding: '45px 20px', color: '#94a3b8' }}>
                       <div style={{ fontSize: '0.92rem', fontWeight: 700 }}>No stock items match your filter criteria.</div>
                       <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>Click "+ New Stock Entry" to add new inventory.</div>
                     </td>
@@ -1102,7 +1103,12 @@ export default function StockSheetView({ settings }) {
                           )}
                         </td>
 
-                        {/* Unit Rate */}
+                        {/* Cost Rate */}
+                        <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#64748b', fontSize: '0.82rem', padding: '8px 6px', whiteSpace: 'nowrap' }}>
+                          Rs. {Number(item.costPerSqFt || 0).toLocaleString()}
+                        </td>
+
+                        {/* Sale Rate */}
                         <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.82rem', padding: '8px 6px', whiteSpace: 'nowrap' }}>
                           Rs. {Number(item.ratePerSqFt || 0).toLocaleString()}
                         </td>
@@ -1378,17 +1384,24 @@ export default function StockSheetView({ settings }) {
             {/* Drawer Body */}
             <div style={{ padding: "20px", overflowY: "auto", flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
               {/* Key Metric Strip */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "12px", borderRadius: "10px", border: "1px solid var(--border-color, #e2e8f0)" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>Current Stock</div>
-                  <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }} className="font-mono">
-                    {drawerItem.stockSqFt || drawerItem.stockPieces || drawerItem.stockBoxes || 0} <span style={{ fontSize: "0.75rem", color: "#64748b" }}>{drawerItem.unit}</span>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "10px", borderRadius: "10px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+                  <div style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 600 }}>Current Stock</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-primary)", marginTop: "2px" }} className="font-mono">
+                    {drawerItem.stockSqFt || drawerItem.stockPieces || drawerItem.stockBoxes || 0} <span style={{ fontSize: "0.7rem", color: "#64748b" }}>{drawerItem.unit}</span>
                   </div>
                 </div>
 
-                <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "12px", borderRadius: "10px", border: "1px solid var(--border-color, #e2e8f0)" }}>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>Unit Rate</div>
-                  <div style={{ fontSize: "1.15rem", fontWeight: 800, color: "#2563eb", marginTop: "2px" }} className="font-mono">
+                <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "10px", borderRadius: "10px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+                  <div style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 600 }}>Cost Rate</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 800, color: "#475569", marginTop: "2px" }} className="font-mono">
+                    Rs. {Number(drawerItem.costPerSqFt || 0).toLocaleString()}
+                  </div>
+                </div>
+
+                <div style={{ background: "var(--bg-primary, #f8fafc)", padding: "10px", borderRadius: "10px", border: "1px solid var(--border-color, #e2e8f0)" }}>
+                  <div style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 600 }}>Sale Rate</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 800, color: "#2563eb", marginTop: "2px" }} className="font-mono">
                     Rs. {Number(drawerItem.ratePerSqFt || 0).toLocaleString()}
                   </div>
                 </div>
@@ -1808,11 +1821,11 @@ export default function StockSheetView({ settings }) {
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
                     <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "#1e293b" }}>
-                      Dimensions & Unit Configuration (پیمائش اور یونٹ کی ترتیب)
+                      Dimensions, Quantity & Unit (پیمائش اور تعداد)
                     </span>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.1fr", gap: "10px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px" }}>
                     {/* Length (ft) */}
                     <div className="app-form-group">
                       <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
@@ -1826,19 +1839,18 @@ export default function StockSheetView({ settings }) {
                           onChange={e => {
                             const val = e.target.value;
                             setFormData(p => {
-                              const nextLen = val;
-                              const w = p.width;
+                              const nextLen = parseFloat(val) || 0;
+                              const w = parseFloat(p.width) || 0;
+                              const pcs = parseFloat(p.stockPieces) || 1;
+                              const sqft = Math.round(nextLen * w * pcs * 100) / 100;
                               let newSize = p.standardSize;
-                              if (nextLen && w) {
-                                newSize = `${nextLen} × ${w}`;
-                              } else if (nextLen) {
-                                newSize = `${nextLen} ft`;
-                              }
-                              return { ...p, length: nextLen, standardSize: newSize };
+                              if (val && p.width) newSize = `${val} × ${p.width}`;
+                              else if (val) newSize = `${val} ft`;
+                              return { ...p, length: nextLen || val, stockSqFt: sqft, standardSize: newSize };
                             });
                           }}
-                          placeholder="ft (e.g. 1, 2, 4)"
-                          className="app-form-input has-icon font-mono"
+                          placeholder="e.g. 1, 2"
+                          className="app-form-input font-mono"
                         />
                       </div>
                     </div>
@@ -1856,19 +1868,44 @@ export default function StockSheetView({ settings }) {
                           onChange={e => {
                             const val = e.target.value;
                             setFormData(p => {
-                              const l = p.length;
-                              const nextWidth = val;
+                              const l = parseFloat(p.length) || 0;
+                              const nextWidth = parseFloat(val) || 0;
+                              const pcs = parseFloat(p.stockPieces) || 1;
+                              const sqft = Math.round(l * nextWidth * pcs * 100) / 100;
                               let newSize = p.standardSize;
-                              if (l && nextWidth) {
-                                newSize = `${l} × ${nextWidth}`;
-                              } else if (nextWidth) {
-                                newSize = `${nextWidth} ft`;
-                              }
-                              return { ...p, width: nextWidth, standardSize: newSize };
+                              if (p.length && val) newSize = `${p.length} × ${val}`;
+                              else if (val) newSize = `${val} ft`;
+                              return { ...p, width: nextWidth || val, stockSqFt: sqft, standardSize: newSize };
                             });
                           }}
-                          placeholder="ft (e.g. 1, 2, 0.5)"
-                          className="app-form-input has-icon font-mono"
+                          placeholder="e.g. 1, 0.5"
+                          className="app-form-input font-mono"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Pieces */}
+                    <div className="app-form-group">
+                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                        Quantity (Pieces)
+                      </label>
+                      <div className="app-input-wrapper">
+                        <input
+                          type="number"
+                          step="any"
+                          value={formData.stockPieces || ""}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setFormData(p => {
+                              const l = parseFloat(p.length) || 0;
+                              const w = parseFloat(p.width) || 0;
+                              const pcs = parseFloat(val) || 0;
+                              const sqft = Math.round(l * w * pcs * 100) / 100;
+                              return { ...p, stockPieces: val, stockBoxes: val, stockSqFt: sqft };
+                            });
+                          }}
+                          placeholder="e.g. 100"
+                          className="app-form-input font-mono"
                         />
                       </div>
                     </div>
@@ -1894,6 +1931,27 @@ export default function StockSheetView({ settings }) {
                         <ChevronDown size={14} className="app-input-chevron" />
                       </div>
                     </div>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginTop: '10px',
+                    paddingTop: '10px',
+                    borderTop: '1px solid #e2e8f0',
+                    fontSize: '0.82rem'
+                  }}>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>Total Calculated Stock (Sq.Ft / Unit):</span>
+                    <span className="font-mono" style={{ fontWeight: 800, color: '#2563eb', fontSize: '1rem' }}>
+                      <input
+                        type="number"
+                        step="any"
+                        value={formData.stockSqFt}
+                        onChange={e => setFormData(p => ({ ...p, stockSqFt: e.target.value }))}
+                        style={{ background: 'transparent', border: 'none', color: 'inherit', fontWeight: 'inherit', width: '80px', textAlign: 'right', borderBottom: '1px dashed #2563eb', outline: 'none' }}
+                      />
+                    </span>
                   </div>
                 </div>
 
@@ -1938,27 +1996,8 @@ export default function StockSheetView({ settings }) {
                   </div>
                 </div>
 
-                {/* 6. Stock Quantity & Low Stock Alert (2-Column Grid) */}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                  <div className="app-form-group">
-                    <label className="app-form-label">
-                      Initial Stock ({formData.unit || "Sq. Ft."}) <span className="app-form-label-required">*</span>
-                    </label>
-                    <div className="app-input-wrapper">
-                      <Boxes size={16} className="app-input-icon" />
-                      <input
-                        type="number"
-                        step="any"
-                        required
-                        value={formData.stockSqFt}
-                        onChange={e => setFormData(p => ({ ...p, stockSqFt: e.target.value, stockPieces: e.target.value, stockBoxes: e.target.value }))}
-                        className="app-form-input has-icon font-mono"
-                        placeholder="0"
-                        style={{ fontWeight: 700 }}
-                      />
-                    </div>
-                  </div>
-
+                {/* 6. Low Stock Alert */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "12px" }}>
                   <div className="app-form-group">
                     <label className="app-form-label">
                       Low Stock Alert Threshold
@@ -2071,7 +2110,8 @@ export default function StockSheetView({ settings }) {
               { key: 'name', label: 'Item Description', labelUrdu: 'نام و تفصیل', bold: true },
               { key: 'category', label: 'Category', labelUrdu: 'کیٹیگری', render: (r) => `${r.category || ''} ${r.subCategory ? '- ' + r.subCategory : ''}` },
               { key: 'stockSqFt', label: 'Stock (Sq.Ft)', labelUrdu: 'اسٹاک', align: 'right', render: (r) => `${Number(r.stockSqFt || 0).toLocaleString()} sq.ft` },
-              { key: 'ratePerSqFt', label: 'Rate (Rs.)', labelUrdu: 'ریٹ', align: 'right', render: (r) => `Rs.${Number(r.ratePerSqFt || 0).toLocaleString()}` },
+              { key: 'costPerSqFt', label: 'Cost Rate (Rs.)', labelUrdu: 'لاگت ریٹ', align: 'right', render: (r) => `Rs.${Number(r.costPerSqFt || 0).toLocaleString()}` },
+              { key: 'ratePerSqFt', label: 'Sale Rate (Rs.)', labelUrdu: 'سیل ریٹ', align: 'right', render: (r) => `Rs.${Number(r.ratePerSqFt || 0).toLocaleString()}` },
               { key: 'valuation', label: 'Valuation (Rs.)', labelUrdu: 'کل مالیت', align: 'right', bold: true, render: (r) => `Rs.${Number((Number(r.stockSqFt || 0) * (Number(r.costPerSqFt) || Number(r.ratePerSqFt) || 0))).toLocaleString()}` },
               { key: 'status', label: 'Status', labelUrdu: 'حیثیت', align: 'center', render: (r) => isOutOfStock(r) ? 'ختم اسٹاک' : isLowStock(r) ? 'کم اسٹاک' : 'موجود اسٹاک' }
             ]

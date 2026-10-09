@@ -384,9 +384,10 @@ export default function SupplierManagementView({ settings }) {
         itemId: nextItem.id,
         name: nextItem.name,
         category: nextItem.category,
-        totalSqFt: 500,
+        pieces: 1,
+        totalSqFt: (nextItem.length && nextItem.width) ? Math.round(nextItem.length * nextItem.width * 100) / 100 : 500,
         ratePerSqFt: nextItem.costPerSqFt || nextItem.ratePerSqFt || 200,
-        amount: 500 * (nextItem.costPerSqFt || nextItem.ratePerSqFt || 200)
+        amount: ((nextItem.length && nextItem.width) ? Math.round(nextItem.length * nextItem.width * 100) / 100 : 500) * (nextItem.costPerSqFt || nextItem.ratePerSqFt || 200)
       }
     ]);
   };
@@ -403,11 +404,30 @@ export default function SupplierManagementView({ settings }) {
         row.name = found.name;
         row.category = found.category;
         row.ratePerSqFt = found.costPerSqFt || found.ratePerSqFt || row.ratePerSqFt || 200;
+        
+        const pcs = parseFloat(row.pieces) || 1;
+        const l = parseFloat(found.length) || 0;
+        const w = parseFloat(found.width) || 0;
+        if (l && w) {
+          row.totalSqFt = Math.round(l * w * pcs * 100) / 100;
+        }
       } else {
         row.itemId = parsedId;
       }
     } else {
       row[field] = value;
+    }
+
+    if (field === 'pieces') {
+      const pcs = parseFloat(value) || 0;
+      const found = items.find((i) => String(i.id) === String(row.itemId));
+      if (found) {
+        const l = parseFloat(found.length) || 0;
+        const w = parseFloat(found.width) || 0;
+        if (l && w) {
+          row.totalSqFt = Math.round(l * w * pcs * 100) / 100;
+        }
+      }
     }
 
     const sqft = parseFloat(field === 'totalSqFt' ? value : row.totalSqFt) || 0;
@@ -2111,8 +2131,9 @@ export default function SupplierManagementView({ settings }) {
                   </div>
 
                   {/* Table Column Headings */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.1fr 1.2fr 36px', gap: '8px', padding: '0 8px 6px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1.1fr 1.2fr 36px', gap: '8px', padding: '0 8px 6px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
                     <span>Select Item / Type</span>
+                    <span>Pieces</span>
                     <span>Qty (Sq.Ft)</span>
                     <span>Rate / Sq.Ft</span>
                     <span style={{ textAlign: 'right' }}>Total (Rs.)</span>
@@ -2121,7 +2142,7 @@ export default function SupplierManagementView({ settings }) {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
                     {purchaseItems.map((it, idx) => (
-                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '2fr 1.1fr 1.1fr 1.2fr 36px', gap: '8px', alignItems: 'center', background: '#ffffff', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1.1fr 1.2fr 36px', gap: '8px', alignItems: 'center', background: '#ffffff', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                         <div className="app-input-wrapper">
                           <Layers size={14} className="app-input-icon" />
                           <select
@@ -2140,6 +2161,19 @@ export default function SupplierManagementView({ settings }) {
                             })}
                           </select>
                           <ChevronDown size={12} className="app-input-chevron" />
+                        </div>
+
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="any"
+                            min="0"
+                            placeholder="Pieces"
+                            className="app-form-input font-mono"
+                            value={it.pieces || ""}
+                            onChange={(e) => handleUpdatePurchaseItem(idx, 'pieces', e.target.value)}
+                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
+                          />
                         </div>
 
                         <div className="app-input-wrapper">

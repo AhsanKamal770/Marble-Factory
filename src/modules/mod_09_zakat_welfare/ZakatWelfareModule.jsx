@@ -35,7 +35,16 @@ export default function ZakatWelfareModule() {
   const isUrdu = language === "ur";
   const tr = (en, ur) => (isUrdu ? ur : en);
 
-  const [zakatRecords, setZakatRecords] = useState([]);
+  const liveRecords = useLiveQuery(async () => {
+    try {
+      const all = await zakatWelfareService.getAllRecords();
+      return (all || []).sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const zakatRecords = liveRecords || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("ALL"); // 'ALL' | 'Zakat' | 'Welfare' | 'Ration'
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -51,21 +60,6 @@ export default function ZakatWelfareModule() {
   const [paymentMode, setPaymentMode] = useState("Cash");
   const [reason, setReason] = useState("Monthly Ration Support");
   const [disbursementDate, setDisbursementDate] = useState(new Date().toISOString().slice(0, 10));
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const allZakat = await zakatWelfareService.getAllRecords();
-      setZakatRecords(
-        allZakat.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
-      );
-    } catch (err) {
-      console.error("Error loading Zakat records:", err);
-    }
-  };
 
   const handleOpenAddModal = () => {
     setEditingRecordId(null);
@@ -99,7 +93,6 @@ export default function ZakatWelfareModule() {
 
     try {
       await zakatWelfareService.deleteRecord(rec.id);
-      loadData();
     } catch (err) {
       alert("Error deleting record: " + err.message);
     }
@@ -146,7 +139,6 @@ export default function ZakatWelfareModule() {
       setRecipientName("");
       setRecipientPhone("");
       setAmount("");
-      loadData();
     } catch (err) {
       alert("Error saving record: " + err.message);
     }

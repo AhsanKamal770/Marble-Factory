@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getLiveCashInDrawer, adjustItemStock } from '../db/index';
+import { addExpense } from '../modules/mod_06_daily_expenses/dailyExpenseService';
 import { useLanguage } from '../context/LanguageContext';
 import Badge from '../components/Badge';
 import ThermalReceiptModal from '../components/ThermalReceiptModal';
@@ -397,7 +398,7 @@ export default function DashboardView({ setActiveView, settings }) {
     if (!expenseForm.amount || Number(expenseForm.amount) <= 0) return;
 
     try {
-      await db.daily_expenses.add({
+      await addExpense({
         date: todayDate,
         category: expenseForm.category,
         amount: Number(expenseForm.amount),
@@ -1621,8 +1622,12 @@ export default function DashboardView({ setActiveView, settings }) {
                   >
                     <option value="Food / Mess (کھانا چائے)">Food / Tea (کھانا چائے)</option>
                     <option value="Petrol / Fuel (پٹرول ڈیزل)">Petrol / Diesel (ایندھن)</option>
+                    <option value="Labour / Loading (مزدوری)">Labour & Loading (مزدوری)</option>
                     <option value="Customer Udhar / Cash Advance (گاہک ادھار)">Cash Advance / Carriage</option>
+                    <option value="Employee Advance (ملازم خرچہ)">Worker Kharcha / Advance</option>
+                    <option value="Zakat / Charity (زکوٰۃ و خیرات)">Zakat / Charity / Sadqah (زکوٰۃ و صدقات)</option>
                     <option value="Factory Maintenance (مرمت و متفرق)">Factory Maintenance</option>
+                    <option value="Miscellaneous (متفرق)">Miscellaneous (متفرق)</option>
                   </select>
                 </div>
                 <div className="form-group">
