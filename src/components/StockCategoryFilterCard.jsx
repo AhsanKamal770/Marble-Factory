@@ -53,7 +53,7 @@ export const STOCK_TAXONOMY = {
   tiles: {
     key: 'Tiles',
     labelEn: 'Tiles & Porcelain',
-    labelUr: 'ٹائلز و پورسلین (1 میٹر = 5 پیس)',
+    labelUr: 'ٹائلز و پورسلین (فی میٹر)',
     icon: Grid3X3,
     sizes: ['12 × 24', '24 × 24', '24 × 48', '16 × 16'],
     accessories: [

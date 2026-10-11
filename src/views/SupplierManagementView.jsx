@@ -308,7 +308,7 @@ export default function SupplierManagementView({ settings }) {
       const categoryKey = getItemCategoryKey(defaultItem);
       const details = getCategoryUnitDetails(categoryKey);
       const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
-      const defPcs = details.isTiles ? 100 : (details.isRunning ? 0 : 50);
+      const defPcs = (details.isTiles || details.isRunning) ? 0 : 50;
       const rate = defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200;
 
       setPurchaseItems([
@@ -346,7 +346,7 @@ export default function SupplierManagementView({ settings }) {
         const categoryKey = it.category || getItemCategoryKey(found || it);
         const details = getCategoryUnitDetails(categoryKey);
         const qty = it.quantity !== undefined ? it.quantity : it.totalSqFt;
-        const pcs = it.pieces !== undefined ? it.pieces : (details.isTiles ? Math.round(Number(qty) * 5) : (details.isRunning ? 0 : Number(qty)));
+        const pcs = details.isTiles ? 0 : (it.pieces !== undefined ? it.pieces : (details.isRunning ? 0 : Number(qty)));
         return {
           ...it,
           category: categoryKey,
@@ -362,7 +362,7 @@ export default function SupplierManagementView({ settings }) {
       const categoryKey = getItemCategoryKey(defaultItem);
       const details = getCategoryUnitDetails(categoryKey);
       const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
-      const defPcs = details.isTiles ? 100 : (details.isRunning ? 0 : 50);
+      const defPcs = (details.isTiles || details.isRunning) ? 0 : 50;
       const rate = defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200;
       setPurchaseItems([
         {
@@ -489,7 +489,7 @@ export default function SupplierManagementView({ settings }) {
         if (details.isTiles) {
           row.quantity = 20;
           row.totalSqFt = 20;
-          row.pieces = 100;
+          row.pieces = 0;
         } else if (details.isRunning) {
           row.quantity = 50;
           row.totalSqFt = 50;
@@ -521,7 +521,7 @@ export default function SupplierManagementView({ settings }) {
           const meters = parseFloat(row.quantity !== undefined ? row.quantity : row.totalSqFt) || 20;
           row.quantity = meters;
           row.totalSqFt = meters;
-          row.pieces = Math.round(meters * 5);
+          row.pieces = 0;
         } else if (details.isRunning) {
           const rft = parseFloat(row.quantity !== undefined ? row.quantity : row.totalSqFt) || 50;
           row.quantity = rft;
@@ -549,9 +549,7 @@ export default function SupplierManagementView({ settings }) {
       row.pieces = value;
       const details = getCategoryUnitDetails(row.category);
       if (details.isTiles) {
-        const meters = Math.round((pcs / 5) * 100) / 100;
-        row.quantity = meters;
-        row.totalSqFt = meters;
+        row.pieces = 0;
       } else if (details.isPieces) {
         row.quantity = pcs;
         row.totalSqFt = pcs;
@@ -571,7 +569,7 @@ export default function SupplierManagementView({ settings }) {
       row.totalSqFt = value;
       const details = getCategoryUnitDetails(row.category);
       if (details.isTiles) {
-        row.pieces = Math.round(qty * 5);
+        row.pieces = 0;
       } else if (details.isPieces) {
         row.pieces = qty;
       }
@@ -2059,7 +2057,7 @@ export default function SupplierManagementView({ settings }) {
                           <tr key={idx} style={{ borderTop: '1px solid var(--border-color)' }}>
                             <td style={{ padding: '8px', fontWeight: 600 }}>{it.name}</td>
                             <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.74rem', color: '#64748b' }}>{it.category || '—'}</td>
-                            <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{it.pieces !== undefined && it.pieces !== null && it.pieces !== '' ? it.pieces : '—'}</td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{it.category === 'Tiles' || it.unit === 'Meters' || it.unit === 'Running Feet' ? '—' : (it.pieces !== undefined && it.pieces !== null && it.pieces !== '' ? it.pieces : '—')}</td>
                             <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
                               {qtyVal} <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{unitLabel}</span>
                             </td>
@@ -2286,7 +2284,7 @@ export default function SupplierManagementView({ settings }) {
                         Inward Shipment Materials ({purchaseItems.length} {purchaseItems.length === 1 ? 'Item' : 'Items'})
                       </label>
                       <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
-                        Select materials: Marble (Sq.Ft), Tiles (Meters, 1m=5pcs), Borders/Kali Patti (R.Ft, 1ft length), Flowers/Panels/Accessories (Pieces)
+                        Select materials: Marble (Sq.Ft), Tiles (Meters, Per Meter), Borders/Kali Patti (R.Ft, 1ft length), Flowers/Panels/Accessories (Pieces)
                       </div>
                     </div>
                     <button
@@ -2394,13 +2392,31 @@ export default function SupplierManagementView({ settings }) {
                                   border: '1px dashed #cbd5e1'
                                 }}
                               />
+                            ) : details.isTiles ? (
+                              <input
+                                type="text"
+                                disabled
+                                value="Per Meter"
+                                title="Tiles are measured strictly in Meters (no pieces)"
+                                className="app-form-input font-mono"
+                                style={{
+                                  padding: '7px 4px',
+                                  fontSize: '0.74rem',
+                                  height: '36px',
+                                  textAlign: 'center',
+                                  fontWeight: 600,
+                                  background: '#f8fafc',
+                                  color: '#64748b',
+                                  border: '1px dashed #cbd5e1'
+                                }}
+                              />
                             ) : (
                               <input
                                 type="number"
                                 step="any"
                                 min="0"
-                                placeholder={details.isTiles ? 'Pcs (5/m)' : 'Pieces'}
-                                title={details.isTiles ? '1 Meter = 5 Pieces' : 'Pieces'}
+                                placeholder="Pieces"
+                                title="Pieces"
                                 className="app-form-input font-mono"
                                 value={it.pieces !== undefined && it.pieces !== null ? it.pieces : ''}
                                 onChange={(e) => handleUpdatePurchaseItem(idx, 'pieces', e.target.value)}

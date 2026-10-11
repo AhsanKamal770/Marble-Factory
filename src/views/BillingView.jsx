@@ -657,8 +657,7 @@ export default function BillingView({ setActiveView, settings }) {
 
     setItemModalForm(prev => {
       if (isTile) {
-        const p = prev.pieces || 10;
-        const m = Math.round((p / 5) * 100) / 100;
+        const m = prev.meters || 20;
         return {
           ...prev,
           itemId: selectedItem.id,
@@ -670,7 +669,7 @@ export default function BillingView({ setActiveView, settings }) {
           selectedSizePreset: detected.preset,
           length: itemL,
           width: itemW,
-          pieces: p,
+          pieces: 0,
           meters: m,
           boxes: 0,
           totalSqFt: m,
@@ -864,8 +863,7 @@ export default function BillingView({ setActiveView, settings }) {
       const isAccessory = cat === 'Accessories';
 
       if (isTile) {
-        const p = prev.pieces || 10;
-        const m = Math.round((p / 5) * 100) / 100;
+        const m = prev.meters || 20;
         const rate = preset.defaultRate || prev.ratePerSqFt || 850;
         return {
           ...prev,
@@ -873,7 +871,7 @@ export default function BillingView({ setActiveView, settings }) {
           selectedSizePreset: preset.label,
           length: preset.length || prev.length || 2,
           width: preset.width || prev.width || 1,
-          pieces: p,
+          pieces: 0,
           meters: m,
           totalSqFt: m,
           ratePerSqFt: rate,
@@ -1096,7 +1094,7 @@ export default function BillingView({ setActiveView, settings }) {
       ];
     }
 
-    // 4. Tiles (12×24, 24×24, 24×48, 16×16) - Per Meter (5 pcs = 1m)
+    // 4. Tiles (12×24, 24×24, 24×48, 16×16) - Per Meter
     if (itemCategoryFilter === 'Tiles' || cat.includes('tile') || sub.includes('tile')) {
       return [
         { label: '12 × 24', length: 2, width: 1, desc: '12" × 24" (Per Meter)' },
@@ -1146,25 +1144,12 @@ export default function BillingView({ setActiveView, settings }) {
       next.ratePerSqFt = rate;
 
       if (isTile) {
-        if (field === 'pieces') {
-          const p = parseInt(val, 10) || 0;
-          const m = Math.round((p / 5) * 100) / 100;
-          next.pieces = p;
-          next.meters = m;
-          next.totalSqFt = m;
-        } else if (field === 'meters') {
-          const m = parseFloat(val) || 0;
-          const p = Math.round(m * 5);
-          next.meters = m;
-          next.pieces = p;
-          next.totalSqFt = m;
-        } else {
-          const m = parseFloat(next.meters) || ((parseInt(next.pieces, 10) || 0) / 5);
-          next.meters = m;
-          next.totalSqFt = m;
-        }
+        const m = parseFloat(field === 'meters' ? val : next.meters) || 0;
+        next.meters = m;
+        next.pieces = 0;
+        next.totalSqFt = m;
         next.unit = 'Meter';
-        next.amount = Math.round((next.meters || 0) * rate);
+        next.amount = Math.round(m * rate);
         return next;
       }
 
@@ -1248,7 +1233,7 @@ export default function BillingView({ setActiveView, settings }) {
 
     if (isTile) {
       finalUnit = 'Meter';
-      billedQuantity = Number(itemModalForm.meters) || (Number(itemModalForm.pieces || 0) / 5) || 0;
+      billedQuantity = Number(itemModalForm.meters) || 0;
     } else if (isRunning) {
       finalUnit = 'R.Ft.';
       billedQuantity = Number(itemModalForm.runningFeet) || Number(itemModalForm.length) || Number(itemModalForm.totalSqFt) || 1;
@@ -1279,7 +1264,7 @@ export default function BillingView({ setActiveView, settings }) {
       selectedSizePreset: selectedSizePreset,
       length: itemModalForm.length,
       width: itemModalForm.width,
-      pieces: isRunning ? 0 : Number(itemModalForm.pieces || (isAccessory ? billedQuantity : 0)),
+      pieces: (isRunning || isTile) ? 0 : Number(itemModalForm.pieces || (isAccessory ? billedQuantity : 0)),
       boxes: 0,
       meters: Number(itemModalForm.meters || (isTile ? billedQuantity : 0)),
       runningFeet: Number(itemModalForm.runningFeet || (isRunning ? billedQuantity : 0)),
@@ -2033,7 +2018,7 @@ export default function BillingView({ setActiveView, settings }) {
                         {/* Subordinate product metadata */}
                         <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '3px' }}>
                           {item.unit === 'Meter'
-                            ? `Tiles • Per Meter (5 Pcs = 1m) • ${item.selectedSizePreset || 'Standard'}`
+                            ? `Tiles • Per Meter • ${item.selectedSizePreset || 'Standard'}`
                             : item.unit === 'R.Ft.'
                             ? `${item.thicknessSutar || 3}" Patti • Running Feet`
                             : item.unit === 'Box'
@@ -2044,7 +2029,7 @@ export default function BillingView({ setActiveView, settings }) {
                         </div>
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {item.unit === 'Meter' ? (
-                            `${item.billedQuantity || item.meters || (item.pieces / 5)} Meters × Rs. ${item.ratePerSqFt || item.rate} (${item.pieces} Pcs Tiles @ 5 pcs/m)`
+                            `${item.billedQuantity || item.meters || 0} Meters × Rs. ${item.ratePerSqFt || item.rate}`
                           ) : item.unit === 'R.Ft.' ? (
                             `${item.billedQuantity || item.runningFeet || item.totalSqFt} R.Ft. × Rs. ${item.ratePerSqFt || item.rate} (${item.thicknessSutar || 3}" Width • ${item.runningFeet || item.length || item.billedQuantity} ft Length)`
                           ) : item.unit === 'Box' ? (
@@ -2893,42 +2878,25 @@ export default function BillingView({ setActiveView, settings }) {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#1e293b' }}>
-                          {isUrdu ? 'ٹائلز پیمائش و میٹر حساب' : 'Tiles - Per Meter Calculation'}
+                          {isUrdu ? 'ٹائلز پیمائش و میٹر حساب' : 'Tiles - Per Meter Measurement'}
                         </span>
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                        <div className="app-form-group">
-                          <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
-                            {isUrdu ? 'تعداد ٹائل پیس (Tiles Quantity - Pieces)' : 'Tile Pieces (Count)'} <span className="app-form-label-required">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            step="1"
-                            className="app-form-input font-mono"
-                            value={itemModalForm.pieces || ''}
-                            onChange={(e) => handleRecalculateItemModal('pieces', e.target.value)}
-                            placeholder="e.g. 20"
-                            style={{ fontWeight: 700 }}
-                          />
-                        </div>
-
-                        <div className="app-form-group">
-                          <label className="app-form-label" style={{ fontSize: '0.72rem' }}>
-                            {isUrdu ? 'کل میٹر (Total Calculated Meters)' : 'Calculated Meters (m)'} <span className="app-form-label-required">*</span>
-                          </label>
-                          <input
-                            type="number"
-                            min="0.2"
-                            step="0.2"
-                            className="app-form-input font-mono"
-                            value={itemModalForm.meters || ''}
-                            onChange={(e) => handleRecalculateItemModal('meters', e.target.value)}
-                            placeholder="e.g. 4.0"
-                            style={{ fontWeight: 700 }}
-                          />
-                        </div>
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: '0.76rem', fontWeight: 700 }}>
+                          {isUrdu ? 'ٹائلز کل میٹر (Total Meters - m)' : 'Total Meters (m)'} <span className="app-form-label-required">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="0.1"
+                          step="any"
+                          className="app-form-input font-mono"
+                          value={itemModalForm.meters || ''}
+                          onChange={(e) => handleRecalculateItemModal('meters', e.target.value)}
+                          placeholder="e.g. 25"
+                          style={{ fontWeight: 700, fontSize: '1rem' }}
+                          autoFocus
+                        />
                       </div>
 
                       <div style={{
@@ -2944,7 +2912,7 @@ export default function BillingView({ setActiveView, settings }) {
                           {isUrdu ? 'بلنگ کوانٹٹی (Billed Quantity):' : 'Billed Quantity:'}
                         </span>
                         <span className="font-mono" style={{ fontWeight: 800, color: '#2563eb', fontSize: '1rem' }}>
-                          {itemModalForm.meters || (Number(itemModalForm.pieces || 0) / 5)} Meter <span style={{ fontSize: '0.8rem', color: '#64748b' }}>({itemModalForm.pieces || 0} Pieces @ 5 pcs/m)</span>
+                          {itemModalForm.meters || 0} Meter
                         </span>
                       </div>
                     </div>

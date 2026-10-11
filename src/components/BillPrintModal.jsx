@@ -75,9 +75,8 @@ export default function BillPrintModal({
     const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories' || isGola;
 
     if (isTile) {
-      const m = item.meters || item.billedQuantity || (item.pieces ? Math.round((item.pieces / 5) * 100) / 100 : item.totalSqFt);
-      const pcs = item.pieces || Math.round(m * 5);
-      return `${m} میٹر (${pcs} پیس)`;
+      const m = item.meters || item.billedQuantity || item.totalSqFt || 0;
+      return `${m} میٹر`;
     }
     if (isRunning) {
       const rft = item.runningFeet || item.billedQuantity || item.totalSqFt;

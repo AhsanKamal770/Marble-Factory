@@ -115,6 +115,12 @@
     - Compiled optimized production assets via Vite.
     - Packaged standalone NSIS x64 Windows installer (`Marble Factory Suite Setup 1.0.5.exe`) in `release/` directory.
     - Tagged and pushed `v1.0.5` to GitHub repository for automated GitHub Actions release workflow.
+  - **Tiles Unit Simplification (Strictly Per Meter)**:
+    - Removed dual pieces conversion (1m = 5 pcs) across the entire system.
+    - **New Bill (POS)**: In `BillingView.jsx`, removed Pieces input from line item modal; Tiles billed strictly in Meters (`m × rate`).
+    - **Stock Entry**: In `StockManagementView.jsx` and `StockSheetView.jsx`, eliminated Pieces input from Tiles modal; stock recorded directly in Meters.
+    - **Inward Shipments**: In `SupplierManagementView.jsx`, disabled pieces entry for Tiles and locked to `Per Meter` with `pieces: 0`.
+    - **Print & Reports**: In `BillPrintModal.jsx`, `BillProfitPrintModal.jsx`, and `StockCategoryFilterCard.jsx`, removed piece count badges/labels for Tiles, showing clean `${m} میٹر` format.
 
 
 

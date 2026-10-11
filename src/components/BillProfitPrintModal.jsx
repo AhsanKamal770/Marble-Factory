@@ -87,9 +87,8 @@ export default function BillProfitPrintModal({
     const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories' || isGola;
 
     if (isTile) {
-      const m = item.meters || item.billedQuantity || (item.pieces ? Math.round((item.pieces / 5) * 100) / 100 : item.totalSqFt);
-      const pcs = item.pieces || Math.round(m * 5);
-      return `${m} میٹر (${pcs} پیس)`;
+      const m = item.meters || item.billedQuantity || item.totalSqFt || 0;
+      return `${m} میٹر`;
     }
     if (isRunning) {
       const rft = item.runningFeet || item.billedQuantity || item.totalSqFt;
@@ -131,7 +130,7 @@ export default function BillProfitPrintModal({
   const itemsWithProfit = items.map((item, originalIndex) => {
     let qty = 1;
     if (item.unit === 'Meter') {
-      qty = Number(item.meters) || Number(item.billedQuantity) || (Number(item.pieces) / 5) || Number(item.totalSqFt) || 1;
+      qty = Number(item.meters) || Number(item.billedQuantity) || Number(item.totalSqFt) || 1;
     } else if (item.unit === 'R.Ft.') {
       qty = Number(item.runningFeet) || Number(item.billedQuantity) || Number(item.totalSqFt) || 1;
     } else if (item.unit === 'Box') {

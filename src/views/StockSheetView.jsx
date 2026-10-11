@@ -43,12 +43,11 @@ function getStockDisplay(item) {
   const isTiles = item.category === "Tiles" || unit === "Meters" || unit === "Meter";
 
   if (isTiles) {
-    const meters = Number(item.stockSqFt || (item.stockPieces ? item.stockPieces / 5 : 0));
-    const pcs = Number(item.stockPieces || Math.round(meters * 5));
+    const meters = Number(item.stockSqFt || 0);
     return {
       qty: meters,
       unit: "Meters",
-      sub: `${pcs.toLocaleString()} pcs (5 pcs/m)`
+      sub: null
     };
   }
 
@@ -93,7 +92,7 @@ export function getItemDimensionAndSpec(item) {
 
   let sub = item.finish || "";
   if (cat.includes("tile")) {
-    sub = "1m = 5 pcs";
+    sub = "Per Meter";
   } else if (cat.includes("border") || cat.includes("patti")) {
     sub = "Length: 1 ft";
   } else if (cat.includes("panel")) {
@@ -527,7 +526,7 @@ export default function StockSheetView({ settings }) {
         costPerSqFt: parseFloat(formData.costPerSqFt) || 0,
         stockSqFt: parseFloat(formData.stockSqFt) || 0,
         stockBoxes: parseInt(formData.stockBoxes) || 0,
-        stockPieces: isTiles ? (parseInt(formData.stockPieces) || Math.round((parseFloat(formData.stockSqFt) || 0) * 5)) : (parseInt(formData.stockPieces) || 0),
+        stockPieces: isTiles ? 0 : (parseInt(formData.stockPieces) || 0),
         unit: formData.unit || (isTiles ? "Meters" : (formData.category === "Borders" || formData.category === "Kali Patti" ? "Running Feet" : "Sq. Ft.")),
         minStockAlert: parseFloat(formData.minStockAlert) || 0,
         thicknessMm: isMarble ? (parseFloat(formData.thicknessMm) || 12) : 0,
@@ -1970,8 +1969,8 @@ export default function StockSheetView({ settings }) {
                   </div>
 
                   {formData.category === "Tiles" ? (
-                    /* TILES SPECIFIC DIMENSIONS & CONVERSIONS: 1 METER = 5 PIECES */
-                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr 1fr", gap: "10px" }}>
+                    /* TILES SPECIFIC DIMENSIONS: BILLED & STORED STRICTLY PER METER */
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                       {/* Stock in Meters */}
                       <div className="app-form-group">
                         <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
@@ -1983,44 +1982,16 @@ export default function StockSheetView({ settings }) {
                             step="any"
                             value={formData.stockSqFt || ""}
                             onChange={e => {
-                              const meters = parseFloat(e.target.value) || 0;
-                              const pcs = Math.round(meters * 5);
                               setFormData(p => ({
                                 ...p,
                                 stockSqFt: e.target.value,
-                                stockPieces: pcs,
+                                stockPieces: 0,
                                 unit: "Meters"
                               }));
                             }}
                             placeholder="e.g. 100"
                             className="app-form-input font-mono"
                             style={{ fontWeight: 700 }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Pieces Conversion */}
-                      <div className="app-form-group">
-                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
-                          Pieces (1 Meter = 5 Pieces)
-                        </label>
-                        <div className="app-input-wrapper">
-                          <input
-                            type="number"
-                            step="any"
-                            value={formData.stockPieces || ""}
-                            onChange={e => {
-                              const pcs = parseFloat(e.target.value) || 0;
-                              const meters = parseFloat((pcs / 5).toFixed(2));
-                              setFormData(p => ({
-                                ...p,
-                                stockPieces: e.target.value,
-                                stockSqFt: meters,
-                                unit: "Meters"
-                              }));
-                            }}
-                            placeholder="e.g. 500"
-                            className="app-form-input font-mono"
                           />
                         </div>
                       </div>
@@ -2032,17 +2003,13 @@ export default function StockSheetView({ settings }) {
                         </label>
                         <div className="app-input-wrapper">
                           <Boxes size={16} className="app-input-icon" />
-                          <select
-                            value={formData.unit || "Meters"}
-                            onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))}
-                            className="app-form-select has-icon has-chevron"
-                            style={{ fontWeight: 600 }}
-                          >
-                            <option value="Meters">Meters</option>
-                            <option value="Boxes">Boxes</option>
-                            <option value="Pieces">Pieces</option>
-                          </select>
-                          <ChevronDown size={14} className="app-input-chevron" />
+                          <input
+                            type="text"
+                            disabled
+                            value="Meters"
+                            className="app-form-input font-mono"
+                            style={{ background: "#f1f5f9", fontWeight: 700, paddingLeft: "32px" }}
+                          />
                         </div>
                       </div>
                     </div>
