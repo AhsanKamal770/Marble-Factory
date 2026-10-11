@@ -1051,29 +1051,26 @@ export default function PrintableGateSlip({
                       >
                         <Info size={14} strokeWidth={2.8} />
                       </div>
-                      <div style={{ fontSize: "1.05rem", fontWeight: 900, color: "#1e3a8a" }}>
-                        نوٹ:
+                      <div style={{ fontSize: "0.95rem", fontWeight: 900, color: "#1e3a8a" }}>
+                        شرائط و ضوابط:
                       </div>
                     </div>
 
-                    {/* Bullet List - 1, 2, 3 correctly on the right */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.84rem", color: "#0f172a", fontWeight: 700, lineHeight: 1.6 }}>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
-                        <span style={{ color: "#1e3a8a", fontWeight: 900, minWidth: "16px" }}>1-</span>
-                        <span>خریداری کے بعد مال واپس یا تبدیل نہیں کیا جا سکتا۔</span>
+                    {/* 3 Lines matching physical bill book */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 600, lineHeight: 1.6 }}>
+                      <div>
+                        <strong style={{ color: "#1e3a8a" }}>1-</strong> ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔ <strong style={{ color: "#1e3a8a" }}>2-</strong> مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔
                       </div>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
-                        <span style={{ color: "#1e3a8a", fontWeight: 900, minWidth: "16px" }}>2-</span>
-                        <span>بل کی ادائیگی 7 دن کے اندر لازمی ہے۔</span>
+                      <div>
+                        <strong style={{ color: "#1e3a8a" }}>3-</strong> مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔ <strong style={{ color: "#1e3a8a" }}>4-</strong> ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔ <strong style={{ color: "#1e3a8a" }}>5-</strong> فیکٹری کے باہر ٹوٹ پھوٹ
                       </div>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
-                        <span style={{ color: "#1e3a8a", fontWeight: 900, minWidth: "16px" }}>3-</span>
-                        <span>معیار میں کسی قسم کی خرابی کی صورت میں فوری اطلاع دیں۔</span>
+                      <div>
+                        کی کوئی ذمہ داری نہیں۔ <strong style={{ color: "#1e3a8a" }}>6-</strong> بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔ <strong style={{ color: "#1e3a8a" }}>7-</strong> بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق
                       </div>
                       {gatePass.notes && (
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: "6px", color: "#1d4ed8", marginTop: "2px" }}>
-                          <span style={{ fontWeight: 900, minWidth: "16px" }}>4-</span>
-                          <span>خصوصی نوٹ: {gatePass.notes}</span>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "6px", color: "#1d4ed8", marginTop: "4px", borderTop: "1px dashed #86efac", paddingTop: "3px", fontSize: "0.80rem" }}>
+                          <strong style={{ minWidth: "16px" }}>خصوصی نوٹ:</strong>
+                          <span>{gatePass.notes}</span>
                         </div>
                       )}
                     </div>

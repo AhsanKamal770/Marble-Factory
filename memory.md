@@ -121,6 +121,11 @@
     - **Stock Entry**: In `StockManagementView.jsx` and `StockSheetView.jsx`, eliminated Pieces input from Tiles modal; stock recorded directly in Meters.
     - **Inward Shipments**: In `SupplierManagementView.jsx`, disabled pieces entry for Tiles and locked to `Per Meter` with `pieces: 0`.
     - **Print & Reports**: In `BillPrintModal.jsx`, `BillProfitPrintModal.jsx`, and `StockCategoryFilterCard.jsx`, removed piece count badges/labels for Tiles, showing clean `${m} میٹر` format.
+  - **Authentic Factory Terms & Conditions (3-Line Replica)**:
+    - Replaced generic 3 rules in `BillPrintModal.jsx` and `PrintableGateSlip.jsx` with the exact 7 factory terms arranged in 3 balanced lines directly matching the physical Rana Shahab bill book:
+      - Line 1: `1- ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔ 2- مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔`
+      - Line 2: `3- مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔ 4- ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔ 5- فیکٹری کے باہر ٹوٹ پھوٹ`
+      - Line 3: `کی کوئی ذمہ داری نہیں۔ 6- بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔ 7- بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق`
 
 
 

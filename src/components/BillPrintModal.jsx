@@ -752,24 +752,21 @@ export default function BillPrintModal({
                         printColorAdjust: 'exact'
                       }}
                     >
-                      <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1d4ed8', marginBottom: '4px', lineHeight: 1.4 }}>
-                        نوٹ:
+                      <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#1d4ed8', marginBottom: '3px', lineHeight: 1.3 }}>
+                        شرائط و ضوابط:
                       </div>
-                      <div dir="rtl" style={{ display: 'flex', flexDirection: 'column', gap: '4px', color: '#1e3a8a', lineHeight: 1.55 }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                          <span style={{ fontWeight: 800, minWidth: '16px' }}>1-</span>
-                          <span>خریداری کے بعد مال واپس یا تبدیل نہیں کیا جا سکتا۔</span>
+                      <div dir="rtl" style={{ display: 'flex', flexDirection: 'column', gap: '3px', color: '#1e3a8a', lineHeight: 1.45, fontSize: '0.64rem', fontWeight: 600 }}>
+                        <div>
+                          <strong style={{ color: '#1e40af' }}>1-</strong> ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔ <strong style={{ color: '#1e40af' }}>2-</strong> مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                          <span style={{ fontWeight: 800, minWidth: '16px' }}>2-</span>
-                          <span>بل کی ادائیگی 7 دن کے اندر لازمی ہے۔</span>
+                        <div>
+                          <strong style={{ color: '#1e40af' }}>3-</strong> مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔ <strong style={{ color: '#1e40af' }}>4-</strong> ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔ <strong style={{ color: '#1e40af' }}>5-</strong> فیکٹری کے باہر ٹوٹ پھوٹ
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
-                          <span style={{ fontWeight: 800, minWidth: '16px' }}>3-</span>
-                          <span>معیار میں کسی قسم کی خرابی کی صورت میں فوری اطلاع دیں۔</span>
+                        <div>
+                          کی کوئی ذمہ داری نہیں۔ <strong style={{ color: '#1e40af' }}>6-</strong> بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔ <strong style={{ color: '#1e40af' }}>7-</strong> بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق
                         </div>
                         {invoice.notes && (
-                          <div style={{ marginTop: '4px', borderTop: '1px dashed #bfdbfe', paddingTop: '3px', color: '#0369a1' }}>
+                          <div style={{ marginTop: '3px', borderTop: '1px dashed #bfdbfe', paddingTop: '2px', color: '#0369a1', fontSize: '0.66rem' }}>
                             <strong>خصوصی ہدایات:</strong> {invoice.notes}
                           </div>
                         )}
