@@ -36,13 +36,13 @@ export default function Sidebar({
     {
       title: language === 'ur' ? 'جائزہ' : 'OVERVIEW',
       items: [
-        { id: 'dashboard', label: 'Factory Dashboard (فیکٹری ڈیش بورڈ)', icon: LayoutDashboard }
+        { id: 'dashboard', label: 'Factory Dashboard', icon: LayoutDashboard }
       ]
     },
     {
       title: language === 'ur' ? 'سیلز و بلنگ' : 'SALES',
       items: [
-        { id: 'billing', label: 'New Bill (نیا بل)', icon: Receipt, highlight: true },
+        { id: 'billing', label: 'New Bill', icon: Receipt, highlight: true },
         { id: 'invoices', label: language === 'ur' ? 'بل بک ریکارڈ' : 'Bills & Invoices', icon: FileText },
         { id: 'customers', label: language === 'ur' ? 'گاہک کھاتہ' : 'Customers / Khata', icon: Users },
       ]

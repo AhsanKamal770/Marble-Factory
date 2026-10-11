@@ -29,9 +29,12 @@ export default function BillProfitPrintModal({
   const printRef = useRef(null);
 
   const companyUrdu = settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری';
-  const companyEnglish = settings?.companyNameEnglish || settings?.companyName || 'Rana Abdullah Siddique Marble Factory';
-  const factoryPhone = settings?.phone || '0321-6606645 | 0300-6664187';
-  const factoryAddress = settings?.address || 'جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد';
+  const companyEnglish = 'Rana Abdullah Siddique';
+  const companyEnglishSub = 'Marble Factory';
+  const factoryPhone = 'ph : +92 300 7995171';
+  const factoryPhoneBottom = '0300-7995171';
+  const factoryAddressUrdu = 'فیصل آباد روڈ، نزد پی ایس او پٹرول پمپ، جھمرہ سٹی';
+  const factoryAddressEnglish = 'Faisalabad Road near PSO Petrol Pump, Jhumra City';
 
   if (!isOpen || !invoice) return null;
 
@@ -423,70 +426,160 @@ export default function BillProfitPrintModal({
                   style={{
                     background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
                     color: '#ffffff',
-                    padding: '12px 18px',
+                    padding: '11px 18px',
                     display: 'flex',
                     flexDirection: 'row',
                     justifyContent: 'space-between',
-                    alignItems: 'center',
+                    alignItems: 'stretch',
                     direction: 'ltr',
+                    gap: '16px',
                     WebkitPrintColorAdjust: 'exact',
                     printColorAdjust: 'exact'
                   }}
                 >
-                  {/* Left: English Factory Name */}
+                  {/* Left: English Factory Details (Prominent & Large) */}
+                  <div
+                    dir="ltr"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      textAlign: 'left',
+                      flex: 1
+                    }}
+                  >
+                    {/* Line 1: Rana Abdullah Siddique (Bara & Prominent) */}
+                    <div
+                      style={{
+                        fontSize: '1.45rem',
+                        fontWeight: 900,
+                        color: '#ffffff',
+                        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        letterSpacing: '-0.3px',
+                        lineHeight: 1.15
+                      }}
+                    >
+                      {companyEnglish}
+                    </div>
+                    {/* Line 2: Marble Factory */}
+                    <div
+                      style={{
+                        fontSize: '0.92rem',
+                        fontWeight: 800,
+                        color: '#bfdbfe',
+                        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                        lineHeight: 1.25,
+                        marginTop: '1px'
+                      }}
+                    >
+                      {companyEnglishSub}
+                    </div>
+                    {/* Lines 3 & 4: Contact Numbers */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1px',
+                        marginTop: '3px',
+                        fontSize: '0.74rem',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-mono), monospace'
+                      }}
+                    >
+                      <div>
+                        <span style={{ color: '#93c5fd', fontWeight: 600 }}>Rana Abdullah :</span> 0317-9784782
+                      </div>
+                      <div>
+                        <span style={{ color: '#93c5fd', fontWeight: 600 }}>Factory no :</span> 0300-7995171
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Center Geometric Logo / Divider */}
                   <div
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: '2px',
-                      textAlign: 'left'
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 4px',
+                      opacity: 0.9
                     }}
                   >
-                    <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#ffffff', fontFamily: 'system-ui, sans-serif', letterSpacing: '-0.2px' }}>
-                      {companyEnglish}
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: '#dbeafe', fontFamily: 'system-ui, sans-serif' }}>
-                      Ph: {factoryPhone}
-                    </div>
-                    <div style={{ fontSize: '0.70rem', color: '#bfdbfe', fontFamily: 'system-ui, sans-serif' }}>
-                      {factoryAddress}
-                    </div>
+                    <svg width="34" height="26" viewBox="0 0 54 40" fill="none">
+                      <polygon points="4,38 22,6 38,38" fill="#1d4ed8" />
+                      <polygon points="18,38 34,2 50,38" fill="#38bdf8" opacity="0.95" />
+                      <polygon points="14,38 26,14 40,38" fill="#93c5fd" opacity="0.85" />
+                    </svg>
+                    <div style={{ width: '1px', height: '18px', background: 'rgba(255,255,255,0.25)', marginTop: '4px' }} />
                   </div>
 
-                  {/* Right: Urdu Factory Name & Logo */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', direction: 'rtl' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.35, letterSpacing: '0.01em' }}>
-                        {companyUrdu}
-                      </div>
-                      <div style={{ fontSize: '0.76rem', color: '#bfdbfe', fontWeight: 600, lineHeight: 1.3 }}>
-                        معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز
-                      </div>
+                  {/* Right: Urdu Factory Details */}
+                  <div
+                    dir="rtl"
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      textAlign: 'right',
+                      flex: 1
+                    }}
+                  >
+                    {/* Line 1: Urdu Name */}
+                    <div
+                      style={{
+                        fontSize: '1.30rem',
+                        fontWeight: 900,
+                        color: '#ffffff',
+                        lineHeight: 1.25,
+                        letterSpacing: '0.01em',
+                        fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif'
+                      }}
+                    >
+                      {companyUrdu}
                     </div>
-
-                    {/* Peak Geometric Logo */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="38" height="30" viewBox="0 0 54 40" fill="none">
-                        <polygon points="4,38 22,6 38,38" fill="#1d4ed8" />
-                        <polygon points="18,38 34,2 50,38" fill="#38bdf8" opacity="0.95" />
-                        <polygon points="14,38 26,14 40,38" fill="#93c5fd" opacity="0.85" />
-                      </svg>
+                    {/* Line 2: Slogan */}
+                    <div
+                      style={{
+                        fontSize: '0.86rem',
+                        color: '#fef08a',
+                        fontWeight: 800,
+                        lineHeight: 1.35,
+                        fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif'
+                      }}
+                    >
+                      نام ہی کافی ہے
+                    </div>
+                    {/* Line 3: Urdu Address */}
+                    <div
+                      style={{
+                        fontSize: '0.74rem',
+                        color: '#dbeafe',
+                        fontWeight: 600,
+                        lineHeight: 1.35,
+                        fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif'
+                      }}
+                    >
+                      {factoryAddressUrdu}
                     </div>
                   </div>
                 </div>
 
                 {/* Main Body Section */}
-                <div style={{ padding: '12px 14px' }}>
+                <div style={{ padding: '10px 14px' }}>
 
                   {/* 2. INVOICE META & REPORT TITLE ROW */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     {/* Report Title & Document Badge */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div
                         style={{
-                          width: '38px',
-                          height: '38px',
-                          borderRadius: '8px',
+                          width: '32px',
+                          height: '32px',
+                          borderRadius: '6px',
                           background: '#eff6ff',
                           border: '1px solid #bfdbfe',
                           display: 'flex',
@@ -497,13 +590,13 @@ export default function BillProfitPrintModal({
                           printColorAdjust: 'exact'
                         }}
                       >
-                        <TrendingUp size={22} color="#2563eb" strokeWidth={2.2} />
+                        <TrendingUp size={18} color="#2563eb" strokeWidth={2.2} />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e40af', lineHeight: 1.35 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.20rem', fontWeight: 800, color: '#1e40af', lineHeight: 1.2 }}>
                           بل منافع رپورٹ
                         </div>
-                        <div style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.35 }}>
+                        <div style={{ fontSize: '0.70rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.2 }}>
                           (لاگت و منافع گوشوارہ)
                         </div>
                       </div>
@@ -514,26 +607,26 @@ export default function BillProfitPrintModal({
                       style={{
                         background: '#f0f7ff',
                         border: '1px solid #bfdbfe',
-                        borderRadius: '7px',
-                        padding: '6px 12px',
-                        minWidth: '160px',
+                        borderRadius: '6px',
+                        padding: '4px 10px',
+                        minWidth: '145px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '3px',
+                        gap: '2px',
                         textAlign: 'right',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact'
                       }}
                     >
-                      <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3 }}>بل نمبر</div>
+                      <div style={{ fontSize: '0.64rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.2 }}>بل نمبر</div>
                       <div
                         style={{
-                          fontSize: '0.98rem',
+                          fontSize: '0.88rem',
                           fontWeight: 900,
                           color: '#1e3a8a',
                           fontFamily: 'var(--font-mono), monospace',
                           letterSpacing: '0.02em',
-                          lineHeight: 1.2
+                          lineHeight: 1.15
                         }}
                       >
                         {invoice.invoiceNo || 'INV-2026-0001'}
@@ -542,11 +635,11 @@ export default function BillProfitPrintModal({
                         style={{
                           borderTop: '1px dashed #bfdbfe',
                           marginTop: '2px',
-                          paddingTop: '3px',
-                          fontSize: '0.72rem',
+                          paddingTop: '2px',
+                          fontSize: '0.68rem',
                           color: '#1e40af',
                           fontWeight: 700,
-                          lineHeight: 1.3
+                          lineHeight: 1.2
                         }}
                       >
                         تاریخ: {formatUrduDate(invoice.date || invoice.createdAt)}
@@ -554,26 +647,26 @@ export default function BillProfitPrintModal({
                     </div>
                   </div>
 
-                  {/* 3. CUSTOMER INFO CARD */}
+                  {/* 3. CUSTOMER INFO CARD (Compact Spacing) */}
                   <div
                     style={{
                       border: '1px solid #bfdbfe',
-                      borderRadius: '8px',
+                      borderRadius: '6px',
                       background: '#f8fbff',
-                      padding: '8px 12px',
-                      marginBottom: '10px',
+                      padding: '5px 10px',
+                      marginBottom: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: '12px'
+                      gap: '10px'
                     }}
                   >
                     {/* Customer Details */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                       <div
                         style={{
-                          width: '32px',
-                          height: '32px',
+                          width: '26px',
+                          height: '26px',
                           borderRadius: '50%',
                           background: '#dbeafe',
                           display: 'flex',
@@ -584,29 +677,29 @@ export default function BillProfitPrintModal({
                           printColorAdjust: 'exact'
                         }}
                       >
-                        <User size={17} color="#2563eb" />
+                        <User size={14} color="#2563eb" />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3 }}>گاہک کا نام</div>
-                        <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.3 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.62rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.1 }}>گاہک کا نام</div>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.2 }}>
                           {customerName} {customerCategory ? `(${customerCategory})` : ''}
                         </div>
-                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3, marginTop: '1px' }}>فون نمبر</div>
-                        <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#1e40af', fontFamily: 'var(--font-mono), monospace', lineHeight: 1.2 }}>
+                        <div style={{ fontSize: '0.62rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.1 }}>فون نمبر</div>
+                        <div style={{ fontSize: '0.76rem', fontWeight: 800, color: '#1e40af', fontFamily: 'var(--font-mono), monospace', lineHeight: 1.15 }}>
                           {customerPhone}
                         </div>
                       </div>
                     </div>
 
                     {/* Vertical Divider */}
-                    <div style={{ width: '1px', height: '48px', background: '#bfdbfe' }} />
+                    <div style={{ width: '1px', height: '36px', background: '#bfdbfe' }} />
 
                     {/* Location & Delivery */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
                       <div
                         style={{
-                          width: '32px',
-                          height: '32px',
+                          width: '26px',
+                          height: '26px',
                           borderRadius: '50%',
                           background: '#dbeafe',
                           display: 'flex',
@@ -617,15 +710,15 @@ export default function BillProfitPrintModal({
                           printColorAdjust: 'exact'
                         }}
                       >
-                        <MapPin size={17} color="#2563eb" />
+                        <MapPin size={14} color="#2563eb" />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3 }}>مقام / ڈلیوری ایڈریس</div>
-                        <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.3 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.62rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.1 }}>مقام / ڈلیوری ایڈریس</div>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.2 }}>
                           {customerAddress}
                         </div>
                         {customerCity && (
-                          <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#1e40af', lineHeight: 1.3 }}>
+                          <div style={{ fontSize: '0.74rem', fontWeight: 700, color: '#1e40af', lineHeight: 1.2 }}>
                             {customerCity}
                           </div>
                         )}
@@ -901,24 +994,26 @@ export default function BillProfitPrintModal({
                   style={{
                     background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
                     color: '#ffffff',
-                    padding: '6px 16px',
+                    padding: '7px 16px',
                     display: 'flex',
+                    flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     fontSize: '0.76rem',
+                    direction: 'ltr',
                     WebkitPrintColorAdjust: 'exact',
                     printColorAdjust: 'exact'
                   }}
                 >
-                  {/* Left: Phone Numbers */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono), monospace', direction: 'ltr' }}>
+                  {/* Left: Phone Number */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'var(--font-mono), monospace', fontWeight: 700, color: '#ffffff' }}>
                     <Phone size={12} color="#93c5fd" />
-                    <span>{factoryPhone}</span>
+                    <span>{factoryPhoneBottom}</span>
                   </div>
 
                   {/* Right: Factory Location */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <span style={{ fontWeight: 700 }}>{factoryAddress}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontWeight: 700, color: '#ffffff' }}>{factoryAddressEnglish}</span>
                     <MapPin size={13} color="#93c5fd" />
                   </div>
                 </div>
@@ -944,9 +1039,12 @@ export default function BillProfitPrintModal({
                 }}
               >
                 <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '6px', marginBottom: '8px' }}>
-                  <div style={{ fontWeight: 900, fontSize: '13px', fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>{companyUrdu}</div>
-                  <div style={{ fontWeight: 800, fontSize: '11px' }}>{companyEnglish}</div>
-                  <div style={{ fontSize: '9.5px', marginTop: '2px' }}>{factoryAddress} | Ph: {factoryPhone}</div>
+                  <div style={{ fontWeight: 900, fontSize: '14px', fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>{companyUrdu}</div>
+                  <div style={{ fontSize: '10px', fontWeight: 800, fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif', color: '#333' }}>نام ہی کافی ہے</div>
+                  <div style={{ fontWeight: 900, fontSize: '12px', marginTop: '3px' }}>RANA ABDULLAH SIDDIQUE</div>
+                  <div style={{ fontWeight: 800, fontSize: '10px' }}>MARBLE FACTORY</div>
+                  <div style={{ fontSize: '9.5px', marginTop: '2px' }}>{factoryPhone}</div>
+                  <div style={{ fontSize: '9px', marginTop: '1px' }}>{factoryAddressEnglish}</div>
                   <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: 700 }}>
                     Bill: {invoice.invoiceNo} (PROFIT SLIP)
                   </div>
@@ -1012,8 +1110,10 @@ export default function BillProfitPrintModal({
                   </div>
                 </div>
 
-                <div style={{ textAlign: 'center', fontSize: '8.5px', marginTop: '8px', borderTop: '1px dashed #000', paddingTop: '4px', fontWeight: 700 }}>
-                  فیکٹری ایڈمن و منافع ریکارڈ
+                <div style={{ textAlign: 'center', fontSize: '8.5px', marginTop: '8px', borderTop: '1px dashed #000', paddingTop: '4px' }}>
+                  <div style={{ fontWeight: 700 }}>{factoryAddressEnglish}</div>
+                  <div style={{ fontWeight: 800, marginTop: '2px' }}>Ph: {factoryPhoneBottom}</div>
+                  <div style={{ marginTop: '3px', fontWeight: 700 }}>فیکٹری ایڈمن و منافع ریکارڈ</div>
                 </div>
               </div>
             )}

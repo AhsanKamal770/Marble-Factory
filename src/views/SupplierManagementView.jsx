@@ -36,6 +36,44 @@ import { useLanguage } from '../context/LanguageContext';
 import GlobalPagination from '../components/GlobalPagination';
 import UniversalReportPrintModal from '../components/UniversalReportPrintModal';
 
+export function getItemCategoryKey(item) {
+  if (!item) return 'Marble';
+  const cat = (item.category || '').toLowerCase();
+  const sub = (item.subCategory || '').toLowerCase();
+  const name = (item.name || '').toLowerCase();
+
+  if (cat.includes('tile') || sub.includes('tile') || name.includes('tile')) return 'Tiles';
+  if (cat.includes('kali') || sub.includes('kali') || name.includes('kali')) return 'Kali Patti';
+  if (cat.includes('border') || sub.includes('border') || name.includes('border') || cat.includes('patti') || sub.includes('patti')) return 'Borders';
+  if (cat.includes('flower') || sub.includes('flower') || name.includes('flower') || name.includes('medallion')) return 'Flowers';
+  if (cat.includes('panel') || sub.includes('panel') || name.includes('panel') || name.includes('mashallah')) return 'Panels';
+  if (cat.includes('granite') || sub.includes('granite') || name.includes('granite')) return 'Granite';
+  if (cat.includes('accessories') || sub.includes('accessories') || name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond')) return 'Accessories';
+  return 'Marble';
+}
+
+export function getCategoryUnitDetails(category) {
+  switch (category) {
+    case 'Tiles':
+      return { unit: 'Meters', qtyLabel: 'Meters', rateLabel: 'Rs/Meter', placeholderQty: 'Meters', isTiles: true, isRunning: false, isPieces: false };
+    case 'Borders':
+      return { unit: 'Running Feet', qtyLabel: 'R.Ft', rateLabel: 'Rs/R.Ft', placeholderQty: 'R.Ft', isTiles: false, isRunning: true, isPieces: false };
+    case 'Kali Patti':
+      return { unit: 'Running Feet', qtyLabel: 'R.Ft', rateLabel: 'Rs/R.Ft', placeholderQty: 'R.Ft', isTiles: false, isRunning: true, isPieces: false };
+    case 'Flowers':
+      return { unit: 'Pieces', qtyLabel: 'Pieces', rateLabel: 'Rs/Piece', placeholderQty: 'Pieces', isTiles: false, isRunning: false, isPieces: true };
+    case 'Panels':
+      return { unit: 'Pieces', qtyLabel: 'Pieces', rateLabel: 'Rs/Piece', placeholderQty: 'Pieces', isTiles: false, isRunning: false, isPieces: true };
+    case 'Accessories':
+      return { unit: 'Pieces', qtyLabel: 'Pieces', rateLabel: 'Rs/Piece', placeholderQty: 'Pieces', isTiles: false, isRunning: false, isPieces: true };
+    case 'Granite':
+      return { unit: 'Sq. Ft.', qtyLabel: 'Sq.Ft', rateLabel: 'Rs/Sq.Ft', placeholderQty: 'Sq.Ft', isTiles: false, isRunning: false, isPieces: false };
+    case 'Marble':
+    default:
+      return { unit: 'Sq. Ft.', qtyLabel: 'Sq.Ft', rateLabel: 'Rs/Sq.Ft', placeholderQty: 'Sq.Ft', isTiles: false, isRunning: false, isPieces: false };
+  }
+}
+
 export default function SupplierManagementView({ settings }) {
   const { language } = useLanguage();
 
@@ -267,14 +305,23 @@ export default function SupplierManagementView({ settings }) {
 
     if (items.length > 0) {
       const defaultItem = items[0];
+      const categoryKey = getItemCategoryKey(defaultItem);
+      const details = getCategoryUnitDetails(categoryKey);
+      const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
+      const defPcs = details.isTiles ? 100 : (details.isRunning ? 0 : 50);
+      const rate = defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200;
+
       setPurchaseItems([
         {
+          category: categoryKey,
           itemId: defaultItem.id,
           name: defaultItem.name,
-          category: defaultItem.category,
-          totalSqFt: 500,
-          ratePerSqFt: defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200,
-          amount: 500 * (defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200)
+          unit: details.unit,
+          pieces: defPcs,
+          quantity: defQty,
+          totalSqFt: defQty,
+          ratePerSqFt: rate,
+          amount: Math.round(defQty * rate)
         }
       ]);
     } else {
@@ -294,17 +341,40 @@ export default function SupplierManagementView({ settings }) {
     setPurchaseNotes(pur.notes || '');
 
     if (pur.items && pur.items.length > 0) {
-      setPurchaseItems(JSON.parse(JSON.stringify(pur.items)));
+      const mapped = pur.items.map(it => {
+        const found = items.find(i => String(i.id) === String(it.itemId));
+        const categoryKey = it.category || getItemCategoryKey(found || it);
+        const details = getCategoryUnitDetails(categoryKey);
+        const qty = it.quantity !== undefined ? it.quantity : it.totalSqFt;
+        const pcs = it.pieces !== undefined ? it.pieces : (details.isTiles ? Math.round(Number(qty) * 5) : (details.isRunning ? 0 : Number(qty)));
+        return {
+          ...it,
+          category: categoryKey,
+          unit: it.unit || details.unit,
+          pieces: pcs,
+          quantity: qty,
+          totalSqFt: qty
+        };
+      });
+      setPurchaseItems(mapped);
     } else if (items.length > 0) {
       const defaultItem = items[0];
+      const categoryKey = getItemCategoryKey(defaultItem);
+      const details = getCategoryUnitDetails(categoryKey);
+      const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
+      const defPcs = details.isTiles ? 100 : (details.isRunning ? 0 : 50);
+      const rate = defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200;
       setPurchaseItems([
         {
+          category: categoryKey,
           itemId: defaultItem.id,
           name: defaultItem.name,
-          category: defaultItem.category,
-          totalSqFt: 500,
-          ratePerSqFt: defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200,
-          amount: 500 * (defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200)
+          unit: details.unit,
+          pieces: defPcs,
+          quantity: defQty,
+          totalSqFt: defQty,
+          ratePerSqFt: rate,
+          amount: Math.round(defQty * rate)
         }
       ]);
     } else {
@@ -325,11 +395,13 @@ export default function SupplierManagementView({ settings }) {
           for (const it of pur.items) {
             if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
               const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+              const deltaQty = -(parseFloat(it.quantity !== undefined ? it.quantity : it.totalSqFt) || 0);
+              const deltaPcs = -(parseFloat(it.pieces) || 0);
               await adjustItemStock(
                 finalItemId,
-                -(parseFloat(it.totalSqFt) || 0),
+                deltaQty,
                 0,
-                0,
+                deltaPcs,
                 'Adjustment',
                 pur.purchaseNo,
                 `Stock reversed due to deletion of Purchase #${pur.purchaseNo}`
@@ -377,17 +449,25 @@ export default function SupplierManagementView({ settings }) {
     // Pick the next available item that is not already selected
     const selectedIds = new Set(purchaseItems.map((p) => String(p.itemId)));
     const nextItem = items.find((i) => !selectedIds.has(String(i.id))) || items[0];
+    const categoryKey = getItemCategoryKey(nextItem);
+    const details = getCategoryUnitDetails(categoryKey);
+
+    const defaultQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
+    const defaultPcs = details.isTiles ? 100 : (details.isRunning ? 0 : 50);
+    const rate = nextItem.costPerSqFt || nextItem.ratePerSqFt || 200;
 
     setPurchaseItems([
       ...purchaseItems,
       {
+        category: categoryKey,
         itemId: nextItem.id,
         name: nextItem.name,
-        category: nextItem.category,
-        pieces: 1,
-        totalSqFt: (nextItem.length && nextItem.width) ? Math.round(nextItem.length * nextItem.width * 100) / 100 : 500,
-        ratePerSqFt: nextItem.costPerSqFt || nextItem.ratePerSqFt || 200,
-        amount: ((nextItem.length && nextItem.width) ? Math.round(nextItem.length * nextItem.width * 100) / 100 : 500) * (nextItem.costPerSqFt || nextItem.ratePerSqFt || 200)
+        unit: details.unit,
+        pieces: defaultPcs,
+        quantity: defaultQty,
+        totalSqFt: defaultQty,
+        ratePerSqFt: rate,
+        amount: Math.round(defaultQty * rate)
       }
     ]);
   };
@@ -396,43 +476,112 @@ export default function SupplierManagementView({ settings }) {
     const updated = [...purchaseItems];
     const row = { ...updated[index] };
 
-    if (field === 'itemId') {
+    if (field === 'category') {
+      row.category = value;
+      const details = getCategoryUnitDetails(value);
+      row.unit = details.unit;
+      const catItems = items.filter(i => getItemCategoryKey(i) === value);
+      const chosenItem = catItems[0] || items[0];
+      if (chosenItem) {
+        row.itemId = chosenItem.id;
+        row.name = chosenItem.name;
+        row.ratePerSqFt = chosenItem.costPerSqFt || chosenItem.ratePerSqFt || 200;
+        if (details.isTiles) {
+          row.quantity = 20;
+          row.totalSqFt = 20;
+          row.pieces = 100;
+        } else if (details.isRunning) {
+          row.quantity = 50;
+          row.totalSqFt = 50;
+          row.pieces = 0;
+        } else if (details.isPieces) {
+          row.quantity = 10;
+          row.totalSqFt = 10;
+          row.pieces = 10;
+        } else {
+          const l = parseFloat(chosenItem.length) || 1;
+          const w = parseFloat(chosenItem.width) || 1;
+          row.pieces = 50;
+          row.quantity = Math.round(l * w * 50 * 100) / 100;
+          row.totalSqFt = row.quantity;
+        }
+      }
+    } else if (field === 'itemId') {
       const parsedId = !isNaN(Number(value)) ? Number(value) : value;
       const found = items.find((i) => i.id === parsedId || String(i.id) === String(value));
       if (found) {
         row.itemId = found.id;
         row.name = found.name;
-        row.category = found.category;
+        row.category = getItemCategoryKey(found);
+        const details = getCategoryUnitDetails(row.category);
+        row.unit = details.unit;
         row.ratePerSqFt = found.costPerSqFt || found.ratePerSqFt || row.ratePerSqFt || 200;
-        
-        const pcs = parseFloat(row.pieces) || 1;
-        const l = parseFloat(found.length) || 0;
-        const w = parseFloat(found.width) || 0;
-        if (l && w) {
-          row.totalSqFt = Math.round(l * w * pcs * 100) / 100;
+
+        if (details.isTiles) {
+          const meters = parseFloat(row.quantity !== undefined ? row.quantity : row.totalSqFt) || 20;
+          row.quantity = meters;
+          row.totalSqFt = meters;
+          row.pieces = Math.round(meters * 5);
+        } else if (details.isRunning) {
+          const rft = parseFloat(row.quantity !== undefined ? row.quantity : row.totalSqFt) || 50;
+          row.quantity = rft;
+          row.totalSqFt = rft;
+          row.pieces = 0;
+        } else if (details.isPieces) {
+          const pcs = parseFloat(row.pieces !== undefined ? row.pieces : row.quantity) || 10;
+          row.quantity = pcs;
+          row.totalSqFt = pcs;
+          row.pieces = pcs;
+        } else {
+          const pcs = parseFloat(row.pieces) || 50;
+          const l = parseFloat(found.length) || 1;
+          const w = parseFloat(found.width) || 1;
+          const sqft = Math.round(l * w * pcs * 100) / 100;
+          row.quantity = sqft;
+          row.totalSqFt = sqft;
+          row.pieces = pcs;
         }
       } else {
         row.itemId = parsedId;
       }
-    } else {
-      row[field] = value;
-    }
-
-    if (field === 'pieces') {
+    } else if (field === 'pieces') {
       const pcs = parseFloat(value) || 0;
-      const found = items.find((i) => String(i.id) === String(row.itemId));
-      if (found) {
-        const l = parseFloat(found.length) || 0;
-        const w = parseFloat(found.width) || 0;
+      row.pieces = value;
+      const details = getCategoryUnitDetails(row.category);
+      if (details.isTiles) {
+        const meters = Math.round((pcs / 5) * 100) / 100;
+        row.quantity = meters;
+        row.totalSqFt = meters;
+      } else if (details.isPieces) {
+        row.quantity = pcs;
+        row.totalSqFt = pcs;
+      } else if (!details.isRunning) {
+        const found = items.find((i) => String(i.id) === String(row.itemId));
+        const l = parseFloat(found?.length) || 1;
+        const w = parseFloat(found?.width) || 1;
         if (l && w) {
-          row.totalSqFt = Math.round(l * w * pcs * 100) / 100;
+          const sqft = Math.round(l * w * pcs * 100) / 100;
+          row.quantity = sqft;
+          row.totalSqFt = sqft;
         }
       }
+    } else if (field === 'quantity' || field === 'totalSqFt') {
+      const qty = parseFloat(value) || 0;
+      row.quantity = value;
+      row.totalSqFt = value;
+      const details = getCategoryUnitDetails(row.category);
+      if (details.isTiles) {
+        row.pieces = Math.round(qty * 5);
+      } else if (details.isPieces) {
+        row.pieces = qty;
+      }
+    } else if (field === 'ratePerSqFt') {
+      row.ratePerSqFt = value;
     }
 
-    const sqft = parseFloat(field === 'totalSqFt' ? value : row.totalSqFt) || 0;
-    const rate = parseFloat(field === 'ratePerSqFt' ? value : row.ratePerSqFt) || 0;
-    row.amount = Math.round(sqft * rate);
+    const qtyNum = parseFloat(row.quantity !== undefined ? row.quantity : row.totalSqFt) || 0;
+    const rateNum = parseFloat(row.ratePerSqFt) || 0;
+    row.amount = Math.round(qtyNum * rateNum);
 
     updated[index] = row;
     setPurchaseItems(updated);
@@ -480,11 +629,13 @@ export default function SupplierManagementView({ settings }) {
             for (const oldIt of oldPur.items) {
               if (oldIt.itemId) {
                 const finalId = !isNaN(Number(oldIt.itemId)) ? Number(oldIt.itemId) : oldIt.itemId;
+                const oldQty = -(parseFloat(oldIt.quantity !== undefined ? oldIt.quantity : oldIt.totalSqFt) || 0);
+                const oldPcs = -(parseFloat(oldIt.pieces) || 0);
                 await adjustItemStock(
                   finalId,
-                  -(parseFloat(oldIt.totalSqFt) || 0),
+                  oldQty,
                   0,
-                  0,
+                  oldPcs,
                   'Adjustment',
                   purchaseNo,
                   `Revert old stock for edited Purchase #${purchaseNo}`
@@ -497,11 +648,13 @@ export default function SupplierManagementView({ settings }) {
           for (const it of purchaseItems) {
             if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
               const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+              const itQty = parseFloat(it.quantity !== undefined ? it.quantity : it.totalSqFt) || 0;
+              const itPcs = parseFloat(it.pieces) || 0;
               await adjustItemStock(
                 finalItemId,
-                parseFloat(it.totalSqFt) || 0,
+                itQty,
                 0,
-                0,
+                itPcs,
                 'Purchase',
                 purchaseNo,
                 `Updated inward from ${sup.name} (Challan #${challanNo})`
@@ -620,11 +773,13 @@ export default function SupplierManagementView({ settings }) {
           for (const it of purchaseItems) {
             if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
               const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+              const itQty = parseFloat(it.quantity !== undefined ? it.quantity : it.totalSqFt) || 0;
+              const itPcs = parseFloat(it.pieces) || 0;
               await adjustItemStock(
                 finalItemId,
-                parseFloat(it.totalSqFt) || 0,
+                itQty,
                 0,
-                0,
+                itPcs,
                 'Purchase',
                 purchaseNo,
                 `Inward from ${sup.name} (Challan #${challanNo})`
@@ -1402,11 +1557,16 @@ export default function SupplierManagementView({ settings }) {
 
                         {/* Items Received */}
                         <td style={{ padding: '8px 6px' }}>
-                          {pur.items?.map((it, idx) => (
-                            <div key={idx} style={{ fontSize: '0.75rem', lineHeight: 1.3 }}>
-                              <span style={{ fontWeight: 600 }}>{it.name}</span> <span style={{ color: '#64748b' }}>({it.totalSqFt} Sq.Ft)</span>
-                            </div>
-                          ))}
+                          {pur.items?.map((it, idx) => {
+                            const unitLabel = it.unit || 'Sq.Ft';
+                            const qtyVal = it.quantity !== undefined ? it.quantity : it.totalSqFt;
+                            return (
+                              <div key={idx} style={{ fontSize: '0.75rem', lineHeight: 1.3 }}>
+                                <span style={{ fontWeight: 600 }}>{it.name}</span>{' '}
+                                <span style={{ color: '#64748b' }}>({qtyVal} {unitLabel})</span>
+                              </div>
+                            );
+                          })}
                         </td>
 
                         {/* Grand Total */}
@@ -1884,20 +2044,30 @@ export default function SupplierManagementView({ settings }) {
                     <thead style={{ background: 'var(--bg-primary, #f1f5f9)' }}>
                       <tr>
                         <th style={{ padding: '8px', textAlign: 'left' }}>Item</th>
-                        <th style={{ padding: '8px', textAlign: 'right' }}>Sq.Ft</th>
+                        <th style={{ padding: '8px', textAlign: 'center' }}>Category</th>
+                        <th style={{ padding: '8px', textAlign: 'right' }}>Pieces</th>
+                        <th style={{ padding: '8px', textAlign: 'right' }}>Quantity</th>
                         <th style={{ padding: '8px', textAlign: 'right' }}>Rate</th>
                         <th style={{ padding: '8px', textAlign: 'right' }}>Total</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {drawerPurchase.items?.map((it, idx) => (
-                        <tr key={idx} style={{ borderTop: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '8px', fontWeight: 600 }}>{it.name}</td>
-                          <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{it.totalSqFt}</td>
-                          <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {it.ratePerSqFt}</td>
-                          <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>Rs. {Number(it.amount || 0).toLocaleString()}</td>
-                        </tr>
-                      ))}
+                      {drawerPurchase.items?.map((it, idx) => {
+                        const unitLabel = it.unit || 'Sq.Ft';
+                        const qtyVal = it.quantity !== undefined ? it.quantity : it.totalSqFt;
+                        return (
+                          <tr key={idx} style={{ borderTop: '1px solid var(--border-color)' }}>
+                            <td style={{ padding: '8px', fontWeight: 600 }}>{it.name}</td>
+                            <td style={{ padding: '8px', textAlign: 'center', fontSize: '0.74rem', color: '#64748b' }}>{it.category || '—'}</td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>{it.pieces !== undefined && it.pieces !== null && it.pieces !== '' ? it.pieces : '—'}</td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>
+                              {qtyVal} <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{unitLabel}</span>
+                            </td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontFamily: 'var(--font-mono)' }}>Rs. {it.ratePerSqFt}</td>
+                            <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>Rs. {Number(it.amount || 0).toLocaleString()}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2017,15 +2187,12 @@ export default function SupplierManagementView({ settings }) {
       {/* ------------------------------------------------------------------------- */}
       {/* 7. RECORD INWARD STOCK SHIPMENT MODAL                                      */}
       {/* ------------------------------------------------------------------------- */}
-      {/* ------------------------------------------------------------------------- */}
-      {/* 7. RECORD INWARD STOCK SHIPMENT MODAL                                      */}
-      {/* ------------------------------------------------------------------------- */}
       {isPurchaseModalOpen && (
         <div className="app-modal-overlay" onClick={() => setIsPurchaseModalOpen(false)}>
           <div
             className="app-modal-card"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: '780px', width: '100%' }}
+            style={{ maxWidth: '960px', width: '100%' }}
           >
             {/* Modal Header */}
             <div className="app-modal-header">
@@ -2118,7 +2285,9 @@ export default function SupplierManagementView({ settings }) {
                       <label className="app-form-label" style={{ margin: 0, fontWeight: 800, color: '#1e293b', fontSize: '0.88rem' }}>
                         Inward Shipment Materials ({purchaseItems.length} {purchaseItems.length === 1 ? 'Item' : 'Items'})
                       </label>
-                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>Select inventory marble/tile items and specify incoming square footage</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                        Select materials: Marble (Sq.Ft), Tiles (Meters, 1m=5pcs), Borders/Kali Patti (R.Ft, 1ft length), Flowers/Panels/Accessories (Pieces)
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -2131,93 +2300,199 @@ export default function SupplierManagementView({ settings }) {
                   </div>
 
                   {/* Table Column Headings */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1.1fr 1.2fr 36px', gap: '8px', padding: '0 8px 6px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-                    <span>Select Item / Type</span>
-                    <span>Pieces</span>
-                    <span>Qty (Sq.Ft)</span>
-                    <span>Rate / Sq.Ft</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1.6fr 0.9fr 1.2fr 1.05fr 1.05fr 34px', gap: '8px', padding: '0 8px 6px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
+                    <span>Category</span>
+                    <span>Select Item</span>
+                    <span style={{ textAlign: 'center' }}>Pieces</span>
+                    <span style={{ textAlign: 'center' }}>Qty & Unit</span>
+                    <span style={{ textAlign: 'center' }}>Cost Rate</span>
                     <span style={{ textAlign: 'right' }}>Total (Rs.)</span>
                     <span></span>
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
-                    {purchaseItems.map((it, idx) => (
-                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.8fr 1fr 1fr 1.1fr 1.2fr 36px', gap: '8px', alignItems: 'center', background: '#ffffff', padding: '8px 10px', borderRadius: '10px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
-                        <div className="app-input-wrapper">
-                          <Layers size={14} className="app-input-icon" />
-                          <select
-                            className="app-form-select"
-                            value={String(it.itemId)}
-                            onChange={(e) => handleUpdatePurchaseItem(idx, 'itemId', e.target.value)}
-                            style={{ padding: '7px 10px 7px 32px', fontSize: '0.82rem', height: '36px', fontWeight: 600 }}
-                          >
-                            {items.map((i) => {
-                              const cleanName = (i.name || '').replace(/^Kali Patti\s+/i, '');
-                              return (
-                                <option key={i.id} value={String(i.id)}>
-                                  {cleanName} ({i.category || 'Marble'})
-                                </option>
-                              );
-                            })}
-                          </select>
-                          <ChevronDown size={12} className="app-input-chevron" />
-                        </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
+                    {purchaseItems.map((it, idx) => {
+                      const currentCategory = it.category || 'Marble';
+                      const details = getCategoryUnitDetails(currentCategory);
+                      const catItems = items.filter((i) => getItemCategoryKey(i) === currentCategory);
+                      const availableItems = catItems.length > 0 ? catItems : items;
 
-                        <div className="app-input-wrapper">
-                          <input
-                            type="number"
-                            step="any"
-                            min="0"
-                            placeholder="Pieces"
-                            className="app-form-input font-mono"
-                            value={it.pieces || ""}
-                            onChange={(e) => handleUpdatePurchaseItem(idx, 'pieces', e.target.value)}
-                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
-                          />
-                        </div>
-
-                        <div className="app-input-wrapper">
-                          <input
-                            type="number"
-                            step="any"
-                            min="0"
-                            placeholder="Sq.Ft"
-                            className="app-form-input font-mono"
-                            value={it.totalSqFt}
-                            onChange={(e) => handleUpdatePurchaseItem(idx, 'totalSqFt', e.target.value)}
-                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
-                          />
-                        </div>
-
-                        <div className="app-input-wrapper">
-                          <input
-                            type="number"
-                            step="any"
-                            min="0"
-                            placeholder="Rate"
-                            className="app-form-input font-mono"
-                            value={it.ratePerSqFt}
-                            onChange={(e) => handleUpdatePurchaseItem(idx, 'ratePerSqFt', e.target.value)}
-                            style={{ padding: '7px 10px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
-                          />
-                        </div>
-
-                        <div className="font-mono" style={{ fontWeight: 800, textAlign: 'right', color: '#2563eb', fontSize: '0.86rem', paddingRight: '4px' }}>
-                          Rs. {Number(it.amount || 0).toLocaleString()}
-                        </div>
-
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm"
-                          style={{ color: purchaseItems.length <= 1 ? '#cbd5e1' : '#ef4444', padding: '6px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: purchaseItems.length <= 1 ? 'not-allowed' : 'pointer' }}
-                          onClick={() => handleRemovePurchaseItem(idx)}
-                          disabled={purchaseItems.length <= 1}
-                          title={purchaseItems.length <= 1 ? 'At least one item row is required' : 'Remove item row'}
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1.15fr 1.6fr 0.9fr 1.2fr 1.05fr 1.05fr 34px',
+                            gap: '8px',
+                            alignItems: 'center',
+                            background: '#ffffff',
+                            padding: '8px 10px',
+                            borderRadius: '10px',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
+                          }}
                         >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    ))}
+                          {/* 1. Category Dropdown */}
+                          <div className="app-input-wrapper">
+                            <select
+                              className="app-form-select"
+                              value={currentCategory}
+                              onChange={(e) => handleUpdatePurchaseItem(idx, 'category', e.target.value)}
+                              style={{ padding: '7px 8px', fontSize: '0.8rem', height: '36px', fontWeight: 700, color: '#1e293b' }}
+                            >
+                              <option value="Marble">Marble</option>
+                              <option value="Tiles">Tiles</option>
+                              <option value="Flowers">Flowers</option>
+                              <option value="Borders">Borders</option>
+                              <option value="Kali Patti">Kali Patti</option>
+                              <option value="Panels">Panels</option>
+                              <option value="Accessories">Accessories</option>
+                              <option value="Granite">Granite</option>
+                            </select>
+                            <ChevronDown size={12} className="app-input-chevron" />
+                          </div>
+
+                          {/* 2. Item Dropdown */}
+                          <div className="app-input-wrapper">
+                            <Layers size={13} className="app-input-icon" />
+                            <select
+                              className="app-form-select"
+                              value={String(it.itemId)}
+                              onChange={(e) => handleUpdatePurchaseItem(idx, 'itemId', e.target.value)}
+                              style={{ padding: '7px 8px 7px 28px', fontSize: '0.8rem', height: '36px', fontWeight: 600 }}
+                            >
+                              {availableItems.map((i) => {
+                                const cleanName = (i.name || '').replace(/^Kali Patti\s+/i, '');
+                                const sz = i.standardSize ? ` (${i.standardSize})` : (i.length && i.width ? ` (${i.length}×${i.width})` : '');
+                                return (
+                                  <option key={i.id} value={String(i.id)}>
+                                    {cleanName}{sz}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <ChevronDown size={12} className="app-input-chevron" />
+                          </div>
+
+                          {/* 3. Pieces */}
+                          <div className="app-input-wrapper" style={{ position: 'relative' }}>
+                            {details.isRunning ? (
+                              <input
+                                type="text"
+                                disabled
+                                value="1 ft Fixed"
+                                title="Borders and Kali Patti are measured in Running Feet (1 ft fixed length)"
+                                className="app-form-input font-mono"
+                                style={{
+                                  padding: '7px 4px',
+                                  fontSize: '0.74rem',
+                                  height: '36px',
+                                  textAlign: 'center',
+                                  fontWeight: 600,
+                                  background: '#f8fafc',
+                                  color: '#64748b',
+                                  border: '1px dashed #cbd5e1'
+                                }}
+                              />
+                            ) : (
+                              <input
+                                type="number"
+                                step="any"
+                                min="0"
+                                placeholder={details.isTiles ? 'Pcs (5/m)' : 'Pieces'}
+                                title={details.isTiles ? '1 Meter = 5 Pieces' : 'Pieces'}
+                                className="app-form-input font-mono"
+                                value={it.pieces !== undefined && it.pieces !== null ? it.pieces : ''}
+                                onChange={(e) => handleUpdatePurchaseItem(idx, 'pieces', e.target.value)}
+                                style={{ padding: '7px 6px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
+                              />
+                            )}
+                          </div>
+
+                          {/* 4. Quantity & Unit */}
+                          <div className="app-input-wrapper" style={{ position: 'relative' }}>
+                            <input
+                              type="number"
+                              step="any"
+                              min="0"
+                              placeholder={details.placeholderQty}
+                              className="app-form-input font-mono"
+                              value={it.quantity !== undefined ? it.quantity : it.totalSqFt}
+                              onChange={(e) => handleUpdatePurchaseItem(idx, 'quantity', e.target.value)}
+                              style={{ padding: '7px 44px 7px 8px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
+                            />
+                            <span
+                              style={{
+                                position: 'absolute',
+                                right: '6px',
+                                fontSize: '0.68rem',
+                                fontWeight: 800,
+                                color: '#2563eb',
+                                background: '#eff6ff',
+                                padding: '2px 4px',
+                                borderRadius: '4px',
+                                pointerEvents: 'none',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {details.qtyLabel}
+                            </span>
+                          </div>
+
+                          {/* 5. Cost Rate */}
+                          <div className="app-input-wrapper" style={{ position: 'relative' }}>
+                            <input
+                              type="number"
+                              step="any"
+                              min="0"
+                              placeholder="Rate"
+                              className="app-form-input font-mono"
+                              value={it.ratePerSqFt}
+                              onChange={(e) => handleUpdatePurchaseItem(idx, 'ratePerSqFt', e.target.value)}
+                              style={{ padding: '7px 46px 7px 8px', fontSize: '0.82rem', height: '36px', textAlign: 'center', fontWeight: 700 }}
+                            />
+                            <span
+                              style={{
+                                position: 'absolute',
+                                right: '6px',
+                                fontSize: '0.64rem',
+                                fontWeight: 700,
+                                color: '#64748b',
+                                pointerEvents: 'none',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {details.rateLabel.replace('Rs/', '/')}
+                            </span>
+                          </div>
+
+                          {/* 6. Total Amount */}
+                          <div className="font-mono" style={{ fontWeight: 800, textAlign: 'right', color: '#2563eb', fontSize: '0.86rem', paddingRight: '4px', whiteSpace: 'nowrap' }}>
+                            Rs. {Number(it.amount || 0).toLocaleString()}
+                          </div>
+
+                          {/* 7. Remove Row */}
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            style={{
+                              color: purchaseItems.length <= 1 ? '#cbd5e1' : '#ef4444',
+                              padding: '6px',
+                              borderRadius: '6px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: purchaseItems.length <= 1 ? 'not-allowed' : 'pointer'
+                            }}
+                            onClick={() => handleRemovePurchaseItem(idx)}
+                            disabled={purchaseItems.length <= 1}
+                            title={purchaseItems.length <= 1 ? 'At least one item row is required' : 'Remove item row'}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 

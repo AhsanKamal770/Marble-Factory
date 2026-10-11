@@ -545,6 +545,9 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
                 <LogIn size={15} />
                 <span>{tr('Sign In to Account', 'اکاؤنٹ میں لاگ ان کریں')}</span>
               </div>
+              <div style={{ fontSize: '0.86rem', color: '#64748b', fontWeight: 600, marginTop: '6px' }}>
+                Welcome Back, Admin
+              </div>
             </div>
           )}
 
@@ -597,43 +600,6 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
           {/* ══════════════════════════════════════════════════════════════════ */}
           {authMode === 'LOGIN' && (
             <div>
-              {/* Auto-Fill Credentials Chip */}
-              <div
-                onClick={handleFillDemo}
-                style={{
-                  background: '#f8fafc',
-                  border: '1px dashed #cbd5e1',
-                  borderRadius: '10px',
-                  padding: '7px 12px',
-                  marginBottom: '16px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  transition: 'all 0.15s ease'
-                }}
-                title="Click to auto-fill credentials"
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={14} style={{ color: '#0f3b73' }} />
-                  <span style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 600 }}>
-                    <strong style={{ color: '#0f3b73' }}>Login Credentials</strong>
-                  </span>
-                </div>
-                <span
-                  style={{
-                    fontSize: '0.68rem',
-                    background: '#0f3b73',
-                    color: '#ffffff',
-                    padding: '3px 8px',
-                    borderRadius: '5px',
-                    fontWeight: 700
-                  }}
-                >
-                  {tr('Auto Fill', 'آٹو فل')}
-                </span>
-              </div>
-
               <form onSubmit={handleLoginSubmit}>
                 {/* Username Input */}
                 <div style={{ marginBottom: '14px' }}>
@@ -668,26 +634,10 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
 
                 {/* Password Input */}
                 <div style={{ marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                  <div style={{ marginBottom: '4px' }}>
                     <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#334155' }}>
                       {tr('Password', 'پاس ورڈ')}
                     </label>
-                    <a
-                      href="#forgot"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        switchMode('FORGOT');
-                      }}
-                      style={{
-                        color: '#2563eb',
-                        textDecoration: 'none',
-                        fontWeight: 600,
-                        fontSize: '0.78rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      {tr('Forgot password?', 'پاس ورڈ بھول گئے؟')}
-                    </a>
                   </div>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <Lock size={17} style={{ position: 'absolute', left: '12px', color: '#64748b', pointerEvents: 'none' }} />

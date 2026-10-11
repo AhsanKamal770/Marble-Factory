@@ -79,16 +79,21 @@ export default function PrintableGateSlip({
     : new Date().toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", hour12: true }));
 
   // Settings & Branding
-  const companyNameEn = factorySettings?.companyNameEnglish || factorySettings?.companyName || "Rana Abdullah Siddique Marble Factory";
-  const companyNameUr = factorySettings?.companyNameUrdu || "رانا عبداللہ صدیق ماربل فیکٹری";
-  const companyTagline = factorySettings?.tagline || "معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز";
-  const phone = factorySettings?.phone || "0321-6606645 | 0300-6664187";
-  const address = factorySettings?.address || "جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد";
+  const companyUrdu = factorySettings?.companyNameUrdu || "رانا عبداللہ صدیق ماربل فیکٹری";
+  const companyEnglish = "Rana Abdullah Siddique";
+  const companyEnglishSub = "Marble Factory";
+  const factoryPhone = "ph : +92 300 7995171";
+  const factoryPhoneBottom = "0300-7995171";
+  const factoryAddressUrdu = "فیصل آباد روڈ، نزد پی ایس او پٹرول پمپ، جھمرہ سٹی";
+  const factoryAddressEnglish = "Faisalabad Road near PSO Petrol Pump, Jhumra City";
+  const companyNameEn = companyEnglish;
+  const companyNameUr = companyUrdu;
 
   // Customer & Driver Details
   const customerName = gatePass.customerName || linkedInvoice?.customerName || "محمد علی خان";
   const customerAddress = gatePass.destination || linkedInvoice?.customerAddress || linkedInvoice?.address || "گھر نمبر 12، گلشن اقبال، بلاک 13-D کراچی";
   const customerPhone = gatePass.customerPhone || linkedInvoice?.customerPhone || "0300-8456123";
+  const deliveryBy = gatePass.carrier || linkedInvoice?.carrier || gatePass.deliveryMethod || linkedInvoice?.transport || "Direct Factory Pickup";
 
   const driverName = gatePass.driverName || "علی رضا";
   const driverPhone = gatePass.driverPhone || "0303-7788990";
@@ -421,69 +426,169 @@ export default function PrintableGateSlip({
                   printColorAdjust: "exact"
                 }}
               >
-                {/* 1. TOP HEADER BANNER (Dark Navy Blue with Logo & Factory Name) */}
+                {/* 1. TOP HEADER BANNER (Bilingual: English Left Prominent, Urdu Right) */}
                 <div
                   style={{
-                    background: "linear-gradient(135deg, #0a2540 0%, #0b325b 100%)",
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
                     color: "#ffffff",
-                    padding: "16px 24px",
+                    padding: "11px 18px",
                     display: "flex",
+                    flexDirection: "row",
                     justifyContent: "space-between",
-                    alignItems: "center",
+                    alignItems: "stretch",
+                    direction: "ltr",
+                    gap: "16px",
                     WebkitPrintColorAdjust: "exact",
                     printColorAdjust: "exact"
                   }}
                 >
-                  {/* Left: 3D Pyramid Logo & English Title */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="46" height="38" viewBox="0 0 60 46" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <polygon points="6,42 30,6 40,24 26,42" fill="#2563eb" />
-                        <polygon points="30,6 54,42 40,42 30,24" fill="#38bdf8" />
-                        <polygon points="18,42 30,22 42,42" fill="#ffffff" />
-                        <polygon points="24,42 30,31 36,42" fill="#1d4ed8" />
-                      </svg>
+                  {/* Left: English Factory Details (Prominent & Large) */}
+                  <div
+                    dir="ltr"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      textAlign: "left",
+                      flex: 1
+                    }}
+                  >
+                    {/* Line 1: Rana Abdullah Siddique (Bara & Prominent) */}
+                    <div
+                      style={{
+                        fontSize: "1.45rem",
+                        fontWeight: 900,
+                        color: "#ffffff",
+                        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        letterSpacing: "-0.3px",
+                        lineHeight: 1.15
+                      }}
+                    >
+                      {companyEnglish}
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", textAlign: "left" }}>
-                      <div style={{ fontSize: "1.22rem", fontWeight: 800, color: "#ffffff", letterSpacing: "0.01em", fontFamily: "var(--font-main)" }}>
-                        {companyNameEn}
+                    {/* Line 2: Marble Factory */}
+                    <div
+                      style={{
+                        fontSize: "0.92rem",
+                        fontWeight: 800,
+                        color: "#bfdbfe",
+                        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                        letterSpacing: "0.04em",
+                        textTransform: "uppercase",
+                        lineHeight: 1.25,
+                        marginTop: "1px"
+                      }}
+                    >
+                      {companyEnglishSub}
+                    </div>
+                    {/* Lines 3 & 4: Contact Numbers */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "1px",
+                        marginTop: "3px",
+                        fontSize: "0.74rem",
+                        color: "#ffffff",
+                        fontWeight: 700,
+                        fontFamily: "var(--font-mono), monospace"
+                      }}
+                    >
+                      <div>
+                        <span style={{ color: "#93c5fd", fontWeight: 600 }}>Rana Abdullah :</span> 0317-9784782
                       </div>
-                      <div style={{ fontSize: "0.75rem", color: "#93c5fd", fontWeight: 600, fontFamily: "var(--font-main)" }}>
-                        Factory Management System
+                      <div>
+                        <span style={{ color: "#93c5fd", fontWeight: 600 }}>Factory no :</span> 0300-7995171
                       </div>
                     </div>
                   </div>
 
-                  {/* Vertical Divider */}
-                  <div style={{ width: "1.5px", height: "42px", background: "rgba(255, 255, 255, 0.25)", margin: "0 16px" }} />
+                  {/* Center Geometric Logo / Divider */}
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 4px",
+                      opacity: 0.9
+                    }}
+                  >
+                    <svg width="34" height="26" viewBox="0 0 54 40" fill="none">
+                      <polygon points="4,38 22,6 38,38" fill="#1d4ed8" />
+                      <polygon points="18,38 34,2 50,38" fill="#38bdf8" opacity="0.95" />
+                      <polygon points="14,38 26,14 40,38" fill="#93c5fd" opacity="0.85" />
+                    </svg>
+                    <div style={{ width: "1px", height: "18px", background: "rgba(255,255,255,0.25)", marginTop: "4px" }} />
+                  </div>
 
-                  {/* Right: Urdu Title & Subtitle */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "2px", textAlign: "right" }}>
-                    <div style={{ fontSize: "1.52rem", fontWeight: 900, color: "#ffffff", lineHeight: 1.3 }}>
-                      {companyNameUr}
+                  {/* Right: Urdu Factory Details */}
+                  <div
+                    dir="rtl"
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      textAlign: "right",
+                      flex: 1
+                    }}
+                  >
+                    {/* Line 1: Urdu Name */}
+                    <div
+                      style={{
+                        fontSize: "1.30rem",
+                        fontWeight: 900,
+                        color: "#ffffff",
+                        lineHeight: 1.25,
+                        letterSpacing: "0.01em",
+                        fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif'
+                      }}
+                    >
+                      {companyUrdu}
                     </div>
-                    <div style={{ fontSize: "0.84rem", color: "#dbeafe", fontWeight: 600, lineHeight: 1.3 }}>
-                      {companyTagline}
+                    {/* Line 2: Slogan */}
+                    <div
+                      style={{
+                        fontSize: "0.86rem",
+                        color: "#fef08a",
+                        fontWeight: 800,
+                        lineHeight: 1.35,
+                        fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif'
+                      }}
+                    >
+                      نام ہی کافی ہے
+                    </div>
+                    {/* Line 3: Urdu Address */}
+                    <div
+                      style={{
+                        fontSize: "0.74rem",
+                        color: "#dbeafe",
+                        fontWeight: 600,
+                        lineHeight: 1.35,
+                        fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif'
+                      }}
+                    >
+                      {factoryAddressUrdu}
                     </div>
                   </div>
                 </div>
 
                 {/* Inner Body Section */}
-                <div style={{ padding: "16px 20px" }}>
+                <div style={{ padding: "10px 16px" }}>
 
-                  {/* 2. SUB-HEADER CARDS ROW (Gate Pass / Raseed Card & Bill No / Date Card) */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "14px", marginBottom: "14px" }}>
+                  {/* 2. SUB-HEADER CARDS ROW (Gate Pass / Raseed Card & Bill No / Date Card - Compact) */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "10px", marginBottom: "8px" }}>
                     
                     {/* Left Sub-Header Card: گیٹ پاس / رسید */}
                     <div
                       style={{
                         background: "#eaf4fd",
-                        border: "1.5px solid #bce0fd",
-                        borderRadius: "12px",
-                        padding: "12px 18px",
+                        border: "1px solid #bce0fd",
+                        borderRadius: "8px",
+                        padding: "6px 14px",
                         display: "flex",
                         alignItems: "center",
-                        gap: "14px",
+                        gap: "10px",
                         WebkitPrintColorAdjust: "exact",
                         printColorAdjust: "exact"
                       }}
@@ -491,32 +596,32 @@ export default function PrintableGateSlip({
                       {/* Document Icon Box */}
                       <div
                         style={{
-                          width: "42px",
-                          height: "42px",
-                          borderRadius: "10px",
-                          background: "#0b2e59",
+                          width: "30px",
+                          height: "30px",
+                          borderRadius: "6px",
+                          background: "#1e3a8a",
                           display: "flex",
                           flexDirection: "column",
                           alignItems: "center",
                           justifyContent: "center",
-                          gap: "3px",
+                          gap: "2px",
                           flexShrink: 0,
                           WebkitPrintColorAdjust: "exact",
                           printColorAdjust: "exact"
                         }}
                       >
-                        <div style={{ width: "20px", height: "3px", background: "#ffffff", borderRadius: "2px" }} />
-                        <div style={{ width: "20px", height: "3px", background: "#ffffff", borderRadius: "2px" }} />
-                        <div style={{ width: "12px", height: "3px", background: "#ffffff", borderRadius: "2px", alignSelf: "flex-start", marginLeft: "11px" }} />
+                        <div style={{ width: "16px", height: "2.5px", background: "#ffffff", borderRadius: "1px" }} />
+                        <div style={{ width: "16px", height: "2.5px", background: "#ffffff", borderRadius: "1px" }} />
+                        <div style={{ width: "10px", height: "2.5px", background: "#ffffff", borderRadius: "1px", alignSelf: "flex-start", marginLeft: "7px" }} />
                       </div>
 
                       {/* Text in Center / Right */}
                       <div style={{ flex: 1, textAlign: "center" }}>
-                        <div style={{ fontSize: "1.45rem", fontWeight: 900, color: "#0b2e59", lineHeight: 1.2 }}>
+                        <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#1e3a8a", lineHeight: 1.2 }}>
                           گیٹ پاس / رسید
                         </div>
-                        <div style={{ fontSize: "0.85rem", color: "#1d4ed8", fontWeight: 700, marginTop: "2px" }}>
-                          (کسٹمری خریداری کے بلنے)
+                        <div style={{ fontSize: "0.72rem", color: "#2563eb", fontWeight: 700, marginTop: "1px" }}>
+                          (کسٹمر کی خریداری کا بل)
                         </div>
                       </div>
                     </div>
@@ -525,13 +630,13 @@ export default function PrintableGateSlip({
                     <div
                       style={{
                         background: "#eaf4fd",
-                        border: "1.5px solid #bce0fd",
-                        borderRadius: "12px",
-                        padding: "10px 16px",
+                        border: "1px solid #bce0fd",
+                        borderRadius: "8px",
+                        padding: "5px 12px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
-                        gap: "12px",
+                        gap: "8px",
                         WebkitPrintColorAdjust: "exact",
                         printColorAdjust: "exact"
                       }}
@@ -539,71 +644,71 @@ export default function PrintableGateSlip({
                       {/* Calendar Icon on Left */}
                       <div
                         style={{
-                          width: "36px",
-                          height: "36px",
-                          borderRadius: "8px",
-                          border: "1.5px solid #0b2e59",
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "6px",
+                          border: "1px solid #1e3a8a",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "#0b2e59",
+                          color: "#1e3a8a",
                           flexShrink: 0
                         }}
                       >
-                        <Calendar size={20} strokeWidth={2.4} />
+                        <Calendar size={16} strokeWidth={2.4} />
                       </div>
 
                       {/* Info lines on Right */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "4px", textAlign: "right", flex: 1 }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px", textAlign: "right", flex: 1 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span
                             className="font-mono"
                             style={{
-                              fontSize: "1.05rem",
+                              fontSize: "0.88rem",
                               fontWeight: 900,
-                              color: "#0b2e59",
+                              color: "#1e3a8a",
                               letterSpacing: "0.02em"
                             }}
                           >
                             {gatePass.invoiceNo || gatePass.gatePassNo || "INV-2026-1252"}
                           </span>
-                          <span style={{ fontSize: "0.84rem", fontWeight: 800, color: "#0b2e59" }}>:بل نمبر</span>
+                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#2563eb" }}>:بل نمبر</span>
                         </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #bce0fd", paddingTop: "3px" }}>
-                          <span style={{ fontSize: "0.88rem", fontWeight: 700, color: "#0b2e59" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #bce0fd", paddingTop: "2px" }}>
+                          <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#1e3a8a" }}>
                             {dispatchDateUrdu}
                           </span>
-                          <span style={{ fontSize: "0.84rem", fontWeight: 800, color: "#0b2e59" }}>:تاریخ</span>
+                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#2563eb" }}>:تاریخ</span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* 3. TWO INFORMATION CARDS (گاہک کی معلومات & ڈرائیور کی معلومات) */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "14px" }}>
+                  {/* 3. TWO INFORMATION CARDS (گاہک کی معلومات & ڈرائیور کی معلومات - Compact) */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "8px" }}>
                     
                     {/* Left Card: گاہک کی معلومات */}
                     <div
                       style={{
                         background: "#f0f7fe",
-                        border: "1.5px solid #bce0fd",
-                        borderRadius: "12px",
-                        padding: "12px 16px",
+                        border: "1px solid #bce0fd",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
                         WebkitPrintColorAdjust: "exact",
                         printColorAdjust: "exact"
                       }}
                     >
                       {/* Card Header with User Icon */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", marginBottom: "8px" }}>
-                        <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#0b2e59" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px", marginBottom: "4px" }}>
+                        <div style={{ fontSize: "0.88rem", fontWeight: 900, color: "#1e3a8a" }}>
                           گاہک کی معلومات
                         </div>
                         <div
                           style={{
-                            width: "30px",
-                            height: "30px",
+                            width: "22px",
+                            height: "22px",
                             borderRadius: "50%",
-                            background: "#0b2e59",
+                            background: "#1e3a8a",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -612,33 +717,33 @@ export default function PrintableGateSlip({
                             printColorAdjust: "exact"
                           }}
                         >
-                          <User size={16} color="#ffffff" strokeWidth={2.6} />
+                          <User size={12} color="#ffffff" strokeWidth={2.6} />
                         </div>
                       </div>
 
                       {/* Details List */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.88rem", textAlign: "left" }}>
+                          <span style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {customerName}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#0b2e59", fontSize: "0.85rem" }}>:نام</span>
+                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:نام</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.82rem", textAlign: "left", maxWidth: "75%", lineHeight: 1.3 }}>
+                          <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.74rem", textAlign: "left", maxWidth: "75%", lineHeight: 1.2 }}>
                             {customerAddress}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#0b2e59", fontSize: "0.85rem" }}>:پتہ</span>
+                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:پتہ</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.88rem", textAlign: "left" }}>
+                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {customerPhone}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#0b2e59", fontSize: "0.85rem" }}>:فون نمبر</span>
+                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:فون نمبر</span>
                         </div>
                       </div>
                     </div>
@@ -647,24 +752,24 @@ export default function PrintableGateSlip({
                     <div
                       style={{
                         background: "#f0f7fe",
-                        border: "1.5px solid #bce0fd",
-                        borderRadius: "12px",
-                        padding: "12px 16px",
+                        border: "1px solid #bce0fd",
+                        borderRadius: "8px",
+                        padding: "6px 12px",
                         WebkitPrintColorAdjust: "exact",
                         printColorAdjust: "exact"
                       }}
                     >
                       {/* Card Header with Truck Icon */}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "10px", marginBottom: "8px" }}>
-                        <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#0b2e59" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px", marginBottom: "4px" }}>
+                        <div style={{ fontSize: "0.88rem", fontWeight: 900, color: "#1e3a8a" }}>
                           ڈرائیور کی معلومات
                         </div>
                         <div
                           style={{
-                            width: "30px",
-                            height: "30px",
+                            width: "22px",
+                            height: "22px",
                             borderRadius: "50%",
-                            background: "#0b2e59",
+                            background: "#1e3a8a",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -673,33 +778,33 @@ export default function PrintableGateSlip({
                             printColorAdjust: "exact"
                           }}
                         >
-                          <Truck size={16} color="#ffffff" strokeWidth={2.4} />
+                          <Truck size={12} color="#ffffff" strokeWidth={2.4} />
                         </div>
                       </div>
 
                       {/* Details List */}
-                      <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.88rem", textAlign: "left" }}>
+                          <span style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {driverName}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#0b2e59", fontSize: "0.85rem" }}>:ڈرائیور کا نام</span>
+                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:ڈرائیور کا نام</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.88rem", textAlign: "left" }}>
+                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {driverPhone}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#0b2e59", fontSize: "0.85rem" }}>:فون نمبر</span>
+                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:فون نمبر</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.88rem", textAlign: "left" }}>
+                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {vehicleNo}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#0b2e59", fontSize: "0.85rem" }}>:گاڑی نمبر</span>
+                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:گاڑی نمبر</span>
                         </div>
                       </div>
                     </div>
@@ -900,27 +1005,26 @@ export default function PrintableGateSlip({
 
                   {/* 5. NOTES & TERMS BOX ("نوٹ:") */}
                   <div
+                    dir="rtl"
                     style={{
                       background: "#eaf4fd",
                       border: "1.5px solid #bce0fd",
-                      borderRadius: "12px",
-                      padding: "12px 18px",
-                      marginBottom: "24px",
+                      borderRadius: "10px",
+                      padding: "10px 16px",
+                      marginBottom: "18px",
+                      textAlign: "right",
                       WebkitPrintColorAdjust: "exact",
                       printColorAdjust: "exact"
                     }}
                   >
                     {/* Header */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "8px", marginBottom: "6px" }}>
-                      <div style={{ fontSize: "1.18rem", fontWeight: 900, color: "#0b2e59" }}>
-                        :نوٹ
-                      </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", marginBottom: "6px" }}>
                       <div
                         style={{
                           width: "22px",
                           height: "22px",
                           borderRadius: "50%",
-                          background: "#0b2e59",
+                          background: "#1e3a8a",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -929,16 +1033,29 @@ export default function PrintableGateSlip({
                       >
                         <Info size={14} strokeWidth={2.8} />
                       </div>
+                      <div style={{ fontSize: "1.05rem", fontWeight: 900, color: "#1e3a8a" }}>
+                        نوٹ:
+                      </div>
                     </div>
 
-                    {/* Bullet List */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", textAlign: "right", fontSize: "0.84rem", color: "#0f172a", fontWeight: 700, lineHeight: 1.7 }}>
-                      <div>-1 خریداری کے بعد مال واپس یا تبدیل نہیں کیا جا سکتا۔</div>
-                      <div>-2 بل کی ادائیگی 7 دن کے اندر لازمی ہے۔</div>
-                      <div>-3 معیار میں کسی قسم کی خرابی کی صورت میں فوری اطلاع دیں۔</div>
+                    {/* Bullet List - 1, 2, 3 correctly on the right */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.84rem", color: "#0f172a", fontWeight: 700, lineHeight: 1.6 }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                        <span style={{ color: "#1e3a8a", fontWeight: 900, minWidth: "16px" }}>1-</span>
+                        <span>خریداری کے بعد مال واپس یا تبدیل نہیں کیا جا سکتا۔</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                        <span style={{ color: "#1e3a8a", fontWeight: 900, minWidth: "16px" }}>2-</span>
+                        <span>بل کی ادائیگی 7 دن کے اندر لازمی ہے۔</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px" }}>
+                        <span style={{ color: "#1e3a8a", fontWeight: 900, minWidth: "16px" }}>3-</span>
+                        <span>معیار میں کسی قسم کی خرابی کی صورت میں فوری اطلاع دیں۔</span>
+                      </div>
                       {gatePass.notes && (
-                        <div style={{ color: "#1d4ed8", marginTop: "2px" }}>
-                          -4 خصوصی نوٹ: {gatePass.notes}
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: "6px", color: "#1d4ed8", marginTop: "2px" }}>
+                          <span style={{ fontWeight: 900, minWidth: "16px" }}>4-</span>
+                          <span>خصوصی نوٹ: {gatePass.notes}</span>
                         </div>
                       )}
                     </div>
@@ -971,33 +1088,32 @@ export default function PrintableGateSlip({
                   </div>
                 </div>
 
-                {/* 7. BOTTOM FOOTER BANNER (Dark Navy Blue with Location & Phones) */}
+                {/* 7. BOTTOM FOOTER BANNER (Bilingual: Left Phone, Right Location) */}
                 <div
                   style={{
-                    background: "linear-gradient(135deg, #0a2540 0%, #0b325b 100%)",
+                    background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
                     color: "#ffffff",
-                    padding: "12px 24px",
+                    padding: "7px 18px",
                     display: "flex",
+                    flexDirection: "row",
                     justifyContent: "space-between",
                     alignItems: "center",
+                    fontSize: "0.76rem",
+                    direction: "ltr",
                     WebkitPrintColorAdjust: "exact",
                     printColorAdjust: "exact"
                   }}
                 >
-                  {/* Location on Left */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <MapPin size={18} color="#ffffff" />
-                    <span style={{ fontWeight: 800, fontSize: "0.86rem", color: "#ffffff" }}>
-                      {address}
-                    </span>
+                  {/* Left: Phone Number */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", fontFamily: "var(--font-mono), monospace", fontWeight: 700, color: "#ffffff" }}>
+                    <Phone size={12} color="#93c5fd" />
+                    <span>{factoryPhoneBottom}</span>
                   </div>
 
-                  {/* Phone on Right */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <span className="font-mono" style={{ fontWeight: 800, fontSize: "0.86rem", color: "#ffffff", letterSpacing: "0.02em" }}>
-                      {phone}
-                    </span>
-                    <Phone size={17} color="#ffffff" />
+                  {/* Right: Factory Location */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontWeight: 700, color: "#ffffff" }}>{factoryAddressEnglish}</span>
+                    <MapPin size={13} color="#93c5fd" />
                   </div>
                 </div>
               </div>
@@ -1023,10 +1139,13 @@ export default function PrintableGateSlip({
               >
                 {/* Thermal Header */}
                 <div style={{ textAlign: "center", borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontSize: "14px", fontWeight: "bold" }}>{companyNameUr}</div>
-                  <div style={{ fontSize: "10px" }}>{companyNameEn}</div>
-                  <div style={{ fontSize: "10px" }}>{address}</div>
-                  <div style={{ fontSize: "10px" }}>Tel: {phone}</div>
+                  <div style={{ fontSize: "14px", fontWeight: "bold" }}>{companyUrdu}</div>
+                  <div style={{ fontSize: "10px", fontWeight: "bold" }}>نام ہی کافی ہے</div>
+                  <div style={{ fontSize: "12px", fontWeight: "bold", marginTop: "3px" }}>RANA ABDULLAH SIDDIQUE</div>
+                  <div style={{ fontSize: "10px", fontWeight: "bold" }}>MARBLE FACTORY</div>
+                  <div style={{ fontSize: "9.5px", marginTop: "2px" }}>Rana Abdullah: 0317-9784782</div>
+                  <div style={{ fontSize: "9.5px" }}>Factory: 0300-7995171</div>
+                  <div style={{ fontSize: "9px", marginTop: "1px" }}>{factoryAddressEnglish}</div>
                   <div style={{ fontSize: "12px", fontWeight: "bold", margin: "4px 0 2px 0", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "2px 0" }}>
                     GATE PASS / رسید
                   </div>
@@ -1086,7 +1205,9 @@ export default function PrintableGateSlip({
                 </div>
 
                 <div style={{ textAlign: "center", fontSize: "9px", marginTop: "12px", borderTop: "1px dotted #888", paddingTop: "4px" }}>
-                  Factory Gate Logistics System
+                  <div style={{ fontWeight: "bold" }}>{factoryAddressEnglish}</div>
+                  <div style={{ fontWeight: "bold", marginTop: "2px" }}>Ph: {factoryPhoneBottom}</div>
+                  <div style={{ marginTop: "3px" }}>Factory Gate Logistics System</div>
                 </div>
               </div>
             )}
