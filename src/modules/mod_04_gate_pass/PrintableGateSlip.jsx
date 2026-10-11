@@ -102,11 +102,25 @@ export default function PrintableGateSlip({
   // Manifest items logic
   let manifestItems = [];
   if (Array.isArray(gatePass.manifest) && gatePass.manifest.length > 0) {
-    manifestItems = gatePass.manifest;
+    manifestItems = gatePass.manifest.map((it, idx) => ({
+      ...it,
+      sr: it.sr || idx + 1,
+      name: it.name || it.itemName || "ماربل",
+      quantity: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.pieces || it.sqFt || "-"),
+      unit: it.unit || (it.sqFt ? "Sq.Ft" : ""),
+      thicknessSutar: it.thicknessSutar || "4",
+      size: it.size || it.dimensions || "-",
+      pieces: it.pieces || it.quantity || "-",
+      sqFt: it.sqFt || it.quantity || "-",
+      amount: it.amount || 0,
+      rate: it.rate || 0
+    }));
   } else if (linkedInvoice?.items && linkedInvoice.items.length > 0) {
     manifestItems = linkedInvoice.items.map((it, idx) => ({
       sr: idx + 1,
       name: it.name || it.itemName || "ماربل",
+      quantity: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.totalSqFt || it.sqFt || it.pieces || "-"),
+      unit: it.unit || (it.totalSqFt || it.sqFt ? "Sq.Ft" : "Pcs"),
       thicknessSutar: it.thicknessSutar || "4",
       size: it.dimensions || (it.length && it.width ? `${it.length}ft × ${it.width}ft` : it.size || "-"),
       pieces: it.quantity || it.pieces || "-",
@@ -180,7 +194,7 @@ export default function PrintableGateSlip({
       `---------------------------------`,
       `*تفصیل اشیاء:*`,
       ...manifestItems.map(
-        (it, idx) => `${idx + 1}. ${it.name} | سائز: ${it.size || "-"} | تعداد: ${it.pieces || "-"} | رقم: Rs. ${it.amount ? Number(it.amount).toLocaleString() : "-"}`
+        (it, idx) => `${idx + 1}. ${it.name} | مقدار: ${it.quantity !== undefined ? `${it.quantity} ${it.unit || ''}`.trim() : (it.pieces || it.sqFt || '-')} ${it.size && it.size !== '-' ? `| سائز: ${it.size}` : ''} | رقم: Rs. ${it.amount ? Number(it.amount).toLocaleString() : '-'}`
       ),
       `---------------------------------`,
       `*کل رقم:* Rs. ${Number(grandTotal).toLocaleString()}`,
@@ -899,7 +913,9 @@ export default function PrintableGateSlip({
                                 borderRight: "1px solid #bce0fd"
                               }}
                             >
-                              {item.size || item.dimensions || (item.length && item.width ? `${item.length}ft x ${item.width}ft` : "-")}
+                              {item.size && item.size !== "-"
+                                ? item.size
+                                : (item.unit ? `یونٹ: ${item.unit}` : "-")}
                             </td>
 
                             {/* 4. مقدار */}
@@ -913,7 +929,9 @@ export default function PrintableGateSlip({
                                 borderRight: "1px solid #bce0fd"
                               }}
                             >
-                              {item.pieces || item.quantity || "-"}
+                              {item.quantity !== undefined && item.quantity !== ""
+                                ? `${item.quantity} ${item.unit || ""}`.trim()
+                                : (item.pieces || item.sqFt || "-")}
                             </td>
 
                             {/* 5. کوالٹی */}
@@ -1184,7 +1202,7 @@ export default function PrintableGateSlip({
                         <span style={{ fontWeight: "bold" }}>Rs. {item.amount ? Number(item.amount).toLocaleString() : "-"}</span>
                       </div>
                       <div style={{ color: "#444", fontSize: "9px", paddingLeft: "10px" }}>
-                        {item.size ? `Size: ${item.size}` : ""} {item.pieces ? `• ${item.pieces} Pcs` : ""}
+                        {item.quantity !== undefined && item.quantity !== "" ? `Qty: ${item.quantity} ${item.unit || ''}`.trim() : (item.pieces ? `• ${item.pieces} Pcs` : "")} {item.size && item.size !== '-' ? `• ${item.size}` : ""}
                       </div>
                     </div>
                   ))}
