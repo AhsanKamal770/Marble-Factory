@@ -109,4 +109,12 @@
   - Upgraded **Invoices Register (`InvoicesView.jsx`)**:
     - Added dedicated `TrendingUp` Admin Profit action button to view and save PDF profit audits for any past invoice.
   - Verified clean production build with Vite (`npm run build`).
+- **2026-10-11:**
+  - Generated **Release v1.0.5 Windows Installer & Package Suite**:
+    - Bumped application version to `1.0.5` in `package.json` and `package-lock.json`.
+    - Compiled optimized production assets via Vite.
+    - Packaged standalone NSIS x64 Windows installer (`Marble Factory Suite Setup 1.0.5.exe`) in `release/` directory.
+    - Tagged and pushed `v1.0.5` to GitHub repository for automated GitHub Actions release workflow.
+
+
 
