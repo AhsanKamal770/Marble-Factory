@@ -62,7 +62,7 @@ const INITIAL_FORM = {
   carriagePaidBy: "Customer (موقع پر ادا کرے گا)",
   driverAdvance: "",
   notes: "",
-  manifestItems: [{ name: "", thicknessSutar: "4", size: "", pieces: "", sqFt: "" }]
+  manifestItems: [{ name: "", quantity: "", unit: "Sq.Ft" }]
 };
 
 // ── Status Badge Component ──────────────────────────────────────────────────
@@ -178,29 +178,37 @@ function GatePassDrawer({ gp, onClose, onPrint, onStatusChange, language }) {
           {(gp.manifest || []).length > 0 && (
             <div style={{ marginBottom: "18px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
-                <div style={{ fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)" }}>Dispatch Manifest</div>
+                <div style={{ fontSize: "0.72rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)" }}>
+                  {language === "ur" ? "روانہ کردہ مال کی تفصیل" : "Dispatch Manifest"}
+                </div>
                 <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-                  {gp.totalPieces || 0} Pcs • {gp.totalSqFt || 0} Sq.Ft
+                  {gp.totalQuantity ? `${gp.totalQuantity} Qty` : `${gp.totalPieces || 0} Pcs • ${gp.totalSqFt || 0} Sq.Ft`}
                 </span>
               </div>
               <div style={{ border: "1px solid var(--border-color)", borderRadius: "8px", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.78rem" }}>
                   <thead>
                     <tr style={{ background: "var(--bg-primary)" }}>
-                      <th style={{ padding: "8px 10px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700 }}>Item</th>
-                      <th style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700 }}>Sutar</th>
-                      <th style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700 }}>Pcs</th>
-                      <th style={{ padding: "8px 10px", textAlign: "right", color: "var(--text-muted)", fontWeight: 700 }}>Sq.Ft</th>
+                      <th style={{ padding: "8px 10px", textAlign: "left", color: "var(--text-muted)", fontWeight: 700 }}>
+                        {language === "ur" ? "آئٹم / مال" : "Item"}
+                      </th>
+                      <th style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700 }}>
+                        {language === "ur" ? "تعداد / مقدار" : "Quantity"}
+                      </th>
+                      <th style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-muted)", fontWeight: 700 }}>
+                        {language === "ur" ? "اکائی (یونٹ)" : "Unit"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {(gp.manifest || []).map((row, i) => (
                       <tr key={i} style={{ borderTop: "1px solid var(--border-divider)" }}>
                         <td style={{ padding: "8px 10px", color: "var(--text-primary)", fontWeight: 600 }}>{row.name}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "center", color: "var(--accent-blue)", fontWeight: 700 }}>{row.thicknessSutar ? `${row.thicknessSutar}S` : "4S"}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-secondary)" }}>{row.pieces || "—"}</td>
-                        <td style={{ padding: "8px 10px", textAlign: "right", color: "var(--text-primary)", fontFamily: "var(--font-mono)", fontWeight: 700 }}>
-                          {row.sqFt ? Number(row.sqFt).toFixed(2) : "—"}
+                        <td style={{ padding: "8px 10px", textAlign: "center", color: "var(--accent-blue)", fontWeight: 700, fontFamily: "var(--font-mono)" }}>
+                          {row.quantity !== undefined && row.quantity !== "" ? row.quantity : (row.sqFt || row.pieces || "—")}
+                        </td>
+                        <td style={{ padding: "8px 10px", textAlign: "center", color: "var(--text-secondary)", fontWeight: 600 }}>
+                          {row.unit || (row.sqFt ? "Sq.Ft" : row.pieces ? "Pcs" : "—")}
                         </td>
                       </tr>
                     ))}
@@ -431,18 +439,20 @@ export default function GatePassView() {
         customerPhone: "",
         destination: "",
         carriageCharges: "",
-        manifestItems: [{ name: "", thicknessSutar: "4", size: "", pieces: "", sqFt: "" }]
+        manifestItems: [{ name: "", quantity: "", unit: "Sq.Ft" }]
       }));
       return;
     }
 
-    const manifestItems = (inv.items || []).map(line => ({
-      name: line.name || "",
-      thicknessSutar: line.thicknessSutar ? String(line.thicknessSutar) : "4",
-      size: line.size || "",
-      pieces: line.pieces ? String(line.pieces) : "",
-      sqFt: line.sqFt ? String(line.sqFt) : ""
-    }));
+    const manifestItems = (inv.items || []).map(line => {
+      const rawQty = line.quantity !== undefined && line.quantity !== "" ? line.quantity : (line.sqFt || line.totalSqFt || line.pieces || "");
+      const cappedQty = rawQty !== "" ? (Number(rawQty) > 300 ? 300 : rawQty) : "";
+      return {
+        name: line.name || "",
+        quantity: cappedQty,
+        unit: line.unit || (line.sqFt || line.totalSqFt ? "Sq.Ft" : "Pcs")
+      };
+    });
 
     setFormData(prev => ({
       ...prev,
@@ -452,14 +462,21 @@ export default function GatePassView() {
       customerPhone: inv.customerPhone || "",
       destination: inv.destination || "",
       carriageCharges: inv.carriageCharges ? String(inv.carriageCharges) : "",
-      manifestItems: manifestItems.length > 0 ? manifestItems : [{ name: "", thicknessSutar: "4", size: "", pieces: "", sqFt: "" }]
+      manifestItems: manifestItems.length > 0 ? manifestItems : [{ name: "", quantity: "", unit: "Sq.Ft" }]
     }));
   };
 
   const handleManifestChange = (index, field, value) => {
     setFormData(prev => {
       const items = [...prev.manifestItems];
-      items[index] = { ...items[index], [field]: value };
+      let finalVal = value;
+      if (field === "quantity" && value !== "") {
+        const num = parseFloat(value);
+        if (!isNaN(num) && num > 300) {
+          finalVal = 300;
+        }
+      }
+      items[index] = { ...items[index], [field]: finalVal };
       return { ...prev, manifestItems: items };
     });
   };
@@ -467,7 +484,7 @@ export default function GatePassView() {
   const handleAddManifestRow = () => {
     setFormData(prev => ({
       ...prev,
-      manifestItems: [...prev.manifestItems, { name: "", thicknessSutar: "4", size: "", pieces: "", sqFt: "" }]
+      manifestItems: [...prev.manifestItems, { name: "", quantity: "", unit: "Sq.Ft" }]
     }));
   };
 
@@ -484,6 +501,12 @@ export default function GatePassView() {
       const manifest = formData.manifestItems.filter(r => r.name.trim());
       if (manifest.length === 0) {
         alert(tr("Please add at least one item to the manifest.", "براہ کرم کم از کم ایک آئٹم درج کریں۔"));
+        return;
+      }
+
+      const exceedsMax = manifest.some(r => Number(r.quantity || r.sqFt || r.pieces || 0) > 300);
+      if (exceedsMax) {
+        alert(tr("A maximum of 300 quantity can be dispatched at a time per item.", "ایک وقت میں فی آئٹم 300 سے زیادہ مقدار روانہ نہیں کی جا سکتی۔"));
         return;
       }
 
@@ -1141,10 +1164,10 @@ export default function GatePassView() {
                       {/* Manifest Quantity */}
                       <td style={{ padding: "14px 14px" }}>
                         <div style={{ fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
-                          {gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)" }}>Sq.Ft</span>
+                          {gp.totalQuantity || gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)" }}>{gp.manifest?.[0]?.unit || "Sq.Ft"}</span>
                         </div>
                         <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                          {gp.totalPieces || (gp.manifest || []).length} Pcs • {(gp.manifest || []).length} items
+                          {(gp.manifest || []).length} items {gp.totalPieces ? `• ${gp.totalPieces} Pcs` : ''}
                         </div>
                       </td>
 
@@ -1584,9 +1607,16 @@ export default function GatePassView() {
                     </button>
                   </div>
 
+                  <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1.2fr 1fr auto", gap: "8px", padding: "0 10px 4px 10px", fontSize: "0.72rem", fontWeight: 700, color: "#64748b" }}>
+                    <span>{tr("Item Name", "مال / آئٹم کا نام")}</span>
+                    <span style={{ textAlign: "right" }}>{tr("Quantity (Max 300)", "مقدار (زیادہ سے زیادہ 300)")}</span>
+                    <span style={{ textAlign: "center" }}>{tr("Unit", "اکائی / یونٹ")}</span>
+                    <span style={{ width: "28px" }}></span>
+                  </div>
+
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                     {formData.manifestItems.map((item, idx) => (
-                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "2.2fr 1fr 1.2fr 0.9fr 1fr auto", gap: "8px", alignItems: "center", background: "#ffffff", padding: "8px 10px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "2.5fr 1.2fr 1fr auto", gap: "8px", alignItems: "center", background: "#ffffff", padding: "8px 10px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
                         <div className="app-input-wrapper">
                           <Layers size={14} className="app-input-icon" />
                           <input
@@ -1601,50 +1631,32 @@ export default function GatePassView() {
                         </div>
 
                         <div className="app-input-wrapper">
-                          <select
-                            value={item.thicknessSutar}
-                            onChange={e => handleManifestChange(idx, "thicknessSutar", e.target.value)}
-                            className="app-form-select"
-                            style={{ padding: "7px 20px 7px 8px", fontSize: "0.82rem", height: "36px", fontWeight: 700 }}
-                          >
-                            {SUTAR_OPTIONS.map(s => (
-                              <option key={s} value={s}>{s} Sutar</option>
-                            ))}
-                          </select>
-                          <ChevronDown size={12} className="app-input-chevron" />
+                          <input
+                            type="number"
+                            step="any"
+                            min={0}
+                            max={300}
+                            value={
+                              item.quantity !== undefined && item.quantity !== ""
+                                ? (Number(item.quantity) > 300 ? 300 : item.quantity)
+                                : (Number(item.pieces || item.sqFt) > 300 ? 300 : (item.pieces || item.sqFt || ""))
+                            }
+                            onChange={e => handleManifestChange(idx, "quantity", e.target.value)}
+                            placeholder="Qty (Max 300)"
+                            title={tr("Max 300 per dispatch", "ایک وقت میں زیادہ سے زیادہ 300")}
+                            className="app-form-input font-mono"
+                            style={{ padding: "7px 10px", fontSize: "0.82rem", height: "36px", textAlign: "right", fontWeight: 700 }}
+                          />
                         </div>
 
                         <div className="app-input-wrapper">
                           <input
                             type="text"
-                            value={item.size}
-                            onChange={e => handleManifestChange(idx, "size", e.target.value)}
-                            placeholder="12×12 / 2×4"
-                            className="app-form-input"
-                            style={{ padding: "7px 10px", fontSize: "0.82rem", height: "36px" }}
-                          />
-                        </div>
-
-                        <div className="app-input-wrapper">
-                          <input
-                            type="number"
-                            value={item.pieces}
-                            onChange={e => handleManifestChange(idx, "pieces", e.target.value)}
-                            placeholder="Pcs"
+                            value={item.unit || ""}
+                            onChange={e => handleManifestChange(idx, "unit", e.target.value)}
+                            placeholder="Unit (e.g. Sq.Ft)"
                             className="app-form-input font-mono"
                             style={{ padding: "7px 8px", fontSize: "0.82rem", height: "36px", textAlign: "center" }}
-                          />
-                        </div>
-
-                        <div className="app-input-wrapper">
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.sqFt}
-                            onChange={e => handleManifestChange(idx, "sqFt", e.target.value)}
-                            placeholder="Sq.Ft"
-                            className="app-form-input font-mono"
-                            style={{ padding: "7px 8px", fontSize: "0.82rem", height: "36px", textAlign: "right", fontWeight: 700 }}
                           />
                         </div>
 

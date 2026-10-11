@@ -1,5 +1,7 @@
 import React, { useState } from "react";
-import { PlusCircle, DollarSign, User, FileText, Calendar, Check, Tag, ChevronDown, Info, Save, Wallet } from "lucide-react";
+import { PlusCircle, DollarSign, User, FileText, Calendar, Check, Tag, ChevronDown, Info, Save, Wallet, HeartHandshake } from "lucide-react";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../../db/index";
 import { EXPENSE_CATEGORIES } from "./dailyExpenseService";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -15,6 +17,10 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
   const [expenseDate, setExpenseDate] = useState(selectedDate || new Date().toISOString().slice(0, 10));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+
+  // Live Query: Fetch registered Zakat Holders
+  const zakatHolders = useLiveQuery(() => db.zakat_beneficiaries ? db.zakat_beneficiaries.toArray() : [], []) || [];
+  const isZakat = category.toLowerCase().includes("zakat") || category.includes("زکوٰۃ");
 
   const quickAmounts = [200, 500, 1000, 2000, 5000];
 
@@ -106,7 +112,13 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
             <Tag size={16} className="app-input-icon" />
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => {
+                const newCat = e.target.value;
+                setCategory(newCat);
+                if (newCat.toLowerCase().includes("zakat") || newCat.includes("زکوٰۃ")) {
+                  setPaidTo("");
+                }
+              }}
               className="app-form-select"
             >
               {EXPENSE_CATEGORIES.map(cat => (
@@ -172,19 +184,56 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
         {/* Paid To & Date Row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div className="app-form-group">
-            <label className="app-form-label">
-              {tr("Paid To / Person", "وصول کنندہ")}
+            <label className="app-form-label" style={{ color: isZakat ? "#059669" : undefined, fontWeight: isZakat ? 800 : undefined }}>
+              {isZakat ? tr("Zakat Holder", "زکوٰۃ ہولڈر") : tr("Paid To / Person", "وصول کنندہ")}
+              {isZakat && <span className="app-form-label-required">*</span>}
             </label>
             <div className="app-input-wrapper">
-              <User size={15} className="app-input-icon" />
-              <input
-                type="text"
-                value={paidTo}
-                onChange={e => setPaidTo(e.target.value)}
-                placeholder="e.g. Driver"
-                className="app-form-input"
-              />
+              {isZakat ? (
+                <HeartHandshake size={15} className="app-input-icon" style={{ color: "#059669" }} />
+              ) : (
+                <User size={15} className="app-input-icon" />
+              )}
+              {isZakat ? (
+                <>
+                  <select
+                    value={paidTo}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPaidTo(val);
+                      const matched = zakatHolders.find(h => h.name === val);
+                      if (matched && (matched.amount_per_month_paid || matched.monthlyAmount)) {
+                        setAmount(String(matched.amount_per_month_paid || matched.monthlyAmount));
+                      }
+                    }}
+                    required
+                    className="app-form-select"
+                    style={{ borderColor: "#059669", fontWeight: 700 }}
+                  >
+                    <option value="">{tr("-- Select Registered Zakat Holder --", "-- رجسٹرڈ زکوٰۃ ہولڈر منتخب کریں --")}</option>
+                    {zakatHolders.map(holder => (
+                      <option key={holder.id} value={holder.name}>
+                        {holder.name} {holder.phone ? `(${holder.phone})` : ""} - Rs. {Number(holder.amount_per_month_paid || holder.monthlyAmount || 0).toLocaleString()}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="app-input-chevron" />
+                </>
+              ) : (
+                <input
+                  type="text"
+                  value={paidTo}
+                  onChange={e => setPaidTo(e.target.value)}
+                  placeholder="e.g. Driver"
+                  className="app-form-input"
+                />
+              )}
             </div>
+            {isZakat && zakatHolders.length === 0 && (
+              <span style={{ fontSize: "0.72rem", color: "#dc2626", marginTop: "3px", display: "block" }}>
+                {tr("No registered Zakat holders found in Zakat Module.", "زکوٰۃ ماڈیول میں کوئی رجسٹرڈ ہولڈر موجود نہیں ہے۔")}
+              </span>
+            )}
           </div>
 
           <div className="app-form-group">

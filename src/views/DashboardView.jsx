@@ -37,6 +37,7 @@ export default function DashboardView({ setActiveView, settings }) {
   const items = useLiveQuery(() => db.items.toArray(), []) || [];
   const customerPayments = useLiveQuery(() => db.customer_payments.toArray(), []) || [];
   const dailyExpenses = useLiveQuery(() => db.daily_expenses.toArray(), []) || [];
+  const zakatHolders = useLiveQuery(() => db.zakat_beneficiaries ? db.zakat_beneficiaries.toArray() : [], []) || [];
 
   // Live cash drawer query - depends on invoices, customer_payments, and daily_expenses
   const drawerDependencies = useLiveQuery(
@@ -1618,7 +1619,15 @@ export default function DashboardView({ setActiveView, settings }) {
                   <select
                     className="form-control"
                     value={expenseForm.category}
-                    onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      const isZ = newCat.toLowerCase().includes('zakat') || newCat.includes('زکوٰۃ');
+                      setExpenseForm({
+                        ...expenseForm,
+                        category: newCat,
+                        paidTo: isZ ? '' : expenseForm.paidTo
+                      });
+                    }}
                   >
                     <option value="Food / Mess (کھانا چائے)">Food / Tea (کھانا چائے)</option>
                     <option value="Petrol / Fuel (پٹرول ڈیزل)">Petrol / Diesel (ایندھن)</option>
@@ -1630,16 +1639,59 @@ export default function DashboardView({ setActiveView, settings }) {
                     <option value="Miscellaneous (متفرق)">Miscellaneous (متفرق)</option>
                   </select>
                 </div>
-                <div className="form-group">
-                  <label className="form-label" style={{ fontSize: '0.78rem' }}>Paid To / Description</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Recipient or purpose"
-                    value={expenseForm.paidTo}
-                    onChange={(e) => setExpenseForm({ ...expenseForm, paidTo: e.target.value })}
-                  />
-                </div>
+                {(() => {
+                  const isDashboardExpenseZakat = (expenseForm.category || "").toLowerCase().includes("zakat") || (expenseForm.category || "").includes("زکوٰۃ");
+                  return (
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: '0.78rem', color: isDashboardExpenseZakat ? '#059669' : undefined, fontWeight: isDashboardExpenseZakat ? 700 : undefined }}>
+                        {isDashboardExpenseZakat
+                          ? (language === 'ur' ? 'زکوٰۃ ہولڈر کا نام *' : 'Zakat Holder Name *')
+                          : 'Paid To / Description'}
+                      </label>
+                      {isDashboardExpenseZakat ? (
+                        <>
+                          <select
+                            className="form-control"
+                            required
+                            value={expenseForm.paidTo}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const matched = zakatHolders.find((h) => h.name === val);
+                              setExpenseForm({
+                                ...expenseForm,
+                                paidTo: val,
+                                amount: matched && (!expenseForm.amount || expenseForm.amount === '500')
+                                  ? String(matched.amount_per_month_paid || matched.monthlyAmount || '')
+                                  : expenseForm.amount
+                              });
+                            }}
+                            style={{ borderColor: '#059669', fontWeight: 700 }}
+                          >
+                            <option value="">{language === 'ur' ? '-- رجسٹرڈ زکوٰۃ ہولڈر منتخب کریں --' : '-- Select Registered Zakat Holder --'}</option>
+                            {zakatHolders.map((h) => (
+                              <option key={h.id} value={h.name}>
+                                {h.name} {h.phone ? `(${h.phone})` : ''} - Rs. {Number(h.amount_per_month_paid || h.monthlyAmount || 0).toLocaleString()}
+                              </option>
+                            ))}
+                          </select>
+                          {zakatHolders.length === 0 && (
+                            <span style={{ fontSize: '0.72rem', color: '#dc2626', marginTop: '3px', display: 'block' }}>
+                              {language === 'ur' ? 'کوئی رجسٹرڈ زکوٰۃ ہولڈر موجود نہیں ہے۔' : 'No registered Zakat holders found.'}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Recipient or purpose"
+                          value={expenseForm.paidTo}
+                          onChange={(e) => setExpenseForm({ ...expenseForm, paidTo: e.target.value })}
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
               <div className="modal-footer" style={{ justifyContent: 'space-between', flexShrink: 0 }}>
                 <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsQuickExpenseOpen(false)}>Cancel</button>

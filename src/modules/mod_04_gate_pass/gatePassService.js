@@ -35,20 +35,28 @@ export async function createGatePass(data) {
   const manifest = Array.isArray(data.manifest) ? data.manifest : [];
   let totalPieces = 0;
   let totalSqFt = 0;
+  let totalQuantity = 0;
 
   const sanitizedManifest = manifest.map((item, idx) => {
-    const pcs = Number(item.pieces) || 0;
-    const sqft = Number(item.sqFt || item.totalSqFt) || 0;
-    totalPieces += pcs;
-    totalSqFt += sqft;
+    const rawQty = item.quantity !== undefined && item.quantity !== "" ? Number(item.quantity) : null;
+    const computedQty = rawQty !== null ? rawQty : (Number(item.sqFt || item.totalSqFt) || Number(item.pieces) || 0);
+    const qty = Math.min(300, computedQty);
+    const pcs = Number(item.pieces) || (item.unit?.toLowerCase().includes("pc") ? qty : 0);
+    const sqft = Number(item.sqFt || item.totalSqFt) || (!item.unit || item.unit?.toLowerCase().includes("sq") ? qty : 0);
+
+    totalPieces += pcs || (item.unit?.toLowerCase().includes("pc") ? qty : 0);
+    totalSqFt += sqft || (item.unit?.toLowerCase().includes("sq") || !item.unit ? qty : 0);
+    totalQuantity += qty;
 
     return {
       sr: idx + 1,
       name: item.name || item.itemName || "Marble / Tile Item",
+      quantity: qty,
+      unit: item.unit || (sqft > 0 ? "Sq.Ft" : "Pcs"),
       thicknessSutar: item.thicknessSutar ? String(item.thicknessSutar) : "4",
       size: item.size || item.dimensions || (item.length && item.width ? `${item.length}ft × ${item.width}ft` : ""),
-      pieces: pcs,
-      sqFt: sqft
+      pieces: pcs || qty,
+      sqFt: sqft || qty
     };
   });
 
@@ -67,8 +75,9 @@ export async function createGatePass(data) {
     carriagePaidBy: data.carriagePaidBy || "Customer (موقع پر ادا کرے گا)",
     driverAdvance: Number(data.driverAdvance) || 0,
     manifest: sanitizedManifest,
-    totalPieces,
+    totalPieces: Math.round(totalPieces),
     totalSqFt: Number(totalSqFt.toFixed(2)),
+    totalQuantity: Number(totalQuantity.toFixed(2)),
     status: data.status || "Dispatched",
     notes: data.notes ? data.notes.trim() : "",
     date: data.date ? data.date.slice(0, 10) : todayDate,
@@ -144,28 +153,37 @@ export async function updateGatePass(id, updatedData) {
   const manifest = Array.isArray(updatedData.manifest) ? updatedData.manifest : [];
   let totalPieces = 0;
   let totalSqFt = 0;
+  let totalQuantity = 0;
 
   const sanitizedManifest = manifest.map((item, idx) => {
-    const pcs = Number(item.pieces) || 0;
-    const sqft = Number(item.sqFt || item.totalSqFt) || 0;
-    totalPieces += pcs;
-    totalSqFt += sqft;
+    const rawQty = item.quantity !== undefined && item.quantity !== "" ? Number(item.quantity) : null;
+    const computedQty = rawQty !== null ? rawQty : (Number(item.sqFt || item.totalSqFt) || Number(item.pieces) || 0);
+    const qty = Math.min(300, computedQty);
+    const pcs = Number(item.pieces) || (item.unit?.toLowerCase().includes("pc") ? qty : 0);
+    const sqft = Number(item.sqFt || item.totalSqFt) || (!item.unit || item.unit?.toLowerCase().includes("sq") ? qty : 0);
+
+    totalPieces += pcs || (item.unit?.toLowerCase().includes("pc") ? qty : 0);
+    totalSqFt += sqft || (item.unit?.toLowerCase().includes("sq") || !item.unit ? qty : 0);
+    totalQuantity += qty;
 
     return {
       sr: idx + 1,
       name: item.name || item.itemName || "Marble / Tile Item",
+      quantity: qty,
+      unit: item.unit || (sqft > 0 ? "Sq.Ft" : "Pcs"),
       thicknessSutar: item.thicknessSutar ? String(item.thicknessSutar) : "4",
       size: item.size || item.dimensions || "",
-      pieces: pcs,
-      sqFt: sqft
+      pieces: pcs || qty,
+      sqFt: sqft || qty
     };
   });
 
   return await db.gate_passes.update(Number(id), {
     ...updatedData,
     manifest: sanitizedManifest,
-    totalPieces,
+    totalPieces: Math.round(totalPieces),
     totalSqFt: Number(totalSqFt.toFixed(2)),
+    totalQuantity: Number(totalQuantity.toFixed(2)),
     updatedAt: now.toISOString()
   });
 }
@@ -218,6 +236,8 @@ export async function getInvoicesForLinking() {
         balanceDue: inv.balanceDue || 0,
         items: (inv.items || []).map(it => ({
           name: it.name || it.itemName || "",
+          quantity: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.sqFt || it.totalSqFt || it.pieces || 0),
+          unit: it.unit || (it.totalSqFt || it.sqFt ? "Sq.Ft" : "Pcs"),
           thicknessSutar: it.thicknessSutar || "4",
           size: it.dimensions || `${it.length || 0}ft × ${it.width || 0}ft`,
           pieces: it.pieces || 0,
