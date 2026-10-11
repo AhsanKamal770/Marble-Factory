@@ -36,13 +36,13 @@ export default function Sidebar({
     {
       title: language === 'ur' ? 'جائزہ' : 'OVERVIEW',
       items: [
-        { id: 'dashboard', label: language === 'ur' ? 'ڈیش بورڈ' : 'Dashboard', icon: LayoutDashboard }
+        { id: 'dashboard', label: 'Factory Dashboard (فیکٹری ڈیش بورڈ)', icon: LayoutDashboard }
       ]
     },
     {
       title: language === 'ur' ? 'سیلز و بلنگ' : 'SALES',
       items: [
-        { id: 'billing', label: language === 'ur' ? 'نیا بل (POS)' : 'New Bill', icon: Receipt, highlight: true },
+        { id: 'billing', label: 'New Bill (نیا بل)', icon: Receipt, highlight: true },
         { id: 'invoices', label: language === 'ur' ? 'بل بک ریکارڈ' : 'Bills & Invoices', icon: FileText },
         { id: 'customers', label: language === 'ur' ? 'گاہک کھاتہ' : 'Customers / Khata', icon: Users },
       ]
@@ -191,25 +191,38 @@ export default function Sidebar({
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', overflow: 'hidden' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981', flexShrink: 0 }}></div>
-              <div style={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f8fafc' }}>Offline Active</div>
-                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>User: admin</div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={onLogout}
-              className="btn btn-ghost btn-sm"
-              title="Sign Out"
-              style={{ padding: '6px 8px', color: '#fb7185' }}
-            >
-              <LogOut size={15} />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onLogout}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              padding: '9px 12px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: '8px',
+              color: '#f87171',
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+            }}
+            title={language === 'ur' ? 'لاگ آؤٹ' : 'Logout'}
+          >
+            <LogOut size={16} />
+            <span>{language === 'ur' ? 'لاگ آؤٹ' : 'Logout'}</span>
+          </button>
         )}
       </div>
     </aside>

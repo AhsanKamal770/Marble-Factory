@@ -571,7 +571,7 @@ export default function DashboardView({ setActiveView, settings }) {
                 letterSpacing: '-0.02em',
                 lineHeight: 1.2
               }}>
-                {language === 'ur' ? 'کارخانہ ڈیش بورڈ' : 'Karkhana Dashboard'}
+                Factory Dashboard <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-secondary, #64748b)', fontFamily: 'var(--font-urdu)' }}>(فیکٹری ڈیش بورڈ)</span>
               </h1>
               <p style={{
                 fontSize: '0.86rem',
@@ -598,7 +598,7 @@ export default function DashboardView({ setActiveView, settings }) {
           bottom: '-15px',
           width: '50%',
           maxWidth: '520px',
-          backgroundImage: `url('./invoice_background.jpg'), url('/invoice_background.jpg'), url('./invoice_background.jpeg'), url('/invoice_background.jpeg')`,
+          backgroundImage: `url('./invoice_background.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'right center',
           maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',

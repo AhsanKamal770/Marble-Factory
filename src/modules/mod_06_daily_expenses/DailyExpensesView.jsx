@@ -193,7 +193,7 @@ export default function DailyExpensesView() {
             bottom: "-15px",
             width: "50%",
             maxWidth: "520px",
-            backgroundImage: `url('./general_background.jpg'), url('/general_background.jpg'), url('./daily_background.png'), url('/daily_background.png')`,
+            backgroundImage: `url('./daily_background.png')`,
             backgroundSize: "cover",
             backgroundPosition: "right center",
             maskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",

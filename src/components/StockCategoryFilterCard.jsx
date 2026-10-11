@@ -53,14 +53,14 @@ export const STOCK_TAXONOMY = {
   tiles: {
     key: 'Tiles',
     labelEn: 'Tiles & Porcelain',
-    labelUr: 'ٹائلز و پورسلین',
+    labelUr: 'ٹائلز و پورسلین (1 میٹر = 5 پیس)',
     icon: Grid3X3,
-    sizes: ['12 × 24', '24 × 24', '24 × 48', '16 × 16', '12 × 36'],
+    sizes: ['12 × 24', '24 × 24', '24 × 48', '16 × 16'],
     accessories: [
       { name: 'Border Strip', labelUr: 'بارڈر پٹی' },
       { name: 'Filling', labelUr: 'جوائنٹ فلنگ پاؤڈر' },
       { name: 'Spacer', labelUr: 'ٹائل سپیسر' },
-      { name: 'Gola', labelUr: 'کارنر گولا' },
+      { name: 'Gola', labelUr: 'کارنر گولا (فی پیس)' },
       { name: 'Tile Bond', labelUr: 'ٹائل بانڈ' }
     ]
   },
@@ -73,25 +73,28 @@ export const STOCK_TAXONOMY = {
   },
   borders: {
     key: 'Borders',
-    labelEn: 'Borders & Patti',
-    labelUr: 'بارڈر و کالی پٹی',
+    labelEn: 'Borders',
+    labelUr: 'بارڈر',
     icon: Ruler,
-    types: [
-      { id: 'Standard 3 inch', labelEn: '3 inch Standard Border', labelUr: '3 انچ عام بارڈر' },
-      { id: 'Standard 6 inch', labelEn: '6 inch Standard Border', labelUr: '6 انچ عام بارڈر' },
-      { id: 'Kali Patti 2 inch', labelEn: '2 inch Kali Patti (Black)', labelUr: '2 انچ کالی پٹی' },
-      { id: 'Kali Patti 3 inch', labelEn: '3 inch Kali Patti (Black)', labelUr: '3 انچ کالی پٹی' }
-    ]
+    sizes: ['3 inch', '6 inch']
+  },
+  kaliPatti: {
+    key: 'Kali Patti',
+    labelEn: 'Kali Patti',
+    labelUr: 'کالی پٹی',
+    icon: Ruler,
+    sizes: ['2 inch', '3 inch']
   },
   panels: {
     key: 'Panels',
-    labelEn: 'Wall & Islamic Panels',
-    labelUr: 'ماشاء اللہ و قرآنی پینل',
+    labelEn: 'Wall & Islamic Panels (12 × 24)',
+    labelUr: 'ماشاء اللہ و قرآنی پینل (12×24)',
     icon: Layers,
+    sizes: ['12 × 24'],
     types: [
-      { id: 'Mashallah Islamic Panels', labelEn: 'Mashallah Islamic Panels', labelUr: 'ماشاء اللہ قرآنی پینل' },
-      { id: '3D Wall Panels', labelEn: '3D Wall Panels', labelUr: 'تھری ڈی وال پینل' },
-      { id: 'Front Elevation Panels', labelEn: 'Front Elevation Panels', labelUr: 'فرنٹ ایلیویشن پینل' }
+      { id: 'Mashallah Islamic Panels', labelEn: 'Mashallah Islamic Panels (12×24)', labelUr: 'ماشاء اللہ قرآنی پینل (12×24)' },
+      { id: '3D Wall Panels', labelEn: '3D Wall Panels (12×24)', labelUr: 'تھری ڈی وال پینل (12×24)' },
+      { id: 'Front Elevation Panels', labelEn: 'Front Elevation Panels (12×24)', labelUr: 'فرنٹ ایلیویشن پینل (12×24)' }
     ]
   }
 };
@@ -139,12 +142,13 @@ export function StockCategoryDropdownTrigger({ filter, onChange }) {
         }}
         title="Filter by Stone / Item Category"
       >
-        <option value="ALL">{isUrdu ? 'تمام کیٹگریز (All Types)' : 'All Categories'}</option>
-        <option value="Marble">{isUrdu ? 'ماربل (Marble)' : 'Marble'}</option>
-        <option value="Tiles">{isUrdu ? 'ٹائلز (Tiles)' : 'Tiles'}</option>
-        <option value="Flowers">{isUrdu ? 'پھول (Flowers)' : 'Flowers'}</option>
-        <option value="Borders">{isUrdu ? 'بارڈر و پٹی (Borders)' : 'Borders & Patti'}</option>
-        <option value="Panels">{isUrdu ? 'پینل (Panels)' : 'Panels'}</option>
+        <option value="ALL">{isUrdu ? 'تمام کیٹگریز' : 'All Categories'}</option>
+        <option value="Marble">{isUrdu ? 'ماربل' : 'Marble'}</option>
+        <option value="Tiles">{isUrdu ? 'ٹائلز' : 'Tiles'}</option>
+        <option value="Flowers">{isUrdu ? 'پھول' : 'Flowers'}</option>
+        <option value="Borders">{isUrdu ? 'بارڈر' : 'Borders'}</option>
+        <option value="Kali Patti">{isUrdu ? 'کالی پٹی' : 'Kali Patti'}</option>
+        <option value="Panels">{isUrdu ? 'پینل' : 'Panels'}</option>
       </select>
       <Filter size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: filter?.type !== 'ALL' ? '#2563eb' : '#64748b', pointerEvents: 'none' }} />
     </div>
@@ -633,39 +637,39 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
         </div>
       )}
 
-      {/* 4. BORDERS DRILL-DOWN */}
+      {/* 4. BORDERS DRILL-DOWN (3 inch, 6 inch) */}
       {activeType === 'Borders' && (
         <div>
           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-            📏 {isUrdu ? 'بارڈر اور کالی پٹی کی قسم:' : 'Border & Patti Strip Types:'}
+            📏 {isUrdu ? 'بارڈر سائز:' : 'Border Sizes:'}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => handleSetSub(null)}
+              onClick={() => handleSetSize(null)}
               style={{
-                padding: '6px 12px',
+                padding: '6px 14px',
                 borderRadius: '7px',
                 fontSize: '0.80rem',
                 fontWeight: 700,
                 border: '1px solid',
                 cursor: 'pointer',
-                background: !activeSub ? '#2563eb' : '#f8fafc',
-                borderColor: !activeSub ? '#2563eb' : '#cbd5e1',
-                color: !activeSub ? '#ffffff' : '#0f172a'
+                background: !activeSize ? '#2563eb' : '#f8fafc',
+                borderColor: !activeSize ? '#2563eb' : '#cbd5e1',
+                color: !activeSize ? '#ffffff' : '#0f172a'
               }}
             >
               {isUrdu ? 'تمام بارڈرز' : 'All Borders'}
             </button>
-            {STOCK_TAXONOMY.borders.types.map((tp) => {
-              const isSelected = activeSub === tp.id;
+            {STOCK_TAXONOMY.borders.sizes.map((sz) => {
+              const isSelected = activeSize === sz;
               return (
                 <button
-                  key={tp.id}
+                  key={sz}
                   type="button"
-                  onClick={() => handleSetSub(tp.id)}
+                  onClick={() => handleSetSize(sz)}
                   style={{
-                    padding: '6px 12px',
+                    padding: '6px 14px',
                     borderRadius: '7px',
                     fontSize: '0.80rem',
                     fontWeight: 800,
@@ -676,7 +680,58 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                     color: isSelected ? '#ffffff' : '#0f172a'
                   }}
                 >
-                  {tp.labelEn} ({tp.labelUr})
+                  {sz}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 5. KALI PATTI DRILL-DOWN (2 inch, 3 inch) */}
+      {activeType === 'Kali Patti' && (
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
+            📏 {isUrdu ? 'کالی پٹی سائز:' : 'Kali Patti Sizes:'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleSetSize(null)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '7px',
+                fontSize: '0.80rem',
+                fontWeight: 700,
+                border: '1px solid',
+                cursor: 'pointer',
+                background: !activeSize ? '#2563eb' : '#f8fafc',
+                borderColor: !activeSize ? '#2563eb' : '#cbd5e1',
+                color: !activeSize ? '#ffffff' : '#0f172a'
+              }}
+            >
+              {isUrdu ? 'تمام کالی پٹی' : 'All Kali Patti'}
+            </button>
+            {STOCK_TAXONOMY.kaliPatti.sizes.map((sz) => {
+              const isSelected = activeSize === sz;
+              return (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => handleSetSize(sz)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '7px',
+                    fontSize: '0.80rem',
+                    fontWeight: 800,
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    background: isSelected ? '#2563eb' : '#f8fafc',
+                    borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                    color: isSelected ? '#ffffff' : '#0f172a'
+                  }}
+                >
+                  {sz}
                 </button>
               );
             })}

@@ -14,12 +14,12 @@ export const TRANSLATIONS = {
     ur: "گرینائٹ و ٹائلز مینجمنٹ"
   },
   nav_dashboard: {
-    en: "Dashboard (Karkhana)",
-    ur: "ڈیش بورڈ (کارخانہ جائزہ)"
+    en: "Factory Dashboard (فیکٹری ڈیش بورڈ)",
+    ur: "Factory Dashboard (فیکٹری ڈیش بورڈ)"
   },
   nav_billing: {
-    en: "Naya Bill (POS)",
-    ur: "نیا بل بک (سیلز)"
+    en: "New Bill (نیا بل)",
+    ur: "New Bill (نیا بل)"
   },
   nav_invoices: {
     en: "Bill Book & Invoices",

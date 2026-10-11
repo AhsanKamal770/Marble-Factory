@@ -963,7 +963,7 @@ export default function SupplierManagementView({ settings }) {
             bottom: '-15px',
             width: '50%',
             maxWidth: '520px',
-            backgroundImage: `url('./supplier_background.jpg'), url('/supplier_background.jpg'), url('./stock_background.jpg'), url('/stock_background.jpg')`,
+            backgroundImage: `url('./supplier_background.jpg')`,
             backgroundSize: 'cover',
             backgroundPosition: 'right center',
             maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',

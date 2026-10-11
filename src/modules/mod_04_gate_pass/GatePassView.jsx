@@ -653,7 +653,7 @@ export default function GatePassView() {
             bottom: "-15px",
             width: "50%",
             maxWidth: "520px",
-            backgroundImage: "url('./general_background.jpg'), url('/general_background.jpg'), url('./gate_background.jpg'), url('/gate_background.jpg')",
+            backgroundImage: "url('./gate_background.jpg')",
             backgroundSize: "cover",
             backgroundPosition: "right center",
             maskImage: "linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",

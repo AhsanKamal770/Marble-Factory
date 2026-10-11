@@ -182,7 +182,7 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                   />
                 </div>
                 <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "3px" }}>
-                  Min: Rs. 50,000 | Max: Rs. 500,000 (ڈیفالٹ: 50,000)
+                  Min: Rs. 50,000 | Max: Rs. 500,000
                 </div>
               </div>
               <div className="app-form-group">

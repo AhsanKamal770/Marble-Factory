@@ -10,11 +10,7 @@ import {
   MapPin,
   Phone,
   Download,
-  ShieldCheck,
-  TrendingUp,
-  DollarSign,
-  Layers,
-  Sparkles
+  TrendingUp
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { printElement } from '../utils/printHelper';
@@ -27,11 +23,15 @@ export default function BillProfitPrintModal({
   customer
 }) {
   const { language } = useLanguage();
-  const isUrdu = language === 'ur';
   const [printFormat, setPrintFormat] = useState('a4'); // 'a4' | 'thermal'
   const [copied, setCopied] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const printRef = useRef(null);
+
+  const companyUrdu = settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری';
+  const companyEnglish = settings?.companyNameEnglish || settings?.companyName || 'Rana Abdullah Siddique Marble Factory';
+  const factoryPhone = settings?.phone || '0321-6606645 | 0300-6664187';
+  const factoryAddress = settings?.address || 'جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد';
 
   if (!isOpen || !invoice) return null;
 
@@ -53,7 +53,7 @@ export default function BillProfitPrintModal({
     setIsPrinting(true);
     try {
       await printElement(printRef, {
-        title: `Admin_Profit_Report_${invoice.invoiceNo || 'INV'}_${new Date().toISOString().slice(0, 10)}`,
+        title: `Profit_Report_${invoice.invoiceNo || 'INV'}_${new Date().toISOString().slice(0, 10)}`,
         format: printFormat,
         isExportPDF: true,
         dir: 'rtl'
@@ -79,8 +79,9 @@ export default function BillProfitPrintModal({
   const formatItemDimension = (item) => {
     const isTile = item.unit === 'Meter' || (item.category && item.category.toLowerCase().includes('tile') && !item.category.toLowerCase().includes('accessories'));
     const isRunning = item.unit === 'R.Ft.' || item.category === 'Border' || item.category === 'Kali Patti';
-    const isGola = item.unit === 'Box' || (item.name && item.name.toLowerCase().includes('gola'));
-    const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories';
+    const isGolaBox = item.unit === 'Box';
+    const isGola = (item.name && item.name.toLowerCase().includes('gola'));
+    const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories' || isGola;
 
     if (isTile) {
       const m = item.meters || item.billedQuantity || (item.pieces ? Math.round((item.pieces / 5) * 100) / 100 : item.totalSqFt);
@@ -89,15 +90,15 @@ export default function BillProfitPrintModal({
     }
     if (isRunning) {
       const rft = item.runningFeet || item.billedQuantity || item.totalSqFt;
-      return `${rft} رننگ فٹ (${item.pieces || '-'} پیس)`;
+      return `${rft} رننگ فٹ (${item.thicknessSutar || 3}" چوڑائی)`;
     }
-    if (isGola) {
+    if (isGolaBox) {
       const b = item.boxes || item.billedQuantity || item.pieces || 1;
       return `${b} بکس`;
     }
     if (isPiece) {
       const p = item.pieces || item.billedQuantity || 1;
-      return `${p} عدد (${item.selectedSizePreset || 'پیس'})`;
+      return `${p} عدد (${item.selectedSizePreset || (isGola ? 'گولا' : 'پیس')})`;
     }
     if (item.length && item.width) {
       const qtyPrefix = item.pieces && Number(item.pieces) > 1 ? `${item.pieces} × ` : (item.quantity && Number(item.quantity) > 1 ? `${item.quantity} × ` : '');
@@ -117,17 +118,14 @@ export default function BillProfitPrintModal({
   };
 
   // -------------------------------------------------------------
-  // Calculate Item-Level & Category-Level Cost & Profit Analytics
+  // Calculate Item-Level Cost & Profit Analytics
   // -------------------------------------------------------------
   const items = invoice.items || [];
-
-  // Group items by category
-  const categorizedItems = {};
   let totalCalculatedCost = 0;
   let totalCalculatedRevenue = 0;
   let totalCalculatedSqFt = 0;
 
-  items.forEach((item, originalIndex) => {
+  const itemsWithProfit = items.map((item, originalIndex) => {
     let qty = 1;
     if (item.unit === 'Meter') {
       qty = Number(item.meters) || Number(item.billedQuantity) || (Number(item.pieces) / 5) || Number(item.totalSqFt) || 1;
@@ -158,28 +156,7 @@ export default function BillProfitPrintModal({
     totalCalculatedRevenue += lineAmount;
     totalCalculatedSqFt += qty;
 
-    const rawCat = item.category || 'Marble';
-    let catKey = 'Marble';
-    if (rawCat.includes('Tile') || rawCat.includes('Porcelain') || item.unit === 'Meter') catKey = 'Tiles';
-    else if (rawCat.includes('Flower') || rawCat.includes('Medallion')) catKey = 'Flower';
-    else if (rawCat.includes('Kali') || rawCat.includes('Black')) catKey = 'Kali Patti';
-    else if (rawCat.includes('Border') || rawCat.includes('Patti')) catKey = 'Border';
-    else if (rawCat.includes('Accessory') || rawCat.includes('Bond') || rawCat.includes('Filling') || rawCat.includes('Gola') || item.unit === 'Box') catKey = 'Accessories';
-    else if (rawCat.includes('Panel') || rawCat.includes('Mashallah')) catKey = 'Panels';
-    else catKey = rawCat || 'Marble';
-
-    if (!categorizedItems[catKey]) {
-      categorizedItems[catKey] = {
-        name: catKey,
-        items: [],
-        totalSqFt: 0,
-        totalCost: 0,
-        totalRevenue: 0,
-        totalProfit: 0
-      };
-    }
-
-    const processedItem = {
+    return {
       ...item,
       originalIndex,
       qty,
@@ -190,15 +167,9 @@ export default function BillProfitPrintModal({
       lineProfit,
       marginPct
     };
-
-    categorizedItems[catKey].items.push(processedItem);
-    categorizedItems[catKey].totalSqFt += qty;
-    categorizedItems[catKey].totalCost += lineCost;
-    categorizedItems[catKey].totalRevenue += lineAmount;
-    categorizedItems[catKey].totalProfit += lineProfit;
   });
 
-  // Calculate overall financial profit & loss
+  // Financial profit & loss calculations
   const carriageCharges = Number(invoice.carriageCharges || 0);
   const labourCharges = Number(invoice.labourCharges || 0);
   const polishCharges = Number(invoice.polishCharges || 0);
@@ -219,32 +190,27 @@ export default function BillProfitPrintModal({
   const customerAddress = invoice.customerAddress || invoice.address || customer?.address || (invoice.carrier ? `بذریعہ: ${invoice.carrier}` : 'فیکٹری گیٹ ڈلیوری');
   const customerCity = invoice.city || customer?.city || '';
 
-  const factoryPhone = settings?.phone || '0321-6606645 | 0300-6664187';
-  const factoryAddress = settings?.address || 'جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد';
+  const minRows = 5;
+  const fillerCount = Math.max(0, minRows - itemsWithProfit.length);
+  const fillerRows = Array.from({ length: fillerCount });
 
   const handleCopyWhatsApp = () => {
     const lines = [
-      `*محفوظ ایڈمن منافع رپورٹ (CONFIDENTIAL)*`,
-      `*${settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}*`,
+      `*${companyUrdu}*`,
+      `*بل منافع رپورٹ (Profit Report)*`,
       `---------------------------------`,
       `*بل نمبر:* ${invoice.invoiceNo}`,
-      `*خریدار:* ${customerName}`,
+      `*گاہک:* ${customerName}`,
+      customerPhone !== '-' ? `*فون:* ${customerPhone}` : null,
       `*تاریخ:* ${formatUrduDate(invoice.date || invoice.createdAt)}`,
       `---------------------------------`,
-      `*کیٹگری وائز منافع خلاصہ:*`,
-      ...Object.keys(categorizedItems).map(catKey => {
-        const cat = categorizedItems[catKey];
-        const catMargin = cat.totalRevenue > 0 ? Math.round((cat.totalProfit / cat.totalRevenue) * 100) : 0;
-        return `• *${cat.name}*: سیل Rs.${cat.totalRevenue.toLocaleString()} | لاگت Rs.${cat.totalCost.toLocaleString()} | منافع: *Rs.${cat.totalProfit.toLocaleString()}* (${catMargin}%)`;
-      }),
+      `*کل لاگت:* Rs. ${totalCalculatedCost.toLocaleString()}`,
+      `*کل بل رقم:* Rs. ${grandTotal.toLocaleString()}`,
+      `*خالص منافع:* Rs. ${totalNetProfit.toLocaleString()} (${overallMarginPct}%)`,
+      `*وصولی:* Rs. ${paidAmount.toLocaleString()} | *بقایا:* Rs. ${balanceDue.toLocaleString()}`,
       `---------------------------------`,
-      `*کل فیکٹری لاگت (COGS):* Rs. ${totalCalculatedCost.toLocaleString()}`,
-      `*کل بل رقم (Grand Total):* Rs. ${grandTotal.toLocaleString()}`,
-      `*خالص منافع (NET PROFIT):* Rs. ${totalNetProfit.toLocaleString()} (${overallMarginPct}%)`,
-      `*ادائیگی:* وصولی Rs.${paidAmount.toLocaleString()} | بقایا Rs.${balanceDue.toLocaleString()}`,
-      `---------------------------------`,
-      `_نوٹ: یہ رپورٹ صرف فیکٹری ایڈمن و اونر ریکارڈ کے لیے ہے۔_`
-    ];
+      `رابطہ: ${factoryPhone}`
+    ].filter(Boolean);
 
     navigator.clipboard.writeText(lines.join('\n'));
     setCopied(true);
@@ -257,7 +223,7 @@ export default function BillProfitPrintModal({
         @media print {
           @page {
             size: ${printFormat === 'thermal' ? '80mm auto' : 'A4 portrait'} !important;
-            margin: ${printFormat === 'thermal' ? '0mm' : '5mm'} !important;
+            margin: ${printFormat === 'thermal' ? '0mm' : '6mm'} !important;
           }
           body * {
             visibility: hidden !important;
@@ -273,7 +239,7 @@ export default function BillProfitPrintModal({
             width: ${printFormat === 'thermal' ? '78mm' : '100%'} !important;
             max-width: ${printFormat === 'thermal' ? '78mm' : '210mm'} !important;
             margin: 0 auto !important;
-            padding: ${printFormat === 'thermal' ? '3mm 2mm' : '3mm'} !important;
+            padding: ${printFormat === 'thermal' ? '3mm 2mm' : '4mm'} !important;
             background: #ffffff !important;
             color: #000000 !important;
             box-sizing: border-box !important;
@@ -290,41 +256,39 @@ export default function BillProfitPrintModal({
       <div
         className="modal-card"
         style={{
-          maxWidth: printFormat === 'a4' ? '760px' : '440px',
+          maxWidth: printFormat === 'a4' ? '710px' : '440px',
           width: '100%',
           maxHeight: '94vh',
           transition: 'max-width 0.2s ease',
           padding: 0,
           overflow: 'hidden',
           display: 'flex',
-          flexDirection: 'column',
-          boxShadow: '0 20px 50px rgba(0, 0, 0, 0.35)',
-          borderRadius: '16px'
+          flexDirection: 'column'
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Control Bar (Hidden on Print) */}
-        <div className="modal-header print-hide" style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-color)', background: '#0f172a', color: '#ffffff', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff'
-            }}>
-              <ShieldCheck size={18} />
-            </div>
-            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary, #ffffff)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <ShieldCheck size={17} style={{ color: '#10b981' }} />
-              <span>Admin Bill Profit Report</span>
+        {/* Header Control Bar (Clean light styling matching BillPrintModal) */}
+        <div
+          className="modal-header print-hide"
+          style={{
+            padding: '10px 16px',
+            borderBottom: '1px solid var(--border-color)',
+            background: 'var(--bg-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px',
+            flexShrink: 0
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <TrendingUp size={16} style={{ color: 'var(--accent-blue, #2563eb)' }} />
+              <span>Profit Bill Report Preview</span>
             </span>
 
-            {/* Print Format Switcher (English Only) */}
-            <div style={{ display: 'flex', background: '#1e293b', padding: '2px', borderRadius: '6px', border: '1px solid #334155', marginLeft: '12px' }}>
+            {/* Print Format Switcher */}
+            <div style={{ display: 'flex', background: 'var(--bg-primary)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
               <button
                 type="button"
                 onClick={() => setPrintFormat('a4')}
@@ -338,8 +302,8 @@ export default function BillProfitPrintModal({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  background: printFormat === 'a4' ? '#059669' : 'transparent',
-                  color: '#ffffff'
+                  background: printFormat === 'a4' ? 'var(--accent-blue, #2563eb)' : 'transparent',
+                  color: printFormat === 'a4' ? '#ffffff' : 'var(--text-secondary)'
                 }}
               >
                 <FileText size={12} />
@@ -359,8 +323,8 @@ export default function BillProfitPrintModal({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  background: printFormat === 'thermal' ? '#059669' : 'transparent',
-                  color: '#ffffff'
+                  background: printFormat === 'thermal' ? 'var(--accent-blue, #2563eb)' : 'transparent',
+                  color: printFormat === 'thermal' ? '#ffffff' : 'var(--text-secondary)'
                 }}
               >
                 <Receipt size={12} />
@@ -375,15 +339,15 @@ export default function BillProfitPrintModal({
               className="btn btn-secondary btn-sm"
               onClick={handleCopyWhatsApp}
               title="Copy WhatsApp Summary"
-              style={{ fontSize: '0.76rem', padding: '5px 10px', background: '#1e293b', border: '1px solid #334155', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600 }}
+              style={{ fontSize: '0.76rem', padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 600 }}
             >
-              {copied ? <Check size={13} style={{ color: '#10b981' }} /> : <Share2 size={13} />}
+              {copied ? <Check size={13} style={{ color: '#059669' }} /> : <Share2 size={13} />}
               <span>{copied ? 'Copied!' : 'WhatsApp'}</span>
             </button>
 
             <button
               type="button"
-              className="btn btn-sm"
+              className="btn btn-secondary btn-sm"
               onClick={handleExportPDF}
               disabled={isPrinting}
               title="Save as PDF directly"
@@ -394,12 +358,9 @@ export default function BillProfitPrintModal({
                 alignItems: 'center',
                 gap: '5px',
                 fontWeight: 700,
-                color: '#ffffff',
-                background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
-                border: 'none',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                color: '#059669',
+                borderColor: '#10b981',
+                background: 'rgba(16, 185, 129, 0.08)'
               }}
             >
               <Download size={13} />
@@ -411,24 +372,34 @@ export default function BillProfitPrintModal({
               className="btn btn-primary btn-sm"
               onClick={handlePrint}
               disabled={isPrinting}
-              style={{ fontSize: '0.76rem', padding: '5px 14px', background: '#2563eb', borderColor: '#2563eb', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 700, color: '#ffffff' }}
+              style={{
+                fontSize: '0.76rem',
+                padding: '5px 14px',
+                background: 'var(--accent-blue, #2563eb)',
+                borderColor: 'var(--accent-blue, #2563eb)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontWeight: 700,
+                color: '#ffffff'
+              }}
             >
               <Printer size={13} />
               <span>Print</span>
             </button>
 
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} style={{ padding: '4px 6px', color: '#94a3b8' }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={onClose} style={{ padding: '4px 6px' }}>
               <X size={16} />
             </button>
           </div>
         </div>
 
         {/* Printable Scroll Container */}
-        <div className="modal-body" style={{ background: '#f1f5f9', padding: '12px 14px', overflowY: 'auto', flex: 1 }}>
+        <div className="modal-body" style={{ background: '#f8fafc', padding: '12px 14px', overflowY: 'auto', flex: 1 }}>
           <div ref={printRef} className="print-target">
 
             {/* ============================================================= */}
-            {/* FORMAT 1: EXACT A4 CONFIDENTIAL ADMIN PROFIT REPORT           */}
+            {/* FORMAT 1: EXACT A4 PROFIT BILL REPORT                         */}
             {/* ============================================================= */}
             {printFormat === 'a4' && (
               <div
@@ -437,75 +408,69 @@ export default function BillProfitPrintModal({
                   background: '#ffffff',
                   color: '#1e293b',
                   borderRadius: '6px',
-                  boxShadow: '0 2px 14px rgba(5, 150, 105, 0.08)',
-                  border: '1px solid #a7f3d0',
+                  boxShadow: '0 2px 14px rgba(37,99,235,0.06)',
+                  border: '1px solid #bfdbfe',
                   fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif',
-                  maxWidth: '720px',
+                  maxWidth: '700px',
                   margin: '0 auto',
                   overflow: 'hidden',
                   WebkitPrintColorAdjust: 'exact',
                   printColorAdjust: 'exact'
                 }}
               >
-                {/* 1. TOP HEADER BAR (Bilingual Header: English Left, Urdu Right) */}
+                {/* 1. TOP HEADER BAR (Bilingual Factory Name: English Left, Urdu Right) */}
                 <div
                   style={{
-                    background: 'linear-gradient(135deg, #064e3b 0%, #047857 50%, #059669 100%)',
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
                     color: '#ffffff',
                     padding: '12px 18px',
                     display: 'flex',
+                    flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    direction: 'ltr',
                     WebkitPrintColorAdjust: 'exact',
                     printColorAdjust: 'exact'
                   }}
                 >
-                  {/* Left: English Factory Name & Confidential Tag */}
+                  {/* Left: English Factory Name */}
                   <div
-                    dir="ltr"
                     style={{
-                      borderRight: '2px solid rgba(255,255,255,0.25)',
-                      paddingRight: '14px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '2px',
                       textAlign: 'left'
                     }}
                   >
-                    <div style={{ fontSize: '0.94rem', fontWeight: 900, color: '#ffffff', fontFamily: 'system-ui, sans-serif' }}>
-                      {settings?.companyNameEnglish || 'Rana Abdullah Siddique Marble Factory'}
+                    <div style={{ fontSize: '0.96rem', fontWeight: 900, color: '#ffffff', fontFamily: 'system-ui, sans-serif', letterSpacing: '-0.2px' }}>
+                      {companyEnglish}
                     </div>
-                    <div style={{ fontSize: '0.72rem', color: '#a7f3d0', fontFamily: 'system-ui, sans-serif' }}>
-                      CONFIDENTIAL ADMIN COST & PROFIT AUDIT
-                    </div>
-                    <div style={{ fontSize: '0.70rem', color: '#d1fae5', fontFamily: 'system-ui, sans-serif' }}>
+                    <div style={{ fontSize: '0.74rem', color: '#dbeafe', fontFamily: 'system-ui, sans-serif' }}>
                       Ph: {factoryPhone}
+                    </div>
+                    <div style={{ fontSize: '0.70rem', color: '#bfdbfe', fontFamily: 'system-ui, sans-serif' }}>
+                      {factoryAddress}
                     </div>
                   </div>
 
-                  {/* Center / Right Factory Name & Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  {/* Right: Urdu Factory Name & Logo */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', direction: 'rtl' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.30rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.35 }}>
-                        {settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}
+                      <div style={{ fontSize: '1.35rem', fontWeight: 900, color: '#ffffff', lineHeight: 1.35, letterSpacing: '0.01em' }}>
+                        {companyUrdu}
                       </div>
-                      <div style={{ fontSize: '0.74rem', color: '#a7f3d0', fontWeight: 700, lineHeight: 1.3 }}>
-                        بل لاگت و منافع گوشوارہ (PROFIT AUDIT SLIP)
+                      <div style={{ fontSize: '0.76rem', color: '#bfdbfe', fontWeight: 600, lineHeight: 1.3 }}>
+                        معیاری ماربل، گرینائٹ اور ٹائلز کا بااعتماد مرکز
                       </div>
                     </div>
 
-                    {/* Shield Logo */}
-                    <div style={{
-                      width: '38px',
-                      height: '38px',
-                      borderRadius: '8px',
-                      background: 'rgba(255, 255, 255, 0.15)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: '#ffffff'
-                    }}>
-                      <ShieldCheck size={24} />
+                    {/* Peak Geometric Logo */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="38" height="30" viewBox="0 0 54 40" fill="none">
+                        <polygon points="4,38 22,6 38,38" fill="#1d4ed8" />
+                        <polygon points="18,38 34,2 50,38" fill="#38bdf8" opacity="0.95" />
+                        <polygon points="14,38 26,14 40,38" fill="#93c5fd" opacity="0.85" />
+                      </svg>
                     </div>
                   </div>
                 </div>
@@ -513,17 +478,17 @@ export default function BillProfitPrintModal({
                 {/* Main Body Section */}
                 <div style={{ padding: '12px 14px' }}>
 
-                  {/* 2. INVOICE META & CONFIDENTIAL BADGE */}
+                  {/* 2. INVOICE META & REPORT TITLE ROW */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    {/* Document Title & KPI Badge */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {/* Report Title & Document Badge */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div
                         style={{
-                          width: '36px',
-                          height: '36px',
+                          width: '38px',
+                          height: '38px',
                           borderRadius: '8px',
-                          background: '#ecfdf5',
-                          border: '1px solid #a7f3d0',
+                          background: '#eff6ff',
+                          border: '1px solid #bfdbfe',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -532,14 +497,14 @@ export default function BillProfitPrintModal({
                           printColorAdjust: 'exact'
                         }}
                       >
-                        <TrendingUp size={20} color="#059669" strokeWidth={2.4} />
+                        <TrendingUp size={22} color="#2563eb" strokeWidth={2.2} />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '1.30rem', fontWeight: 900, color: '#065f46', lineHeight: 1.3 }}>
-                          بل منافع تجزیہ رپورٹ
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e40af', lineHeight: 1.35 }}>
+                          بل منافع رپورٹ
                         </div>
-                        <div style={{ fontSize: '0.74rem', color: '#047857', fontWeight: 700, lineHeight: 1.3 }}>
-                          (کیٹگری وائز خریداری لاگت، سیل اور خالص منافع)
+                        <div style={{ fontSize: '0.78rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.35 }}>
+                          (لاگت و منافع گوشوارہ)
                         </div>
                       </div>
                     </div>
@@ -547,25 +512,25 @@ export default function BillProfitPrintModal({
                     {/* Invoice Number & Date Box */}
                     <div
                       style={{
-                        background: '#f0fdf4',
-                        border: '1px solid #a7f3d0',
+                        background: '#f0f7ff',
+                        border: '1px solid #bfdbfe',
                         borderRadius: '7px',
                         padding: '6px 12px',
-                        minWidth: '170px',
+                        minWidth: '160px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '2px',
+                        gap: '3px',
                         textAlign: 'right',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact'
                       }}
                     >
-                      <div style={{ fontSize: '0.66rem', color: '#047857', fontWeight: 800, lineHeight: 1.2 }}>بل نمبر</div>
+                      <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3 }}>بل نمبر</div>
                       <div
                         style={{
-                          fontSize: '0.94rem',
+                          fontSize: '0.98rem',
                           fontWeight: 900,
-                          color: '#065f46',
+                          color: '#1e3a8a',
                           fontFamily: 'var(--font-mono), monospace',
                           letterSpacing: '0.02em',
                           lineHeight: 1.2
@@ -575,13 +540,13 @@ export default function BillProfitPrintModal({
                       </div>
                       <div
                         style={{
-                          borderTop: '1px dashed #a7f3d0',
+                          borderTop: '1px dashed #bfdbfe',
                           marginTop: '2px',
-                          paddingTop: '2px',
-                          fontSize: '0.70rem',
-                          color: '#065f46',
+                          paddingTop: '3px',
+                          fontSize: '0.72rem',
+                          color: '#1e40af',
                           fontWeight: 700,
-                          lineHeight: 1.2
+                          lineHeight: 1.3
                         }}
                       >
                         تاریخ: {formatUrduDate(invoice.date || invoice.createdAt)}
@@ -592,9 +557,9 @@ export default function BillProfitPrintModal({
                   {/* 3. CUSTOMER INFO CARD */}
                   <div
                     style={{
-                      border: '1px solid #a7f3d0',
+                      border: '1px solid #bfdbfe',
                       borderRadius: '8px',
-                      background: '#f8fafc',
+                      background: '#f8fbff',
                       padding: '8px 12px',
                       marginBottom: '10px',
                       display: 'flex',
@@ -607,10 +572,10 @@ export default function BillProfitPrintModal({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                       <div
                         style={{
-                          width: '30px',
-                          height: '30px',
+                          width: '32px',
+                          height: '32px',
                           borderRadius: '50%',
-                          background: '#d1fae5',
+                          background: '#dbeafe',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -619,30 +584,31 @@ export default function BillProfitPrintModal({
                           printColorAdjust: 'exact'
                         }}
                       >
-                        <User size={15} color="#059669" />
+                        <User size={17} color="#2563eb" />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.66rem', color: '#047857', fontWeight: 800, lineHeight: 1.2 }}>خریدار / کھاتہ دار</div>
-                        <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3 }}>گاہک کا نام</div>
+                        <div style={{ fontSize: '0.96rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.3 }}>
                           {customerName} {customerCategory ? `(${customerCategory})` : ''}
                         </div>
-                        <div style={{ fontSize: '0.80rem', fontWeight: 700, color: '#475569', fontFamily: 'var(--font-mono), monospace', lineHeight: 1.2 }}>
+                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3, marginTop: '1px' }}>فون نمبر</div>
+                        <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#1e40af', fontFamily: 'var(--font-mono), monospace', lineHeight: 1.2 }}>
                           {customerPhone}
                         </div>
                       </div>
                     </div>
 
                     {/* Vertical Divider */}
-                    <div style={{ width: '1px', height: '42px', background: '#cbd5e1' }} />
+                    <div style={{ width: '1px', height: '48px', background: '#bfdbfe' }} />
 
                     {/* Location & Delivery */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                       <div
                         style={{
-                          width: '30px',
-                          height: '30px',
+                          width: '32px',
+                          height: '32px',
                           borderRadius: '50%',
-                          background: '#d1fae5',
+                          background: '#dbeafe',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -651,15 +617,15 @@ export default function BillProfitPrintModal({
                           printColorAdjust: 'exact'
                         }}
                       >
-                        <MapPin size={15} color="#059669" />
+                        <MapPin size={17} color="#2563eb" />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.66rem', color: '#047857', fontWeight: 800, lineHeight: 1.2 }}>ڈلیوری / کیریئر تفاصیل</div>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.2 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#2563eb', fontWeight: 700, lineHeight: 1.3 }}>مقام / ڈلیوری ایڈریس</div>
+                        <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.3 }}>
                           {customerAddress}
                         </div>
                         {customerCity && (
-                          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', lineHeight: 1.2 }}>
+                          <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#1e40af', lineHeight: 1.3 }}>
                             {customerCity}
                           </div>
                         )}
@@ -667,178 +633,126 @@ export default function BillProfitPrintModal({
                     </div>
                   </div>
 
-                  {/* 4. CATEGORY-WISE ITEMS & PROFIT TABLE */}
-                  <div style={{ marginBottom: '10px' }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: '4px',
-                      padding: '2px 4px'
-                    }}>
-                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#065f46', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Layers size={14} color="#059669" />
-                        <span>کیٹگری وائز لاگت و منافع بریک ڈاؤن (Category Profit Breakdown):</span>
-                      </div>
-                      <span style={{ fontSize: '0.70rem', color: '#64748b', fontWeight: 600 }}>
-                        کل اشیاء: {items.length} ({totalCalculatedSqFt} فٹ)
-                      </span>
-                    </div>
+                  {/* 4. ITEMS & PROFIT TABLE */}
+                  <table
+                    style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      marginBottom: '10px',
+                      fontSize: '0.76rem'
+                    }}
+                  >
+                    <thead>
+                      <tr
+                        style={{
+                          background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
+                          color: '#ffffff',
+                          WebkitPrintColorAdjust: 'exact',
+                          printColorAdjust: 'exact'
+                        }}
+                      >
+                        <th style={{ padding: '6px 4px', textAlign: 'center', width: '32px', border: '1px solid #1e40af' }}>#</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #1e40af' }}>تفصیل آئٹم</th>
+                        <th style={{ padding: '6px 4px', textAlign: 'center', width: '70px', border: '1px solid #1e40af' }}>پیمائش</th>
+                        <th style={{ padding: '6px 4px', textAlign: 'center', width: '58px', border: '1px solid #1e40af' }}>خرید ریٹ</th>
+                        <th style={{ padding: '6px 4px', textAlign: 'center', width: '58px', border: '1px solid #1e40af' }}>سیل ریٹ</th>
+                        <th style={{ padding: '6px 5px', textAlign: 'center', width: '75px', border: '1px solid #1e40af' }}>کل لاگت</th>
+                        <th style={{ padding: '6px 5px', textAlign: 'center', width: '75px', border: '1px solid #1e40af' }}>کل سیل</th>
+                        <th style={{ padding: '6px 5px', textAlign: 'center', width: '75px', border: '1px solid #1e40af' }}>منافع</th>
+                        <th style={{ padding: '6px 4px', textAlign: 'center', width: '48px', border: '1px solid #1e40af' }}>مارجن %</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {itemsWithProfit.map((item, idx) => {
+                        const isOdd = idx % 2 === 1;
+                        const rowBg = isOdd ? '#f1f5f9' : '#ffffff';
+                        return (
+                          <tr
+                            key={idx}
+                            style={{
+                              height: '28px',
+                              background: rowBg,
+                              WebkitPrintColorAdjust: 'exact',
+                              printColorAdjust: 'exact'
+                            }}
+                          >
+                            <td style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontWeight: 800, color: '#1e40af' }}>
+                              {idx + 1}
+                            </td>
+                            <td style={{ padding: '4px 8px', textAlign: 'right', border: '1px solid #cbd5e1', fontWeight: 800, fontSize: '0.82rem', color: '#1e3a8a' }}>
+                              {item.name}
+                              {item.thicknessSutar ? (
+                                <span style={{ fontSize: '0.70rem', color: '#2563eb', marginRight: '5px', fontWeight: 700 }}>
+                                  [{item.thicknessSutar} سوتر]
+                                </span>
+                              ) : null}
+                            </td>
+                            <td style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', color: '#475569' }}>
+                              {formatItemDimension(item)}
+                            </td>
+                            <td style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', color: '#64748b' }}>
+                              {Number(item.costRate).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 700, color: '#2563eb' }}>
+                              {Number(item.saleRate).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '4px 5px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', color: '#475569' }}>
+                              Rs. {Number(item.lineCost).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '4px 5px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 800, color: '#1e3a8a' }}>
+                              Rs. {Number(item.lineAmount).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '4px 5px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 900, color: item.lineProfit >= 0 ? '#059669' : '#dc2626' }}>
+                              Rs. {Number(item.lineProfit).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 800, color: item.lineProfit >= 0 ? '#059669' : '#dc2626' }}>
+                              {item.marginPct}%
+                            </td>
+                          </tr>
+                        );
+                      })}
 
-                    <table
-                      style={{
-                        width: '100%',
-                        borderCollapse: 'collapse',
-                        fontSize: '0.74rem'
-                      }}
-                    >
-                      <thead>
-                        <tr
-                          style={{
-                            background: 'linear-gradient(135deg, #064e3b 0%, #047857 100%)',
-                            color: '#ffffff',
-                            WebkitPrintColorAdjust: 'exact',
-                            printColorAdjust: 'exact'
-                          }}
-                        >
-                          <th style={{ padding: '5px 4px', textAlign: 'center', width: '32px', border: '1px solid #064e3b' }}>#</th>
-                          <th style={{ padding: '5px 6px', textAlign: 'right', border: '1px solid #064e3b' }}>تفصیل آئٹم و سائز</th>
-                          <th style={{ padding: '5px 4px', textAlign: 'center', width: '65px', border: '1px solid #064e3b' }}>پیمائش/فٹ</th>
-                          <th style={{ padding: '5px 4px', textAlign: 'center', width: '60px', border: '1px solid #064e3b' }}>خرید ریٹ</th>
-                          <th style={{ padding: '5px 4px', textAlign: 'center', width: '60px', border: '1px solid #064e3b' }}>سیل ریٹ</th>
-                          <th style={{ padding: '5px 5px', textAlign: 'center', width: '75px', border: '1px solid #064e3b' }}>کل لاگت (Cost)</th>
-                          <th style={{ padding: '5px 5px', textAlign: 'center', width: '75px', border: '1px solid #064e3b' }}>کل سیل (Sale)</th>
-                          <th style={{ padding: '5px 5px', textAlign: 'center', width: '75px', border: '1px solid #064e3b' }}>منافع (Profit)</th>
-                          <th style={{ padding: '5px 4px', textAlign: 'center', width: '48px', border: '1px solid #064e3b' }}>مارجن %</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.keys(categorizedItems).map((catKey, catIdx) => {
-                          const cat = categorizedItems[catKey];
-                          const catMargin = cat.totalRevenue > 0 ? Math.round((cat.totalProfit / cat.totalRevenue) * 100) : 0;
+                      {/* Filler rows if items are few */}
+                      {fillerRows.map((_, fIdx) => {
+                        const globalIdx = itemsWithProfit.length + fIdx;
+                        const isOdd = globalIdx % 2 === 1;
+                        const rowBg = isOdd ? '#f1f5f9' : '#ffffff';
+                        return (
+                          <tr
+                            key={`fill-${fIdx}`}
+                            style={{
+                              height: '24px',
+                              background: rowBg,
+                              WebkitPrintColorAdjust: 'exact',
+                              printColorAdjust: 'exact'
+                            }}
+                          >
+                            <td style={{ border: '1px solid #e2e8f0', textAlign: 'center' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                            <td style={{ border: '1px solid #e2e8f0' }}>&nbsp;</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
 
-                          return (
-                            <React.Fragment key={catKey}>
-                              {/* Category Section Header Row */}
-                              <tr
-                                style={{
-                                  background: '#e0f2fe',
-                                  color: '#0369a1',
-                                  fontWeight: 800,
-                                  fontSize: '0.76rem',
-                                  WebkitPrintColorAdjust: 'exact',
-                                  printColorAdjust: 'exact'
-                                }}
-                              >
-                                <td colSpan={9} style={{ padding: '4px 8px', border: '1px solid #bae6fd', textAlign: 'right' }}>
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span>📦 کیٹگری: <strong>{cat.name}</strong> ({cat.items.length} آئٹمز)</span>
-                                    <span style={{ fontSize: '0.70rem', color: '#0284c7' }}>
-                                      سب ٹوٹل فٹ: {cat.totalSqFt} | منافع: Rs. {cat.totalProfit.toLocaleString()} ({catMargin}%)
-                                    </span>
-                                  </div>
-                                </td>
-                              </tr>
-
-                              {/* Category Items Rows */}
-                              {cat.items.map((item, idx) => {
-                                const isOdd = idx % 2 === 1;
-                                const rowBg = isOdd ? '#f8fafc' : '#ffffff';
-                                return (
-                                  <tr
-                                    key={idx}
-                                    style={{
-                                      background: rowBg,
-                                      WebkitPrintColorAdjust: 'exact',
-                                      printColorAdjust: 'exact'
-                                    }}
-                                  >
-                                    <td style={{ padding: '3px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontWeight: 700, color: '#64748b' }}>
-                                      {item.originalIndex + 1}
-                                    </td>
-                                    <td style={{ padding: '3px 6px', textAlign: 'right', border: '1px solid #cbd5e1', fontWeight: 800, color: '#0f172a' }}>
-                                      {item.name}
-                                      {item.thicknessSutar ? (
-                                        <span style={{ fontSize: '0.68rem', color: '#059669', marginRight: '4px', fontWeight: 700 }}>
-                                          [{item.thicknessSutar} سوتر]
-                                        </span>
-                                      ) : null}
-                                    </td>
-                                    <td style={{ padding: '3px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', color: '#475569' }}>
-                                      {formatItemDimension(item)}
-                                    </td>
-                                    <td style={{ padding: '3px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', color: '#64748b' }}>
-                                      {Number(item.costRate).toLocaleString()}
-                                    </td>
-                                    <td style={{ padding: '3px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 700, color: '#2563eb' }}>
-                                      {Number(item.saleRate).toLocaleString()}
-                                    </td>
-                                    <td style={{ padding: '3px 5px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', color: '#475569' }}>
-                                      Rs. {Number(item.lineCost).toLocaleString()}
-                                    </td>
-                                    <td style={{ padding: '3px 5px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 700, color: '#0f172a' }}>
-                                      Rs. {Number(item.lineAmount).toLocaleString()}
-                                    </td>
-                                    <td style={{ padding: '3px 5px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 900, color: item.lineProfit >= 0 ? '#059669' : '#dc2626' }}>
-                                      Rs. {Number(item.lineProfit).toLocaleString()}
-                                    </td>
-                                    <td style={{ padding: '3px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', fontWeight: 800, color: '#047857' }}>
-                                      {item.marginPct}%
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-
-                              {/* Category Subtotal Summary Row */}
-                              <tr
-                                style={{
-                                  background: '#f0fdf4',
-                                  fontWeight: 800,
-                                  fontSize: '0.72rem',
-                                  color: '#065f46',
-                                  WebkitPrintColorAdjust: 'exact',
-                                  printColorAdjust: 'exact'
-                                }}
-                              >
-                                <td colSpan={2} style={{ padding: '3px 6px', border: '1px solid #a7f3d0', textAlign: 'right' }}>
-                                  کل {cat.name} سب ٹوٹل:
-                                </td>
-                                <td style={{ padding: '3px 4px', textAlign: 'center', border: '1px solid #a7f3d0', fontFamily: 'var(--font-mono), monospace' }}>
-                                  {cat.totalSqFt} فٹ
-                                </td>
-                                <td colSpan={2} style={{ border: '1px solid #a7f3d0' }}>&nbsp;</td>
-                                <td style={{ padding: '3px 5px', textAlign: 'center', border: '1px solid #a7f3d0', fontFamily: 'var(--font-mono), monospace' }}>
-                                  Rs. {cat.totalCost.toLocaleString()}
-                                </td>
-                                <td style={{ padding: '3px 5px', textAlign: 'center', border: '1px solid #a7f3d0', fontFamily: 'var(--font-mono), monospace' }}>
-                                  Rs. {cat.totalRevenue.toLocaleString()}
-                                </td>
-                                <td style={{ padding: '3px 5px', textAlign: 'center', border: '1px solid #a7f3d0', fontFamily: 'var(--font-mono), monospace', fontWeight: 900, color: '#059669' }}>
-                                  Rs. {cat.totalProfit.toLocaleString()}
-                                </td>
-                                <td style={{ padding: '3px 4px', textAlign: 'center', border: '1px solid #a7f3d0', fontFamily: 'var(--font-mono), monospace', fontWeight: 900 }}>
-                                  {catMargin}%
-                                </td>
-                              </tr>
-                            </React.Fragment>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* 5. OVERALL FINANCIAL & NET PROFIT SUMMARY SECTION */}
+                  {/* 5. TOTALS & PROFIT SUMMARY SECTION */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '10px', marginBottom: '10px', alignItems: 'stretch' }}>
-
-                    {/* Left: Cost & Margin Deductions Audit */}
+                    {/* Left: Cost & Profit Breakdown */}
                     <div
                       style={{
-                        border: '1px solid #a7f3d0',
+                        border: '1px solid #bfdbfe',
                         borderRadius: '8px',
-                        background: '#f0fdf4',
+                        background: '#eff6ff',
                         padding: '10px 12px',
-                        fontSize: '0.74rem',
-                        boxShadow: '0 1px 3px rgba(5, 150, 105, 0.04)',
+                        fontSize: '0.78rem',
+                        boxShadow: '0 1px 3px rgba(37,99,235,0.03)',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact',
                         display: 'flex',
@@ -846,147 +760,138 @@ export default function BillProfitPrintModal({
                         justifyContent: 'space-between'
                       }}
                     >
-                      <div>
-                        <div style={{ fontSize: '0.88rem', fontWeight: 900, color: '#065f46', marginBottom: '6px', lineHeight: 1.3 }}>
-                          📊 لاگت و منافع آڈٹ تفصیل:
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1d4ed8', marginBottom: '3px' }}>
+                          لاگت و منافع خلاصہ:
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', color: '#1e293b', fontSize: '0.76rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>کل مال لاگت (Stone Cost):</span>
-                            <span className="font-mono">Rs. {totalCalculatedCost.toLocaleString()}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span>خام مال کا منافع (Gross Margin):</span>
-                            <span className="font-mono" style={{ color: '#059669', fontWeight: 800 }}>Rs. {rawItemsGrossProfit.toLocaleString()}</span>
-                          </div>
-                          {carriageCharges > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0369a1' }}>
-                              <span>+ کرایہ وصولی:</span>
-                              <span className="font-mono">+ Rs. {carriageCharges.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {labourCharges > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0369a1' }}>
-                              <span>+ مزدوری وصولی:</span>
-                              <span className="font-mono">+ Rs. {labourCharges.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {polishCharges > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#0369a1' }}>
-                              <span>+ پالش وصولی:</span>
-                              <span className="font-mono">+ Rs. {polishCharges.toLocaleString()}</span>
-                            </div>
-                          )}
-                          {discountAmount > 0 && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626', fontWeight: 700 }}>
-                              <span>- کسٹمر کو دی گئی رعایت:</span>
-                              <span className="font-mono">- Rs. {discountAmount.toLocaleString()}</span>
-                            </div>
-                          )}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#1e3a8a' }}>
+                          <span>کل فیکٹری لاگت:</span>
+                          <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 700 }}>Rs. {totalCalculatedCost.toLocaleString()}</span>
                         </div>
+                        {carriageCharges > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                            <span>+ کرایہ باربرداری:</span>
+                            <span style={{ fontFamily: 'var(--font-mono), monospace' }}>+ Rs. {carriageCharges.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {labourCharges > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                            <span>+ مزدوری و لوڈنگ:</span>
+                            <span style={{ fontFamily: 'var(--font-mono), monospace' }}>+ Rs. {labourCharges.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {polishCharges > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                            <span>+ پالش و کٹائی:</span>
+                            <span style={{ fontFamily: 'var(--font-mono), monospace' }}>+ Rs. {polishCharges.toLocaleString()}</span>
+                          </div>
+                        )}
+                        {discountAmount > 0 && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626' }}>
+                            <span>- رعایت (ڈسکاؤنٹ):</span>
+                            <span style={{ fontFamily: 'var(--font-mono), monospace' }}>- Rs. {discountAmount.toLocaleString()}</span>
+                          </div>
+                        )}
                       </div>
 
-                      <div style={{ borderTop: '1px dashed #a7f3d0', paddingTop: '4px', marginTop: '4px', fontSize: '0.68rem', color: '#047857', fontWeight: 600 }}>
-                        ⚠️ یہ دستاویز صرف فیکٹری ایڈمن و اکاؤنٹنٹ ریکارڈ کے لیے ہے۔
+                      {/* NET PROFIT RIBBON */}
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: 'linear-gradient(135deg, #1e40af 0%, #2563eb 100%)',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          color: '#ffffff',
+                          fontWeight: 800,
+                          fontSize: '0.88rem',
+                          marginTop: '6px',
+                          WebkitPrintColorAdjust: 'exact',
+                          printColorAdjust: 'exact'
+                        }}
+                      >
+                        <span>خالص منافع (Net Profit):</span>
+                        <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: '0.98rem', color: '#ffffff' }}>
+                          Rs. {totalNetProfit.toLocaleString()} ({overallMarginPct}%)
+                        </span>
                       </div>
                     </div>
 
-                    {/* Right: Executive Grand Net Profit Card */}
+                    {/* Right: Bill & Payment Summary */}
                     <div
                       style={{
-                        border: '1px solid #059669',
+                        border: '1px solid #bfdbfe',
                         borderRadius: '8px',
                         background: '#ffffff',
                         padding: '10px 12px',
                         display: 'flex',
                         flexDirection: 'column',
+                        justifyContent: 'space-between',
                         gap: '4px',
                         fontSize: '0.80rem',
-                        boxShadow: '0 2px 8px rgba(5, 150, 105, 0.08)',
+                        boxShadow: '0 1px 3px rgba(37,99,235,0.03)',
                         WebkitPrintColorAdjust: 'exact',
                         printColorAdjust: 'exact'
                       }}
                     >
-                      {/* Total Sale */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontWeight: 700, color: '#334155' }}>کل بل رقم (Grand Total):</span>
-                        <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 800, color: '#0f172a' }}>
-                          Rs. {grandTotal.toLocaleString()}
-                        </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '3px' }}>
+                          بل رقم و ادائیگی:
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 700, color: '#1e3a8a' }}>کل بل رقم:</span>
+                          <span style={{ fontFamily: 'var(--font-mono), monospace', fontWeight: 800, color: '#1e3a8a', fontSize: '0.92rem' }}>
+                            Rs. {grandTotal.toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#059669', fontWeight: 700 }}>
+                          <span>نقد وصولی:</span>
+                          <span style={{ fontFamily: 'var(--font-mono), monospace' }}>
+                            Rs. {paidAmount.toLocaleString()}
+                          </span>
+                        </div>
+
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            color: balanceDue > 0 ? '#dc2626' : '#059669',
+                            fontWeight: 800,
+                            borderTop: '1px dashed #bfdbfe',
+                            paddingTop: '4px'
+                          }}
+                        >
+                          <span>بقایا رقم:</span>
+                          <span style={{ fontFamily: 'var(--font-mono), monospace' }}>
+                            Rs. {balanceDue.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* Total Cost */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#64748b' }}>
-                        <span style={{ fontWeight: 700 }}>کل فیکٹری لاگت (COGS):</span>
-                        <span style={{ fontFamily: 'var(--font-mono), monospace' }}>
-                          Rs. {totalCalculatedCost.toLocaleString()}
-                        </span>
-                      </div>
-
-                      {/* NET PROFIT HIGHLIGHT RIBBON */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          background: 'linear-gradient(135deg, #064e3b 0%, #059669 100%)',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          color: '#ffffff',
-                          fontWeight: 900,
-                          fontSize: '0.90rem',
-                          margin: '3px 0',
-                          WebkitPrintColorAdjust: 'exact',
-                          printColorAdjust: 'exact'
-                        }}
-                      >
-                        <span style={{ fontSize: '0.92rem', color: '#ffffff' }}>خالص منافع (NET PROFIT):</span>
-                        <span style={{ fontFamily: 'var(--font-mono), monospace', fontSize: '1.05rem', color: '#a7f3d0' }}>
-                          Rs. {totalNetProfit.toLocaleString()} ({overallMarginPct}%)
-                        </span>
-                      </div>
-
-                      {/* Collection & Udhar Status */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#16a34a', fontWeight: 800 }}>
-                        <span>نقد وصول شدہ رقم:</span>
-                        <span style={{ fontFamily: 'var(--font-mono), monospace' }}>
-                          Rs. {paidAmount.toLocaleString()}
-                        </span>
-                      </div>
-
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          color: balanceDue > 0 ? '#dc2626' : '#059669',
-                          fontWeight: 800,
-                          borderTop: '1px dashed #cbd5e1',
-                          paddingTop: '3px'
-                        }}
-                      >
-                        <span>بقایا ادھار (Pending):</span>
-                        <span style={{ fontFamily: 'var(--font-mono), monospace' }}>
-                          Rs. {balanceDue.toLocaleString()}
-                        </span>
+                      <div style={{ borderTop: '1px dashed #bfdbfe', paddingTop: '4px', fontSize: '0.68rem', color: '#64748b', textAlign: 'center' }}>
+                        فیکٹری ایڈمن و منافع ریکارڈ
                       </div>
                     </div>
                   </div>
 
-                  {/* 6. SIGNATURES & AUDIT APPROVAL */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: '8px', marginBottom: '4px' }}>
+                  {/* 6. SIGNATURES ROW */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingTop: '8px', marginBottom: '6px' }}>
                     {/* Munshi Signature */}
                     <div style={{ textAlign: 'center', width: '160px', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
                       <div style={{ borderBottom: '1.2px dashed #94a3b8', width: '100%', height: '8px' }} />
-                      <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0f172a', lineHeight: 1.3 }}>دستخط منشی / بل آپریٹر</div>
+                      <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#1e3a8a', lineHeight: 1.3 }}>دستخط منشی / بل آپریٹر</div>
                       <div style={{ fontSize: '0.66rem', color: '#64748b', lineHeight: 1.2 }}>(تیار کنندہ بل)</div>
                     </div>
 
                     {/* Admin Approval Signature */}
-                    <div style={{ textAlign: 'center', width: '190px', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
-                      <div style={{ borderBottom: '1.2px dashed #059669', width: '100%', height: '8px' }} />
-                      <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#065f46', lineHeight: 1.3 }}>منظوری فیکٹری اونر / ایڈمن</div>
-                      <div style={{ fontSize: '0.66rem', color: '#059669', lineHeight: 1.2 }}>(محفوظ ریکارڈ)</div>
+                    <div style={{ textAlign: 'center', width: '180px', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center' }}>
+                      <div style={{ borderBottom: '1.2px dashed #2563eb', width: '100%', height: '8px' }} />
+                      <div style={{ fontSize: '0.84rem', fontWeight: 800, color: '#1e40af', lineHeight: 1.3 }}>منظوری فیکٹری اونر</div>
+                      <div style={{ fontSize: '0.66rem', color: '#2563eb', lineHeight: 1.2 }}>(محفوظ ریکارڈ)</div>
                     </div>
                   </div>
                 </div>
@@ -994,25 +899,27 @@ export default function BillProfitPrintModal({
                 {/* 7. FOOTER BOTTOM BAR */}
                 <div
                   style={{
-                    background: 'linear-gradient(135deg, #064e3b 0%, #047857 100%)',
+                    background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
                     color: '#ffffff',
-                    padding: '5px 16px',
+                    padding: '6px 16px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    fontSize: '0.72rem',
+                    fontSize: '0.76rem',
                     WebkitPrintColorAdjust: 'exact',
                     printColorAdjust: 'exact'
                   }}
                 >
+                  {/* Left: Phone Numbers */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontFamily: 'var(--font-mono), monospace', direction: 'ltr' }}>
-                    <Phone size={11} color="#a7f3d0" />
+                    <Phone size={12} color="#93c5fd" />
                     <span>{factoryPhone}</span>
                   </div>
 
+                  {/* Right: Factory Location */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
                     <span style={{ fontWeight: 700 }}>{factoryAddress}</span>
-                    <MapPin size={12} color="#a7f3d0" />
+                    <MapPin size={13} color="#93c5fd" />
                   </div>
                 </div>
               </div>
@@ -1037,12 +944,11 @@ export default function BillProfitPrintModal({
                 }}
               >
                 <div style={{ textAlign: 'center', borderBottom: '1px dashed #000', paddingBottom: '6px', marginBottom: '8px' }}>
-                  <div style={{ fontWeight: 900, fontSize: '13px', fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>{settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری'}</div>
-                  <div style={{ fontWeight: 800, fontSize: '11px' }}>{settings?.companyNameEnglish || settings?.companyName || 'RANA ABDULLAH SIDDIQUE MARBLE FACTORY'}</div>
-                  <div style={{ fontSize: '9.5px', fontWeight: 800, color: '#059669', marginTop: '2px' }}>*** ADMIN PROFIT SLIP ***</div>
-                  <div style={{ fontSize: '9px' }}>{factoryAddress} | Ph: {factoryPhone}</div>
+                  <div style={{ fontWeight: 900, fontSize: '13px', fontFamily: 'var(--font-urdu), "Noto Nastaliq Urdu", serif' }}>{companyUrdu}</div>
+                  <div style={{ fontWeight: 800, fontSize: '11px' }}>{companyEnglish}</div>
+                  <div style={{ fontSize: '9.5px', marginTop: '2px' }}>{factoryAddress} | Ph: {factoryPhone}</div>
                   <div style={{ fontSize: '10px', marginTop: '4px', fontWeight: 700 }}>
-                    Bill: {invoice.invoiceNo}
+                    Bill: {invoice.invoiceNo} (PROFIT SLIP)
                   </div>
                   <div style={{ fontSize: '9px' }}>{new Date(invoice.date || invoice.createdAt).toLocaleString()}</div>
                 </div>
@@ -1052,48 +958,39 @@ export default function BillProfitPrintModal({
                   {customerPhone !== '-' && <div>Ph: {customerPhone}</div>}
                 </div>
 
-                {/* Category-Wise Breakdown Table */}
+                {/* Table */}
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9.5px', marginBottom: '6px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid #000', borderTop: '1px solid #000' }}>
-                      <th style={{ textAlign: 'left', padding: '2px 0' }}>Item/Cat</th>
+                      <th style={{ textAlign: 'left', padding: '2px 0' }}>Item</th>
                       <th style={{ textAlign: 'center', padding: '2px 0' }}>Cost</th>
                       <th style={{ textAlign: 'right', padding: '2px 0' }}>Sale</th>
                       <th style={{ textAlign: 'right', padding: '2px 0' }}>Profit</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((it, idx) => {
-                      const qty = Number(it.totalSqFt) || Number(it.sqft) || Number(it.pieces) || 1;
-                      const saleR = Number(it.ratePerSqFt) || Number(it.rate) || 0;
-                      const amt = Number(it.amount) || Math.round(qty * saleR);
-                      const costR = Number(it.costPerSqFt) || Number(it.purchasePrice) || Math.round(saleR * 0.72);
-                      const cCost = Math.round(qty * costR);
-                      const pProfit = amt - cCost;
-
-                      return (
-                        <tr key={idx} style={{ borderBottom: '1px dotted #ccc' }}>
-                          <td style={{ padding: '2px 0' }}>
-                            {it.name} <span style={{ fontSize: '8.5px' }}>({qty}F)</span>
-                          </td>
-                          <td style={{ textAlign: 'center', padding: '2px 0' }}>{cCost.toLocaleString()}</td>
-                          <td style={{ textAlign: 'right', padding: '2px 0' }}>{amt.toLocaleString()}</td>
-                          <td style={{ textAlign: 'right', padding: '2px 0', fontWeight: 800 }}>{pProfit.toLocaleString()}</td>
-                        </tr>
-                      );
-                    })}
+                    {itemsWithProfit.map((it, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px dotted #ccc' }}>
+                        <td style={{ padding: '2px 0' }}>
+                          {it.name} <span style={{ fontSize: '8.5px' }}>({it.qty}F)</span>
+                        </td>
+                        <td style={{ textAlign: 'center', padding: '2px 0' }}>{it.lineCost.toLocaleString()}</td>
+                        <td style={{ textAlign: 'right', padding: '2px 0' }}>{it.lineAmount.toLocaleString()}</td>
+                        <td style={{ textAlign: 'right', padding: '2px 0', fontWeight: 800, color: it.lineProfit >= 0 ? '#059669' : '#dc2626' }}>{it.lineProfit.toLocaleString()}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
 
                 {/* Totals & Net Profit */}
                 <div style={{ borderTop: '1px dashed #000', paddingTop: '4px', fontSize: '10px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Total Sales:</span>
-                    <span>Rs. {grandTotal.toLocaleString()}</span>
+                    <span>Total Cost:</span>
+                    <span>Rs. {totalCalculatedCost.toLocaleString()}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Total Cost (COGS):</span>
-                    <span>Rs. {totalCalculatedCost.toLocaleString()}</span>
+                    <span>Total Sales:</span>
+                    <span>Rs. {grandTotal.toLocaleString()}</span>
                   </div>
                   {discountAmount > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -1106,7 +1003,7 @@ export default function BillProfitPrintModal({
                     <span>Rs. {totalNetProfit.toLocaleString()} ({overallMarginPct}%)</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                    <span>Paid (Cash):</span>
+                    <span>Paid:</span>
                     <span>Rs. {paidAmount.toLocaleString()}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
@@ -1116,7 +1013,7 @@ export default function BillProfitPrintModal({
                 </div>
 
                 <div style={{ textAlign: 'center', fontSize: '8.5px', marginTop: '8px', borderTop: '1px dashed #000', paddingTop: '4px', fontWeight: 700 }}>
-                  CONFIDENTIAL - FOR ADMIN RECORD ONLY
+                  فیکٹری ایڈمن و منافع ریکارڈ
                 </div>
               </div>
             )}

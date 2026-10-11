@@ -9,12 +9,10 @@ import {
   PanelLeftOpen,
   LogOut,
   UserCheck,
-  Globe,
-  Wallet
+  Globe
 } from 'lucide-react';
 import { exportDatabaseToJson } from '../db/backupService';
 import { useLanguage } from '../context/LanguageContext';
-import { getLiveCashInDrawer } from '../db/index';
 
 export default function Header({
   activeView,
@@ -29,69 +27,11 @@ export default function Header({
   const { language, toggleLanguage, t } = useLanguage();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [backupMsg, setBackupMsg] = useState('');
-  const [liveCash, setLiveCash] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  useEffect(() => {
-    fetchLiveDrawer();
-  }, [activeView]);
-
-  const fetchLiveDrawer = async () => {
-    try {
-      const data = await getLiveCashInDrawer();
-      setLiveCash(data.liveCash || 0);
-    } catch {
-      // fallback
-    }
-  };
-
-  const titles = {
-    'dashboard': {
-      title: language === 'ur' ? 'ماربل فیکٹری جائزہ' : 'Karkhana Dashboard',
-      subtitle: language === 'ur' ? 'لائیو سیلز، دراز کیش اور کھاتہ سمری' : 'Live sales, Roznamcha drawer cash & Digital Khata'
-    },
-    'billing': {
-      title: language === 'ur' ? 'نیا بل بک (سیلز)' : 'Naya Bill Book (POS)',
-      subtitle: language === 'ur' ? 'سوتر، اسکوائر فٹ اور برانڈڈ انوائس' : 'Sutar thickness & Sq.Ft marble/tile billing'
-    },
-    'invoices': {
-      title: language === 'ur' ? 'بل بک ریکارڈ و پرنٹ' : 'Bill Book & Invoices',
-      subtitle: language === 'ur' ? 'تمام پرانے بل، وصولی اور پرنٹ' : 'Search, 80mm thermal receipt reprint & Udhar dues'
-    },
-    'stock': {
-      title: language === 'ur' ? 'ماربل و ٹائلز اسٹاک' : 'Marble & Tiles Stock',
-      subtitle: language === 'ur' ? '4 سوتر درجہ بندی، کٹنگ سائز اور ریٹ' : 'Sutar categories (4, 6, 9, 14 sutar) & pricing'
-    },
-    'stock-sheet': {
-      title: language === 'ur' ? 'اسٹاک لیجر و آڈٹ' : 'Stock Sheet & Audit',
-      subtitle: language === 'ur' ? 'مال کی آمد و روانگی کا کھاتہ' : 'Stock ledger, In/Out movements & valuation'
-    },
-    'customers': {
-      title: language === 'ur' ? 'ڈیجیٹل کھاتہ (گاہک)' : 'Digital Khata (Customers)',
-      subtitle: language === 'ur' ? 'گاہکوں کا مکمل ادھار اور وصولی' : 'Customer ledger, Udhar balance & wasooli history'
-    },
-    'suppliers': {
-      title: language === 'ur' ? 'سپلائر مال آمد' : 'Supplier Purchases',
-      subtitle: language === 'ur' ? 'ٹرک و چالان کی انٹری' : 'Raw stone blocks, truck intake & supplier balance'
-    },
-    'returns': {
-      title: language === 'ur' ? 'واپسی مال و کٹائی نقصان' : 'Wapsi & Factory Wastage',
-      subtitle: language === 'ur' ? 'گاہک واپسی اور فیکٹری بریکیج' : 'Sales returns & bridge-cutter breakage logs'
-    },
-    'settings': {
-      title: language === 'ur' ? 'فیکٹری ترتیبات و بیک اپ' : 'Factory Settings',
-      subtitle: language === 'ur' ? 'رانا عبداللہ صدیق ماربل پروفائل اور ڈیٹا بیک اپ' : 'Rana Abdullah Siddique profile, bill book terms & local backup'
-    }
-  };
-
-  const currentInfo = titles[activeView] || {
-    title: language === 'ur' ? 'رانا عبداللہ صدیق ماربل فیکٹری' : 'Rana Abdullah Siddique Marble Factory',
-    subtitle: 'ERP + POS System'
-  };
 
   const handleQuickBackup = async () => {
     const res = await exportDatabaseToJson();
@@ -122,28 +62,12 @@ export default function Header({
           margin: 0,
           whiteSpace: 'nowrap'
         }}>
-          {activeView === 'dashboard' ? (language === 'ur' ? 'کارخانہ ڈیش بورڈ' : 'Karkhana Dashboard') : currentInfo.title}
+          Rana Abdullah Siddique Marble Factory
         </h1>
       </div>
 
       {/* Zone 2 (Center/Right): Subdued contextual info */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-        {/* Compact Financial Indicator (Not a loud pill) */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          lineHeight: 1.2,
-          paddingRight: '12px',
-          borderRight: '1px solid var(--border-color)'
-        }}>
-          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-            {language === 'ur' ? 'دراز کیش (روزنامچہ)' : 'Draz Cash (Drawer)'}
-          </span>
-          <span className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-            Rs. {Number(liveCash).toLocaleString()}
-          </span>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
 
         {/* Subtle Language Toggle */}
         <button

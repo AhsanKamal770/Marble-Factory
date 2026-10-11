@@ -25,7 +25,17 @@ export const defaultSettings = {
 // 2. Default System Users
 export const defaultUsers = [
   {
+    username: "Rana_Marble",
+    password: "R@n@M@rble786",
+    passwordHash: "R@n@M@rble786",
+    fullName: "Rana Abdullah Siddique",
+    role: "Admin",
+    isActive: true,
+    createdAt: new Date().toISOString()
+  },
+  {
     username: "admin",
+    password: "admin",
     passwordHash: "admin",
     fullName: "Master Administrator",
     role: "Admin",
@@ -66,7 +76,20 @@ export async function initializeDatabaseWithSeedData() {
     }
   }
 
-  // Initialize admin user if missing
+  // Initialize default users if missing
+  const ranaUser = await db.users.where('username').equalsIgnoreCase('rana_marble').first();
+  if (!ranaUser) {
+    await db.users.add({
+      username: "Rana_Marble",
+      password: "R@n@M@rble786",
+      passwordHash: "R@n@M@rble786",
+      fullName: "Rana Abdullah Siddique",
+      role: "Admin",
+      isActive: true,
+      createdAt: new Date().toISOString()
+    });
+  }
+
   const usersCount = await db.users.count();
   if (usersCount === 0) {
     for (const u of defaultUsers) {

@@ -46,11 +46,13 @@ export const ITEM_TAXONOMY = {
     label: "Tiles",
     icon: Grid3X3,
     sizes: ["12 × 24", "24 × 24", "24 × 48", "16 × 16"],
+    unit: "Meters",
+    desc: "1 Meter = 5 Pieces (Rate per Meter)",
     accessories: [
       { name: "Border", desc: "Patti Strip" },
       { name: "Filling", desc: "20kg Grout Bag" },
       { name: "Spacer", desc: "3mm Cross Pack" },
-      { name: "Gola", desc: "8ft Chamfer Gola" }
+      { name: "Gola", desc: "Per Piece Gola" }
     ]
   },
   flowers: {
@@ -65,15 +67,17 @@ export const ITEM_TAXONOMY = {
     icon: Ruler,
     standard: ["3 inch", "6 inch"],
     blackBorder: ["2 inch", "3 inch"],
+    length: "1 ft",
     unit: "Running Feet",
-    desc: "Standard borders & Kali Patti (Black Border)"
+    desc: "Standard borders & Kali Patti (Length: 1 ft)"
   },
   panels: {
     label: "Panels",
     icon: Layers,
     types: ["Mashallah Islamic Panels", "3D Wall Panels", "Front Elevation Panels"],
+    sizes: ["12 × 24"],
     unit: "Pieces",
-    desc: "Decorative high-value entrance and wall panels"
+    desc: "Decorative entrance and wall panels (12 × 24)"
   }
 };
 
@@ -81,11 +85,23 @@ export const ITEM_TAXONOMY = {
 // Stock Display & Helper Calculations
 // ─────────────────────────────────────────────────────────────────────────────
 function getStockDisplay(item) {
-  const unit = item.unit || "Sq. Ft.";
+  const unit = item.unit || (item.category === "Tiles" ? "Meters" : "Sq. Ft.");
+  const isTiles = item.category === "Tiles" || unit === "Meters" || unit === "Meter";
+
+  if (isTiles) {
+    const meters = Number(item.stockSqFt || (item.stockPieces ? item.stockPieces / 5 : 0));
+    const pcs = Number(item.stockPieces || Math.round(meters * 5));
+    return {
+      qty: meters,
+      unit: "Meters",
+      sub: `${pcs.toLocaleString()} pcs (5 pcs/m)`
+    };
+  }
+
   const qty = Number(item.stockSqFt || item.stockPieces || item.stockBoxes || 0);
   switch (unit) {
     case "Running Feet":
-      return { qty: Number(item.stockSqFt || 0), unit: "Feet", sub: item.stockPieces > 0 ? `${item.stockPieces} pcs` : null };
+      return { qty: Number(item.stockSqFt || 0), unit: "R.Ft.", sub: "Length: 1 ft" };
     case "Pieces":
       return { qty: Number(item.stockPieces || item.stockSqFt || 0), unit: "Pcs", sub: item.stockBoxes > 0 ? `${item.stockBoxes} boxes` : null };
     case "Boxes":
@@ -93,6 +109,51 @@ function getStockDisplay(item) {
     default:
       return { qty: Number(item.stockSqFt || 0), unit: "Sq.Ft", sub: item.stockBoxes > 0 ? `${item.stockBoxes} boxes` : null };
   }
+}
+
+export function getItemDimensionAndSpec(item) {
+  const cat = (item.category || "").toLowerCase();
+  const isMarble = cat.includes("marble") || (!cat.includes("tile") && !cat.includes("border") && !cat.includes("patti") && !cat.includes("flower") && !cat.includes("panel") && !cat.includes("access"));
+
+  if (isMarble) {
+    const sutar = item.sutarThickness ? `${item.sutarThickness} Sutar` : "";
+    const sz = item.standardSize ? item.standardSize : (item.length && item.width ? `${item.length} × ${item.width}` : "");
+    return {
+      main: sutar ? (sz ? `${sutar} (${sz})` : sutar) : (sz || "Standard"),
+      sub: item.finish || "Polished"
+    };
+  }
+
+  // NON-MARBLE (Tiles, Borders, Kali Patti, Flowers, Panels, Accessories):
+  // Strictly NO "Sutar" or "4 Sutar"!!
+  let dim = item.standardSize || "";
+  if (!dim || dim === "Standard") {
+    if (cat.includes("border") || cat.includes("patti")) {
+      dim = item.width ? `${Math.round(item.width * 12)}" × 1 ft` : "1 ft (R.Ft.)";
+    } else if (item.length && item.width) {
+      dim = `${item.length} × ${item.width}`;
+    } else {
+      dim = item.category || "Standard";
+    }
+  }
+
+  let sub = item.finish || "";
+  if (cat.includes("tile")) {
+    sub = "1m = 5 pcs";
+  } else if (cat.includes("border") || cat.includes("patti")) {
+    sub = "Length: 1 ft";
+  } else if (cat.includes("panel")) {
+    sub = "12 × 24 Piece";
+  } else if (cat.includes("flower")) {
+    sub = "Per Piece";
+  } else if (cat.includes("access")) {
+    sub = "Per Piece";
+  }
+
+  return {
+    main: dim,
+    sub: sub
+  };
 }
 
 function isLowStock(item) {
@@ -897,13 +958,15 @@ function ItemDetailsDrawer({ item, onClose, onEdit, onAdjust }) {
 
           {/* Specifications */}
           <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "0.84rem" }}>
+            {item.category === "Marble" ? (
+              <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
+                <span style={{ color: "#64748b" }}>Sutar Thickness:</span>
+                <span style={{ fontWeight: 700 }}>{item.sutarThickness ? `${item.sutarThickness} Sutar` : "—"}</span>
+              </div>
+            ) : null}
             <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
-              <span style={{ color: "#64748b" }}>Sutar Thickness:</span>
-              <span style={{ fontWeight: 700 }}>{item.sutarThickness ? `${item.sutarThickness} Sutar` : "—"}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
-              <span style={{ color: "#64748b" }}>Standard Size:</span>
-              <span style={{ fontWeight: 700 }}>{item.standardSize || "—"}</span>
+              <span style={{ color: "#64748b" }}>Standard Size / Dimension:</span>
+              <span style={{ fontWeight: 700 }}>{item.standardSize || (item.length && item.width ? `${item.length} × ${item.width}` : "—")}</span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9", paddingBottom: "6px" }}>
               <span style={{ color: "#64748b" }}>Finish / Grade:</span>
@@ -1040,13 +1103,18 @@ export default function StockManagementView() {
 
           if (itemTypeFilter.sutar) {
             const targetSutar = itemTypeFilter.sutar.split(" ")[0]; // "4", "6", "9", "14"
-            const matchesSutar = sutar === targetSutar ||
-              name.includes(`${targetSutar} sutar`) ||
-              name.includes(`${targetSutar}-sutar`) ||
-              sub.includes(`${targetSutar} sutar`) ||
-              sub.includes(`${targetSutar}-sutar`) ||
-              (targetSutar === "6" && (name.includes("kitchen") || sub.includes("kitchen") || name.includes("stairs")));
-            if (!matchesSutar) return false;
+            const itemSutar = String(item.sutarThickness || "").trim();
+
+            if (itemSutar) {
+              // Exact match required when item has explicit sutarThickness
+              if (itemSutar !== targetSutar) return false;
+            } else {
+              // If no explicit sutarThickness, test name and subCategory with strict regex
+              const sutarRegex = new RegExp(`(^|\\D)${targetSutar}[ -]?sutar(\\D|$)`, 'i');
+              const matchesName = sutarRegex.test(name) || sutarRegex.test(sub);
+              const matchesSpecial6 = targetSutar === "6" && (name.includes("kitchen") || sub.includes("kitchen") || name.includes("stairs"));
+              if (!matchesName && !matchesSpecial6) return false;
+            }
           }
 
           if (itemTypeFilter.size) {
@@ -1077,17 +1145,24 @@ export default function StockManagementView() {
             const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
             if (!cleanItemSz.includes(cleanSz)) return false;
           }
-        } else if (itemTypeFilter.type === "Borders") {
-          const isBorder = cat.includes("border") || sub.includes("border") || sub.includes("patti") || name.includes("border") || name.includes("patti");
-          if (!isBorder) return false;
+        } else if (itemTypeFilter.type === "Borders" || itemTypeFilter.type === "Border") {
+          const isBorder = cat.includes("border") || sub.includes("border") || (cat.includes("patti") && !cat.includes("kali")) || (name.includes("border") && !name.includes("kali"));
+          const isKali = cat.includes("kali") || sub.includes("kali") || name.includes("kali") || name.includes("black border");
+          if (!isBorder || isKali) return false;
 
-          if (itemTypeFilter.sub) {
-            if (itemTypeFilter.sub.includes("Kali Patti") || itemTypeFilter.sub.includes("Black")) {
-              if (!sub.includes("kali") && !name.includes("kali") && !name.includes("black")) return false;
-            }
-            if (itemTypeFilter.sub.includes("3 inch") && !sz.includes("3") && !name.includes("3") && !sub.includes("3")) return false;
-            if (itemTypeFilter.sub.includes("6 inch") && !sz.includes("6") && !name.includes("6") && !sub.includes("6")) return false;
-            if (itemTypeFilter.sub.includes("2 inch") && !sz.includes("2") && !name.includes("2") && !sub.includes("2")) return false;
+          const targetSize = itemTypeFilter.size || itemTypeFilter.sub;
+          if (targetSize) {
+            if (targetSize.includes("3") && !sz.includes("3") && !name.includes("3") && !sub.includes("3")) return false;
+            if (targetSize.includes("6") && !sz.includes("6") && !name.includes("6") && !sub.includes("6")) return false;
+          }
+        } else if (itemTypeFilter.type === "Kali Patti") {
+          const isKali = cat.includes("kali") || sub.includes("kali") || name.includes("kali") || name.includes("black border") || sub.includes("black border");
+          if (!isKali) return false;
+
+          const targetSize = itemTypeFilter.size || itemTypeFilter.sub;
+          if (targetSize) {
+            if (targetSize.includes("2") && !sz.includes("2") && !name.includes("2") && !sub.includes("2")) return false;
+            if (targetSize.includes("3") && !sz.includes("3") && !name.includes("3") && !sub.includes("3")) return false;
           }
         } else if (itemTypeFilter.type === "Panels") {
           const isPanel = cat.includes("panel") || sub.includes("panel") || name.includes("panel") || name.includes("mashallah");
@@ -1145,10 +1220,10 @@ export default function StockManagementView() {
       ...INITIAL_FORM,
       category: cat,
       sutarThickness: cat === 'Marble' ? '4' : '',
-      standardSize: cat === 'Marble' ? '12 × 12' : (cat === 'Tiles' ? '12 × 24' : (cat === 'Borders' ? '3 inch' : (cat === 'Kali Patti' ? '2 inch' : (cat === 'Panels' ? '24 × 48' : '12 × 12')))),
-      length: cat === 'Tiles' ? 2 : (cat === 'Borders' || cat === 'Kali Patti' ? 10 : (cat === 'Panels' ? 4 : 1)),
-      width: cat === 'Tiles' ? 1 : (cat === 'Borders' ? 0.25 : (cat === 'Kali Patti' ? 0.166 : (cat === 'Panels' ? 2 : 1))),
-      unit: cat === 'Flowers' || cat === 'Panels' ? 'Pieces' : (cat === 'Borders' || cat === 'Kali Patti' ? 'Running Feet' : (cat === 'Tiles' ? 'Boxes' : 'Sq. Ft.')),
+      standardSize: cat === 'Marble' ? '12 × 12' : (cat === 'Tiles' ? '12 × 24' : (cat === 'Borders' ? '3 inch' : (cat === 'Kali Patti' ? '2 inch' : (cat === 'Panels' ? '12 × 24' : '12 × 12')))),
+      length: cat === 'Tiles' ? 2 : (cat === 'Borders' || cat === 'Kali Patti' ? 1 : (cat === 'Panels' ? 2 : 1)),
+      width: cat === 'Tiles' ? 1 : (cat === 'Borders' ? 0.25 : (cat === 'Kali Patti' ? 0.1667 : (cat === 'Panels' ? 1 : 1))),
+      unit: cat === 'Flowers' || cat === 'Panels' || cat === 'Accessories' ? 'Pieces' : (cat === 'Borders' || cat === 'Kali Patti' ? 'Running Feet' : (cat === 'Tiles' ? 'Meters' : 'Sq. Ft.')),
       code: `${cat === 'Tiles' ? 'TL' : cat === 'Flowers' ? 'FL' : cat === 'Borders' ? 'BR' : cat === 'Kali Patti' ? 'KP' : cat === 'Panels' ? 'PN' : cat === 'Accessories' ? 'AC' : cat === 'Granite' ? 'GR' : 'MB'}-${Date.now().toString().slice(-4)}`,
       lotNo: `LOT-${new Date().getFullYear()}`
     });
@@ -1172,7 +1247,7 @@ export default function StockManagementView() {
       defaultWid = 1;
       defaultCodePrefix = "MB";
     } else if (newCat === "Tiles") {
-      defaultUnit = "Boxes";
+      defaultUnit = "Meters";
       defaultSutar = "";
       defaultSize = "12 × 24";
       defaultLen = 2;
@@ -1189,29 +1264,29 @@ export default function StockManagementView() {
       defaultUnit = "Running Feet";
       defaultSutar = "";
       defaultSize = "3 inch";
-      defaultLen = 10;
+      defaultLen = 1;
       defaultWid = 0.25;
       defaultCodePrefix = "BR";
     } else if (newCat === "Kali Patti") {
       defaultUnit = "Running Feet";
       defaultSutar = "";
       defaultSize = "2 inch";
-      defaultLen = 10;
-      defaultWid = 0.166;
+      defaultLen = 1;
+      defaultWid = 0.1667;
       defaultCodePrefix = "KP";
     } else if (newCat === "Panels") {
       defaultUnit = "Pieces";
       defaultSutar = "";
-      defaultSize = "24 × 48";
-      defaultLen = 4;
-      defaultWid = 2;
+      defaultSize = "12 × 24";
+      defaultLen = 2;
+      defaultWid = 1;
       defaultCodePrefix = "PN";
     } else if (newCat === "Accessories") {
       defaultUnit = "Pieces";
       defaultSutar = "";
-      defaultSize = "Border";
-      defaultLen = 10;
-      defaultWid = 0.25;
+      defaultSize = "Gola";
+      defaultLen = 1;
+      defaultWid = 1;
       defaultCodePrefix = "AC";
     } else if (newCat === "Granite") {
       defaultUnit = "Sq. Ft.";
@@ -1238,24 +1313,35 @@ export default function StockManagementView() {
 
   const handleOpenEditModal = (item) => {
     setEditingItem(item);
-    setFormData({ ...INITIAL_FORM, ...item });
+    const isMarble = item.category === 'Marble';
+    setFormData({
+      ...INITIAL_FORM,
+      ...item,
+      sutarThickness: isMarble ? (item.sutarThickness || '4') : '',
+      unit: item.unit || (item.category === 'Tiles' ? 'Meters' : (item.category === 'Borders' || item.category === 'Kali Patti' ? 'Running Feet' : 'Sq. Ft.'))
+    });
     setIsModalOpen(true);
   };
 
   const handleSaveItem = async (e) => {
     e.preventDefault();
     try {
+      const isTiles = formData.category === "Tiles";
+      const isMarble = formData.category === "Marble";
+
       const payload = {
         ...formData,
+        sutarThickness: isMarble ? (formData.sutarThickness || "4") : "",
         length: parseFloat(formData.length) || 1,
         width: parseFloat(formData.width) || 1,
         ratePerSqFt: parseFloat(formData.ratePerSqFt) || 0,
         costPerSqFt: parseFloat(formData.costPerSqFt) || 0,
         stockSqFt: parseFloat(formData.stockSqFt) || 0,
         stockBoxes: parseInt(formData.stockBoxes) || 0,
-        stockPieces: parseInt(formData.stockPieces) || 0,
+        stockPieces: isTiles ? (parseInt(formData.stockPieces) || Math.round((parseFloat(formData.stockSqFt) || 0) * 5)) : (parseInt(formData.stockPieces) || 0),
+        unit: formData.unit || (isTiles ? "Meters" : (formData.category === "Borders" || formData.category === "Kali Patti" ? "Running Feet" : "Sq. Ft.")),
         minStockAlert: parseFloat(formData.minStockAlert) || 0,
-        thicknessMm: parseFloat(formData.thicknessMm) || 0,
+        thicknessMm: isMarble ? (parseFloat(formData.thicknessMm) || 12) : 0,
         updatedAt: new Date().toISOString(),
       };
 
@@ -1424,7 +1510,7 @@ export default function StockManagementView() {
           bottom: '-15px',
           width: '50%',
           maxWidth: '520px',
-          backgroundImage: `url('./stock_background.jpg'), url('/stock_background.jpg'), url('./invoice_background.jpg'), url('/invoice_background.jpg')`,
+          backgroundImage: `url('./stock_background.jpg')`,
           backgroundSize: 'cover',
           backgroundPosition: 'right center',
           maskImage: 'linear-gradient(to left, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)',
@@ -1731,10 +1817,10 @@ export default function StockManagementView() {
                 <th style={{ width: "75px", padding: "10px 6px" }}>CODE</th>
                 <th style={{ padding: "10px 8px" }}>PRODUCT NAME</th>
                 <th style={{ width: "105px", padding: "10px 6px" }}>CATEGORY</th>
-                <th style={{ width: "110px", padding: "10px 6px" }}>SPECS / SUTAR</th>
-                <th style={{ width: "90px", textAlign: "right", padding: "10px 6px" }}>STOCK</th>
-                <th style={{ width: "80px", textAlign: "right", padding: "10px 6px" }}>COST RATE</th>
-                <th style={{ width: "80px", textAlign: "right", padding: "10px 6px" }}>SALE RATE</th>
+                <th style={{ width: "115px", padding: "10px 6px" }}>SPECS / DIMENSIONS</th>
+                <th style={{ width: "95px", textAlign: "right", padding: "10px 6px" }}>STOCK</th>
+                <th style={{ width: "85px", textAlign: "right", padding: "10px 6px" }}>COST RATE</th>
+                <th style={{ width: "85px", textAlign: "right", padding: "10px 6px" }}>SALE RATE</th>
                 <th style={{ width: "90px", textAlign: "right", padding: "10px 6px" }}>VALUE</th>
                 <th style={{ width: "70px", textAlign: "center", padding: "10px 4px" }}>STATUS</th>
                 <th style={{ width: "75px", textAlign: "center", padding: "10px 4px" }}>ACTION</th>
@@ -1752,6 +1838,8 @@ export default function StockManagementView() {
                 paginatedItems.map((item) => {
                   const isSelected = selectedIds.includes(item.id);
                   const sd = getStockDisplay(item);
+                  const specInfo = getItemDimensionAndSpec(item);
+                  const isTiles = item.category === "Tiles" || item.unit === "Meters" || item.unit === "Meter";
                   const low = isLowStock(item);
                   const out = isOutOfStock(item);
                   const totalValue = sd.qty * Number(item.ratePerSqFt || 0);
@@ -1809,10 +1897,10 @@ export default function StockManagementView() {
                       {/* Dimensions / Specs */}
                       <td style={{ padding: "8px 6px" }}>
                         <div style={{ fontSize: "0.76rem", color: "var(--text-primary, #0f172a)", fontWeight: 600 }}>
-                          {item.sutarThickness ? `${item.sutarThickness} Sutar` : item.standardSize || "Standard"}
+                          {specInfo.main}
                         </div>
                         <div style={{ fontSize: "0.7rem", color: "#64748b" }}>
-                          {item.finish || "Polished"}
+                          {specInfo.sub}
                         </div>
                       </td>
 
@@ -1828,12 +1916,12 @@ export default function StockManagementView() {
 
                       {/* Cost Rate */}
                       <td style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 600, color: "#64748b", fontSize: "0.8rem", padding: "8px 6px", whiteSpace: "nowrap" }}>
-                        Rs. {Number(item.costPerSqFt || 0).toLocaleString()}
+                        Rs. {Number(item.costPerSqFt || 0).toLocaleString()}{isTiles ? ' / m' : ''}
                       </td>
 
                       {/* Sale Rate */}
                       <td style={{ textAlign: "right", fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: "0.8rem", padding: "8px 6px", whiteSpace: "nowrap" }}>
-                        Rs. {Number(item.ratePerSqFt || 0).toLocaleString()}
+                        Rs. {Number(item.ratePerSqFt || 0).toLocaleString()}{isTiles ? ' / m' : ''}
                       </td>
 
                       {/* Total Value */}
@@ -2004,14 +2092,14 @@ export default function StockManagementView() {
                         className="app-form-select has-icon has-chevron"
                         style={{ fontWeight: 700 }}
                       >
-                        <option value="Marble">Marble (Slabs & Tiles)</option>
-                        <option value="Tiles">Tiles (Porcelain & Ceramic)</option>
-                        <option value="Flowers">Flowers (Medallions)</option>
-                        <option value="Borders">Borders (Patti / Strips)</option>
-                        <option value="Kali Patti">Kali Patti (Black Border)</option>
-                        <option value="Panels">Panels (Mashallah / 3D)</option>
-                        <option value="Granite">Granite (Slabs & Tops)</option>
-                        <option value="Accessories">Accessories (Gola, Spacer, Filling)</option>
+                        <option value="Marble">Marble</option>
+                        <option value="Tiles">Tiles</option>
+                        <option value="Flowers">Flowers</option>
+                        <option value="Borders">Borders</option>
+                        <option value="Kali Patti">Kali Patti</option>
+                        <option value="Panels">Panels</option>
+                        <option value="Granite">Granite</option>
+                        <option value="Accessories">Accessories</option>
                       </select>
                       <ChevronDown size={14} className="app-input-chevron" />
                     </div>
@@ -2064,11 +2152,11 @@ export default function StockManagementView() {
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                         <label className="app-form-label" style={{ margin: 0, fontWeight: 700, display: "flex", alignItems: "center", gap: "6px" }}>
                           <Ruler size={14} style={{ color: "#2563eb" }} />
-                          Sutar Thickness (سوتر موٹائی) <span className="app-form-label-required">*</span>
+                          Sutar Thickness <span className="app-form-label-required">*</span>
                         </label>
                         {formData.sutarThickness === "6" && (
                           <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#d97706", background: "rgba(217, 119, 6, 0.1)", padding: "2px 8px", borderRadius: "4px" }}>
-                            ⚡ صرف کچن اور سیڑھیوں کے لیے (Kitchen & Stairs Only)
+                            ⚡ Kitchen & Stairs Only
                           </span>
                         )}
                       </div>
@@ -2116,7 +2204,7 @@ export default function StockManagementView() {
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                         <label className="app-form-label" style={{ margin: 0, fontSize: "0.74rem", color: "#64748b" }}>
-                          Standard Sizes for {formData.sutarThickness || 4} Sutar (معیاری سائز)
+                          Standard Sizes for {formData.sutarThickness || 4} Sutar
                         </label>
                         <span style={{ fontSize: "0.68rem", color: "var(--text-muted)" }}>
                           Click to apply dimensions
@@ -2175,10 +2263,10 @@ export default function StockManagementView() {
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                       <label className="app-form-label" style={{ margin: 0, fontWeight: 700 }}>
-                        Types of Tiles (ٹائلز کے معیاری سائز)
+                        Tile Sizes
                       </label>
-                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
-                        Click to apply format
+                      <span style={{ fontSize: "0.72rem", color: "#2563eb", fontWeight: 700 }}>
+                        1 Meter = 5 Pieces
                       </span>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
@@ -2197,7 +2285,8 @@ export default function StockManagementView() {
                               ...p,
                               standardSize: opt.label,
                               length: opt.length,
-                              width: opt.width
+                              width: opt.width,
+                              unit: "Meters"
                             }))}
                             style={{
                               padding: "8px 4px",
@@ -2225,13 +2314,13 @@ export default function StockManagementView() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                       <label className="app-form-label" style={{ margin: 0, fontWeight: 700 }}>
                         {formData.category === "Flowers"
-                          ? "Types of Flower (پھول کے سائز)"
+                          ? "Flower Sizes"
                           : formData.category === "Borders"
-                            ? "Types of Border (بارڈر پٹی کے سائز)"
+                            ? "Border Sizes (Length: 1 ft)"
                             : formData.category === "Kali Patti"
-                              ? "Types of Black Border / Kali Patti (کالی پٹی کے سائز)"
+                              ? "Kali Patti Sizes (Length: 1 ft)"
                               : formData.category === "Panels"
-                                ? "Panel Types - Higher Rate (وال پینل)"
+                                ? "Panel Types (12 × 24)"
                                 : `${String(formData.category || '')} Standard Sizes`}
                       </label>
                       <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
@@ -2240,7 +2329,7 @@ export default function StockManagementView() {
                     </div>
                     <div style={{
                       display: "grid",
-                      gridTemplateColumns: (formData.category === "Flowers" || formData.category === "Panels" || formData.category === "Granite") ? "repeat(3, 1fr)" : (formData.category === "Borders" || formData.category === "Kali Patti") ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+                      gridTemplateColumns: (formData.category === "Flowers" || formData.category === "Granite") ? "repeat(3, 1fr)" : (formData.category === "Borders" || formData.category === "Kali Patti") ? "repeat(2, 1fr)" : formData.category === "Panels" ? "repeat(1, 1fr)" : "repeat(4, 1fr)",
                       gap: "8px"
                     }}>
                       {(formData.category === "Flowers"
@@ -2251,19 +2340,17 @@ export default function StockManagementView() {
                         ]
                         : formData.category === "Borders"
                           ? [
-                            { label: "3 inch", sub: '3" width (10 R.Ft)', length: 10, width: 0.25 },
-                            { label: "6 inch", sub: '6" width (10 R.Ft)', length: 10, width: 0.5 }
+                            { label: "3 inch", sub: '3" Width × 1 ft Length', length: 1, width: 0.25 },
+                            { label: "6 inch", sub: '6" Width × 1 ft Length', length: 1, width: 0.5 }
                           ]
                           : formData.category === "Kali Patti"
                             ? [
-                              { label: "2 inch", sub: '2" Kali Patti (10 R.Ft)', length: 10, width: 0.166 },
-                              { label: "3 inch", sub: '3" Kali Patti (10 R.Ft)', length: 10, width: 0.25 }
+                              { label: "2 inch", sub: '2" Width × 1 ft Length', length: 1, width: 0.1667 },
+                              { label: "3 inch", sub: '3" Width × 1 ft Length', length: 1, width: 0.25 }
                             ]
                             : formData.category === "Panels"
                               ? [
-                                { label: "24 × 48", sub: "Mashallah (2ft × 4ft)", length: 4, width: 2 },
-                                { label: "3 × 3", sub: "Calligraphy (3ft × 3ft)", length: 3, width: 3 },
-                                { label: "3 × 5", sub: "Elevation (3ft × 5ft)", length: 5, width: 3 }
+                                { label: "12 × 24", sub: "1ft × 2ft (Per Piece)", length: 2, width: 1 }
                               ]
                               : formData.category === "Granite"
                                 ? [
@@ -2272,10 +2359,10 @@ export default function StockManagementView() {
                                   { label: "Stair Step", sub: "4ft × 1ft (4 Sq.Ft)", length: 4, width: 1 }
                                 ]
                                 : [
-                                  { label: "Border", sub: "Tile Patti Strip", length: 10, width: 0.25 },
+                                  { label: "Gola", sub: "Corner Gola (Per Piece)", length: 1, width: 1 },
+                                  { label: "Border Strip", sub: "Tile Patti Strip", length: 1, width: 0.25 },
                                   { label: "Filling", sub: "Joint Filling / Bond", length: 1, width: 1 },
-                                  { label: "Spacer", sub: "3mm Cross Spacers", length: 1, width: 1 },
-                                  { label: "Gola", sub: "8ft Chamfer Gola", length: 8, width: 1 }
+                                  { label: "Spacer", sub: "3mm Cross Spacers", length: 1, width: 1 }
                                 ]
                       ).map(opt => {
                         const isSelected = formData.standardSize === opt.label;
@@ -2311,6 +2398,61 @@ export default function StockManagementView() {
                   </div>
                 )}
 
+                {/* Custom Size / Dimensions Direct Text Box */}
+                <div style={{
+                  background: "#ffffff",
+                  border: "1px dashed #cbd5e1",
+                  borderRadius: "10px",
+                  padding: "10px 12px"
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                    <label className="app-form-label" style={{ margin: 0, fontSize: "0.74rem", fontWeight: 700, color: "#1e293b" }}>
+                      Custom Size / Dimensions (Optional)
+                    </label>
+                    <span style={{ fontSize: "0.72rem", color: "#2563eb", fontWeight: 700 }}>
+                      Current: {formData.standardSize || "Standard"}
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.standardSize || ""}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setFormData(p => {
+                        let nextL = p.length;
+                        let nextW = p.width;
+                        const match = val.match(/(\d+(?:\.\d+)?)\s*[x×X*]\s*(\d+(?:\.\d+)?)/);
+                        if (match) {
+                          const n1 = parseFloat(match[1]);
+                          const n2 = parseFloat(match[2]);
+                          if (n1 <= 12 && n2 > 12) {
+                            nextW = parseFloat((n1 / 12).toFixed(4));
+                            nextL = parseFloat((n2 / 12).toFixed(4));
+                          } else if (n2 <= 12 && n1 > 12) {
+                            nextL = parseFloat((n1 / 12).toFixed(4));
+                            nextW = parseFloat((n2 / 12).toFixed(4));
+                          } else {
+                            nextL = n1;
+                            nextW = n2;
+                          }
+                        }
+                        const pcs = parseFloat(p.stockPieces) || 1;
+                        const sqft = Math.round(nextL * nextW * pcs * 100) / 100;
+                        return {
+                          ...p,
+                          standardSize: val,
+                          length: nextL,
+                          width: nextW,
+                          stockSqFt: p.category === 'Tiles' ? p.stockSqFt : sqft
+                        };
+                      });
+                    }}
+                    placeholder="e.g. 12 × 12, 12 × 24, 4 × 24, 3 inch, or custom size..."
+                    className="app-form-input font-mono"
+                    style={{ fontSize: "0.85rem", height: "38px" }}
+                  />
+                </div>
+
                 {/* 4. Dimensions Box & Unit Configuration */}
                 <div style={{
                   background: "#f8fafc",
@@ -2320,117 +2462,267 @@ export default function StockManagementView() {
                 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
                     <span style={{ fontSize: "0.8rem", fontWeight: 800, color: "#1e293b" }}>
-                      Dimensions, Quantity & Unit (پیمائش اور تعداد)
+                      Dimensions, Quantity & Unit ({formData.category === "Tiles" ? "1 Meter = 5 Pieces" : "Dimensions & Stock"})
                     </span>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px" }}>
-                    {/* Length (ft) */}
-                    <div className="app-form-group">
-                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
-                        Length (ft) / لمبائی
-                      </label>
-                      <div className="app-input-wrapper">
-                        <input
-                          type="number"
-                          step="any"
-                          value={formData.length !== undefined ? formData.length : ""}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setFormData(p => {
-                              const nextLen = parseFloat(val) || 0;
-                              const w = parseFloat(p.width) || 0;
-                              const pcs = parseFloat(p.stockPieces) || 1;
-                              const sqft = Math.round(nextLen * w * pcs * 100) / 100;
-                              let newSize = p.standardSize;
-                              if (val && p.width) newSize = `${val} × ${p.width}`;
-                              else if (val) newSize = `${val} ft`;
-                              return { ...p, length: nextLen || val, stockSqFt: sqft, standardSize: newSize };
-                            });
-                          }}
-                          placeholder="e.g. 1, 2"
-                          className="app-form-input font-mono"
-                        />
+                  {formData.category === "Tiles" ? (
+                    /* TILES SPECIFIC DIMENSIONS & CONVERSIONS: 1 METER = 5 PIECES */
+                    <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.2fr 1fr", gap: "10px" }}>
+                      {/* Stock in Meters */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Stock in Meters <span className="app-form-label-required">*</span>
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.stockSqFt || ""}
+                            onChange={e => {
+                              const meters = parseFloat(e.target.value) || 0;
+                              const pcs = Math.round(meters * 5);
+                              setFormData(p => ({
+                                ...p,
+                                stockSqFt: e.target.value,
+                                stockPieces: pcs,
+                                unit: "Meters"
+                              }));
+                            }}
+                            placeholder="e.g. 100"
+                            className="app-form-input font-mono"
+                            style={{ fontWeight: 700 }}
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Width (ft) */}
-                    <div className="app-form-group">
-                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
-                        Width (ft) / چوڑائی
-                      </label>
-                      <div className="app-input-wrapper">
-                        <input
-                          type="number"
-                          step="any"
-                          value={formData.width !== undefined ? formData.width : ""}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setFormData(p => {
-                              const l = parseFloat(p.length) || 0;
-                              const nextWidth = parseFloat(val) || 0;
-                              const pcs = parseFloat(p.stockPieces) || 1;
-                              const sqft = Math.round(l * nextWidth * pcs * 100) / 100;
-                              let newSize = p.standardSize;
-                              if (p.length && val) newSize = `${p.length} × ${val}`;
-                              else if (val) newSize = `${val} ft`;
-                              return { ...p, width: nextWidth || val, stockSqFt: sqft, standardSize: newSize };
-                            });
-                          }}
-                          placeholder="e.g. 1, 0.5"
-                          className="app-form-input font-mono"
-                        />
+                      {/* Pieces Conversion */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Pieces (1 Meter = 5 Pieces)
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.stockPieces || ""}
+                            onChange={e => {
+                              const pcs = parseFloat(e.target.value) || 0;
+                              const meters = parseFloat((pcs / 5).toFixed(2));
+                              setFormData(p => ({
+                                ...p,
+                                stockPieces: e.target.value,
+                                stockSqFt: meters,
+                                unit: "Meters"
+                              }));
+                            }}
+                            placeholder="e.g. 500"
+                            className="app-form-input font-mono"
+                          />
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Pieces */}
-                    <div className="app-form-group">
-                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
-                        Quantity (Pieces)
-                      </label>
-                      <div className="app-input-wrapper">
-                        <input
-                          type="number"
-                          step="any"
-                          value={formData.stockPieces || ""}
-                          onChange={e => {
-                            const val = e.target.value;
-                            setFormData(p => {
-                              const l = parseFloat(p.length) || 0;
-                              const w = parseFloat(p.width) || 0;
-                              const pcs = parseFloat(val) || 0;
-                              const sqft = Math.round(l * w * pcs * 100) / 100;
-                              return { ...p, stockPieces: val, stockBoxes: val, stockSqFt: sqft };
-                            });
-                          }}
-                          placeholder="e.g. 100"
-                          className="app-form-input font-mono"
-                        />
-                      </div>
-                    </div>
 
-                    {/* Stock Unit */}
-                    <div className="app-form-group">
-                      <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
-                        Stock Unit <span className="app-form-label-required">*</span>
-                      </label>
-                      <div className="app-input-wrapper">
-                        <Boxes size={16} className="app-input-icon" />
-                        <select
-                          value={formData.unit}
-                          onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))}
-                          className="app-form-select has-icon has-chevron"
-                          style={{ fontWeight: 600 }}
-                        >
-                          <option value="Sq. Ft.">Sq. Ft.</option>
-                          <option value="Boxes">Boxes</option>
-                          <option value="Pieces">Pieces</option>
-                          <option value="Running Feet">Running Feet</option>
-                        </select>
-                        <ChevronDown size={14} className="app-input-chevron" />
+                      {/* Stock Unit */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Stock Unit
+                        </label>
+                        <div className="app-input-wrapper">
+                          <Boxes size={16} className="app-input-icon" />
+                          <select
+                            value={formData.unit || "Meters"}
+                            onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))}
+                            className="app-form-select has-icon has-chevron"
+                            style={{ fontWeight: 600 }}
+                          >
+                            <option value="Meters">Meters</option>
+                            <option value="Boxes">Boxes</option>
+                            <option value="Pieces">Pieces</option>
+                          </select>
+                          <ChevronDown size={14} className="app-input-chevron" />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : formData.category === "Borders" || formData.category === "Kali Patti" ? (
+                    /* BORDERS & KALI PATTI: LENGTH IS STRICTLY 1 FT, BILLED IN RUNNING FEET */
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px" }}>
+                      {/* Width (inches / ft) */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Width (Inches)
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="text"
+                            value={formData.width ? `${Math.round(formData.width * 12)}"` : (formData.category === "Kali Patti" ? '2"' : '3"')}
+                            readOnly
+                            className="app-form-input font-mono"
+                            style={{ background: "#f1f5f9", fontWeight: 700 }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Length (ft) - STRICTLY 1 FT */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Length
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="text"
+                            value="1 ft"
+                            readOnly
+                            className="app-form-input font-mono"
+                            style={{ background: "#f1f5f9", fontWeight: 700 }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Running Feet Qty */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Stock (Running Feet / R.Ft.)
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.stockSqFt || ""}
+                            onChange={e => setFormData(p => ({ ...p, stockSqFt: e.target.value, stockPieces: 0 }))}
+                            placeholder="e.g. 50"
+                            className="app-form-input font-mono"
+                            style={{ fontWeight: 700 }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Unit */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Unit
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="text"
+                            value="Running Feet"
+                            readOnly
+                            className="app-form-input"
+                            style={{ background: "#f1f5f9", fontWeight: 700 }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    /* STANDARD MARBLE & OTHER CATEGORIES */
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: "10px" }}>
+                      {/* Length (ft) */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Length (ft)
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.length !== undefined ? formData.length : ""}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setFormData(p => {
+                                const nextLen = parseFloat(val) || 0;
+                                const w = parseFloat(p.width) || 0;
+                                const pcs = parseFloat(p.stockPieces) || 1;
+                                const sqft = Math.round(nextLen * w * pcs * 100) / 100;
+                                let newSize = p.standardSize;
+                                if (val && p.width) newSize = `${val} × ${p.width}`;
+                                else if (val) newSize = `${val} ft`;
+                                return { ...p, length: nextLen || val, stockSqFt: sqft, standardSize: newSize };
+                              });
+                            }}
+                            placeholder="e.g. 1, 2"
+                            className="app-form-input font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Width (ft) */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Width (ft)
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.width !== undefined ? formData.width : ""}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setFormData(p => {
+                                const l = parseFloat(p.length) || 0;
+                                const nextWidth = parseFloat(val) || 0;
+                                const pcs = parseFloat(p.stockPieces) || 1;
+                                const sqft = Math.round(l * nextWidth * pcs * 100) / 100;
+                                let newSize = p.standardSize;
+                                if (p.length && val) newSize = `${p.length} × ${val}`;
+                                else if (val) newSize = `${val} ft`;
+                                return { ...p, width: nextWidth || val, stockSqFt: sqft, standardSize: newSize };
+                              });
+                            }}
+                            placeholder="e.g. 1, 0.5"
+                            className="app-form-input font-mono"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Pieces */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Quantity (Pieces)
+                        </label>
+                        <div className="app-input-wrapper">
+                          <input
+                            type="number"
+                            step="any"
+                            value={formData.stockPieces || ""}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setFormData(p => {
+                                const l = parseFloat(p.length) || 0;
+                                const w = parseFloat(p.width) || 0;
+                                const pcs = parseFloat(val) || 0;
+                                const sqft = Math.round(l * w * pcs * 100) / 100;
+                                return { ...p, stockPieces: val, stockBoxes: val, stockSqFt: sqft };
+                              });
+                            }}
+                            placeholder="e.g. 100"
+                            className="app-form-input font-mono"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Stock Unit */}
+                      <div className="app-form-group">
+                        <label className="app-form-label" style={{ fontSize: "0.72rem", fontWeight: 700 }}>
+                          Stock Unit <span className="app-form-label-required">*</span>
+                        </label>
+                        <div className="app-input-wrapper">
+                          <Boxes size={16} className="app-input-icon" />
+                          <select
+                            value={formData.unit}
+                            onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))}
+                            className="app-form-select has-icon has-chevron"
+                            style={{ fontWeight: 600 }}
+                          >
+                            <option value="Sq. Ft.">Sq. Ft.</option>
+                            <option value="Meters">Meters</option>
+                            <option value="Boxes">Boxes</option>
+                            <option value="Pieces">Pieces</option>
+                            <option value="Running Feet">Running Feet</option>
+                          </select>
+                          <ChevronDown size={14} className="app-input-chevron" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div style={{
                     display: 'flex',
@@ -2441,7 +2733,7 @@ export default function StockManagementView() {
                     borderTop: '1px solid #e2e8f0',
                     fontSize: '0.82rem'
                   }}>
-                    <span style={{ color: '#64748b', fontWeight: 600 }}>Total Calculated Stock (Sq.Ft / Unit):</span>
+                    <span style={{ color: '#64748b', fontWeight: 600 }}>Total Calculated Stock ({formData.category === 'Tiles' ? 'Meters' : formData.unit || 'Sq.Ft'}):</span>
                     <span className="font-mono" style={{ fontWeight: 800, color: '#2563eb', fontSize: '1rem' }}>
                       <input
                         type="number"
@@ -2458,7 +2750,7 @@ export default function StockManagementView() {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
                   <div className="app-form-group">
                     <label className="app-form-label">
-                      Selling Rate (Rs / {formData.unit || "Unit"}) <span className="app-form-label-required">*</span>
+                      Selling Rate (Rs / {formData.category === "Tiles" ? "Meter" : (formData.unit || "Unit")}) <span className="app-form-label-required">*</span>
                     </label>
                     <div className="app-input-wrapper">
                       <DollarSign size={16} className="app-input-icon" />
@@ -2477,7 +2769,7 @@ export default function StockManagementView() {
 
                   <div className="app-form-group">
                     <label className="app-form-label">
-                      Cost Rate (Rs / {formData.unit || "Unit"}) <span className="app-form-label-required">*</span>
+                      Cost Rate (Rs / {formData.category === "Tiles" ? "Meter" : (formData.unit || "Unit")}) <span className="app-form-label-required">*</span>
                     </label>
                     <div className="app-input-wrapper">
                       <DollarSign size={16} className="app-input-icon" />

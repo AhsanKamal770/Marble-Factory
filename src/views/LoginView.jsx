@@ -5,7 +5,6 @@ import {
   Eye,
   EyeOff,
   LogIn,
-  UserPlus,
   KeyRound,
   AlertCircle,
   CheckCircle2,
@@ -18,7 +17,6 @@ import {
   Check,
   X
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { db } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import Logo from '../components/Logo';
@@ -146,7 +144,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
   const { language, toggleLanguage } = useLanguage();
   const tr = (en, ur) => (language === 'ur' ? ur : en);
 
-  // Auth Mode: 'LOGIN' | 'SIGNUP' | 'FORGOT'
+  // Auth Mode: 'LOGIN' | 'FORGOT'
   const [authMode, setAuthMode] = useState('LOGIN');
 
   // Common UI State
@@ -155,19 +153,13 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // 1. Login State
+  // 1. Login State (Empty initially - filled on Auto Fill click)
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // 2. Sign Up State (Clean: Username + Password + Confirm Password ONLY)
-  const [signupUsername, setSignupUsername] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
-
-  // 3. Forgot Password State (Clean: Username + New Password + Confirm Password)
+  // 2. Forgot Password State (Clean: Username + New Password + Confirm Password)
   const [forgotUsername, setForgotUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
@@ -178,22 +170,41 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
     ensureDefaultAdmin();
   }, []);
 
-  // Ensure default admin user is seeded in Dexie DB
+  // Ensure default Rana_Marble and admin users are seeded in Dexie DB
   const ensureDefaultAdmin = async () => {
     try {
-      const existing = await db.users.where('username').equalsIgnoreCase('admin').first();
-      if (!existing) {
+      const existingRana = await db.users.where('username').equalsIgnoreCase('rana_marble').first();
+      if (!existingRana) {
+        await db.users.add({
+          username: 'Rana_Marble',
+          password: 'R@n@M@rble786',
+          passwordHash: 'R@n@M@rble786',
+          fullName: 'Rana Abdullah Siddique',
+          role: 'Admin',
+          isActive: true,
+          createdAt: new Date().toISOString()
+        });
+      } else if (existingRana.password !== 'R@n@M@rble786' && existingRana.passwordHash !== 'R@n@M@rble786') {
+        await db.users.update(existingRana.id, {
+          password: 'R@n@M@rble786',
+          passwordHash: 'R@n@M@rble786'
+        });
+      }
+
+      const existingAdmin = await db.users.where('username').equalsIgnoreCase('admin').first();
+      if (!existingAdmin) {
         await db.users.add({
           username: 'admin',
           password: 'admin',
           passwordHash: 'admin',
+          fullName: 'Master Administrator',
           role: 'Admin',
           isActive: true,
           createdAt: new Date().toISOString()
         });
       }
     } catch (err) {
-      console.warn('Could not verify default admin in DB:', err);
+      console.warn('Could not verify default users in DB:', err);
     }
   };
 
@@ -202,8 +213,6 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
     setAuthMode(mode);
     setError('');
     setSuccessMsg('');
-    setSignupPassword('');
-    setSignupConfirmPassword('');
     setNewPassword('');
     setConfirmNewPassword('');
   };
@@ -212,7 +221,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
   // HANDLER 1: LOGIN (Authenticate with local Dexie DB)
   // ─────────────────────────────────────────────────────────────────────────────
   const handleLoginSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError('');
     setSuccessMsg('');
     setLoading(true);
@@ -224,15 +233,24 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
       // Look up in Dexie DB
       let user = await db.users.where('username').equalsIgnoreCase(cleanUser).first();
 
-      // Fallback for admin credentials
-      if (!user && cleanUser === 'admin' && enteredPass === 'admin') {
-        user = { username: 'admin', role: 'Administrator' };
+      // Direct fallback for Rana_Marble credentials
+      if (!user && cleanUser === 'rana_marble' && enteredPass === 'R@n@M@rble786') {
+        user = { username: 'Rana_Marble', role: 'Administrator', password: 'R@n@M@rble786' };
       }
 
-      if (user && (user.password === enteredPass || user.passwordHash === enteredPass || (cleanUser === 'admin' && enteredPass === 'admin'))) {
+      // Fallback for admin credentials
+      if (!user && cleanUser === 'admin' && enteredPass === 'admin') {
+        user = { username: 'admin', role: 'Administrator', password: 'admin' };
+      }
+
+      const isRanaMatch = cleanUser === 'rana_marble' && (enteredPass === 'R@n@M@rble786' || (user && (user.password === enteredPass || user.passwordHash === enteredPass)));
+      const isAdminMatch = cleanUser === 'admin' && (enteredPass === 'admin' || (user && (user.password === enteredPass || user.passwordHash === enteredPass)));
+      const isGeneralMatch = user && (user.password === enteredPass || user.passwordHash === enteredPass);
+
+      if (isRanaMatch || isAdminMatch || isGeneralMatch) {
         const authData = {
-          user: user.username,
-          role: user.role || 'Admin',
+          user: cleanUser === 'rana_marble' ? 'Rana_Marble' : (user?.username || cleanUser),
+          role: user?.role || 'Admin',
           loginTime: new Date().toISOString()
         };
 
@@ -253,8 +271,10 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
       }
     } catch (err) {
       console.error('Login error:', err);
-      if (loginUsername.trim().toLowerCase() === 'admin' && loginPassword === 'admin') {
-        const authData = { user: 'admin', role: 'Administrator' };
+      const cleanUser = loginUsername.trim().toLowerCase();
+      const enteredPass = loginPassword.trim();
+      if ((cleanUser === 'rana_marble' && enteredPass === 'R@n@M@rble786') || (cleanUser === 'admin' && enteredPass === 'admin')) {
+        const authData = { user: cleanUser === 'rana_marble' ? 'Rana_Marble' : 'admin', role: 'Administrator' };
         localStorage.setItem('marble_auth', JSON.stringify(authData));
         onLoginSuccess(authData);
       } else {
@@ -265,98 +285,10 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // HANDLER 2: SIGN UP (Direct local user creation)
-  // ─────────────────────────────────────────────────────────────────────────────
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-
-    const cleanUser = signupUsername.trim().toLowerCase();
-    if (!cleanUser || !signupPassword) {
-      setError(tr('Please enter username and password!', 'یوزر نام اور پاس ورڈ درج کریں!'));
-      return;
-    }
-
-    // Business-grade password security check
-    const sec = evaluatePasswordSecurity(signupPassword);
-    if (!sec.isFullySecure) {
-      setError(
-        tr(
-          'Password must meet all 5 business security requirements (8+ chars, uppercase, lowercase, number, symbol).',
-          'پاس ورڈ میں تمام سیکیورٹی شرائط (8 حروف، بڑے و چھوٹے حروف، نمبر اور علامت) کا ہونا لازمی ہے۔'
-        )
-      );
-      return;
-    }
-
-    if (signupPassword !== signupConfirmPassword) {
-      setError(tr('Passwords do not match! Please re-type correctly.', 'پاس ورڈ ایک جیسے نہیں ہیں! دوبارہ تصدیق کریں۔'));
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      // Check for duplicate username
-      const existing = await db.users.where('username').equalsIgnoreCase(cleanUser).first();
-      if (existing) {
-        setError(
-          tr(
-            `Username "${signupUsername}" already exists! Please choose a different username.`,
-            `یوزر نام "${signupUsername}" پہلے سے موجود ہے! کوئی دوسرا نام لکھیں۔`
-          )
-        );
-        setLoading(false);
-        return;
-      }
-
-      // Add directly to local Dexie DB
-      await db.users.add({
-        username: cleanUser,
-        password: signupPassword,
-        passwordHash: signupPassword,
-        role: 'User',
-        isActive: true,
-        createdAt: new Date().toISOString()
-      });
-
-      // Confetti celebration
-      try {
-        confetti({
-          particleCount: 70,
-          spread: 60,
-          origin: { y: 0.6 }
-        });
-      } catch (_) { }
-
-      setSuccessMsg(
-        tr(
-          `User "${cleanUser}" created successfully! You can now log in.`,
-          `اکاؤنٹ "${cleanUser}" بن گیا ہے! اب لاگ ان کریں۔`
-        )
-      );
-
-      // Pre-fill login
-      setLoginUsername(cleanUser);
-      setLoginPassword('');
-
-      setTimeout(() => {
-        switchMode('LOGIN');
-      }, 1200);
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError('Signup failed: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // HANDLER 3: FORGOT PASSWORD (Direct Reset with Username & New Password)
+  // HANDLER 2: FORGOT PASSWORD (Direct Reset with Username & New Password)
   // ─────────────────────────────────────────────────────────────────────────────
   const handleForgotSubmit = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     setError('');
     setSuccessMsg('');
 
@@ -388,9 +320,9 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
     try {
       let user = await db.users.where('username').equalsIgnoreCase(cleanUser).first();
 
-      if (!user && cleanUser === 'admin') {
+      if (!user && (cleanUser === 'admin' || cleanUser === 'rana_marble')) {
         user = await db.users.add({
-          username: 'admin',
+          username: cleanUser === 'rana_marble' ? 'Rana_Marble' : 'admin',
           password: newPassword,
           passwordHash: newPassword,
           role: 'Admin',
@@ -421,7 +353,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
         )
       );
 
-      setLoginUsername(cleanUser);
+      setLoginUsername(cleanUser === 'rana_marble' ? 'Rana_Marble' : cleanUser);
       setLoginPassword(newPassword);
 
       setTimeout(() => {
@@ -436,12 +368,12 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
   };
 
   const handleFillDemo = () => {
-    setLoginUsername('admin');
-    setLoginPassword('admin');
+    setLoginUsername('Rana_Marble');
+    setLoginPassword('R@n@M@rble786');
     setError('');
   };
 
-  const companyName = settings?.companyName || 'Rana Abdullah Siddique Marble Factory';
+  const companyName = 'Rana Abdullah Siddique Marble Factory';
 
   return (
     <div
@@ -453,7 +385,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        backgroundImage: `url('./login_background.jpeg'), url('/login_background.jpeg'), url('./general_background.jpg')`,
+        backgroundImage: `url('./login_background.jpeg')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
@@ -567,30 +499,19 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
           {/* Main Factory Name */}
           <h1
             style={{
-              fontSize: '1.75rem',
+              fontSize: '1.70rem',
               fontWeight: 800,
               color: '#0f2a4a',
               margin: '4px 0 2px',
               letterSpacing: '-0.01em',
-              lineHeight: 1.15
+              lineHeight: 1.25,
+              textAlign: 'center'
             }}
           >
-            {companyName}
+            <span>Rana Abdullah Siddique</span>
+            <br />
+            <span>Marble Factory</span>
           </h1>
-
-          {/* Subtitle */}
-          <h2
-            style={{
-              fontSize: '0.80rem',
-              fontWeight: 700,
-              color: '#475569',
-              margin: '0 0 4px',
-              letterSpacing: '2px',
-              textTransform: 'uppercase'
-            }}
-          >
-            FACTORY MANAGEMENT SYSTEM
-          </h2>
         </div>
 
         {/* 2. AUTH CARD (WHITE FLOATING CONTAINER) */}
@@ -605,67 +526,27 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
             boxSizing: 'border-box'
           }}
         >
-          {/* Mode Switcher Tabs (Sign In vs Sign Up) */}
-          <div
-            style={{
-              display: 'flex',
-              background: '#f1f5f9',
-              padding: '4px',
-              borderRadius: '12px',
-              marginBottom: '20px',
-              border: '1px solid #e2e8f0'
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => switchMode('LOGIN')}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                border: 'none',
-                borderRadius: '9px',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                background: authMode === 'LOGIN' ? '#0f3b73' : 'transparent',
-                color: authMode === 'LOGIN' ? '#ffffff' : '#64748b',
-                transition: 'all 0.15s ease',
-                boxShadow: authMode === 'LOGIN' ? '0 2px 8px rgba(15, 59, 115, 0.25)' : 'none'
-              }}
-            >
-              <LogIn size={15} />
-              <span>{tr('Sign In', 'لاگ ان')}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => switchMode('SIGNUP')}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                border: 'none',
-                borderRadius: '9px',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px',
-                background: authMode === 'SIGNUP' ? '#0f3b73' : 'transparent',
-                color: authMode === 'SIGNUP' ? '#ffffff' : '#64748b',
-                transition: 'all 0.15s ease',
-                boxShadow: authMode === 'SIGNUP' ? '0 2px 8px rgba(15, 59, 115, 0.25)' : 'none'
-              }}
-            >
-              <UserPlus size={15} />
-              <span>{tr('Sign Up', 'نیا اکاؤنٹ')}</span>
-            </button>
-          </div>
+          {/* Sign In Header Badge */}
+          {authMode === 'LOGIN' && (
+            <div style={{ textAlign: 'center', marginBottom: '18px' }}>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 18px',
+                  background: 'rgba(15, 59, 115, 0.07)',
+                  borderRadius: '20px',
+                  color: '#0f3b73',
+                  fontSize: '0.85rem',
+                  fontWeight: 700
+                }}
+              >
+                <LogIn size={15} />
+                <span>{tr('Sign In to Account', 'اکاؤنٹ میں لاگ ان کریں')}</span>
+              </div>
+            </div>
+          )}
 
           {/* Success Notification */}
           {successMsg && (
@@ -716,14 +597,14 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
           {/* ══════════════════════════════════════════════════════════════════ */}
           {authMode === 'LOGIN' && (
             <div>
-              {/* Auto-Fill Demo Chip */}
+              {/* Auto-Fill Credentials Chip */}
               <div
                 onClick={handleFillDemo}
                 style={{
                   background: '#f8fafc',
                   border: '1px dashed #cbd5e1',
                   borderRadius: '10px',
-                  padding: '6px 12px',
+                  padding: '7px 12px',
                   marginBottom: '16px',
                   cursor: 'pointer',
                   display: 'flex',
@@ -731,12 +612,12 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
                   justifyContent: 'space-between',
                   transition: 'all 0.15s ease'
                 }}
-                title="Click to auto-fill admin credentials"
+                title="Click to auto-fill credentials"
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Sparkles size={13} style={{ color: '#0f3b73' }} />
+                  <Sparkles size={14} style={{ color: '#0f3b73' }} />
                   <span style={{ fontSize: '0.74rem', color: '#475569', fontWeight: 600 }}>
-                    <strong style={{ color: '#0f3b73' }}>Login Credentials Auto-filled</strong>
+                    <strong style={{ color: '#0f3b73' }}>Login Credentials</strong>
                   </span>
                 </div>
                 <span
@@ -744,7 +625,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
                     fontSize: '0.68rem',
                     background: '#0f3b73',
                     color: '#ffffff',
-                    padding: '2px 7px',
+                    padding: '3px 8px',
                     borderRadius: '5px',
                     fontWeight: 700
                   }}
@@ -764,7 +645,7 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
                     <input
                       type="text"
                       required
-                      placeholder={tr('Enter username (e.g. admin)', 'یوزر نام درج کریں')}
+                      placeholder={tr('Enter username (e.g. Rana_Marble)', 'یوزر نام درج کریں')}
                       value={loginUsername}
                       onChange={(e) => setLoginUsername(e.target.value)}
                       style={{
@@ -890,192 +771,6 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
             </div>
           )}
 
-          {/* ══════════════════════════════════════════════════════════════════ */}
-          {/* MODE 2: CLEAN SIGN UP FORM (Username + Password + Confirm ONLY)   */}
-          {/* ══════════════════════════════════════════════════════════════════ */}
-          {authMode === 'SIGNUP' && (
-            <form onSubmit={handleSignupSubmit}>
-              <div style={{ marginBottom: '16px', textAlign: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: '#0f172a' }}>
-                  {tr('Create New User', 'نیا یوزر اکاؤنٹ بنائیں')}
-                </h3>
-                <p style={{ margin: '3px 0 0', fontSize: '0.78rem', color: '#64748b' }}>
-                  {tr('User will be added directly into system', 'نیا یوزر سیدھا سسٹم میں شامل ہو جائے گا')}
-                </p>
-              </div>
-
-              {/* Username */}
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                  {tr('Username', 'یوزر نام')}
-                </label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <User size={17} style={{ position: 'absolute', left: '12px', color: '#64748b', pointerEvents: 'none' }} />
-                  <input
-                    type="text"
-                    required
-                    placeholder={tr('Enter username (e.g. usman)', 'یوزر نام درج کریں')}
-                    value={signupUsername}
-                    onChange={(e) => setSignupUsername(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      paddingLeft: '38px',
-                      paddingRight: '12px',
-                      background: '#f8fafc',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '9px',
-                      fontSize: '0.90rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                    autoFocus
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div style={{ marginBottom: '14px' }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                  {tr('Password', 'پاس ورڈ')}
-                </label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Lock size={17} style={{ position: 'absolute', left: '12px', color: '#64748b', pointerEvents: 'none' }} />
-                  <input
-                    type={showSignupPassword ? 'text' : 'password'}
-                    required
-                    placeholder={tr('Enter strong password', 'مضبوط پاس ورڈ لکھیں')}
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      paddingLeft: '38px',
-                      paddingRight: '40px',
-                      background: '#f8fafc',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '9px',
-                      fontSize: '0.90rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignupPassword(!showSignupPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '10px',
-                      background: 'none',
-                      border: 'none',
-                      color: '#64748b',
-                      cursor: 'pointer',
-                      padding: '4px'
-                    }}
-                  >
-                    {showSignupPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-
-                {/* Real-time Business Security Meter */}
-                <PasswordSecurityMeter password={signupPassword} tr={tr} />
-              </div>
-
-              {/* Confirm Password */}
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                  {tr('Confirm Password', 'تصدیق پاس ورڈ')}
-                </label>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <Lock size={17} style={{ position: 'absolute', left: '12px', color: '#64748b', pointerEvents: 'none' }} />
-                  <input
-                    type={showSignupPassword ? 'text' : 'password'}
-                    required
-                    placeholder={tr('Re-enter password', 'دوبارہ پاس ورڈ لکھیں')}
-                    value={signupConfirmPassword}
-                    onChange={(e) => setSignupConfirmPassword(e.target.value)}
-                    style={{
-                      width: '100%',
-                      height: '44px',
-                      paddingLeft: '38px',
-                      paddingRight: '12px',
-                      background: '#f8fafc',
-                      border: signupConfirmPassword
-                        ? signupPassword === signupConfirmPassword
-                          ? '1px solid #10b981'
-                          : '1px solid #ef4444'
-                        : '1px solid #cbd5e1',
-                      borderRadius: '9px',
-                      fontSize: '0.90rem',
-                      color: '#0f172a',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
-                  />
-                </div>
-
-                {/* Live Password Match Feedback */}
-                {signupConfirmPassword && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px', fontSize: '0.72rem' }}>
-                    {signupPassword === signupConfirmPassword ? (
-                      <span style={{ color: '#059669', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <Check size={13} style={{ strokeWidth: 3 }} /> {tr('Passwords match', 'پاس ورڈز ایک جیسے ہیں')}
-                      </span>
-                    ) : (
-                      <span style={{ color: '#dc2626', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <X size={13} style={{ strokeWidth: 2.5 }} /> {tr('Passwords do not match', 'پاس ورڈز ایک جیسے نہیں ہیں')}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  height: '46px',
-                  background: '#059669',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 12px rgba(5, 150, 105, 0.3)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <UserPlus size={17} />
-                <span>{loading ? tr('Creating Account...', 'اکاؤنٹ بن رہا ہے...') : tr('Create Account (اکاؤنٹ بنائیں)', 'اکاؤنٹ بنائیں')}</span>
-              </button>
-
-              <div style={{ textAlign: 'center', marginTop: '14px' }}>
-                <button
-                  type="button"
-                  onClick={() => switchMode('LOGIN')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2563eb',
-                    fontSize: '0.82rem',
-                    fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                >
-                  {tr('Already have an account? Sign In', 'پہلے سے اکاؤنٹ موجود ہے؟ لاگ ان کریں')}
-                </button>
-              </div>
-            </form>
-          )}
 
           {/* ══════════════════════════════════════════════════════════════════ */}
           {/* MODE 3: CLEAN FORGOT PASSWORD FORM                                 */}
@@ -1273,13 +968,13 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
               alignItems: 'center',
               justifyContent: 'center',
               gap: '6px',
-              fontSize: '0.72rem',
+              fontSize: '0.75rem',
               color: '#64748b',
-              fontWeight: 500
+              fontWeight: 600
             }}
           >
             <ShieldCheck size={14} style={{ color: '#0f3b73' }} />
-            <span>Secure Offline Local Database &bull; Marble Factory POS</span>
+            <span>Factory Management System</span>
           </div>
         </div>
       </div>

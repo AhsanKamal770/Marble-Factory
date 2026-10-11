@@ -2089,6 +2089,10 @@ select.form-control option {
   -moz-appearance: none !important;
   padding-right: 38px !important;
   cursor: pointer;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 100%;
 }
 
 .app-input-wrapper:has(.app-input-chevron) .app-form-select,

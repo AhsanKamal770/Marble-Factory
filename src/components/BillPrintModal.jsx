@@ -16,6 +16,11 @@ export default function BillPrintModal({
   const [isPrinting, setIsPrinting] = useState(false);
   const printRef = useRef(null);
 
+  const companyUrdu = settings?.companyNameUrdu || 'رانا عبداللہ صدیق ماربل فیکٹری';
+  const companyEnglish = settings?.companyNameEnglish || settings?.companyName || 'Rana Abdullah Siddique Marble Factory';
+  const factoryPhone = settings?.phone || '0321-6606645 | 0300-6664187';
+  const factoryAddress = settings?.address || 'جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد';
+
   if (!isOpen || !invoice) return null;
 
   const handlePrint = async () => {
@@ -62,8 +67,9 @@ export default function BillPrintModal({
   const formatItemDimension = (item) => {
     const isTile = item.unit === 'Meter' || (item.category && item.category.toLowerCase().includes('tile') && !item.category.toLowerCase().includes('accessories'));
     const isRunning = item.unit === 'R.Ft.' || item.category === 'Border' || item.category === 'Kali Patti';
-    const isGola = item.unit === 'Box' || (item.name && item.name.toLowerCase().includes('gola'));
-    const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories';
+    const isGolaBox = item.unit === 'Box';
+    const isGola = (item.name && item.name.toLowerCase().includes('gola'));
+    const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories' || isGola;
 
     if (isTile) {
       const m = item.meters || item.billedQuantity || (item.pieces ? Math.round((item.pieces / 5) * 100) / 100 : item.totalSqFt);
@@ -72,15 +78,15 @@ export default function BillPrintModal({
     }
     if (isRunning) {
       const rft = item.runningFeet || item.billedQuantity || item.totalSqFt;
-      return `${rft} رننگ فٹ (${item.pieces || '-'} پیس)`;
+      return `${rft} رننگ فٹ (${item.thicknessSutar || 3}" چوڑائی)`;
     }
-    if (isGola) {
+    if (isGolaBox) {
       const b = item.boxes || item.billedQuantity || item.pieces || 1;
       return `${b} بکس / ڈبہ`;
     }
     if (isPiece) {
       const p = item.pieces || item.billedQuantity || 1;
-      return `${p} عدد (${item.selectedSizePreset || 'پیس'})`;
+      return `${p} عدد (${item.selectedSizePreset || (isGola ? 'گولا' : 'پیس')})`;
     }
     if (item.length && item.width) {
       const qtyPrefix = item.pieces && Number(item.pieces) > 1 ? `${item.pieces} × ` : (item.quantity && Number(item.quantity) > 1 ? `${item.quantity} × ` : '');
@@ -113,7 +119,7 @@ export default function BillPrintModal({
       `*تفصیل اشیاء (ITEMS):*`,
       ...(invoice.items || []).map(
         (it, idx) =>
-          `${idx + 1}. ${it.name} [${it.thicknessSutar ? it.thicknessSutar + ' سوتر' : '6 سوتر'}] - ${formatItemDimension(it)} @ Rs.${it.ratePerSqFt || it.rate || 0} = Rs.${Number(it.amount || 0).toLocaleString()}`
+          `${idx + 1}. ${it.name} [${it.unit === 'R.Ft.' ? (it.thicknessSutar || 3) + ' انچ' : (it.thicknessSutar ? it.thicknessSutar + ' سوتر' : (it.selectedSizePreset || 'معیاری'))}] - ${formatItemDimension(it)} @ Rs.${it.ratePerSqFt || it.rate || 0} = Rs.${Number(it.amount || 0).toLocaleString()}`
       ),
       `---------------------------------`,
       `*سب ٹوٹل:* Rs. ${Number(invoice.subtotal || invoice.grandTotal || 0).toLocaleString()}`,
@@ -145,8 +151,6 @@ export default function BillPrintModal({
   const customerAddress = invoice.customerAddress || invoice.address || customer?.address || (invoice.carrier ? `بذریعہ: ${invoice.carrier}` : 'فیکٹری گیٹ ڈلیوری');
   const customerCity = invoice.city || customer?.city || '';
 
-  const factoryPhone = settings?.phone || '0321-6606645 | 0300-6664187';
-  const factoryAddress = settings?.address || 'جھمرہ روڈ، بالمقابل پی ایس او پمپ، فیصل آباد';
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
