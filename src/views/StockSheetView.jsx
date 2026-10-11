@@ -290,12 +290,24 @@ export default function StockSheetView({ settings }) {
             const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
             if (!cleanItemSz.includes(cleanSz)) return false;
           }
-        } else if (itemTypeFilter.type === "Borders") {
-          const isBorder = cat.includes("border") || sub.includes("border") || sub.includes("patti") || name.includes("border") || name.includes("patti");
-          if (!isBorder) return false;
-          if (itemTypeFilter.sub) {
-            const cleanSub = itemTypeFilter.sub.toLowerCase();
-            if (!sub.includes(cleanSub) && !name.includes(cleanSub)) return false;
+        } else if (itemTypeFilter.type === "Borders" || itemTypeFilter.type === "Border") {
+          const isBorder = cat.includes("border") || sub.includes("border") || (cat.includes("patti") && !cat.includes("kali")) || (name.includes("border") && !name.includes("kali"));
+          const isKali = cat.includes("kali") || sub.includes("kali") || name.includes("kali") || name.includes("black border");
+          if (!isBorder || isKali) return false;
+
+          const targetSize = itemTypeFilter.size || itemTypeFilter.sub;
+          if (targetSize) {
+            if (targetSize.includes("3") && !sz.includes("3") && !name.includes("3") && !sub.includes("3")) return false;
+            if (targetSize.includes("6") && !sz.includes("6") && !name.includes("6") && !sub.includes("6")) return false;
+          }
+        } else if (itemTypeFilter.type === "Kali Patti") {
+          const isKali = cat.includes("kali") || sub.includes("kali") || name.includes("kali") || name.includes("black border") || sub.includes("black border");
+          if (!isKali) return false;
+
+          const targetSize = itemTypeFilter.size || itemTypeFilter.sub;
+          if (targetSize) {
+            if (targetSize.includes("2") && !sz.includes("2") && !name.includes("2") && !sub.includes("2")) return false;
+            if (targetSize.includes("3") && !sz.includes("3") && !name.includes("3") && !sub.includes("3")) return false;
           }
         } else if (itemTypeFilter.type === "Panels") {
           const isPanel = cat.includes("panel") || sub.includes("panel") || name.includes("panel") || name.includes("mashallah");
