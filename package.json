@@ -1,7 +1,7 @@
 {
   "name": "marble-factory-desktop",
   "private": true,
-  "version": "1.0.5",
+  "version": "1.0.6",
   "type": "module",
   "main": "electron/main.cjs",
   "author": "Ahsan Kamal",
@@ -16,7 +16,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "electron:dev": "vite build && electron electron/main.cjs",
-    "electron": "electron electron/main.cjs",
+    "electron": "vite build && electron electron/main.cjs",
     "dist": "vite build && electron-builder",
     "dist:publish": "vite build && electron-builder --publish always",
     "release": "vite build && electron-builder --publish always",
