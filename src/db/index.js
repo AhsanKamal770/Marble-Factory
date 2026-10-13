@@ -58,6 +58,7 @@ export async function getLiveCashInDrawer(customDate = null) {
     const settingsList = await db.settings.toArray();
     const openingCash = Number(settingsList[0]?.openingCashBalance || 0);
 
+    // 1. Cash Inflows: Cash Sales from Invoices (Walk-in or paid invoices on targetDate)
     const allInvoices = await db.invoices.toArray();
     let cashSalesToday = 0;
     allInvoices.forEach(inv => {
@@ -69,36 +70,135 @@ export async function getLiveCashInDrawer(customDate = null) {
       }
     });
 
+    // 2. Cash Inflows: Customer Khata Wasooli (Payments Received)
     const allPayments = await db.customer_payments.toArray();
     let wasooliToday = 0;
     allPayments.forEach(pay => {
-      const payDate = (pay.date || '').slice(0, 10);
-      if (payDate === targetDate) {
+      const payDate = (pay.date || pay.createdAt || '').slice(0, 10);
+      const isCash = !pay.paymentMethod || pay.paymentMethod.toLowerCase().includes('cash');
+      if (payDate === targetDate && isCash) {
         wasooliToday += Number(pay.amount || 0);
       }
     });
 
+    // 3. Cash Outflows: Daily Expenses
     const allExpenses = await db.daily_expenses.toArray();
     let expensesToday = 0;
     allExpenses.forEach(exp => {
       const expDate = (exp.date || exp.createdAt || '').slice(0, 10);
-      if (expDate === targetDate) {
+      const isCash = !exp.paymentMethod || exp.paymentMethod.toLowerCase().includes('cash');
+      if (expDate === targetDate && isCash) {
         expensesToday += Number(exp.amount || 0);
       }
     });
 
-    const liveCash = openingCash + cashSalesToday + wasooliToday - expensesToday;
+    // 4. Cash Outflows: Supplier Cash Payments
+    let supplierPaymentsToday = 0;
+    if (db.supplier_payments) {
+      const allSupplierPayments = await db.supplier_payments.toArray();
+      allSupplierPayments.forEach(sp => {
+        const spDate = (sp.date || sp.createdAt || '').slice(0, 10);
+        const isCash = !sp.paymentMethod || sp.paymentMethod.toLowerCase().includes('cash');
+        if (spDate === targetDate && isCash) {
+          supplierPaymentsToday += Number(sp.amount || 0);
+        }
+      });
+    }
+
+    // 5. Cash Outflows: Payroll Cash Salaries Disbursed
+    let salariesPaidToday = 0;
+    if (db.payrolls) {
+      const allPayrolls = await db.payrolls.toArray();
+      allPayrolls.forEach(pr => {
+        const prDate = (pr.date || pr.createdAt || '').slice(0, 10);
+        const isCash = !pr.paymentMode || pr.paymentMode.toLowerCase().includes('cash') || pr.paymentMethod?.toLowerCase().includes('cash');
+        if (prDate === targetDate && isCash) {
+          salariesPaidToday += Number(pr.amount || 0);
+        }
+      });
+    }
+
+    // 6. Cash Outflows: Employee Cash Advances
+    let advancesPaidToday = 0;
+    if (db.employee_advances) {
+      const allAdvances = await db.employee_advances.toArray();
+      allAdvances.forEach(adv => {
+        const advDate = (adv.date || adv.createdAt || '').slice(0, 10);
+        const isCash = !adv.paymentMode || adv.paymentMode.toLowerCase().includes('cash');
+        if (advDate === targetDate && isCash) {
+          advancesPaidToday += Number(adv.amount || 0);
+        }
+      });
+    }
+
+    // 7. Cash Outflows: Zakat & Welfare Cash Payments
+    let zakatPaidToday = 0;
+    if (db.zakat_welfare) {
+      const allZakatWelfare = await db.zakat_welfare.toArray();
+      allZakatWelfare.forEach(zw => {
+        const zwDate = (zw.date || zw.createdAt || '').slice(0, 10);
+        const isCash = !zw.paymentMode || zw.paymentMode.toLowerCase().includes('cash');
+        if (zwDate === targetDate && isCash) {
+          zakatPaidToday += Number(zw.amount || 0);
+        }
+      });
+    }
+    if (db.zakat_records) {
+      const allZakatRecords = await db.zakat_records.toArray();
+      allZakatRecords.forEach(zr => {
+        const zrDate = (zr.date || zr.createdAt || '').slice(0, 10);
+        const isCash = !zr.paymentMode || zr.paymentMode.toLowerCase().includes('cash');
+        if (zrDate === targetDate && isCash) {
+          zakatPaidToday += Number(zr.amount || 0);
+        }
+      });
+    }
+
+    // 8. Cash Outflows: Sales Returns Immediate Cash Refunds
+    let cashRefundsToday = 0;
+    if (db.returns) {
+      const allReturns = await db.returns.toArray();
+      allReturns.forEach(ret => {
+        const retDate = (ret.date || ret.createdAt || '').slice(0, 10);
+        const isCashRefund = ret.refundMethod === 'Cash' || (ret.refundMethod && ret.refundMethod.toLowerCase().includes('cash'));
+        if (retDate === targetDate && isCashRefund) {
+          cashRefundsToday += Number(ret.totalAmount || 0);
+        }
+      });
+    }
+
+    // Total Cash Outflows
+    const totalOutflowsToday = expensesToday + supplierPaymentsToday + salariesPaidToday + advancesPaidToday + zakatPaidToday + cashRefundsToday;
+    const liveCash = openingCash + cashSalesToday + wasooliToday - totalOutflowsToday;
 
     return {
       openingCash,
       cashSalesToday,
       wasooliToday,
       expensesToday,
+      supplierPaymentsToday,
+      salariesPaidToday,
+      advancesPaidToday,
+      zakatPaidToday,
+      cashRefundsToday,
+      totalOutflowsToday,
       liveCash
     };
   } catch (err) {
     console.error('Error computing live cash in drawer:', err);
-    return { openingCash: 0, cashSalesToday: 0, wasooliToday: 0, expensesToday: 0, liveCash: 0 };
+    return {
+      openingCash: 0,
+      cashSalesToday: 0,
+      wasooliToday: 0,
+      expensesToday: 0,
+      supplierPaymentsToday: 0,
+      salariesPaidToday: 0,
+      advancesPaidToday: 0,
+      zakatPaidToday: 0,
+      cashRefundsToday: 0,
+      totalOutflowsToday: 0,
+      liveCash: 0
+    };
   }
 }
 
@@ -160,9 +260,10 @@ export async function adjustItemStock(
 
     const realItemId = item.id;
     const prevSqFt = Number(item.stockSqFt) || 0;
-    const newSqFt = Math.max(0, Math.round((prevSqFt + deltaSqFt) * 100) / 100);
-    const newBoxes = Math.max(0, (Number(item.stockBoxes) || 0) + deltaBoxes);
-    const newPieces = Math.max(0, (Number(item.stockPieces) || 0) + deltaPieces);
+    // Accurate stock tracking: calculate exact delta to prevent phantom stock inflation on void/cancellation
+    const newSqFt = Math.round((prevSqFt + deltaSqFt) * 100) / 100;
+    const newBoxes = (Number(item.stockBoxes) || 0) + deltaBoxes;
+    const newPieces = (Number(item.stockPieces) || 0) + deltaPieces;
 
     await db.items.update(realItemId, {
       stockSqFt: newSqFt,
@@ -189,12 +290,24 @@ export async function adjustItemStock(
   });
 }
 
-// Generate sequential document numbers (e.g. INV-2026-001, GP-2026-001)
+// Generate sequential document numbers with max sequence to prevent duplicates on deletion
 export async function generateNextDocNo(prefix, tableName, fieldName = 'invoiceNo') {
   try {
     const currentYear = new Date().getFullYear();
-    const count = await db[tableName].count();
-    const nextSeq = count + 1;
+    const items = await db[tableName].toArray();
+    let maxSeq = 0;
+    const regex = new RegExp(`^${prefix}-${currentYear}-(\\d+)`, 'i');
+    for (const item of items) {
+      const val = item[fieldName] || item.docNo || item.invoiceNo || item.purchaseNo || item.returnNo || item.gatePassNo || '';
+      const match = String(val).match(regex);
+      if (match && match[1]) {
+        const num = parseInt(match[1], 10);
+        if (!isNaN(num) && num > maxSeq) {
+          maxSeq = num;
+        }
+      }
+    }
+    const nextSeq = maxSeq + 1;
     return `${prefix}-${currentYear}-${String(nextSeq).padStart(3, '0')}`;
   } catch (err) {
     const random = Math.floor(100 + Math.random() * 900);

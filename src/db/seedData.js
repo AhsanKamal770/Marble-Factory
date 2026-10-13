@@ -76,23 +76,10 @@ export async function initializeDatabaseWithSeedData() {
     }
   }
 
-  // Initialize default users if missing
-  const ranaUser = await db.users.where('username').equalsIgnoreCase('rana_marble').first();
-  if (!ranaUser) {
-    await db.users.add({
-      username: "Rana_Marble",
-      password: "R@n@M@rble786",
-      passwordHash: "R@n@M@rble786",
-      fullName: "Rana Abdullah Siddique",
-      role: "Admin",
-      isActive: true,
-      createdAt: new Date().toISOString()
-    });
-  }
-
-  const usersCount = await db.users.count();
-  if (usersCount === 0) {
-    for (const u of defaultUsers) {
+  // Initialize default users if missing (ensuring both Rana_Marble and admin are created)
+  for (const u of defaultUsers) {
+    const existing = await db.users.where('username').equalsIgnoreCase(u.username).first();
+    if (!existing) {
       await db.users.add(u);
     }
   }

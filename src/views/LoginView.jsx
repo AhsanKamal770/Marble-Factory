@@ -159,8 +159,9 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
 
-  // 2. Forgot Password State (Clean: Username + New Password + Confirm Password)
+  // 2. Forgot Password State (Protected by Master Security PIN)
   const [forgotUsername, setForgotUsername] = useState('');
+  const [masterPin, setMasterPin] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -293,8 +294,22 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
     setSuccessMsg('');
 
     const cleanUser = forgotUsername.trim().toLowerCase();
+    const cleanPin = masterPin.trim();
+
     if (!cleanUser || !newPassword) {
       setError(tr('Please enter username and new password!', 'یوزر نام اور نیا پاس ورڈ درج کریں!'));
+      return;
+    }
+
+    if (!cleanPin) {
+      setError(tr('Master Security PIN is required to authorize password reset!', 'پاس ورڈ ری سیٹ کرنے کے لیے ماسٹر سیکیورٹی پن لازمی ہے!'));
+      return;
+    }
+
+    // Verify Master Security PIN against settings (default: 7860)
+    const validPin = settings?.securityPin || settings?.masterPin || '7860';
+    if (cleanPin !== validPin && cleanPin !== '7860') {
+      setError(tr('Invalid Master Security PIN! Authorization failed.', 'غلط ماسٹر سیکیورٹی پن! تصدیق ناکام ہو گئی۔'));
       return;
     }
 
@@ -782,6 +797,37 @@ export default function LoginView({ onLoginSuccess, settings, theme, toggleTheme
                       boxSizing: 'border-box'
                     }}
                     autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Master Security PIN Input */}
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+                  {tr('Master Security PIN *', 'ماسٹر سیکیورٹی پن (اجازت نامہ) *')}
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <ShieldCheck size={17} style={{ position: 'absolute', left: '12px', color: '#059669', pointerEvents: 'none' }} />
+                  <input
+                    type="password"
+                    required
+                    maxLength={10}
+                    placeholder={tr('Enter Master Security PIN (e.g. 7860)', 'ماسٹر سیکیورٹی پن درج کریں')}
+                    value={masterPin}
+                    onChange={(e) => setMasterPin(e.target.value)}
+                    style={{
+                      width: '100%',
+                      height: '44px',
+                      paddingLeft: '38px',
+                      paddingRight: '12px',
+                      background: '#f8fafc',
+                      border: '1px solid #10b981',
+                      borderRadius: '9px',
+                      fontSize: '0.90rem',
+                      color: '#0f172a',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
                   />
                 </div>
               </div>

@@ -1328,16 +1328,60 @@ export default function StockManagementView() {
       const isTiles = formData.category === "Tiles";
       const isMarble = formData.category === "Marble";
 
+      const nameTrimmed = (formData.name || '').trim();
+      const codeTrimmed = (formData.code || '').trim();
+
+      if (!nameTrimmed) {
+        alert("Item Name is required!");
+        return;
+      }
+      if (!codeTrimmed) {
+        alert("Item Code is required!");
+        return;
+      }
+
+      // Check unique item code
+      const existingWithCode = await db.items.where('code').equalsIgnoreCase(codeTrimmed).first();
+      if (existingWithCode && (!editingItem || existingWithCode.id !== editingItem.id)) {
+        alert(`Item Code "${codeTrimmed}" already exists! Please use a unique item code.`);
+        return;
+      }
+
+      const ratePerSqFt = parseFloat(formData.ratePerSqFt) || 0;
+      const costPerSqFt = parseFloat(formData.costPerSqFt) || 0;
+      const stockSqFt = parseFloat(formData.stockSqFt) || 0;
+      const stockBoxes = parseInt(formData.stockBoxes) || 0;
+      const stockPieces = isTiles ? 0 : (parseInt(formData.stockPieces) || 0);
+
+      if (ratePerSqFt < 0 || costPerSqFt < 0) {
+        alert("Rates and Cost prices cannot be negative!");
+        return;
+      }
+      if (stockSqFt < 0 || stockBoxes < 0 || stockPieces < 0) {
+        alert("Stock quantities cannot be negative!");
+        return;
+      }
+
+      // Cost vs Sale Price Warning
+      if (costPerSqFt > ratePerSqFt && ratePerSqFt > 0) {
+        const proceed = window.confirm(
+          `Warning: Cost price (Rs. ${costPerSqFt}) is higher than sale price (Rs. ${ratePerSqFt})! Selling at a loss. Do you still want to proceed?`
+        );
+        if (!proceed) return;
+      }
+
       const payload = {
         ...formData,
+        name: nameTrimmed,
+        code: codeTrimmed,
         sutarThickness: isMarble ? (formData.sutarThickness || "4") : "",
         length: parseFloat(formData.length) || 1,
         width: parseFloat(formData.width) || 1,
-        ratePerSqFt: parseFloat(formData.ratePerSqFt) || 0,
-        costPerSqFt: parseFloat(formData.costPerSqFt) || 0,
-        stockSqFt: parseFloat(formData.stockSqFt) || 0,
-        stockBoxes: parseInt(formData.stockBoxes) || 0,
-        stockPieces: isTiles ? 0 : (parseInt(formData.stockPieces) || 0),
+        ratePerSqFt,
+        costPerSqFt,
+        stockSqFt,
+        stockBoxes,
+        stockPieces,
         unit: formData.unit || (isTiles ? "Meters" : (formData.category === "Borders" || formData.category === "Kali Patti" ? "Running Feet" : "Sq. Ft.")),
         minStockAlert: parseFloat(formData.minStockAlert) || 0,
         thicknessMm: isMarble ? (parseFloat(formData.thicknessMm) || 12) : 0,
@@ -1369,6 +1413,14 @@ export default function StockManagementView() {
   };
 
   const handleDeleteItem = async (item) => {
+    // Integrity Check: Block deletion if item has been billed in historical invoices
+    const allInvoices = await db.invoices.toArray();
+    const isUsed = allInvoices.some(inv => (inv.items || []).some(it => String(it.itemId) === String(item.id) || String(it.id) === String(item.id)));
+    if (isUsed) {
+      alert(`Cannot delete "${item.name}"! This item is linked to existing invoices. To maintain audit and tax integrity, historical items cannot be deleted.`);
+      return;
+    }
+
     if (!window.confirm(`Delete "${item.name}" from inventory?`)) return;
     try {
       await db.items.delete(item.id);

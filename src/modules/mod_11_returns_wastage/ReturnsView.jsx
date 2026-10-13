@@ -42,6 +42,7 @@ import { db, adjustItemStock } from '../../db/index';
 import { useLanguage } from '../../context/LanguageContext';
 import GlobalPagination from '../../components/GlobalPagination';
 import UniversalReportPrintModal from '../../components/UniversalReportPrintModal';
+import { getItemDimensionAndSpec } from '../../views/StockSheetView';
 import {
   recordSalesReturn,
   recordPurchaseReturn,
@@ -350,13 +351,6 @@ export default function ReturnsView({ settings }) {
           reason
         });
       }
-
-      // Celebrate success!
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.8 }
-      });
 
       setIsModalOpen(false);
     } catch (err) {
@@ -1027,6 +1021,8 @@ export default function ReturnsView({ settings }) {
                 <th style={{ width: '90px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>DATE</th>
                 <th style={{ padding: '12px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>PARTY / SOURCE</th>
                 <th style={{ padding: '12px 12px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>STONE ITEM</th>
+                <th style={{ width: '110px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>CATEGORY</th>
+                <th style={{ width: '130px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>DIMENSION</th>
                 <th style={{ width: '120px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textAlign: 'right' }}>FINANCIAL AMOUNT</th>
                 <th style={{ width: '150px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em' }}>CONDITION / METHOD</th>
                 <th style={{ width: '95px', padding: '12px 10px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b', letterSpacing: '0.05em', textAlign: 'center' }}>ACTIONS</th>
@@ -1035,7 +1031,7 @@ export default function ReturnsView({ settings }) {
             <tbody>
               {paginatedReturns.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '45px 20px', color: '#94a3b8' }}>
+                  <td colSpan={9} style={{ textAlign: 'center', padding: '45px 20px', color: '#94a3b8' }}>
                     <div style={{ fontSize: '0.92rem', fontWeight: 700 }}>No return or wastage records found.</div>
                     <div style={{ fontSize: '0.78rem', marginTop: '4px' }}>Click "+ Add Return" or "Log Wastage" to record transactions into the system.</div>
                   </td>
@@ -1045,6 +1041,11 @@ export default function ReturnsView({ settings }) {
                   const item = ret.items?.[0] || {};
                   const isWastage = ret.type === 'Factory Wastage';
                   const isGood = (item.condition || '').includes('Good');
+                  const dbItem = items.find((i) => i.id === item.itemId);
+                  const itemCategory = item.category || dbItem?.category || 'Marble';
+                  const dimSpec = dbItem
+                    ? getItemDimensionAndSpec(dbItem).main
+                    : (item.dimension || item.standardSize || (item.sutarThickness ? `${item.sutarThickness} Sutar` : 'Standard'));
 
                   return (
                     <tr
@@ -1088,8 +1089,35 @@ export default function ReturnsView({ settings }) {
                         <div style={{ fontWeight: 600, color: 'var(--text-primary, #0f172a)', fontSize: '0.83rem' }}>
                           {item.name || 'Marble Item'}
                         </div>
-                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
-                          {item.category || 'Standard'}
+                        {item.sqft > 0 && (
+                          <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '1px' }}>
+                            {item.sqft} Sq.Ft
+                          </div>
+                        )}
+                      </td>
+
+                      {/* CATEGORY */}
+                      <td style={{ padding: '11px 10px' }}>
+                        <span
+                          style={{
+                            background: 'var(--bg-primary, #f1f5f9)',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            fontSize: '0.74rem',
+                            fontWeight: 600,
+                            color: '#475569',
+                            display: 'inline-block',
+                            lineHeight: 1.2
+                          }}
+                        >
+                          {itemCategory}
+                        </span>
+                      </td>
+
+                      {/* DIMENSION */}
+                      <td style={{ padding: '11px 10px' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-primary, #0f172a)', fontWeight: 600 }}>
+                          {dimSpec}
                         </div>
                       </td>
 
@@ -2025,6 +2053,16 @@ export default function ReturnsView({ settings }) {
           { key: 'type', label: 'Type', labelUrdu: 'قسم' },
           { key: 'partyName', label: 'Party / Source', labelUrdu: 'پارٹی / مشین' },
           { key: 'itemName', label: 'Stone Item', labelUrdu: 'آئٹم', render: (r) => r.items?.[0]?.name || 'Marble' },
+          { key: 'category', label: 'Category', labelUrdu: 'کیٹیگری', render: (r) => {
+            const it = r.items?.[0] || {};
+            const dIt = items.find((i) => i.id === it.itemId);
+            return it.category || dIt?.category || 'Marble';
+          }},
+          { key: 'dimension', label: 'Dimension / Size', labelUrdu: 'پیمائش / سائز', render: (r) => {
+            const it = r.items?.[0] || {};
+            const dIt = items.find((i) => i.id === it.itemId);
+            return dIt ? getItemDimensionAndSpec(dIt).main : (it.dimension || it.standardSize || (it.sutarThickness ? `${it.sutarThickness} Sutar` : 'Standard'));
+          }},
           { key: 'sqft', label: 'Sq.Ft / Qty', labelUrdu: 'رقبہ / تعداد', align: 'right', render: (r) => `${r.items?.[0]?.sqft || 0} sqft` },
           { key: 'totalAmount', label: 'Amount (Rs.)', labelUrdu: 'رقم', align: 'right', bold: true, render: (r) => rs(r.totalAmount || 0) },
           { key: 'status', label: 'Status', labelUrdu: 'حیثیت', align: 'center', render: (r) => r.status || 'Cleared' }

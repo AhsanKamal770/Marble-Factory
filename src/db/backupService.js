@@ -54,8 +54,16 @@ export async function exportDatabaseToJson() {
 export async function importDatabaseFromJson(jsonString) {
   try {
     const data = JSON.parse(jsonString);
-    if (!data.settings) {
-      throw new Error("Invalid backup file structure: missing settings.");
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error("Invalid backup file: JSON root must be a valid object.");
+    }
+
+    // Structural integrity check: verify essential core stores before clearing database
+    const requiredStores = ['settings', 'items', 'customers', 'invoices'];
+    for (const storeName of requiredStores) {
+      if (!data[storeName] || !Array.isArray(data[storeName])) {
+        throw new Error(`Corrupted or incomplete backup file: missing "${storeName}" array.`);
+      }
     }
 
     const txStores = [

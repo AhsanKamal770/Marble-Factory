@@ -396,7 +396,10 @@ export default function DashboardView({ setActiveView, settings }) {
   // ---------------------------------------------------------------------------
   const handleSaveQuickExpense = async (e) => {
     e.preventDefault();
-    if (!expenseForm.amount || Number(expenseForm.amount) <= 0) return;
+    if (!expenseForm.amount || Number(expenseForm.amount) <= 0) {
+      alert(language === 'ur' ? 'برائے مہربانی درست خرچ رقم (0 سے زیادہ) درج کریں۔' : 'Please enter a valid expense amount greater than 0.');
+      return;
+    }
 
     try {
       await addExpense({
@@ -407,6 +410,33 @@ export default function DashboardView({ setActiveView, settings }) {
         remarks: expenseForm.remarks || '',
         createdAt: new Date().toISOString()
       });
+
+      // Sync with employee advance table if this expense is an employee advance
+      if (db.employee_advances && db.employees && expenseForm.paidTo && (expenseForm.category.includes('Advance') || expenseForm.category.includes('ایڈوانس'))) {
+        try {
+          const empList = await db.employees.toArray();
+          const cleanName = expenseForm.paidTo.trim().toLowerCase();
+          const matchedEmp = empList.find(emp => emp.name.toLowerCase().includes(cleanName));
+          if (matchedEmp) {
+            await db.employee_advances.add({
+              employeeId: matchedEmp.id,
+              employeeName: matchedEmp.name,
+              amount: Number(expenseForm.amount),
+              paymentMode: 'Cash',
+              notes: expenseForm.remarks || 'Advance issued via Quick Expense',
+              date: todayDate,
+              createdAt: new Date().toISOString()
+            });
+            const prevAdv = Number(matchedEmp.advanceBalance || matchedEmp.advanceDrawn || 0);
+            await db.employees.update(matchedEmp.id, {
+              advanceBalance: prevAdv + Number(expenseForm.amount),
+              advanceDrawn: prevAdv + Number(expenseForm.amount)
+            });
+          }
+        } catch (syncErr) {
+          console.warn('Could not auto-sync employee advance:', syncErr);
+        }
+      }
 
       setExpenseSuccessMsg(language === 'ur' ? 'خرچ کامیابی سے درج ہوگیا' : 'Expense recorded successfully');
       setExpenseForm({ category: 'Food / Mess (کھانا چائے)', amount: '', paidTo: '', remarks: '' });
@@ -424,12 +454,35 @@ export default function DashboardView({ setActiveView, settings }) {
     e.preventDefault();
     const payAmount = Number(wasooliForm.amount);
     const targetCustId = Number(wasooliForm.customerId);
-    if (!payAmount || payAmount <= 0 || !targetCustId) return;
+
+    if (!targetCustId) {
+      alert(language === 'ur' ? 'برائے مہربانی کسٹمر منتخب کریں!' : 'Please select a customer.');
+      return;
+    }
+    if (!payAmount || payAmount <= 0) {
+      alert(language === 'ur' ? 'برائے مہربانی درست وصولی رقم (0 سے زیادہ) درج کریں!' : 'Please enter a valid recovery amount greater than 0.');
+      return;
+    }
+
+    const customer = await db.customers.get(targetCustId);
+    if (!customer) {
+      alert(language === 'ur' ? 'کسٹمر ریکارڈ نہیں ملا!' : 'Customer record not found!');
+      return;
+    }
+
+    // Over-recovery Warning
+    const curBal = Number(customer.balanceDue || 0);
+    if (curBal > 0 && payAmount > curBal) {
+      const confirmOver = window.confirm(
+        language === 'ur'
+          ? `انتباہ: وصول شدہ رقم (Rs. ${payAmount.toLocaleString()}) کسٹمر کے کل بقایا ادھار (Rs. ${curBal.toLocaleString()}) سے زیادہ ہے! کیا آپ پھر بھی یہ وصولی درج کرنا چاہتے ہیں؟`
+          : `Warning: Recovery amount (Rs. ${payAmount.toLocaleString()}) exceeds the customer's total due balance (Rs. ${curBal.toLocaleString()})! Do you still want to proceed?`
+      );
+      if (!confirmOver) return;
+    }
 
     try {
       await db.transaction('rw', [db.customers, db.customer_payments, db.invoices], async () => {
-        const customer = await db.customers.get(targetCustId);
-        if (!customer) return;
 
         const paymentNo = `PAY-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
         await db.customer_payments.add({

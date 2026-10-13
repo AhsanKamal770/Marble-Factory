@@ -33,6 +33,9 @@ export async function createGatePass(data) {
 
   // Compute manifest totals
   const manifest = Array.isArray(data.manifest) ? data.manifest : [];
+  if (manifest.length === 0) {
+    throw new Error('Gate pass requires at least 1 item.');
+  }
   let totalPieces = 0;
   let totalSqFt = 0;
   let totalQuantity = 0;
@@ -40,7 +43,7 @@ export async function createGatePass(data) {
   const sanitizedManifest = manifest.map((item, idx) => {
     const rawQty = item.quantity !== undefined && item.quantity !== "" ? Number(item.quantity) : null;
     const computedQty = rawQty !== null ? rawQty : (Number(item.sqFt || item.totalSqFt) || Number(item.pieces) || 0);
-    const qty = Math.min(300, computedQty);
+    const qty = Math.max(0, computedQty);
     const pcs = Number(item.pieces) || (item.unit?.toLowerCase().includes("pc") ? qty : 0);
     const sqft = Number(item.sqFt || item.totalSqFt) || (!item.unit || item.unit?.toLowerCase().includes("sq") ? qty : 0);
 
@@ -158,7 +161,7 @@ export async function updateGatePass(id, updatedData) {
   const sanitizedManifest = manifest.map((item, idx) => {
     const rawQty = item.quantity !== undefined && item.quantity !== "" ? Number(item.quantity) : null;
     const computedQty = rawQty !== null ? rawQty : (Number(item.sqFt || item.totalSqFt) || Number(item.pieces) || 0);
-    const qty = Math.min(300, computedQty);
+    const qty = Math.max(0, computedQty);
     const pcs = Number(item.pieces) || (item.unit?.toLowerCase().includes("pc") ? qty : 0);
     const sqft = Number(item.sqFt || item.totalSqFt) || (!item.unit || item.unit?.toLowerCase().includes("sq") ? qty : 0);
 

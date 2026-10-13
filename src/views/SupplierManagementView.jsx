@@ -613,7 +613,21 @@ export default function SupplierManagementView({ settings }) {
     }
 
     const sup = suppliers.find((s) => s.id === parseInt(selectedSupplierId, 10));
-    if (!sup) return;
+    if (!sup) {
+      alert('برائے مہربانی سپلائر منتخب کریں! (Please select a supplier)');
+      return;
+    }
+
+    // Validation: Each item must have quantity > 0 and rate > 0
+    for (let i = 0; i < purchaseItems.length; i++) {
+      const it = purchaseItems[i];
+      const q = parseFloat(it.quantity !== undefined ? it.quantity : it.totalSqFt) || 0;
+      const r = parseFloat(it.ratePerSqFt) || 0;
+      if (q <= 0 || r <= 0) {
+        alert(`آئٹم #${i + 1} (${it.name || 'Row'}) میں درست مقدار اور ریٹ (0 سے زیادہ) درج کرنا لازمی ہے!`);
+        return;
+      }
+    }
 
     try {
       if (editingPurchase) {
@@ -878,6 +892,23 @@ export default function SupplierManagementView({ settings }) {
   };
 
   const handleDeleteSupplier = async (sup) => {
+    // 1. Block deletion if supplier has outstanding balance payable
+    if (Number(sup.balancePayable || 0) > 0) {
+      alert(`Cannot delete supplier "${sup.name}"! Outstanding balance of Rs. ${Number(sup.balancePayable).toLocaleString()} is payable.`);
+      return;
+    }
+
+    // 2. Block deletion if supplier has linked purchases or payments
+    const allPurchases = await db.supplier_purchases.toArray();
+    const hasPurchases = allPurchases.some(p => p.supplierId === sup.id);
+    const allPayments = await db.supplier_payments.toArray();
+    const hasPayments = allPayments.some(p => p.supplierId === sup.id);
+
+    if (hasPurchases || hasPayments) {
+      alert(`Cannot delete supplier "${sup.name}"! Linked purchase challans or payment vouchers exist in the system. To preserve historical audit data, deleting this supplier is blocked.`);
+      return;
+    }
+
     if (!window.confirm(`Delete supplier "${sup.name}"? This action cannot be undone.`)) return;
     try {
       await db.suppliers.delete(sup.id);

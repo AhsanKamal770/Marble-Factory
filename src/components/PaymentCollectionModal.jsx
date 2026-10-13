@@ -26,6 +26,11 @@ export default function PaymentCollectionModal({ isOpen, onClose, customer, onSu
       return;
     }
 
+    if (currentBalance > 0 && payAmount > currentBalance) {
+      setError(`Payment amount cannot exceed current balance of Rs. ${currentBalance.toLocaleString()}.`);
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
@@ -238,11 +243,19 @@ export default function PaymentCollectionModal({ isOpen, onClose, customer, onSu
                 type="number"
                 step="any"
                 min="1"
+                max={currentBalance > 0 ? currentBalance : undefined}
                 required
                 className="form-control font-mono"
                 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--accent-blue)' }}
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (currentBalance > 0 && parseFloat(val) > currentBalance) {
+                    setAmount(currentBalance.toString());
+                  } else {
+                    setAmount(val);
+                  }
+                }}
                 placeholder="Enter amount..."
                 autoFocus
               />

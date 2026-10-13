@@ -17,6 +17,7 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!payAmount || payAmount <= 0) return;
+    if (currentBalance > 0 && payAmount > currentBalance) return;
     onSave(formData);
   };
 
@@ -51,11 +52,11 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
             <X size={20} />
           </button>
         </div>
-        
+
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>
           <div className="app-modal-body" style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            
+
             {/* Customer Info Card */}
             <div style={{
               padding: "14px 16px",
@@ -100,9 +101,17 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
                   required
                   type="number"
                   min="1"
+                  max={currentBalance > 0 ? currentBalance : undefined}
                   autoFocus
                   value={formData.amount}
-                  onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (currentBalance > 0 && parseFloat(val) > currentBalance) {
+                      setFormData(p => ({ ...p, amount: currentBalance.toString() }));
+                    } else {
+                      setFormData(p => ({ ...p, amount: val }));
+                    }
+                  }}
                   className="app-form-input font-mono"
                   style={{
                     fontSize: "1.15rem",
@@ -178,7 +187,7 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
             </div>
 
           </div>
-          
+
           {/* Footer */}
           <div className="app-modal-footer">
             <button

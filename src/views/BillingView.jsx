@@ -1249,6 +1249,29 @@ export default function BillingView({ setActiveView, settings }) {
     }
 
     const ratePerUnit = Number(itemModalForm.ratePerSqFt || 0);
+
+    // Validation: Quantity > 0 and Rate > 0
+    if (billedQuantity <= 0) {
+      alert(isUrdu ? 'برائے مہربانی درست مقدار (0 سے زیادہ) درج کریں۔' : 'Please enter a valid quantity greater than 0.');
+      return;
+    }
+
+    if (ratePerUnit <= 0) {
+      alert(isUrdu ? 'برائے مہربانی درست ریٹ (0 سے زیادہ) درج کریں۔' : 'Please enter a valid rate greater than 0.');
+      return;
+    }
+
+    // Validation: Stock Out of Limit Warning
+    const available = Number(itemModalForm.availableStock || 0);
+    if (available > 0 && billedQuantity > available) {
+      const proceed = window.confirm(
+        isUrdu
+          ? `انتباہ: مطلوبہ مقدار (${billedQuantity} ${finalUnit}) یارڈ کے موجودہ اسٹاک (${available} ${finalUnit}) سے زیادہ ہے! کیا آپ پھر بھی یہ آئٹم شامل کرنا چاہتے ہیں؟`
+          : `Stock Warning: Requested quantity (${billedQuantity} ${finalUnit}) exceeds available yard stock (${available} ${finalUnit})! Do you still want to proceed?`
+      );
+      if (!proceed) return;
+    }
+
     const unitCost = Number(itemModalForm.costPerSqFt) || Math.round(ratePerUnit * 0.72);
     const saleAmount = Math.round(billedQuantity * ratePerUnit);
     const totalCost = Math.round(billedQuantity * unitCost);
@@ -1405,6 +1428,17 @@ export default function BillingView({ setActiveView, settings }) {
         }
       }
 
+      // Strict Validation: Prevent Walk-in Udhar (Khata is mandatory if balanceDue > 0)
+      if (!effectiveCustomer && balanceDue > 0) {
+        setErrorMessage(
+          isUrdu
+            ? 'ادھار بل کے لیے کسٹمر منتخب کرنا یا نام اور فون نمبر درج کرنا لازمی ہے! عام خریدار پر ادھار ممکن نہیں۔'
+            : 'Credit / Udhaar sales require selecting or registering a customer with their Name and Phone number!'
+        );
+        setIsSaving(false);
+        return;
+      }
+
       const customerName = effectiveCustomer ? effectiveCustomer.name : (isUrdu ? 'عام خریدار (نقد)' : 'Walk-in Cash Sale');
       const customerPhone = effectiveCustomer ? (effectiveCustomer.phone || '') : '';
       const customerId = effectiveCustomer ? effectiveCustomer.id : null;
@@ -1425,7 +1459,7 @@ export default function BillingView({ setActiveView, settings }) {
         polishCharges: charges.polish || 0,
         discountAmount: netDiscount,
         grandTotal,
-        paidAmount: numPaid,
+        paidAmount: Math.min(grandTotal, numPaid),
         balanceDue,
         paymentStatus,
         paymentMethod,

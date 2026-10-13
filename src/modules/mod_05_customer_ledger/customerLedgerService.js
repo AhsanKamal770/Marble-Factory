@@ -2,7 +2,7 @@ import { db } from '../../db/index.js';
 
 export async function getAllCustomers() {
   const list = await db.customers.toArray();
-  return list.sort((a, b) => Number(b.balanceDue || 0) - Number(a.balanceDue || 0));
+  return list.filter((c) => !c.isArchived).sort((a, b) => Number(b.balanceDue || 0) - Number(a.balanceDue || 0));
 }
 
 export async function getCustomerById(id) {
@@ -79,25 +79,25 @@ export async function deleteCustomer(id) {
       throw new Error(`Khata not cleared! Customer has an outstanding balance of Rs. ${balanceDue.toLocaleString()}. Please recover all dues before deleting.`);
     }
 
-    // 3. Khata is Cleared (balance <= 0) -> Cascade delete all invoices, payments, and customer record
+    // 3. Khata is Cleared (balance <= 0)
+    // Check if customer has linked invoices or payments
     const allInvoices = await db.invoices.toArray();
-    const invIdsToDelete = allInvoices
-      .filter((inv) => String(inv.customerId) === targetIdStr)
-      .map((inv) => inv.id);
-
-    if (invIdsToDelete.length > 0) {
-      await db.invoices.bulkDelete(invIdsToDelete);
-    }
-
+    const hasInvoices = allInvoices.some((inv) => String(inv.customerId) === targetIdStr);
     const allPayments = await db.customer_payments.toArray();
-    const payIdsToDelete = allPayments
-      .filter((pay) => String(pay.customerId) === targetIdStr)
-      .map((pay) => pay.id);
+    const hasPayments = allPayments.some((pay) => String(pay.customerId) === targetIdStr);
 
-    if (payIdsToDelete.length > 0) {
-      await db.customer_payments.bulkDelete(payIdsToDelete);
+    if (hasInvoices || hasPayments) {
+      // Data Loss Prevention: Do NOT delete invoices or payments!
+      // Archive customer record instead so past sales reports, P&L, and ledger audit trail remain intact.
+      await db.customers.update(customer.id, {
+        isArchived: true,
+        isActive: false,
+        updatedAt: new Date().toISOString()
+      });
+      return true;
     }
 
+    // If no linked transactions exist, safely delete the customer record
     await db.customers.delete(customer.id);
     return true;
   });

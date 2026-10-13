@@ -69,6 +69,8 @@ export async function recordSalesReturn({
   let totalAmount = 0;
   const processedItems = items.map((it) => {
     const sqft = Number(it.sqft) || 0;
+    const boxes = Number(it.boxes) || 0;
+    const pieces = Number(it.pieces) || 0;
     const rate = Number(it.rate) || 0;
     const amount = Number(it.amount) || sqft * rate;
     totalAmount += amount;
@@ -77,6 +79,8 @@ export async function recordSalesReturn({
       name: it.name || 'Marble Item',
       category: it.category || 'General Marble',
       sqft,
+      boxes,
+      pieces,
       rate,
       amount,
       condition: it.condition || 'Good - Return to Yard Stock'
@@ -107,14 +111,14 @@ export async function recordSalesReturn({
 
       const recordId = await db.returns.add(returnRecord);
 
-      // 2. Restock items if condition is Good
+      // 2. Restock items if condition is Good (supporting SqFt, Boxes, and Pieces)
       for (const it of processedItems) {
         if (it.condition.includes('Good')) {
           await adjustItemStock(
             it.itemId,
             it.sqft,
-            0,
-            0,
+            it.boxes || 0,
+            it.pieces || 0,
             'Sales Return',
             returnNo,
             `Returned from ${partyName} (${reason})`
@@ -188,6 +192,8 @@ export async function recordPurchaseReturn({
   let totalAmount = 0;
   const processedItems = items.map((it) => {
     const sqft = Number(it.sqft) || 0;
+    const boxes = Number(it.boxes) || 0;
+    const pieces = Number(it.pieces) || 0;
     const rate = Number(it.rate) || 0;
     const amount = Number(it.amount) || sqft * rate;
     totalAmount += amount;
@@ -196,6 +202,8 @@ export async function recordPurchaseReturn({
       name: it.name || 'Stone Item',
       category: it.category || 'Raw Slabs',
       sqft,
+      boxes,
+      pieces,
       rate,
       amount,
       condition: 'Returned to Supplier'
@@ -230,8 +238,8 @@ export async function recordPurchaseReturn({
         await adjustItemStock(
           it.itemId,
           -it.sqft,
-          0,
-          0,
+          -(it.boxes || 0),
+          -(it.pieces || 0),
           'Purchase Return',
           returnNo,
           `Returned to supplier ${partyName} (${reason})`
