@@ -88,6 +88,8 @@ export default function PrintableGateSlip({
   const factoryAddressEnglish = "Faisalabad Road near PSO Petrol Pump, Jhumra City";
   const companyNameEn = companyEnglish;
   const companyNameUr = companyUrdu;
+  const companyTagline = factorySettings?.tagline || "نام ہی کافی ہے";
+  const phone = factorySettings?.phone || factoryPhoneBottom;
 
   // Customer & Driver Details
   const customerName = gatePass.customerName || linkedInvoice?.customerName || "محمد علی خان";
@@ -226,6 +228,41 @@ export default function PrintableGateSlip({
       }}
       onClick={onClose}
     >
+      <style>{`
+        @media print {
+          @page {
+            size: ${printFormat === 'thermal' ? '80mm auto' : 'A4 portrait'} !important;
+            margin: ${printFormat === 'thermal' ? '0mm' : '6mm'} !important;
+          }
+          body * {
+            visibility: hidden !important;
+          }
+          .print-target, .print-target *,
+          #gatepass-print-area, #gatepass-print-area * {
+            visibility: visible !important;
+          }
+          .print-target,
+          #gatepass-print-area {
+            display: block !important;
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: ${printFormat === 'thermal' ? '78mm' : '100%'} !important;
+            max-width: ${printFormat === 'thermal' ? '78mm' : '210mm'} !important;
+            margin: 0 auto !important;
+            padding: ${printFormat === 'thermal' ? '3mm 2mm' : '4mm'} !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            box-sizing: border-box !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
+          }
+          .print-hide, .modal-header, .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
       <div
         className="modal-card"
         style={{
@@ -395,32 +432,7 @@ export default function PrintableGateSlip({
 
         {/* Printable Body Scroll Area */}
         <div style={{ background: "#f8fafc", padding: "16px", overflowY: "auto", flex: 1 }}>
-          <div ref={printRef} id="gatepass-print-area">
-            <style>{`
-              @media print {
-                body * { visibility: hidden !important; }
-                #gatepass-print-area, #gatepass-print-area * { visibility: visible !important; }
-                #gatepass-print-area {
-                  display: block !important;
-                  position: absolute;
-                  left: 0;
-                  top: 0;
-                  width: 100% !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  background: #ffffff !important;
-                  color: #000000 !important;
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
-                .print-hide { display: none !important; }
-                @page {
-                  size: ${printFormat === "a4" ? "A4 portrait" : "80mm auto"};
-                  margin: ${printFormat === "a4" ? "6mm" : "0"};
-                }
-              }
-            `}</style>
-
+          <div ref={printRef} className="print-target" id="gatepass-print-area">
             {/* ------------------------------------------------------------- */}
             {/* FORMAT 1: EXACT MATCH TO USER'S REFERENCE IMAGE (A4 SLIP)     */}
             {/* ------------------------------------------------------------- */}
