@@ -126,6 +126,11 @@
       - Line 1: `1- ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔ 2- مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔`
       - Line 2: `3- مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔ 4- ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔ 5- فیکٹری کے باہر ٹوٹ پھوٹ`
       - Line 3: `کی کوئی ذمہ داری نہیں۔ 6- بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔ 7- بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق`
-
-
+- **2026-10-14:**
+  - Generated **Release v1.0.7 Windows Installer & Suite**:
+    - Bumped application version to `1.0.7` in `package.json` and `package-lock.json`.
+    - Integrated gate pass slip design and thermal print improvements.
+    - Updated bill print modal, login and dashboard views, customer ledger, returns & wastage, and supplier views.
+    - Packaged standalone NSIS x64 Windows installer (`Marble Factory Suite Setup 1.0.7.exe`) in `release/` directory.
+    - Tagged `v1.0.7` and pushed commits & tags to GitHub repository to trigger automated GitHub Actions build and release workflow.
 
