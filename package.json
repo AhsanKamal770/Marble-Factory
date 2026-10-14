@@ -47,7 +47,8 @@
       "publish": {
         "provider": "github",
         "owner": "AhsanKamal770",
-        "repo": "Marble-Factory"
+        "repo": "Marble-Factory",
+        "releaseType": "release"
       }
     },
     "nsis": {
@@ -62,7 +63,8 @@
     "publish": {
       "provider": "github",
       "owner": "AhsanKamal770",
-      "repo": "Marble-Factory"
+      "repo": "Marble-Factory",
+      "releaseType": "release"
     }
   },
   "dependencies": {
