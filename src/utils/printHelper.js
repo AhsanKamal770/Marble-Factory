@@ -8,7 +8,7 @@ export const printElement = async (elementOrRef, options = {}) => {
     format = 'a4',
     isExportPDF = false,
     landscape = false,
-    dir = 'rtl'
+    dir = 'ltr'
   } = options;
 
   let htmlContent = '';

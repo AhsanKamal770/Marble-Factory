@@ -67,14 +67,22 @@ ipcMain.handle('export-pdf', async (event, htmlContent, defaultName, options = {
 
     const fullHtml = `
       <!DOCTYPE html>
-      <html dir="${options.dir || 'auto'}">
+      <html dir="${options.dir || 'ltr'}">
       <head>
         <meta charset="utf-8">
         <title>${defaultName || 'Document'}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
           @page {
             size: ${isThermal ? '80mm auto' : 'A4 portrait'};
             margin: ${isThermal ? '2mm' : '8mm'};
+          }
+          :root {
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-urdu: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', -apple-system, sans-serif;
           }
           * {
             box-sizing: border-box;
@@ -84,10 +92,13 @@ ipcMain.handle('export-pdf', async (event, htmlContent, defaultName, options = {
           body {
             margin: 0;
             padding: ${isThermal ? '4px' : '10px'};
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Jameel Noori Nastaleeq';
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq';
             color: #0f172a;
             background: #ffffff;
             width: 100%;
+          }
+          .font-mono {
+            font-family: 'JetBrains Mono', monospace !important;
           }
           table {
             border-collapse: collapse;
@@ -102,7 +113,10 @@ ipcMain.handle('export-pdf', async (event, htmlContent, defaultName, options = {
     `;
 
     await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(fullHtml)}`);
-    await new Promise((r) => setTimeout(r, 250));
+    try {
+      await printWindow.webContents.executeJavaScript('document.fonts.ready');
+    } catch (_) {}
+    await new Promise((r) => setTimeout(r, 200));
 
     const pdfBuffer = await printWindow.webContents.printToPDF({
       printBackground: true,
@@ -159,13 +173,21 @@ ipcMain.handle('print-document', async (event, htmlContent, options = {}) => {
 
     const fullHtml = `
       <!DOCTYPE html>
-      <html dir="${options.dir || 'auto'}">
+      <html dir="${options.dir || 'ltr'}">
       <head>
         <meta charset="utf-8">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
           @page {
             size: ${isThermal ? '80mm auto' : 'A4 portrait'};
             margin: ${isThermal ? '0mm' : '8mm'};
+          }
+          :root {
+            --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-urdu: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Urdu Typesetting', -apple-system, sans-serif;
           }
           * {
             box-sizing: border-box;
@@ -175,10 +197,13 @@ ipcMain.handle('print-document', async (event, htmlContent, options = {}) => {
           body {
             margin: 0;
             padding: ${isThermal ? '4px' : '10px'};
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Jameel Noori Nastaleeq';
+            font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq';
             color: #0f172a;
             background: #ffffff;
             width: ${isThermal ? '76mm' : '100%'};
+          }
+          .font-mono {
+            font-family: 'JetBrains Mono', monospace !important;
           }
           table {
             border-collapse: collapse;
@@ -193,7 +218,10 @@ ipcMain.handle('print-document', async (event, htmlContent, options = {}) => {
     `;
 
     await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(fullHtml)}`);
-    await new Promise((r) => setTimeout(r, 250));
+    try {
+      await printWindow.webContents.executeJavaScript('document.fonts.ready');
+    } catch (_) {}
+    await new Promise((r) => setTimeout(r, 200));
 
     return new Promise((resolve) => {
       printWindow.webContents.print(

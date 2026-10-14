@@ -752,21 +752,42 @@ export default function BillPrintModal({
                         printColorAdjust: 'exact'
                       }}
                     >
-                      <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#1d4ed8', marginBottom: '3px', lineHeight: 1.3 }}>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 900, color: '#1d4ed8', marginBottom: '5px', lineHeight: 1.3 }}>
                         شرائط و ضوابط:
                       </div>
-                      <div dir="rtl" style={{ display: 'flex', flexDirection: 'column', gap: '3px', color: '#1e3a8a', lineHeight: 1.45, fontSize: '0.64rem', fontWeight: 600 }}>
-                        <div>
-                          <strong style={{ color: '#1e40af' }}>1-</strong> ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔ <strong style={{ color: '#1e40af' }}>2-</strong> مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔
-                        </div>
-                        <div>
-                          <strong style={{ color: '#1e40af' }}>3-</strong> مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔ <strong style={{ color: '#1e40af' }}>4-</strong> ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔ <strong style={{ color: '#1e40af' }}>5-</strong> فیکٹری کے باہر ٹوٹ پھوٹ
-                        </div>
-                        <div>
-                          کی کوئی ذمہ داری نہیں۔ <strong style={{ color: '#1e40af' }}>6-</strong> بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔ <strong style={{ color: '#1e40af' }}>7-</strong> بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق
-                        </div>
+                      <div
+                        dir="rtl"
+                        style={{
+                          textAlign: 'justify',
+                          textJustify: 'inter-word',
+                          lineHeight: 1.75,
+                          fontSize: '0.66rem',
+                          color: '#1e3a8a',
+                          fontWeight: 600
+                        }}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '16px', padding: '0 5px', background: '#1e40af', color: '#ffffff', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 900, marginLeft: '3px', verticalAlign: 'middle', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>1</span>
+                        ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔
+                        &nbsp;&nbsp;
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '16px', padding: '0 5px', background: '#1e40af', color: '#ffffff', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 900, marginLeft: '3px', marginRight: '4px', verticalAlign: 'middle', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>2</span>
+                        مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔
+                        &nbsp;&nbsp;
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '16px', padding: '0 5px', background: '#1e40af', color: '#ffffff', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 900, marginLeft: '3px', marginRight: '4px', verticalAlign: 'middle', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>3</span>
+                        مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔
+                        &nbsp;&nbsp;
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '16px', padding: '0 5px', background: '#1e40af', color: '#ffffff', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 900, marginLeft: '3px', marginRight: '4px', verticalAlign: 'middle', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>4</span>
+                        ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔
+                        &nbsp;&nbsp;
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '16px', padding: '0 5px', background: '#1e40af', color: '#ffffff', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 900, marginLeft: '3px', marginRight: '4px', verticalAlign: 'middle', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>5</span>
+                        فیکٹری کے باہر ٹوٹ پھوٹ کی کوئی ذمہ داری نہیں۔
+                        &nbsp;&nbsp;
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '16px', padding: '0 5px', background: '#1e40af', color: '#ffffff', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 900, marginLeft: '3px', marginRight: '4px', verticalAlign: 'middle', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>6</span>
+                        بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔
+                        &nbsp;&nbsp;
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: '18px', height: '16px', padding: '0 5px', background: '#1e40af', color: '#ffffff', borderRadius: '3px', fontSize: '0.65rem', fontWeight: 900, marginLeft: '3px', marginRight: '4px', verticalAlign: 'middle', WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>7</span>
+                        بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق۔
                         {invoice.notes && (
-                          <div style={{ marginTop: '3px', borderTop: '1px dashed #bfdbfe', paddingTop: '2px', color: '#0369a1', fontSize: '0.66rem' }}>
+                          <div style={{ marginTop: '6px', borderTop: '1px dashed #bfdbfe', paddingTop: '3px', color: '#0369a1', fontSize: '0.68rem' }}>
                             <strong>خصوصی ہدایات:</strong> {invoice.notes}
                           </div>
                         )}

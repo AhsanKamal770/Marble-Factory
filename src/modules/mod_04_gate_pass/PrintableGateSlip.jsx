@@ -156,7 +156,7 @@ export default function PrintableGateSlip({
         title: `GatePass_${gatePass.gatePassNo || 'Slip'}`,
         format: printFormat,
         isExportPDF: false,
-        dir: 'rtl'
+        dir: 'ltr'
       });
     } finally {
       setIsPrinting(false);
@@ -170,7 +170,7 @@ export default function PrintableGateSlip({
         title: `GatePass_${gatePass.gatePassNo || 'Slip'}`,
         format: printFormat,
         isExportPDF: true,
-        dir: 'rtl'
+        dir: 'ltr'
       });
     } finally {
       setIsPrinting(false);
@@ -432,12 +432,13 @@ export default function PrintableGateSlip({
 
         {/* Printable Body Scroll Area */}
         <div style={{ background: "#f8fafc", padding: "16px", overflowY: "auto", flex: 1 }}>
-          <div ref={printRef} className="print-target" id="gatepass-print-area">
+          <div ref={printRef} className="print-target" id="gatepass-print-area" dir="ltr">
             {/* ------------------------------------------------------------- */}
             {/* FORMAT 1: EXACT MATCH TO USER'S REFERENCE IMAGE (A4 SLIP)     */}
             {/* ------------------------------------------------------------- */}
             {printFormat === "a4" && (
               <div
+                dir="ltr"
                 style={{
                   background: "#ffffff",
                   color: "#0f172a",
@@ -689,6 +690,7 @@ export default function PrintableGateSlip({
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                           <span
                             className="font-mono"
+                            dir="ltr"
                             style={{
                               fontSize: "0.88rem",
                               fontWeight: 900,
@@ -698,13 +700,13 @@ export default function PrintableGateSlip({
                           >
                             {gatePass.invoiceNo || gatePass.gatePassNo || "INV-2026-1252"}
                           </span>
-                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#2563eb" }}>:بل نمبر</span>
+                          <span dir="rtl" style={{ fontSize: "0.68rem", fontWeight: 800, color: "#2563eb" }}>بل نمبر:</span>
                         </div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #bce0fd", paddingTop: "2px" }}>
-                          <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#1e3a8a" }}>
+                          <span dir="rtl" style={{ fontSize: "0.74rem", fontWeight: 700, color: "#1e3a8a" }}>
                             {dispatchDateUrdu}
                           </span>
-                          <span style={{ fontSize: "0.68rem", fontWeight: 800, color: "#2563eb" }}>:تاریخ</span>
+                          <span dir="rtl" style={{ fontSize: "0.68rem", fontWeight: 800, color: "#2563eb" }}>تاریخ:</span>
                         </div>
                       </div>
                     </div>
@@ -750,26 +752,26 @@ export default function PrintableGateSlip({
                       {/* Details List */}
                       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
+                          <span dir="rtl" style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {customerName}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:نام</span>
+                          <span dir="rtl" style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>نام:</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.74rem", textAlign: "left", maxWidth: "75%", lineHeight: 1.2 }}>
+                          <span dir="rtl" style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.74rem", textAlign: "left", maxWidth: "75%", lineHeight: 1.2 }}>
                             {customerAddress}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:پتہ</span>
+                          <span dir="rtl" style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>پتہ:</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
+                          <span dir="ltr" className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {customerPhone}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:فون نمبر</span>
+                          <span dir="rtl" style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>فون نمبر:</span>
                         </div>
                       </div>
                     </div>
@@ -811,26 +813,26 @@ export default function PrintableGateSlip({
                       {/* Details List */}
                       <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
+                          <span dir="rtl" style={{ fontWeight: 700, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {driverName}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:ڈرائیور کا نام</span>
+                          <span dir="rtl" style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>ڈرائیور کا نام:</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
+                          <span dir="ltr" className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {driverPhone}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:فون نمبر</span>
+                          <span dir="rtl" style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>فون نمبر:</span>
                         </div>
                         <div style={{ height: "1px", background: "#d4e8fc" }} />
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
+                          <span dir="ltr" className="font-mono" style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.78rem", textAlign: "left" }}>
                             {vehicleNo}
                           </span>
-                          <span style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>:گاڑی نمبر</span>
+                          <span dir="rtl" style={{ fontWeight: 800, color: "#2563eb", fontSize: "0.68rem" }}>گاڑی نمبر:</span>
                         </div>
                       </div>
                     </div>
@@ -884,6 +886,7 @@ export default function PrintableGateSlip({
                             {/* 1. رقم / نوٹ */}
                             <td
                               className="font-mono"
+                              dir="ltr"
                               style={{
                                 padding: "8px 10px",
                                 textAlign: "center",
@@ -903,6 +906,7 @@ export default function PrintableGateSlip({
 
                             {/* 2. R.T.F */}
                             <td
+                              dir="ltr"
                               style={{
                                 padding: "8px 8px",
                                 textAlign: "center",
@@ -916,7 +920,6 @@ export default function PrintableGateSlip({
 
                             {/* 3. تفصیل */}
                             <td
-                              className="font-mono"
                               style={{
                                 padding: "8px 10px",
                                 textAlign: "center",
@@ -926,8 +929,8 @@ export default function PrintableGateSlip({
                               }}
                             >
                               {item.size && item.size !== "-"
-                                ? item.size
-                                : (item.unit ? `یونٹ: ${item.unit}` : "-")}
+                                ? <span dir="ltr">{item.size}</span>
+                                : (item.unit ? <span><span dir="rtl">یونٹ:</span> <span dir="ltr">{item.unit}</span></span> : "-")}
                             </td>
 
                             {/* 4. مقدار */}
@@ -941,13 +944,16 @@ export default function PrintableGateSlip({
                                 borderRight: "1px solid #bce0fd"
                               }}
                             >
-                              {item.quantity !== undefined && item.quantity !== ""
-                                ? `${item.quantity} ${item.unit || ""}`.trim()
-                                : (item.pieces || item.sqFt || "-")}
+                              <span dir="ltr">
+                                {item.quantity !== undefined && item.quantity !== ""
+                                  ? `${item.quantity} ${item.unit || ""}`.trim()
+                                  : (item.pieces || item.sqFt || "-")}
+                              </span>
                             </td>
 
                             {/* 5. کوالٹی */}
                             <td
+                              dir="rtl"
                               style={{
                                 padding: "8px 10px",
                                 textAlign: "center",
@@ -963,6 +969,7 @@ export default function PrintableGateSlip({
                             {/* 6. سیریل نمبر */}
                             <td
                               className="font-mono"
+                              dir="ltr"
                               style={{
                                 padding: "8px 8px",
                                 textAlign: "center",
@@ -988,6 +995,7 @@ export default function PrintableGateSlip({
                           {/* Grand Total Amount */}
                           <td
                             className="font-mono"
+                            dir="ltr"
                             style={{
                               padding: "10px 10px",
                               textAlign: "center",
@@ -1018,6 +1026,7 @@ export default function PrintableGateSlip({
                           {/* کل رقم (Span 2 Columns) */}
                           <td
                             colSpan={2}
+                            dir="rtl"
                             style={{
                               padding: "10px 14px",
                               textAlign: "center",
@@ -1033,7 +1042,7 @@ export default function PrintableGateSlip({
                     </table>
                   </div>
 
-                  {/* 5. NOTES & TERMS BOX ("نوٹ:") */}
+                  {/* 5. NOTES & TERMS BOX ("شرائط و ضوابط:") */}
                   <div
                     dir="rtl"
                     style={{
@@ -1048,7 +1057,7 @@ export default function PrintableGateSlip({
                     }}
                   >
                     {/* Header */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", marginBottom: "6px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: "8px", marginBottom: "8px" }}>
                       <div
                         style={{
                           width: "22px",
@@ -1068,24 +1077,46 @@ export default function PrintableGateSlip({
                       </div>
                     </div>
 
-                    {/* 3 Lines matching physical bill book */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.78rem", color: "#0f172a", fontWeight: 600, lineHeight: 1.6 }}>
-                      <div>
-                        <strong style={{ color: "#1e3a8a" }}>1-</strong> ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔ <strong style={{ color: "#1e3a8a" }}>2-</strong> مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔
-                      </div>
-                      <div>
-                        <strong style={{ color: "#1e3a8a" }}>3-</strong> مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔ <strong style={{ color: "#1e3a8a" }}>4-</strong> ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔ <strong style={{ color: "#1e3a8a" }}>5-</strong> فیکٹری کے باہر ٹوٹ پھوٹ
-                      </div>
-                      <div>
-                        کی کوئی ذمہ داری نہیں۔ <strong style={{ color: "#1e3a8a" }}>6-</strong> بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔ <strong style={{ color: "#1e3a8a" }}>7-</strong> بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق
-                      </div>
-                      {gatePass.notes && (
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: "6px", color: "#1d4ed8", marginTop: "4px", borderTop: "1px dashed #86efac", paddingTop: "3px", fontSize: "0.80rem" }}>
-                          <strong style={{ minWidth: "16px" }}>خصوصی نوٹ:</strong>
-                          <span>{gatePass.notes}</span>
-                        </div>
-                      )}
+                    {/* Continuous Paragraph with Prominent Number Badges */}
+                    <div
+                      dir="rtl"
+                      style={{
+                        textAlign: "justify",
+                        textJustify: "inter-word",
+                        lineHeight: 1.85,
+                        fontSize: "0.78rem",
+                        color: "#0f172a",
+                        fontWeight: 600
+                      }}
+                    >
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "20px", height: "18px", padding: "0 6px", background: "#1e3a8a", color: "#ffffff", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 900, marginLeft: "4px", verticalAlign: "middle", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>1</span>
+                      ماربل قدرتی چیز ہے اسکے شیڈ کلر رنگ اور قدرتی نقائص کی کوئی گارنٹی نہیں۔
+                      &nbsp;&nbsp;&nbsp;
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "20px", height: "18px", padding: "0 6px", background: "#1e3a8a", color: "#ffffff", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 900, marginLeft: "4px", marginRight: "6px", verticalAlign: "middle", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>2</span>
+                      مال وصول کرتے وقت چیک کر لیں بعد میں ادارہ ذمہ دار نہ ہو گا۔
+                      &nbsp;&nbsp;&nbsp;
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "20px", height: "18px", padding: "0 6px", background: "#1e3a8a", color: "#ffffff", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 900, marginLeft: "4px", marginRight: "6px", verticalAlign: "middle", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>3</span>
+                      مال کے استعمال کے بعد کسی قسم کا کوئی کلیم نہیں ہوگا۔
+                      &nbsp;&nbsp;&nbsp;
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "20px", height: "18px", padding: "0 6px", background: "#1e3a8a", color: "#ffffff", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 900, marginLeft: "4px", marginRight: "6px", verticalAlign: "middle", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>4</span>
+                      ٹوٹا ہوا مال سیمنٹ والا آؤٹ سائز کسی خاص کلر کا مال قابل واپسی نہ ہو گا۔
+                      &nbsp;&nbsp;&nbsp;
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "20px", height: "18px", padding: "0 6px", background: "#1e3a8a", color: "#ffffff", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 900, marginLeft: "4px", marginRight: "6px", verticalAlign: "middle", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>5</span>
+                      فیکٹری کے باہر ٹوٹ پھوٹ کی کوئی ذمہ داری نہیں۔
+                      &nbsp;&nbsp;&nbsp;
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "20px", height: "18px", padding: "0 6px", background: "#1e3a8a", color: "#ffffff", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 900, marginLeft: "4px", marginRight: "6px", verticalAlign: "middle", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>6</span>
+                      بوقت ضرورت مال میں فلنگ کی جا سکتی ہے۔
+                      &nbsp;&nbsp;&nbsp;
+                      <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", minWidth: "20px", height: "18px", padding: "0 6px", background: "#1e3a8a", color: "#ffffff", borderRadius: "4px", fontSize: "0.72rem", fontWeight: 900, marginLeft: "4px", marginRight: "6px", verticalAlign: "middle", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>7</span>
+                      بل ڈیلیوری چالان وصولی کے مطابق ہو گا نہ کے موقع پر ماربل کی پیمائش کے مطابق۔
                     </div>
+
+                    {gatePass.notes && (
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px", color: "#1d4ed8", marginTop: "8px", borderTop: "1px dashed #bce0fd", paddingTop: "5px", fontSize: "0.80rem" }}>
+                        <strong style={{ minWidth: "16px" }}>خصوصی نوٹ:</strong>
+                        <span>{gatePass.notes}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* 6. SIGNATURE LINES SECTION (Dashed Lines for Customer & Driver) */}
