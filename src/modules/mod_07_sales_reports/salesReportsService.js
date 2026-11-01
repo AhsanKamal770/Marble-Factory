@@ -3,7 +3,8 @@
 //
 // Full Dexie.js 4 backend service providing offline-first business intelligence,
 // sales aggregation, Cost of Goods Sold (COGS) tracking, Gross & Net Profit
-// (Munafa) calculation, Sutar thickness distribution, and customer Khata rankings.
+// (Munafa) calculation, Sutar thickness distribution, customer Khata rankings,
+// and comprehensive factory daily expenses tracking.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { db } from '../../db/index.js';
@@ -33,18 +34,23 @@ export function getHorizonDateRange(horizon = 'Monthly', custom = null) {
     prevEnd.setHours(23, 59, 59, 999);
     label = 'Today (آج)';
   } else if (horizon === 'Weekly' || horizon === 'This Week') {
-    const day = now.getDay(); // 0 is Sunday
-    start.setDate(now.getDate() - day);
+    // Current week starting from Monday
+    const day = now.getDay(); // 0 is Sunday, 1 is Monday
+    const diff = now.getDate() - (day === 0 ? 6 : day - 1);
+    start.setDate(diff);
     start.setHours(0, 0, 0, 0);
     // Previous period: last week
+    prevStart = new Date(start);
     prevStart.setDate(start.getDate() - 7);
-    prevStart.setHours(0, 0, 0, 0);
-    prevEnd.setDate(start.getDate() - 1);
-    prevEnd.setHours(23, 59, 59, 999);
+    prevEnd = new Date(start);
+    prevEnd.setMilliseconds(-1);
     label = 'This Week (اس ہفتے)';
   } else if (horizon === 'Monthly' || horizon === 'This Month') {
     start.setDate(1);
     start.setHours(0, 0, 0, 0);
+    // Cover full current calendar month
+    end.setFullYear(now.getFullYear(), now.getMonth() + 1, 0);
+    end.setHours(23, 59, 59, 999);
     // Previous period: last month
     prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
     prevEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
@@ -52,16 +58,35 @@ export function getHorizonDateRange(horizon = 'Monthly', custom = null) {
   } else if (horizon === 'Yearly' || horizon === 'This Year') {
     start.setMonth(0, 1);
     start.setHours(0, 0, 0, 0);
+    // Cover full current year
+    end.setFullYear(now.getFullYear(), 11, 31);
+    end.setHours(23, 59, 59, 999);
     // Previous period: last year
     prevStart = new Date(now.getFullYear() - 1, 0, 1, 0, 0, 0, 0);
     prevEnd = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
     label = 'This Year (اس سال)';
   } else {
     // Custom Range
-    const fromStr = custom?.from ? `${custom.from}T00:00:00` : null;
-    const toStr = custom?.to ? `${custom.to}T23:59:59.999` : null;
-    const customStart = fromStr ? new Date(fromStr) : new Date(0);
-    const customEnd = toStr ? new Date(toStr) : end;
+    const fromStr = custom?.from ? custom.from : null;
+    const toStr = custom?.to ? custom.to : null;
+    let customStart = new Date(0);
+    let customEnd = new Date(end);
+
+    if (fromStr && /^\d{4}-\d{2}-\d{2}$/.test(fromStr)) {
+      const [fy, fm, fd] = fromStr.split('-').map(Number);
+      customStart = new Date(fy, fm - 1, fd, 0, 0, 0, 0);
+    }
+    if (toStr && /^\d{4}-\d{2}-\d{2}$/.test(toStr)) {
+      const [ty, tm, td] = toStr.split('-').map(Number);
+      customEnd = new Date(ty, tm - 1, td, 23, 59, 59, 999);
+    }
+
+    // Auto-swap if start > end
+    if (customStart > customEnd) {
+      const temp = new Date(customStart);
+      customStart = new Date(customEnd);
+      customEnd = temp;
+    }
 
     const diffMs = customEnd.getTime() - customStart.getTime();
     prevEnd = new Date(customStart.getTime() - 1);
@@ -80,10 +105,18 @@ export function getHorizonDateRange(horizon = 'Monthly', custom = null) {
 }
 
 /**
- * Normalizes date object or string into a reliable Date instance
+ * Normalizes date object or string into a reliable Date instance.
+ * Handles "YYYY-MM-DD" local midnight at noon to prevent UTC timezone shift bugs.
  */
-function parseDate(val) {
+export function parseDate(val) {
   if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+  if (typeof val === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+      const [y, m, d] = val.split('-').map(Number);
+      return new Date(y, m - 1, d, 12, 0, 0, 0);
+    }
+  }
   const d = new Date(val);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -94,7 +127,7 @@ function parseDate(val) {
 export async function fetchInvoicesInRange(start, end) {
   const all = await db.invoices.toArray();
   return all.filter((inv) => {
-    const d = parseDate(inv.createdAt || inv.date);
+    const d = parseDate(inv.date || inv.createdAt);
     return d && d >= start && d <= end;
   });
 }
@@ -127,20 +160,22 @@ export async function fetchDailyExpensesInRange(start, end) {
 export async function fetchSalesReturnsInRange(start, end) {
   const all = await db.returns.toArray();
   return all.filter((ret) => {
-    if (ret.type !== 'Sales Return') return false;
+    if (ret.type !== 'Sales Return' && ret.type !== 'sales_return') return false;
     const d = parseDate(ret.date || ret.createdAt);
     return d && d >= start && d <= end;
   });
 }
 
 /**
- * Builds a fast Map of itemId -> item stone details for accurate COGS
+ * Builds fast Maps of itemId/name -> item stone details for accurate COGS
  */
 export async function fetchItemCostMap() {
   const items = await db.items.toArray();
-  const map = new Map();
+  const mapById = new Map();
+  const mapByName = new Map();
+
   items.forEach((item) => {
-    map.set(item.id, {
+    const itemInfo = {
       id: item.id,
       code: item.code,
       name: item.name,
@@ -149,10 +184,15 @@ export async function fetchItemCostMap() {
       ratePerSqFt: Number(item.ratePerSqFt) || 0,
       costPerSqFt: Number(item.costPerSqFt) || Math.round((Number(item.ratePerSqFt) || 0) * 0.72), // Default 72% cost heuristic if unspecified
       sutarThickness: item.sutarThickness || item.thicknessMm || 'Standard',
-      stockSqFt: Number(item.stockSqFt) || 0
-    });
+      stockSqFt: Number(item.stockSqFt) || 0,
+      unit: item.unit || 'Sq.Ft'
+    };
+
+    if (item.id) mapById.set(item.id, itemInfo);
+    if (item.name) mapByName.set(item.name.trim().toLowerCase(), itemInfo);
   });
-  return map;
+
+  return { mapById, mapByName };
 }
 
 /**
@@ -173,7 +213,7 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
     expenses,
     returns,
     customers,
-    itemCostMap
+    { mapById: itemCostMap, mapByName: itemCostNameMap }
   ] = await Promise.all([
     fetchInvoicesInRange(start, end),
     fetchInvoicesInRange(prevStart, prevEnd),
@@ -253,7 +293,7 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
         billsCount: 0,
         sqFt: 0,
         balanceDue: liveCustomer ? Number(liveCustomer.balanceDue) || 0 : due,
-        lastDate: inv.createdAt || inv.date
+        lastDate: inv.date || inv.createdAt
       };
     }
     customerAggregate[custKey].revenue += billTotal;
@@ -267,7 +307,8 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
       customerAggregate[custKey].sqFt += lineSqFt;
 
       // Item & COGS lookup
-      const catalogItem = line.itemId ? itemCostMap.get(line.itemId) : null;
+      const catalogItem = (line.itemId ? itemCostMap.get(line.itemId) : null) ||
+                          (line.name ? itemCostNameMap.get(line.name.trim().toLowerCase()) : null);
       const unitCost = catalogItem ? catalogItem.costPerSqFt : Math.round((Number(line.ratePerSqFt) || 150) * 0.72);
       const lineCost = lineSqFt > 0 ? (lineSqFt * unitCost) : Math.round(lineAmount * 0.72);
       totalCOGS += lineCost;
@@ -328,7 +369,7 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
   const salesReturnsAmount = returns.reduce((sum, r) => sum + (Number(r.totalAmount) || 0), 0);
   const netSales = Math.max(0, grossSales - salesReturnsAmount);
 
-  // Wasooli & Factory Expenses
+  // Wasooli & Factory Daily Expenses
   const wasooliCollections = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const factoryExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
@@ -373,7 +414,7 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
   // ── 4. Top Customers Ranked ──────────────────────────────────────────────
   const topCustomers = Object.values(customerAggregate)
     .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 15);
+    .slice(0, 20);
 
   // ── 5. Top Selling Products ──────────────────────────────────────────────
   const topProducts = Object.values(itemAggregate)
@@ -382,9 +423,69 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
       marginPct: p.revenue > 0 ? Math.round((p.profit / p.revenue) * 100) : 0
     }))
     .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 15);
+    .slice(0, 20);
 
-  // ── 6. Timeline Series for Charts ────────────────────────────────────────
+  // ── 6. Expenses Aggregation & Itemized List ──────────────────────────────
+  const expenseCategoryStats = {};
+  const expensesList = expenses.map((exp) => {
+    const amt = Number(exp.amount) || 0;
+    const cat = exp.category || 'Miscellaneous';
+    if (!expenseCategoryStats[cat]) {
+      expenseCategoryStats[cat] = {
+        category: cat,
+        totalAmount: 0,
+        count: 0
+      };
+    }
+    expenseCategoryStats[cat].totalAmount += amt;
+    expenseCategoryStats[cat].count += 1;
+
+    return {
+      id: exp.id,
+      date: exp.date || (exp.createdAt ? exp.createdAt.slice(0, 10) : ''),
+      category: cat,
+      paidTo: exp.paidTo || '-',
+      remarks: exp.remarks || '-',
+      paymentMethod: exp.paymentMethod || 'Cash',
+      amount: amt,
+      createdAt: exp.createdAt
+    };
+  }).sort((a, b) => {
+    const dateA = a.date || a.createdAt || '';
+    const dateB = b.date || b.createdAt || '';
+    return dateB.localeCompare(dateA);
+  });
+
+  const expensesByCategory = Object.values(expenseCategoryStats).map((c) => ({
+    ...c,
+    sharePct: factoryExpenses > 0 ? Math.round((c.totalAmount / factoryExpenses) * 100) : 0
+  })).sort((a, b) => b.totalAmount - a.totalAmount);
+
+  // ── 7. Invoices Itemized List ────────────────────────────────────────────
+  const invoicesList = invoices.map((inv) => {
+    const totalSqFt = (inv.items || []).reduce((s, it) => s + (Number(it.totalSqFt) || Number(it.sqft) || 0), 0);
+    return {
+      id: inv.id,
+      invoiceNo: inv.invoiceNo || (inv.id ? `INV-${inv.id}` : 'INV-Direct'),
+      date: inv.date || (inv.createdAt ? inv.createdAt.slice(0, 10) : ''),
+      customerName: inv.customerName || 'Walk-in Cash Sale',
+      customerPhone: inv.customerPhone || '-',
+      itemsCount: (inv.items || []).length,
+      totalSqFt: Math.round(totalSqFt * 10) / 10,
+      grandTotal: Number(inv.grandTotal) || 0,
+      paidAmount: Number(inv.paidAmount) || 0,
+      balanceDue: Number(inv.balanceDue) || 0,
+      paymentMethod: inv.paymentMethod || 'Cash',
+      paymentStatus: inv.paymentStatus || (Number(inv.balanceDue) > 0 ? 'Partial/Credit' : 'Paid'),
+      createdAt: inv.createdAt
+    };
+  }).sort((a, b) => {
+    const dateA = a.date || a.createdAt || '';
+    const dateB = b.date || b.createdAt || '';
+    return dateB.localeCompare(dateA);
+  });
+
+  // ── 8. Timeline Series for Charts ────────────────────────────────────────
   const timelineSeries = generateTimelineSeries(start, end, horizon, invoices, payments, expenses);
 
   return {
@@ -419,12 +520,21 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
       netProfit,
       netMarginPct,
       salesGrowthPct,
-      prevGrossSales
+      prevGrossSales,
+      // UniversalReportPrintModal & legacy component compatibility:
+      totalExpenses: factoryExpenses,
+      netOperatingProfit: netProfit,
+      cashCollected: totalCashInflow,
+      unpaidReceivables: creditSalesDirect,
+      invoiceCount: invoices.length
     },
     categoryBreakdown,
     sutarBreakdown,
     topCustomers,
     topProducts,
+    expensesByCategory,
+    expensesList,
+    invoicesList,
     paymentMethodStats,
     timelineSeries,
     rawInvoicesCount: invoices.length
@@ -435,7 +545,6 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
  * Builds time series intervals for chart rendering
  */
 function generateTimelineSeries(start, end, horizon, invoices, payments, expenses) {
-  const points = [];
   const map = new Map();
 
   // Create date buckets based on horizon
@@ -469,12 +578,11 @@ function generateTimelineSeries(start, end, horizon, invoices, payments, expense
 
   // Populate Invoices
   invoices.forEach((inv) => {
-    const dStr = (inv.createdAt || inv.date || '').slice(0, 10);
+    const dStr = (inv.date || inv.createdAt || '').slice(0, 10);
     const key = isYearly ? dStr.slice(0, 7) : dStr;
     const bucket = map.get(key);
     if (bucket) {
       bucket.sales += Number(inv.grandTotal) || 0;
-      // Estimate 28% gross margin contribution on spot
       bucket.profit += Math.round((Number(inv.grandTotal) || 0) * 0.28);
     }
   });
@@ -535,7 +643,7 @@ export function exportSalesReportToCSV(report) {
   // 2. Category Breakdown
   lines.push('"--- CATEGORY PERFORMANCE (اقسام ماربل و ٹائلز) ---"');
   lines.push('"Category","Revenue (PKR)","Sq. Ft.","COGS (PKR)","Profit (PKR)","Margin %","Share %"');
-  report.categoryBreakdown.forEach((c) => {
+  (report.categoryBreakdown || []).forEach((c) => {
     lines.push(`"${c.name}",${c.revenue},${c.sqFt},${c.cogs},${c.profit},"${c.marginPct}%","${c.sharePct}%"`);
   });
   lines.push('');
@@ -543,7 +651,7 @@ export function exportSalesReportToCSV(report) {
   // 3. Sutar Thickness Breakdown
   lines.push('"--- SUTAR THICKNESS PERFORMANCE (موٹائی سوتر) ---"');
   lines.push('"Thickness Category","Revenue (PKR)","Sq. Ft.","Margin %","Share %"');
-  report.sutarBreakdown.forEach((s) => {
+  (report.sutarBreakdown || []).forEach((s) => {
     lines.push(`"${s.name}",${s.revenue},${s.sqFt},"${s.marginPct}%","${s.sharePct}%"`);
   });
   lines.push('');
@@ -551,8 +659,37 @@ export function exportSalesReportToCSV(report) {
   // 4. Top Customers
   lines.push('"--- TOP REVENUE CUSTOMERS (نمبر ون گاہک کھاتہ) ---"');
   lines.push('"Customer Name","Phone","City","Total Billed (PKR)","Bills Count","Total Sq. Ft.","Balance Due (PKR)"');
-  report.topCustomers.forEach((cust) => {
+  (report.topCustomers || []).forEach((cust) => {
     lines.push(`"${cust.name}","${cust.phone}","${cust.city}",${cust.revenue},${cust.billsCount},${cust.sqFt},${cust.balanceDue}`);
+  });
+  lines.push('');
+
+  // 5. Top Products
+  lines.push('"--- TOP SELLING STONE ITEMS (نمبر ون پتھر و مصنوعات) ---"');
+  lines.push('"Code","Stone Name","Category","Revenue (PKR)","Sq. Ft.","COGS (PKR)","Profit (PKR)","Margin %"');
+  (report.topProducts || []).forEach((p) => {
+    lines.push(`"${p.code}","${p.name}","${p.category}",${p.revenue},${p.sqFt},${p.cogs},${p.profit},"${p.marginPct}%"`);
+  });
+  lines.push('');
+
+  // 6. Factory Daily Expenses
+  lines.push('"--- FACTORY DAILY EXPENSES (روزانہ فیکٹری اخراجات) ---"');
+  lines.push('"Expense Category","Total Amount (PKR)","Entries Count","Share %"');
+  (report.expensesByCategory || []).forEach((e) => {
+    lines.push(`"${e.category}",${e.totalAmount},${e.count},"${e.sharePct}%"`);
+  });
+  lines.push('');
+  lines.push('"Date","Category","Paid To / Worker","Remarks / Reason","Method","Amount (PKR)"');
+  (report.expensesList || []).forEach((e) => {
+    lines.push(`"${e.date}","${e.category}","${e.paidTo}","${(e.remarks || '').replace(/"/g, '""')}","${e.paymentMethod}",${e.amount}`);
+  });
+  lines.push('');
+
+  // 7. Sales Invoices
+  lines.push('"--- SALES INVOICES AUDIT (سیلز بلز تفصیل) ---"');
+  lines.push('"Invoice No","Date","Customer Name","Items","Sq. Ft.","Method","Total Bill (PKR)","Paid (PKR)","Balance Due (PKR)"');
+  (report.invoicesList || []).forEach((inv) => {
+    lines.push(`"${inv.invoiceNo}","${inv.date}","${inv.customerName}",${inv.itemsCount},${inv.totalSqFt},"${inv.paymentMethod}",${inv.grandTotal},${inv.paidAmount},${inv.balanceDue}`);
   });
 
   return '\uFEFF' + lines.join('\n'); // Prepend UTF-8 BOM for Microsoft Excel Urdu/English compatibility

@@ -17,7 +17,8 @@ import {
   UserCog,
   TrendingUp,
   Heart,
-  HandHeart
+  HandHeart,
+  Scale
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import Logo from './Logo';
@@ -69,6 +70,7 @@ export default function Sidebar({
       title: language === 'ur' ? 'رپورٹس و افرادی قوت' : 'REPORTS & WORKFORCE',
       items: [
         { id: 'sales-reports', label: language === 'ur' ? 'سیلز رپورٹس' : 'Sales Reports', icon: TrendingUp },
+        { id: 'balance-sheet', label: language === 'ur' ? 'فیکٹری بیلنس شیٹ' : 'Balance Sheet', icon: Scale },
         { id: 'employees', label: language === 'ur' ? 'ملازمین و تنخواہ' : 'Employees & Payroll', icon: Users },
         { id: 'zakat', label: language === 'ur' ? 'زکوٰۃ فنڈ' : 'Zakat Fund', icon: Heart }
       ]

@@ -145,7 +145,7 @@ export default function UniversalReportPrintModal({
         @media print {
           @page {
             size: ${printFormat === 'thermal' ? '80mm auto' : 'A4 portrait'} !important;
-            margin: ${printFormat === 'thermal' ? '0mm' : '8mm'} !important;
+            margin: ${printFormat === 'thermal' ? '0mm' : '5mm 6mm'} !important;
           }
           body * {
             visibility: hidden !important;
@@ -161,13 +161,25 @@ export default function UniversalReportPrintModal({
             width: ${printFormat === 'thermal' ? '78mm' : '100%'} !important;
             max-width: ${printFormat === 'thermal' ? '78mm' : '210mm'} !important;
             margin: 0 auto !important;
-            padding: ${printFormat === 'thermal' ? '3mm 2mm' : '4mm'} !important;
+            padding: ${printFormat === 'thermal' ? '2mm' : '2mm 4mm'} !important;
             background: #ffffff !important;
             color: #000000 !important;
             box-sizing: border-box !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
             color-adjust: exact !important;
+          }
+          table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+          }
+          table th, table td {
+            padding: 2.5px 5px !important;
+            font-size: 9.5px !important;
+            line-height: 1.15 !important;
+          }
+          tr {
+            page-break-inside: avoid !important;
           }
           .print-hide, .modal-header, .no-print {
             display: none !important;
@@ -473,24 +485,25 @@ export default function UniversalReportPrintModal({
                   </div>
                 )}
 
-                {/* 3. ITEM DATA TABLE (Pure Urdu Columns) */}
-                <div style={{ overflowX: 'auto', marginBottom: '16px' }}>
+                {/* 3. ITEM DATA TABLE (Pure Urdu Columns - Compact Print Format) */}
+                <div style={{ overflowX: 'auto', marginBottom: '10px' }}>
                   <table
                     style={{
                       width: '100%',
                       borderCollapse: 'collapse',
-                      fontSize: '0.80rem',
+                      fontSize: '0.74rem',
+                      lineHeight: '1.25',
                       color: '#0f172a'
                     }}
                   >
                     <thead>
                       <tr style={{ background: '#f1f5f9', borderTop: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>
-                        <th style={{ padding: '8px 10px', textAlign: 'center', width: '40px', fontWeight: 800, color: '#1e3a8a' }}>#</th>
+                        <th style={{ padding: '4px 6px', textAlign: 'center', width: '36px', fontWeight: 800, color: '#1e3a8a' }}>#</th>
                         {columns.map((col, idx) => (
                           <th
                             key={idx}
                             style={{
-                              padding: '8px 10px',
+                              padding: '4px 6px',
                               textAlign: col.align || 'right',
                               width: col.width || 'auto',
                               fontWeight: 800,
@@ -505,7 +518,7 @@ export default function UniversalReportPrintModal({
                     <tbody>
                       {data.length === 0 ? (
                         <tr>
-                          <td colSpan={columns.length + 1} style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                          <td colSpan={columns.length + 1} style={{ padding: '16px', textAlign: 'center', color: '#94a3b8' }}>
                             کوئی ریکارڈ موجود نہیں (No records found)
                           </td>
                         </tr>
@@ -515,10 +528,11 @@ export default function UniversalReportPrintModal({
                             key={rIdx}
                             style={{
                               background: rIdx % 2 === 0 ? '#ffffff' : '#f8fafc',
-                              borderBottom: '1px solid #e2e8f0'
+                              borderBottom: '1px solid #e2e8f0',
+                              pageBreakInside: 'avoid'
                             }}
                           >
-                            <td style={{ padding: '8px 10px', textAlign: 'center', color: '#64748b', fontWeight: 700 }}>
+                            <td style={{ padding: '3.5px 6px', textAlign: 'center', color: '#64748b', fontWeight: 700 }}>
                               {rIdx + 1}
                             </td>
                             {columns.map((col, cIdx) => {
@@ -527,7 +541,7 @@ export default function UniversalReportPrintModal({
                                 <td
                                   key={cIdx}
                                   style={{
-                                    padding: '8px 10px',
+                                    padding: '3.5px 6px',
                                     textAlign: col.align || 'right',
                                     fontWeight: col.bold ? 800 : 500,
                                     color: col.color ? col.color(row) : 'inherit',

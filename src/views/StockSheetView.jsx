@@ -56,6 +56,8 @@ function getStockDisplay(item) {
     case "Running Feet":
       return { qty: Number(item.stockSqFt || 0), unit: "R.Ft.", sub: "Length: 1 ft" };
     case "Pieces":
+    case "Piece":
+    case "Pcs":
       return { qty: Number(item.stockPieces || item.stockSqFt || 0), unit: "Pcs", sub: item.stockBoxes > 0 ? `${item.stockBoxes} boxes` : null };
     case "Boxes":
       return { qty: Number(item.stockBoxes || 0), unit: "Boxes", sub: item.stockSqFt > 0 ? `${Number(item.stockSqFt).toLocaleString()} Sq.Ft` : null };
@@ -66,6 +68,33 @@ function getStockDisplay(item) {
 
 export function getItemDimensionAndSpec(item) {
   const cat = (item.category || "").toLowerCase();
+  const name = (item.name || "").toLowerCase();
+  const subCat = (item.subCategory || "").toLowerCase();
+
+  if (cat.includes("kakri") || subCat.includes("kakri") || name.includes("kakri")) {
+    return {
+      main: item.standardSize || "2 × 2",
+      sub: "Sq. Ft."
+    };
+  }
+
+  if (cat.includes("kalm") || subCat.includes("kalm") || name.includes("kalm")) {
+    return {
+      main: item.standardSize || "1 inch",
+      sub: "Sq. Ft."
+    };
+  }
+
+  if (cat.includes("other accessories") || subCat.includes("other accessories") ||
+      name.includes("sink") || name.includes("basin") || name.includes("bason") ||
+      name.includes("seat") || name.includes("combod") || name.includes("commode") ||
+      name.includes("سنک") || name.includes("بیسن") || name.includes("سیٹ") || name.includes("کموڈ")) {
+    return {
+      main: item.standardSize || "Piece",
+      sub: "Per Piece"
+    };
+  }
+
   const isMarble = cat.includes("marble") || (!cat.includes("tile") && !cat.includes("border") && !cat.includes("patti") && !cat.includes("flower") && !cat.includes("panel") && !cat.includes("access"));
 
   if (isMarble) {
@@ -315,6 +344,69 @@ export default function StockSheetView({ settings }) {
             const cleanSub = itemTypeFilter.sub.toLowerCase();
             if (!sub.includes(cleanSub) && !name.includes(cleanSub)) return false;
           }
+        } else if (itemTypeFilter.type === "Tile Accessories") {
+          const isTileAcc = cat.includes("tile accessories") || sub.includes("tile accessories") ||
+            ((cat.includes("tile") || cat.includes("accessories")) && (name.includes("gola") || name.includes("spacer") || name.includes("filling") || name.includes("bond"))) ||
+            name.includes("gola") || name.includes("spacer") || name.includes("filling") || name.includes("bond") ||
+            sub.includes("gola") || sub.includes("spacer") || sub.includes("filling") || sub.includes("bond");
+          if (!isTileAcc) return false;
+
+          if (itemTypeFilter.sub) {
+            const cleanSub = itemTypeFilter.sub.toLowerCase();
+            if (!name.includes(cleanSub) && !sub.includes(cleanSub)) return false;
+          }
+        } else if (itemTypeFilter.type === "Marble Accessories") {
+          const isMarbleAcc = cat.includes("marble accessories") || sub.includes("marble accessories") ||
+            name.includes("kakri") || cat.includes("kakri") || sub.includes("kakri") ||
+            name.includes("kalm") || cat.includes("kalm") || sub.includes("kalm") ||
+            name.includes("kk-") || name.includes("kl-");
+          if (!isMarbleAcc) return false;
+
+          if (itemTypeFilter.sub) {
+            const cleanSub = itemTypeFilter.sub.toLowerCase();
+            if (!name.includes(cleanSub) && !sub.includes(cleanSub)) return false;
+          }
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
+          }
+        } else if (itemTypeFilter.type === "Other Accessories") {
+          const isOtherAcc = cat.includes("other accessories") || sub.includes("other accessories") ||
+            name.includes("combod") || name.includes("commode") || sub.includes("combod") || sub.includes("commode") ||
+            name.includes("seat") || sub.includes("seat") ||
+            name.includes("bason") || name.includes("basin") || sub.includes("bason") || sub.includes("basin") ||
+            name.includes("sink") || sub.includes("sink");
+          if (!isOtherAcc) return false;
+
+          if (itemTypeFilter.sub) {
+            const cleanSub = itemTypeFilter.sub.toLowerCase();
+            if (!name.includes(cleanSub) && !sub.includes(cleanSub)) return false;
+          }
+        } else if (itemTypeFilter.type === "Kakri") {
+          const isKakri = name.includes("kakri") || cat.includes("kakri") || sub.includes("kakri") || name.includes("kk-");
+          if (!isKakri) return false;
+
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
+          }
+        } else if (itemTypeFilter.type === "Kalm") {
+          const isKalm = name.includes("kalm") || cat.includes("kalm") || sub.includes("kalm") || name.includes("kl-");
+          if (!isKalm) return false;
+
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase();
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase();
+            if (!cleanItemSz.includes(cleanSz)) return false;
+          }
+        } else if (itemTypeFilter.type === "Accessories") {
+          const isAcc = cat.includes("accessories") || sub.includes("accessories") ||
+            name.includes("spacer") || name.includes("filling") || name.includes("gola") || name.includes("bond") ||
+            name.includes("sink") || name.includes("basin") || name.includes("bason") || name.includes("seat") || name.includes("combod") || name.includes("commode") ||
+            name.includes("kakri") || name.includes("kalm");
+          if (!isAcc) return false;
         }
       }
 
@@ -401,8 +493,8 @@ export default function StockSheetView({ settings }) {
       standardSize: cat === 'Marble' ? '12 × 12' : (cat === 'Tiles' ? '12 × 24' : (cat === 'Borders' ? '3 inch' : (cat === 'Kali Patti' ? '2 inch' : (cat === 'Panels' ? '12 × 24' : '12 × 12')))),
       length: cat === 'Tiles' ? 2 : (cat === 'Borders' || cat === 'Kali Patti' ? 1 : (cat === 'Panels' ? 2 : 1)),
       width: cat === 'Tiles' ? 1 : (cat === 'Borders' ? 0.25 : (cat === 'Kali Patti' ? 0.1667 : (cat === 'Panels' ? 1 : 1))),
-      unit: cat === 'Flowers' || cat === 'Panels' || cat === 'Accessories' ? 'Pieces' : (cat === 'Borders' || cat === 'Kali Patti' ? 'Running Feet' : (cat === 'Tiles' ? 'Meters' : 'Sq. Ft.')),
-      code: `${cat === 'Tiles' ? 'TL' : cat === 'Flowers' ? 'FL' : cat === 'Borders' ? 'BR' : cat === 'Kali Patti' ? 'KP' : cat === 'Panels' ? 'PN' : cat === 'Accessories' ? 'AC' : cat === 'Granite' ? 'GR' : 'MB'}-${Date.now().toString().slice(-4)}`,
+      unit: ['Flowers', 'Panels', 'Accessories', 'Tile Accessories', 'Other Accessories'].includes(cat) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(cat) ? 'Running Feet' : (cat === 'Tiles' ? 'Meters' : 'Sq. Ft.')),
+      code: `${cat === 'Tiles' ? 'TL' : cat === 'Flowers' ? 'FL' : cat === 'Borders' ? 'BR' : cat === 'Kali Patti' ? 'KP' : cat === 'Panels' ? 'PN' : cat === 'Tile Accessories' ? 'TA' : cat === 'Marble Accessories' ? 'MA' : cat === 'Other Accessories' ? 'OA' : cat === 'Kakri' ? 'KK' : cat === 'Kalm' ? 'KL' : cat === 'Accessories' ? 'AC' : cat === 'Granite' ? 'GR' : 'MB'}-${Date.now().toString().slice(-4)}`,
       lotNo: `LOT-${new Date().getFullYear()}`
     });
     setIsModalOpen(true);
@@ -459,10 +551,45 @@ export default function StockSheetView({ settings }) {
       defaultLen = 2;
       defaultWid = 1;
       defaultCodePrefix = "PN";
-    } else if (newCat === "Accessories") {
+    } else if (newCat === "Kakri") {
+      defaultUnit = "Sq. Ft.";
+      defaultSutar = "4";
+      defaultSize = "2 × 2";
+      defaultLen = 2/12;
+      defaultWid = 2/12;
+      defaultCodePrefix = "KK";
+    } else if (newCat === "Kalm") {
+      defaultUnit = "Sq. Ft.";
+      defaultSutar = "4";
+      defaultSize = "1 inch";
+      defaultLen = 1;
+      defaultWid = 1/12;
+      defaultCodePrefix = "KL";
+    } else if (newCat === "Tile Accessories") {
       defaultUnit = "Pieces";
       defaultSutar = "";
       defaultSize = "Gola";
+      defaultLen = 1;
+      defaultWid = 1;
+      defaultCodePrefix = "TA";
+    } else if (newCat === "Marble Accessories") {
+      defaultUnit = "Sq. Ft.";
+      defaultSutar = "4";
+      defaultSize = "Kakri 2 × 2";
+      defaultLen = 2/12;
+      defaultWid = 2/12;
+      defaultCodePrefix = "MA";
+    } else if (newCat === "Other Accessories") {
+      defaultUnit = "Pieces";
+      defaultSutar = "";
+      defaultSize = "Combod";
+      defaultLen = 1;
+      defaultWid = 1;
+      defaultCodePrefix = "OA";
+    } else if (newCat === "Accessories") {
+      defaultUnit = "Pieces";
+      defaultSutar = "";
+      defaultSize = "Combod";
       defaultLen = 1;
       defaultWid = 1;
       defaultCodePrefix = "AC";
@@ -614,9 +741,13 @@ export default function StockSheetView({ settings }) {
       className="stock-sheet-printable-area"
       style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '1440px', margin: '0 auto', paddingBottom: '30px' }}
     >
-      {/* ── Dynamic Print Styles ─────────────────────────────────────────── */}
+      {/* ── Dynamic Print Styles (Compact for Maximum Items per Page) ─────────────────────────────────────────── */}
       <style>{`
         @media print {
+          @page {
+            size: A4 portrait !important;
+            margin: 6mm 8mm !important;
+          }
           body * { visibility: hidden !important; }
           .stock-sheet-printable-area, .stock-sheet-printable-area * { visibility: visible !important; }
           .stock-sheet-printable-area {
@@ -624,7 +755,7 @@ export default function StockSheetView({ settings }) {
             left: 0 !important;
             top: 0 !important;
             width: 100% !important;
-            padding: 15px !important;
+            padding: 4px !important;
             margin: 0 !important;
             background: #ffffff !important;
             color: #000000 !important;
@@ -636,8 +767,9 @@ export default function StockSheetView({ settings }) {
             box-shadow: none !important;
           }
           table { border: 1px solid #cbd5e1 !important; width: 100% !important; border-collapse: collapse !important; }
-          th, td { border-bottom: 1px solid #e2e8f0 !important; padding: 6px 8px !important; }
-          .print-header-banner { display: block !important; margin-bottom: 14px !important; border-bottom: 2px solid #0f172a !important; padding-bottom: 8px !important; }
+          th, td { border-bottom: 1px solid #e2e8f0 !important; padding: 2.5px 5px !important; font-size: 9.5px !important; line-height: 1.15 !important; }
+          tr { page-break-inside: avoid !important; }
+          .print-header-banner { display: block !important; margin-bottom: 8px !important; border-bottom: 2px solid #0f172a !important; padding-bottom: 4px !important; }
         }
         .print-header-banner { display: none; }
       `}</style>
@@ -1648,6 +1780,11 @@ export default function StockSheetView({ settings }) {
                       >
                         <option value="Marble">Marble</option>
                         <option value="Tiles">Tiles</option>
+                        <option value="Tile Accessories">Tile Accessories</option>
+                        <option value="Marble Accessories">Marble Accessories</option>
+                        <option value="Other Accessories">Other Accessories</option>
+                        <option value="Kakri">Kakri</option>
+                        <option value="Kalm">Kalm</option>
                         <option value="Flowers">Flowers</option>
                         <option value="Borders">Borders</option>
                         <option value="Kali Patti">Kali Patti</option>
@@ -1883,41 +2020,80 @@ export default function StockSheetView({ settings }) {
                     </div>
                     <div style={{
                       display: "grid",
-                      gridTemplateColumns: (formData.category === "Flowers" || formData.category === "Granite") ? "repeat(3, 1fr)" : (formData.category === "Borders" || formData.category === "Kali Patti") ? "repeat(2, 1fr)" : formData.category === "Panels" ? "repeat(1, 1fr)" : "repeat(4, 1fr)",
+                      gridTemplateColumns: (formData.category === "Flowers" || formData.category === "Granite" || formData.category === "Kakri" || formData.category === "Kalm" || formData.category === "Marble Accessories") ? "repeat(3, 1fr)" : (formData.category === "Borders" || formData.category === "Kali Patti") ? "repeat(2, 1fr)" : formData.category === "Panels" ? "repeat(1, 1fr)" : "repeat(4, 1fr)",
                       gap: "8px"
                     }}>
                       {(formData.category === "Flowers"
                         ? [
-                          { label: "12 × 12", sub: "1 ft × 1 ft (1 Sq.Ft)", length: 1, width: 1 },
-                          { label: "24 × 24", sub: "2 ft × 2 ft (4 Sq.Ft)", length: 2, width: 2 },
-                          { label: "3 × 3", sub: "3 ft × 3 ft (9 Sq.Ft)", length: 3, width: 3 }
+                          { label: "12 × 12", sub: "1 ft × 1 ft (1 Sq.Ft)", length: 1, width: 1, unit: "Pieces" },
+                          { label: "24 × 24", sub: "2 ft × 2 ft (4 Sq.Ft)", length: 2, width: 2, unit: "Pieces" },
+                          { label: "3 × 3", sub: "3 ft × 3 ft (9 Sq.Ft)", length: 3, width: 3, unit: "Pieces" }
                         ]
-                        : formData.category === "Borders"
+                        : formData.category === "Tile Accessories"
                           ? [
-                            { label: "3 inch", sub: '3" Width × 1 ft Length', length: 1, width: 0.25 },
-                            { label: "6 inch", sub: '6" Width × 1 ft Length', length: 1, width: 0.5 }
+                            { label: "Gola", sub: "Corner Gola (8ft - Piece)", length: 1, width: 1, unit: "Pieces" },
+                            { label: "Spacer", sub: "Tile Cross Spacer (Piece)", length: 1, width: 1, unit: "Pieces" },
+                            { label: "Filling", sub: "Joint Filling Grout (20kg)", length: 1, width: 1, unit: "Pieces" },
+                            { label: "Bond", sub: "Tile Bond Adhesive (20kg)", length: 1, width: 1, unit: "Pieces" }
                           ]
-                          : formData.category === "Kali Patti"
+                        : formData.category === "Marble Accessories"
+                          ? [
+                            { label: "Kakri 2 × 2", sub: '2" × 2" (Sq. Ft.)', length: 2/12, width: 2/12, unit: "Sq. Ft." },
+                            { label: "Kakri 3 × 3", sub: '3" × 3" (Sq. Ft.)', length: 3/12, width: 3/12, unit: "Sq. Ft." },
+                            { label: "Kakri 6 × 6", sub: '6" × 6" (Sq. Ft.)', length: 6/12, width: 6/12, unit: "Sq. Ft." },
+                            { label: "Kalm 1 inch", sub: '1" Strip (Sq. Ft.)', length: 1, width: 1/12, unit: "Sq. Ft." },
+                            { label: "Kalm 2 inch", sub: '2" Strip (Sq. Ft.)', length: 1, width: 2/12, unit: "Sq. Ft." },
+                            { label: "Kalm 3 inch", sub: '3" Strip (Sq. Ft.)', length: 1, width: 3/12, unit: "Sq. Ft." }
+                          ]
+                        : formData.category === "Other Accessories"
+                          ? [
+                            { label: "Combod", sub: "One-Piece Commode (Piece)", length: 1, width: 1, unit: "Pieces" },
+                            { label: "Seat", sub: "Ceramic Toilet Seat (Piece)", length: 1, width: 1, unit: "Pieces" },
+                            { label: "Bason", sub: "Vanity Basin (Piece)", length: 1, width: 1, unit: "Pieces" },
+                            { label: "Sink", sub: "Kitchen Marble Sink (Piece)", length: 1, width: 1, unit: "Pieces" }
+                          ]
+                        : formData.category === "Kakri"
+                          ? [
+                            { label: "2 × 2", sub: '2" × 2" (Sq. Ft.)', length: 2/12, width: 2/12, unit: "Sq. Ft." },
+                            { label: "3 × 3", sub: '3" × 3" (Sq. Ft.)', length: 3/12, width: 3/12, unit: "Sq. Ft." },
+                            { label: "6 × 6", sub: '6" × 6" (Sq. Ft.)', length: 6/12, width: 6/12, unit: "Sq. Ft." }
+                          ]
+                          : formData.category === "Kalm"
                             ? [
-                              { label: "2 inch", sub: '2" Width × 1 ft Length', length: 1, width: 0.1667 },
-                              { label: "3 inch", sub: '3" Width × 1 ft Length', length: 1, width: 0.25 }
+                              { label: "1 inch", sub: '1" Strip (Sq. Ft.)', length: 1, width: 1/12, unit: "Sq. Ft." },
+                              { label: "2 inch", sub: '2" Strip (Sq. Ft.)', length: 1, width: 2/12, unit: "Sq. Ft." },
+                              { label: "3 inch", sub: '3" Strip (Sq. Ft.)', length: 1, width: 3/12, unit: "Sq. Ft." }
                             ]
-                            : formData.category === "Panels"
+                            : formData.category === "Borders"
                               ? [
-                                { label: "12 × 24", sub: "1ft × 2ft (Per Piece)", length: 2, width: 1 }
+                                { label: "3 inch", sub: '3" Width × 1 ft Length', length: 1, width: 0.25, unit: "Running Feet" },
+                                { label: "6 inch", sub: '6" Width × 1 ft Length', length: 1, width: 0.5, unit: "Running Feet" }
                               ]
-                              : formData.category === "Granite"
+                              : formData.category === "Kali Patti"
                                 ? [
-                                  { label: "Kitchen Slab", sub: "8ft × 2ft (16 Sq.Ft)", length: 8, width: 2 },
-                                  { label: "Flooring Slab", sub: "6ft × 2ft (12 Sq.Ft)", length: 6, width: 2 },
-                                  { label: "Stair Step", sub: "4ft × 1ft (4 Sq.Ft)", length: 4, width: 1 }
+                                  { label: "2 inch", sub: '2" Width × 1 ft Length', length: 1, width: 0.1667, unit: "Running Feet" },
+                                  { label: "3 inch", sub: '3" Width × 1 ft Length', length: 1, width: 0.25, unit: "Running Feet" }
                                 ]
-                                : [
-                                  { label: "Gola", sub: "Corner Gola (Per Piece)", length: 1, width: 1 },
-                                  { label: "Border Strip", sub: "Tile Patti Strip", length: 1, width: 0.25 },
-                                  { label: "Filling", sub: "Joint Filling / Bond", length: 1, width: 1 },
-                                  { label: "Spacer", sub: "3mm Cross Spacers", length: 1, width: 1 }
-                                ]
+                                : formData.category === "Panels"
+                                  ? [
+                                    { label: "12 × 24", sub: "1ft × 2ft (Per Piece)", length: 2, width: 1, unit: "Pieces" }
+                                  ]
+                                  : formData.category === "Granite"
+                                    ? [
+                                      { label: "Kitchen Slab", sub: "8ft × 2ft (16 Sq.Ft)", length: 8, width: 2, unit: "Sq. Ft." },
+                                      { label: "Flooring Slab", sub: "6ft × 2ft (12 Sq.Ft)", length: 6, width: 2, unit: "Sq. Ft." },
+                                      { label: "Stair Step", sub: "4ft × 1ft (4 Sq.Ft)", length: 4, width: 1, unit: "Sq. Ft." }
+                                    ]
+                                    : [
+                                      { label: "Combod", sub: "Commode (Piece)", length: 1, width: 1, unit: "Pieces" },
+                                      { label: "Seat", sub: "Toilet Seat (Piece)", length: 1, width: 1, unit: "Pieces" },
+                                      { label: "Bason", sub: "Vanity Basin (Piece)", length: 1, width: 1, unit: "Pieces" },
+                                      { label: "Sink", sub: "Kitchen Sink (Piece)", length: 1, width: 1, unit: "Pieces" },
+                                      { label: "Gola", sub: "Corner Gola (Piece)", length: 1, width: 1, unit: "Pieces" },
+                                      { label: "Bond", sub: "Tile Bond (Piece)", length: 1, width: 1, unit: "Pieces" },
+                                      { label: "Filling", sub: "Joint Filling (Piece)", length: 1, width: 1, unit: "Pieces" },
+                                      { label: "Spacer", sub: "Tile Spacer (Piece)", length: 1, width: 1, unit: "Pieces" }
+                                    ]
                       ).map(opt => {
                         const isSelected = formData.standardSize === opt.label;
                         return (
@@ -2423,10 +2599,17 @@ export default function StockSheetView({ settings }) {
               { key: 'name', label: 'Item Description', labelUrdu: 'نام و تفصیل', bold: true },
               { key: 'category', label: 'Category', labelUrdu: 'کیٹیگری', render: (r) => `${r.category || ''} ${r.subCategory ? '- ' + r.subCategory : ''}` },
               { key: 'dimension', label: 'Dimensions / Size', labelUrdu: 'پیمائش / سائز', render: (r) => getItemDimensionAndSpec(r).main },
-              { key: 'stockSqFt', label: 'Stock (Sq.Ft)', labelUrdu: 'اسٹاک', align: 'right', render: (r) => `${Number(r.stockSqFt || 0).toLocaleString()} sq.ft` },
+              { key: 'stockSqFt', label: 'Stock (Qty / Unit)', labelUrdu: 'اسٹاک', align: 'right', render: (r) => {
+                const d = getStockDisplay(r);
+                return `${Number(d.qty || 0).toLocaleString()} ${d.unit}`;
+              }},
               { key: 'costPerSqFt', label: 'Cost Rate (Rs.)', labelUrdu: 'لاگت ریٹ', align: 'right', render: (r) => `Rs.${Number(r.costPerSqFt || 0).toLocaleString()}` },
               { key: 'ratePerSqFt', label: 'Sale Rate (Rs.)', labelUrdu: 'سیل ریٹ', align: 'right', render: (r) => `Rs.${Number(r.ratePerSqFt || 0).toLocaleString()}` },
-              { key: 'valuation', label: 'Valuation (Rs.)', labelUrdu: 'کل مالیت', align: 'right', bold: true, render: (r) => `Rs.${Number((Number(r.stockSqFt || 0) * (Number(r.costPerSqFt) || Number(r.ratePerSqFt) || 0))).toLocaleString()}` },
+              { key: 'valuation', label: 'Valuation (Rs.)', labelUrdu: 'کل مالیت', align: 'right', bold: true, render: (r) => {
+                const d = getStockDisplay(r);
+                const rate = Number(r.costPerSqFt) || Number(r.ratePerSqFt) || 0;
+                return `Rs.${Number(d.qty * rate).toLocaleString()}`;
+              }},
               { key: 'status', label: 'Status', labelUrdu: 'حیثیت', align: 'center', render: (r) => isOutOfStock(r) ? 'ختم اسٹاک' : isLowStock(r) ? 'کم اسٹاک' : 'موجود اسٹاک' }
             ]
             : [

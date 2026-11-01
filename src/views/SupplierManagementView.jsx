@@ -42,13 +42,47 @@ export function getItemCategoryKey(item) {
   const sub = (item.subCategory || '').toLowerCase();
   const name = (item.name || '').toLowerCase();
 
-  if (cat.includes('tile') || sub.includes('tile') || name.includes('tile')) return 'Tiles';
+  // 1. Tile Accessories (Gola, Spacer, Filling, Bond)
+  if (
+    cat.includes('tile accessories') || sub.includes('tile accessories') ||
+    name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond') ||
+    sub.includes('gola') || sub.includes('spacer') || sub.includes('filling') || sub.includes('bond')
+  ) {
+    return 'Tile Accessories';
+  }
+
+  // 2. Marble Accessories (Kakri, Kalm)
+  if (
+    cat.includes('marble accessories') || sub.includes('marble accessories') ||
+    name.includes('kakri') || cat.includes('kakri') || sub.includes('kakri') ||
+    name.includes('kalm') || cat.includes('kalm') || sub.includes('kalm') ||
+    name.includes('kk-') || name.includes('kl-')
+  ) {
+    return 'Marble Accessories';
+  }
+
+  // 3. Other Accessories (Combod, Seat, Bason, Sink)
+  if (
+    cat.includes('other accessories') || sub.includes('other accessories') ||
+    name.includes('combod') || name.includes('commode') || sub.includes('combod') || sub.includes('commode') ||
+    name.includes('seat') || sub.includes('seat') ||
+    name.includes('bason') || name.includes('basin') || sub.includes('bason') || sub.includes('basin') ||
+    name.includes('sink') || sub.includes('sink')
+  ) {
+    return 'Other Accessories';
+  }
+
+  // Legacy Accessories fallback
+  if (cat.includes('accessories') || sub.includes('accessories')) {
+    return 'Other Accessories';
+  }
+
+  if (cat.includes('tile') || sub.includes('tile') || name.includes('tile') || cat.includes('porcelain')) return 'Tiles';
   if (cat.includes('kali') || sub.includes('kali') || name.includes('kali')) return 'Kali Patti';
   if (cat.includes('border') || sub.includes('border') || name.includes('border') || cat.includes('patti') || sub.includes('patti')) return 'Borders';
   if (cat.includes('flower') || sub.includes('flower') || name.includes('flower') || name.includes('medallion')) return 'Flowers';
   if (cat.includes('panel') || sub.includes('panel') || name.includes('panel') || name.includes('mashallah')) return 'Panels';
   if (cat.includes('granite') || sub.includes('granite') || name.includes('granite')) return 'Granite';
-  if (cat.includes('accessories') || sub.includes('accessories') || name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond')) return 'Accessories';
   return 'Marble';
 }
 
@@ -57,17 +91,18 @@ export function getCategoryUnitDetails(category) {
     case 'Tiles':
       return { unit: 'Meters', qtyLabel: 'Meters', rateLabel: 'Rs/Meter', placeholderQty: 'Meters', isTiles: true, isRunning: false, isPieces: false };
     case 'Borders':
-      return { unit: 'Running Feet', qtyLabel: 'R.Ft', rateLabel: 'Rs/R.Ft', placeholderQty: 'R.Ft', isTiles: false, isRunning: true, isPieces: false };
     case 'Kali Patti':
       return { unit: 'Running Feet', qtyLabel: 'R.Ft', rateLabel: 'Rs/R.Ft', placeholderQty: 'R.Ft', isTiles: false, isRunning: true, isPieces: false };
     case 'Flowers':
-      return { unit: 'Pieces', qtyLabel: 'Pieces', rateLabel: 'Rs/Piece', placeholderQty: 'Pieces', isTiles: false, isRunning: false, isPieces: true };
     case 'Panels':
-      return { unit: 'Pieces', qtyLabel: 'Pieces', rateLabel: 'Rs/Piece', placeholderQty: 'Pieces', isTiles: false, isRunning: false, isPieces: true };
+    case 'Tile Accessories':
+    case 'Other Accessories':
     case 'Accessories':
       return { unit: 'Pieces', qtyLabel: 'Pieces', rateLabel: 'Rs/Piece', placeholderQty: 'Pieces', isTiles: false, isRunning: false, isPieces: true };
+    case 'Marble Accessories':
+    case 'Kakri':
+    case 'Kalm':
     case 'Granite':
-      return { unit: 'Sq. Ft.', qtyLabel: 'Sq.Ft', rateLabel: 'Rs/Sq.Ft', placeholderQty: 'Sq.Ft', isTiles: false, isRunning: false, isPieces: false };
     case 'Marble':
     default:
       return { unit: 'Sq. Ft.', qtyLabel: 'Sq.Ft', rateLabel: 'Rs/Sq.Ft', placeholderQty: 'Sq.Ft', isTiles: false, isRunning: false, isPieces: false };
@@ -480,7 +515,14 @@ export default function SupplierManagementView({ settings }) {
       row.category = value;
       const details = getCategoryUnitDetails(value);
       row.unit = details.unit;
-      const catItems = items.filter(i => getItemCategoryKey(i) === value);
+      const catItems = items.filter(i => {
+        const k = getItemCategoryKey(i);
+        if (k === value) return true;
+        if (value === 'Accessories') return ['Tile Accessories', 'Marble Accessories', 'Other Accessories', 'Accessories'].includes(k);
+        if (value === 'Kakri') return (i.name || '').toLowerCase().includes('kakri') || (i.category || '').toLowerCase().includes('kakri');
+        if (value === 'Kalm') return (i.name || '').toLowerCase().includes('kalm') || (i.category || '').toLowerCase().includes('kalm');
+        return false;
+      });
       const chosenItem = catItems[0] || items[0];
       if (chosenItem) {
         row.itemId = chosenItem.id;
@@ -800,9 +842,10 @@ export default function SupplierManagementView({ settings }) {
           }
 
           // Update supplier balance
+          const currentPayable = Number(sup.balancePayable) || 0;
           const newTotalPurchased = (Number(sup.totalPurchased) || 0) + purchaseGrandTotal;
           const newTotalPaid = (Number(sup.totalPaid) || 0) + numPaid;
-          const newBalancePayable = (Number(sup.balancePayable) || 0) + purchaseBalanceDue;
+          const newBalancePayable = Math.max(0, currentPayable + purchaseGrandTotal - numPaid);
 
           await db.suppliers.update(sup.id, {
             totalPurchased: newTotalPurchased,
@@ -2343,7 +2386,20 @@ export default function SupplierManagementView({ settings }) {
                     {purchaseItems.map((it, idx) => {
                       const currentCategory = it.category || 'Marble';
                       const details = getCategoryUnitDetails(currentCategory);
-                      const catItems = items.filter((i) => getItemCategoryKey(i) === currentCategory);
+                      const catItems = items.filter((i) => {
+                        const k = getItemCategoryKey(i);
+                        if (k === currentCategory) return true;
+                        if (currentCategory === 'Accessories') {
+                          return ['Tile Accessories', 'Marble Accessories', 'Other Accessories', 'Accessories'].includes(k);
+                        }
+                        if (currentCategory === 'Kakri') {
+                          return (i.name || '').toLowerCase().includes('kakri') || (i.category || '').toLowerCase().includes('kakri');
+                        }
+                        if (currentCategory === 'Kalm') {
+                          return (i.name || '').toLowerCase().includes('kalm') || (i.category || '').toLowerCase().includes('kalm');
+                        }
+                        return false;
+                      });
                       const availableItems = catItems.length > 0 ? catItems : items;
 
                       return (
@@ -2371,12 +2427,17 @@ export default function SupplierManagementView({ settings }) {
                             >
                               <option value="Marble">Marble</option>
                               <option value="Tiles">Tiles</option>
+                              <option value="Tile Accessories">Tile Accessories</option>
+                              <option value="Marble Accessories">Marble Accessories</option>
+                              <option value="Other Accessories">Other Accessories</option>
+                              <option value="Kakri">Kakri</option>
+                              <option value="Kalm">Kalm</option>
                               <option value="Flowers">Flowers</option>
                               <option value="Borders">Borders</option>
                               <option value="Kali Patti">Kali Patti</option>
                               <option value="Panels">Panels</option>
-                              <option value="Accessories">Accessories</option>
                               <option value="Granite">Granite</option>
+                              <option value="Accessories">Accessories</option>
                             </select>
                             <ChevronDown size={12} className="app-input-chevron" />
                           </div>

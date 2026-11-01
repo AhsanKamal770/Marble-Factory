@@ -18,6 +18,13 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Sync expenseDate when selectedDate changes in parent
+  React.useEffect(() => {
+    if (selectedDate) {
+      setExpenseDate(selectedDate);
+    }
+  }, [selectedDate]);
+
   // Live Query: Fetch registered Zakat Holders
   const zakatHolders = useLiveQuery(() => db.zakat_beneficiaries ? db.zakat_beneficiaries.toArray() : [], []) || [];
   const isZakat = category.toLowerCase().includes("zakat") || category.includes("زکوٰۃ");
@@ -103,14 +110,16 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "8px", flex: 1, justifyContent: "space-between" }}>
         
-        {/* Expense Category */}
+        {/* Expense Category (Custom text input with datalist & quick category buttons) */}
         <div className="app-form-group">
           <label className="app-form-label">
             {tr("Expense Category", "خرچے کی کیٹیگری")} <span className="app-form-label-required">*</span>
           </label>
           <div className="app-input-wrapper">
             <Tag size={16} className="app-input-icon" />
-            <select
+            <input
+              type="text"
+              list="expense-category-suggestions"
               value={category}
               onChange={(e) => {
                 const newCat = e.target.value;
@@ -119,15 +128,57 @@ export default function ExpenseEntryForm({ onAddExpense, selectedDate }) {
                   setPaidTo("");
                 }
               }}
-              className="app-form-select"
-            >
+              placeholder={tr("Type category (e.g. Food, Petrol, Repair...)", "کیٹیگری خود درج کریں (مثلاً کھانا، پیٹرول، مرمت...)")}
+              required
+              className="app-form-input has-icon"
+              style={{ fontWeight: 600 }}
+            />
+            <datalist id="expense-category-suggestions">
               {EXPENSE_CATEGORIES.map(cat => (
-                <option key={cat.id} value={cat.id}>
-                  {language === "ur" ? cat.ur : cat.en}
-                </option>
+                <option key={cat.id} value={language === "ur" ? cat.ur : cat.en} />
               ))}
-            </select>
-            <ChevronDown size={14} className="app-input-chevron" />
+            </datalist>
+          </div>
+
+          {/* Quick Category Badges */}
+          <div style={{ display: "flex", gap: "6px", marginTop: "6px", flexWrap: "wrap" }}>
+            {[
+              { id: "Food / Mess", en: "Food / Mess", ur: "کھانا / میس" },
+              { id: "Fuel / Petrol", en: "Fuel / Petrol", ur: "پیٹرول / ڈیزل" },
+              { id: "Factory Repair", en: "Factory Repair", ur: "فیکٹری مرمت" },
+              { id: "Labour / Daily Wage", en: "Labour / Wage", ur: "مزدوری" },
+              { id: "Office Chai / Refreshment", en: "Tea / Chai", ur: "چائے خرچ" },
+              { id: "Zakat / صدقہ", en: "Zakat", ur: "زکوٰۃ / صدقہ" }
+            ].map(quickCat => {
+              const label = language === "ur" ? quickCat.ur : quickCat.en;
+              const isSelected = category === label || category === quickCat.en || category === quickCat.ur || category === quickCat.id;
+              return (
+                <button
+                  key={quickCat.id}
+                  type="button"
+                  onClick={() => {
+                    setCategory(label);
+                    if (label.toLowerCase().includes("zakat") || label.includes("زکوٰۃ")) {
+                      setPaidTo("");
+                    }
+                  }}
+                  style={{
+                    background: isSelected ? "#ef4444" : "#f1f5f9",
+                    color: isSelected ? "#ffffff" : "#475569",
+                    border: "1px solid",
+                    borderColor: isSelected ? "#ef4444" : "#e2e8f0",
+                    borderRadius: "6px",
+                    padding: "3px 8px",
+                    fontSize: "0.72rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

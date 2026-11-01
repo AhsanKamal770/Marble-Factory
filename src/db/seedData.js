@@ -83,6 +83,336 @@ export async function initializeDatabaseWithSeedData() {
       await db.users.add(u);
     }
   }
+
+  // Ensure new accessories items (Tile Accessories: Gola, Spacer, Filling, Bond; Marble Accessories: Kakri, Kalm; Other Accessories: Combod, Seat, Basin, Sink)
+  const newAccessoriesItems = [
+    {
+      code: "KK-0202",
+      name: "Ziarat White Kakri (2 × 2)",
+      category: "Marble Accessories",
+      subCategory: "Kakri 2x2",
+      sutarThickness: 4,
+      finish: "Polished",
+      grade: "Grade A",
+      thicknessMm: 12,
+      standardSize: "2 × 2 in",
+      unit: "Sq. Ft.",
+      ratePerSqFt: 180,
+      costPerSqFt: 120,
+      stockSqFt: 350,
+      stockBoxes: 0,
+      stockPieces: 0,
+      minStockAlert: 50,
+      lotNo: "LOT-KK-0202",
+      location: "Accessories Bay 1",
+      notes: "Kakri 2x2 decorative cut stone in Sq. Ft."
+    },
+    {
+      code: "KK-0303",
+      name: "Super White Kakri (3 × 3)",
+      category: "Marble Accessories",
+      subCategory: "Kakri 3x3",
+      sutarThickness: 4,
+      finish: "Polished",
+      grade: "Grade A",
+      thicknessMm: 12,
+      standardSize: "3 × 3 in",
+      unit: "Sq. Ft.",
+      ratePerSqFt: 190,
+      costPerSqFt: 130,
+      stockSqFt: 400,
+      stockBoxes: 0,
+      stockPieces: 0,
+      minStockAlert: 50,
+      lotNo: "LOT-KK-0303",
+      location: "Accessories Bay 1",
+      notes: "Kakri 3x3 decorative cut stone in Sq. Ft."
+    },
+    {
+      code: "KK-0606",
+      name: "Sunny Grey Kakri (6 × 6)",
+      category: "Marble Accessories",
+      subCategory: "Kakri 6x6",
+      sutarThickness: 4,
+      finish: "Polished",
+      grade: "Grade A",
+      thicknessMm: 12,
+      standardSize: "6 × 6 in",
+      unit: "Sq. Ft.",
+      ratePerSqFt: 210,
+      costPerSqFt: 145,
+      stockSqFt: 450,
+      stockBoxes: 0,
+      stockPieces: 0,
+      minStockAlert: 50,
+      lotNo: "LOT-KK-0606",
+      location: "Accessories Bay 1",
+      notes: "Kakri 6x6 decorative cut stone in Sq. Ft."
+    },
+    {
+      code: "KL-01IN",
+      name: "Marble Kalm (1 inch)",
+      category: "Marble Accessories",
+      subCategory: "Kalm 1 inch",
+      sutarThickness: 4,
+      finish: "Polished Edge",
+      grade: "Grade A",
+      thicknessMm: 12,
+      standardSize: "1 inch",
+      unit: "Sq. Ft.",
+      ratePerSqFt: 95,
+      costPerSqFt: 65,
+      stockSqFt: 500,
+      stockBoxes: 0,
+      stockPieces: 0,
+      minStockAlert: 60,
+      lotNo: "LOT-KL-01IN",
+      location: "Accessories Bay 2",
+      notes: "1 inch Kalm edging strip in Sq. Ft."
+    },
+    {
+      code: "KL-02IN",
+      name: "Marble Kalm (2 inch)",
+      category: "Marble Accessories",
+      subCategory: "Kalm 2 inch",
+      sutarThickness: 4,
+      finish: "Polished Edge",
+      grade: "Grade A",
+      thicknessMm: 12,
+      standardSize: "2 inch",
+      unit: "Sq. Ft.",
+      ratePerSqFt: 125,
+      costPerSqFt: 85,
+      stockSqFt: 600,
+      stockBoxes: 0,
+      stockPieces: 0,
+      minStockAlert: 60,
+      lotNo: "LOT-KL-02IN",
+      location: "Accessories Bay 2",
+      notes: "2 inch Kalm edging strip in Sq. Ft."
+    },
+    {
+      code: "KL-03IN",
+      name: "Marble Kalm (3 inch)",
+      category: "Marble Accessories",
+      subCategory: "Kalm 3 inch",
+      sutarThickness: 4,
+      finish: "Polished Edge",
+      grade: "Grade A",
+      thicknessMm: 12,
+      standardSize: "3 inch",
+      unit: "Sq. Ft.",
+      ratePerSqFt: 155,
+      costPerSqFt: 105,
+      stockSqFt: 450,
+      stockBoxes: 0,
+      stockPieces: 0,
+      minStockAlert: 60,
+      lotNo: "LOT-KL-03IN",
+      location: "Accessories Bay 2",
+      notes: "3 inch Kalm edging strip in Sq. Ft."
+    },
+    {
+      code: "ACC-GL-01",
+      name: "Chamfer Corner Gola Patti (8ft)",
+      category: "Tile Accessories",
+      subCategory: "Gola",
+      sutarThickness: 0,
+      finish: "Glazed / PVC",
+      grade: "Standard",
+      thicknessMm: 10,
+      standardSize: "8 Feet Length",
+      unit: "Pieces",
+      ratePerSqFt: 85,
+      costPerSqFt: 55,
+      stockSqFt: 450,
+      stockBoxes: 0,
+      stockPieces: 150,
+      minStockAlert: 80,
+      lotNo: "LOT-GL-01",
+      location: "Accessories Shelf 3",
+      notes: "Tile edge chamfer gola for corner protection (Per Piece)"
+    },
+    {
+      code: "ACC-SP-01",
+      name: "Tile Cross Spacers (3mm)",
+      category: "Tile Accessories",
+      subCategory: "Spacer",
+      sutarThickness: 0,
+      finish: "Plastic",
+      grade: "Standard",
+      thicknessMm: 3,
+      standardSize: "3mm Cross (Pack of 100)",
+      unit: "Pieces",
+      ratePerSqFt: 120,
+      costPerSqFt: 75,
+      stockSqFt: 500,
+      stockBoxes: 50,
+      stockPieces: 500,
+      minStockAlert: 100,
+      lotNo: "LOT-SP-01",
+      location: "Accessories Shelf 2",
+      notes: "Tile spacer pack for uniform joint lines (Per Pack/Piece)"
+    },
+    {
+      code: "ACC-FL-01",
+      name: "Tile Joint Filling Grout (20kg)",
+      category: "Tile Accessories",
+      subCategory: "Filling",
+      sutarThickness: 0,
+      finish: "Powder / Polymer",
+      grade: "Super Bond",
+      thicknessMm: 0,
+      standardSize: "20kg Bag",
+      unit: "Pieces",
+      ratePerSqFt: 480,
+      costPerSqFt: 340,
+      stockSqFt: 150,
+      stockBoxes: 0,
+      stockPieces: 150,
+      minStockAlert: 30,
+      lotNo: "LOT-FL-01",
+      location: "Accessories Warehouse",
+      notes: "Joint filling grout powder (Per Bag/Piece)"
+    },
+    {
+      code: "ACC-BD-01",
+      name: "Tile Bond Adhesive (20kg Bag)",
+      category: "Tile Accessories",
+      subCategory: "Bond",
+      sutarThickness: 0,
+      finish: "Adhesive Cementitious",
+      grade: "Premium Strong Grip",
+      thicknessMm: 0,
+      standardSize: "20kg Bag",
+      unit: "Pieces",
+      ratePerSqFt: 650,
+      costPerSqFt: 450,
+      stockSqFt: 200,
+      stockBoxes: 0,
+      stockPieces: 100,
+      minStockAlert: 25,
+      lotNo: "LOT-BD-01",
+      location: "Accessories Warehouse",
+      notes: "Heavy-duty tile bond adhesive for flooring & wall tiles"
+    },
+    {
+      code: "SN-SINK",
+      name: "Kitchen Marble Sink",
+      category: "Other Accessories",
+      subCategory: "Sink",
+      sutarThickness: 0,
+      finish: "Honed / Polished",
+      grade: "Premium",
+      thicknessMm: 25,
+      standardSize: "Standard Sink",
+      unit: "Piece",
+      ratePerSqFt: 4500,
+      costPerSqFt: 3100,
+      stockSqFt: 0,
+      stockBoxes: 0,
+      stockPieces: 15,
+      minStockAlert: 3,
+      lotNo: "LOT-SN-SINK",
+      location: "Showroom Sanitary Section",
+      notes: "Handcrafted marble kitchen sink"
+    },
+    {
+      code: "SN-BASIN",
+      name: "Marble Vanity Basin",
+      category: "Other Accessories",
+      subCategory: "Basin",
+      sutarThickness: 0,
+      finish: "High Gloss Polish",
+      grade: "Premium",
+      thicknessMm: 20,
+      standardSize: "Standard Basin",
+      unit: "Piece",
+      ratePerSqFt: 3800,
+      costPerSqFt: 2600,
+      stockSqFt: 0,
+      stockBoxes: 0,
+      stockPieces: 20,
+      minStockAlert: 4,
+      lotNo: "LOT-SN-BASIN",
+      location: "Showroom Sanitary Section",
+      notes: "Vanity tabletop marble basin"
+    },
+    {
+      code: "SN-SEAT",
+      name: "Ceramic Toilet Seat",
+      category: "Other Accessories",
+      subCategory: "Seat",
+      sutarThickness: 0,
+      finish: "Glazed Ceramic",
+      grade: "First Choice",
+      thicknessMm: 15,
+      standardSize: "Standard Seat",
+      unit: "Piece",
+      ratePerSqFt: 3200,
+      costPerSqFt: 2200,
+      stockSqFt: 0,
+      stockBoxes: 0,
+      stockPieces: 25,
+      minStockAlert: 5,
+      lotNo: "LOT-SN-SEAT",
+      location: "Warehouse Sanitary Bay",
+      notes: "Ceramic toilet seat"
+    },
+    {
+      code: "SN-COMMODE",
+      name: "One-Piece Luxury Commode",
+      category: "Other Accessories",
+      subCategory: "Combod",
+      sutarThickness: 0,
+      finish: "Nano Ceramic Glazed",
+      grade: "First Choice",
+      thicknessMm: 20,
+      standardSize: "Standard Commode",
+      unit: "Piece",
+      ratePerSqFt: 8500,
+      costPerSqFt: 6200,
+      stockSqFt: 0,
+      stockBoxes: 0,
+      stockPieces: 12,
+      minStockAlert: 3,
+      lotNo: "LOT-SN-COMMODE",
+      location: "Warehouse Sanitary Bay",
+      notes: "One-piece soft close sanitary commode"
+    }
+  ];
+
+  if (db.items) {
+    for (const item of newAccessoriesItems) {
+      const existing = await db.items.where('code').equals(item.code).first();
+      if (!existing) {
+        await db.items.add(item);
+      } else {
+        // Strip Urdu from existing item and update category if needed
+        let cleanName = existing.name ? existing.name.replace(/\s*\([\u0600-\u06FF\s]+\)/g, '').trim() : item.name;
+        if (cleanName !== existing.name || existing.category !== item.category) {
+          await db.items.update(existing.id, {
+            name: cleanName,
+            category: item.category,
+            unit: item.unit || existing.unit
+          });
+        }
+      }
+    }
+
+    // Auto-clean any remaining items in Dexie with Urdu names
+    try {
+      const allItems = await db.items.toArray();
+      for (const it of allItems) {
+        if (it.name && /[\u0600-\u06FF]/.test(it.name)) {
+          const sanitized = it.name.replace(/\s*\([\u0600-\u06FF\s]+\)/g, '').replace(/[\u0600-\u06FF]+/g, '').trim();
+          if (sanitized && sanitized !== it.name) {
+            await db.items.update(it.id, { name: sanitized });
+          }
+        }
+      }
+    } catch (_) {}
+  }
 }
 
 /**
@@ -110,6 +440,7 @@ export async function wipeAllData() {
   ];
   if (db.payrolls) stores.push(db.payrolls);
   if (db.zakat_welfare) stores.push(db.zakat_welfare);
+  if (db.day_closings) stores.push(db.day_closings);
 
   await db.transaction('rw', stores, async () => {
     await db.items.clear();
@@ -131,6 +462,7 @@ export async function wipeAllData() {
     await db.payroll_records.clear();
     if (db.payrolls) await db.payrolls.clear();
     if (db.zakat_welfare) await db.zakat_welfare.clear();
+    if (db.day_closings) await db.day_closings.clear();
   });
 }
 
@@ -580,7 +912,7 @@ export const sampleItems = [
   },
   {
     code: "ACC-FL-01",
-    name: "Tile Joint Filling / Bond Grout",
+    name: "Tile Joint Filling Grout (20kg)",
     category: "Tile Accessories",
     subCategory: "Filling",
     sutarThickness: 0,
@@ -597,7 +929,28 @@ export const sampleItems = [
     minStockAlert: 30,
     lotNo: "LOT-FL-01",
     location: "Accessories Warehouse",
-    notes: "Joint filling grout & tile adhesive bond"
+    notes: "Joint filling grout powder (Per Bag)"
+  },
+  {
+    code: "ACC-BD-01",
+    name: "Tile Bond Adhesive (20kg Bag)",
+    category: "Tile Accessories",
+    subCategory: "Bond",
+    sutarThickness: 0,
+    finish: "Adhesive Cementitious",
+    grade: "Premium Strong Grip",
+    thicknessMm: 0,
+    standardSize: "20kg Bag",
+    unit: "Pieces",
+    ratePerSqFt: 650,
+    costPerSqFt: 450,
+    stockSqFt: 200,
+    stockBoxes: 0,
+    stockPieces: 100,
+    minStockAlert: 25,
+    lotNo: "LOT-BD-01",
+    location: "Accessories Warehouse",
+    notes: "Heavy-duty tile bond adhesive for flooring & wall tiles"
   },
   {
     code: "ACC-SP-01",
@@ -618,7 +971,7 @@ export const sampleItems = [
     minStockAlert: 100,
     lotNo: "LOT-SP-01",
     location: "Accessories Shelf 2",
-    notes: "Tile spacer pack for uniform joint lines"
+    notes: "Tile spacer pack for uniform joint lines (Per Pack)"
   },
   {
     code: "ACC-GL-01",
@@ -630,7 +983,7 @@ export const sampleItems = [
     grade: "Standard",
     thicknessMm: 10,
     standardSize: "8 Feet Length",
-    unit: "Running Feet",
+    unit: "Pieces",
     ratePerSqFt: 85,
     costPerSqFt: 55,
     stockSqFt: 450,
@@ -639,7 +992,7 @@ export const sampleItems = [
     minStockAlert: 80,
     lotNo: "LOT-GL-01",
     location: "Accessories Shelf 3",
-    notes: "Tile edge chamfer gola for corner protection"
+    notes: "Tile edge chamfer gola for corner protection (Per Piece)"
   },
 
   // ── PANELS (INCLUDED IN TILES CATEGORY, HIGHER RATE) ──
@@ -684,6 +1037,222 @@ export const sampleItems = [
     lotNo: "LOT-AYT-PANEL",
     location: "Panel Showroom Display",
     notes: "Higher rate decorative Islamic panel"
+  },
+
+  // ── MARBLE ACCESSORIES: KAKRI (SQ. FT.) ──
+  {
+    code: "KK-0202",
+    name: "Ziarat White Kakri (2 × 2)",
+    category: "Marble Accessories",
+    subCategory: "Kakri 2x2",
+    sutarThickness: 4,
+    finish: "Polished",
+    grade: "Grade A",
+    thicknessMm: 12,
+    standardSize: "2 × 2 in",
+    unit: "Sq. Ft.",
+    ratePerSqFt: 180,
+    costPerSqFt: 120,
+    stockSqFt: 350,
+    stockBoxes: 0,
+    stockPieces: 0,
+    minStockAlert: 50,
+    lotNo: "LOT-KK-0202",
+    location: "Accessories Bay 1",
+    notes: "Kakri 2x2 decorative cut stone in Sq. Ft."
+  },
+  {
+    code: "KK-0303",
+    name: "Super White Kakri (3 × 3)",
+    category: "Marble Accessories",
+    subCategory: "Kakri 3x3",
+    sutarThickness: 4,
+    finish: "Polished",
+    grade: "Grade A",
+    thicknessMm: 12,
+    standardSize: "3 × 3 in",
+    unit: "Sq. Ft.",
+    ratePerSqFt: 190,
+    costPerSqFt: 130,
+    stockSqFt: 400,
+    stockBoxes: 0,
+    stockPieces: 0,
+    minStockAlert: 50,
+    lotNo: "LOT-KK-0303",
+    location: "Accessories Bay 1",
+    notes: "Kakri 3x3 decorative cut stone in Sq. Ft."
+  },
+  {
+    code: "KK-0606",
+    name: "Sunny Grey Kakri (6 × 6)",
+    category: "Marble Accessories",
+    subCategory: "Kakri 6x6",
+    sutarThickness: 4,
+    finish: "Polished",
+    grade: "Grade A",
+    thicknessMm: 12,
+    standardSize: "6 × 6 in",
+    unit: "Sq. Ft.",
+    ratePerSqFt: 210,
+    costPerSqFt: 145,
+    stockSqFt: 450,
+    stockBoxes: 0,
+    stockPieces: 0,
+    minStockAlert: 50,
+    lotNo: "LOT-KK-0606",
+    location: "Accessories Bay 1",
+    notes: "Kakri 6x6 decorative cut stone in Sq. Ft."
+  },
+
+  // ── MARBLE ACCESSORIES: KALM (SQ. FT.) ──
+  {
+    code: "KL-01IN",
+    name: "Marble Kalm (1 inch)",
+    category: "Marble Accessories",
+    subCategory: "Kalm 1 inch",
+    sutarThickness: 4,
+    finish: "Polished Edge",
+    grade: "Grade A",
+    thicknessMm: 12,
+    standardSize: "1 inch",
+    unit: "Sq. Ft.",
+    ratePerSqFt: 95,
+    costPerSqFt: 65,
+    stockSqFt: 500,
+    stockBoxes: 0,
+    stockPieces: 0,
+    minStockAlert: 60,
+    lotNo: "LOT-KL-01IN",
+    location: "Accessories Bay 2",
+    notes: "1 inch Kalm edging strip in Sq. Ft."
+  },
+  {
+    code: "KL-02IN",
+    name: "Marble Kalm (2 inch)",
+    category: "Marble Accessories",
+    subCategory: "Kalm 2 inch",
+    sutarThickness: 4,
+    finish: "Polished Edge",
+    grade: "Grade A",
+    thicknessMm: 12,
+    standardSize: "2 inch",
+    unit: "Sq. Ft.",
+    ratePerSqFt: 125,
+    costPerSqFt: 85,
+    stockSqFt: 600,
+    stockBoxes: 0,
+    stockPieces: 0,
+    minStockAlert: 60,
+    lotNo: "LOT-KL-02IN",
+    location: "Accessories Bay 2",
+    notes: "2 inch Kalm edging strip in Sq. Ft."
+  },
+  {
+    code: "KL-03IN",
+    name: "Marble Kalm (3 inch)",
+    category: "Marble Accessories",
+    subCategory: "Kalm 3 inch",
+    sutarThickness: 4,
+    finish: "Polished Edge",
+    grade: "Grade A",
+    thicknessMm: 12,
+    standardSize: "3 inch",
+    unit: "Sq. Ft.",
+    ratePerSqFt: 155,
+    costPerSqFt: 105,
+    stockSqFt: 450,
+    stockBoxes: 0,
+    stockPieces: 0,
+    minStockAlert: 60,
+    lotNo: "LOT-KL-03IN",
+    location: "Accessories Bay 2",
+    notes: "3 inch Kalm edging strip in Sq. Ft."
+  },
+
+  // ── SANITARY & OTHER ACCESSORIES (PIECES) ──
+  {
+    code: "SN-SINK",
+    name: "Kitchen Marble Sink",
+    category: "Other Accessories",
+    subCategory: "Sink",
+    sutarThickness: 0,
+    finish: "Honed / Polished",
+    grade: "Premium",
+    thicknessMm: 25,
+    standardSize: "Standard Sink",
+    unit: "Piece",
+    ratePerSqFt: 4500,
+    costPerSqFt: 3100,
+    stockSqFt: 0,
+    stockBoxes: 0,
+    stockPieces: 15,
+    minStockAlert: 3,
+    lotNo: "LOT-SN-SINK",
+    location: "Showroom Sanitary Section",
+    notes: "Handcrafted marble kitchen sink"
+  },
+  {
+    code: "SN-BASIN",
+    name: "Marble Vanity Basin",
+    category: "Other Accessories",
+    subCategory: "Basin",
+    sutarThickness: 0,
+    finish: "High Gloss Polish",
+    grade: "Premium",
+    thicknessMm: 20,
+    standardSize: "Standard Basin",
+    unit: "Piece",
+    ratePerSqFt: 3800,
+    costPerSqFt: 2600,
+    stockSqFt: 0,
+    stockBoxes: 0,
+    stockPieces: 20,
+    minStockAlert: 4,
+    lotNo: "LOT-SN-BASIN",
+    location: "Showroom Sanitary Section",
+    notes: "Vanity tabletop marble basin"
+  },
+  {
+    code: "SN-SEAT",
+    name: "Ceramic Toilet Seat",
+    category: "Other Accessories",
+    subCategory: "Seat",
+    sutarThickness: 0,
+    finish: "Glazed Ceramic",
+    grade: "First Choice",
+    thicknessMm: 15,
+    standardSize: "Standard Seat",
+    unit: "Piece",
+    ratePerSqFt: 3200,
+    costPerSqFt: 2200,
+    stockSqFt: 0,
+    stockBoxes: 0,
+    stockPieces: 25,
+    minStockAlert: 5,
+    lotNo: "LOT-SN-SEAT",
+    location: "Warehouse Sanitary Bay",
+    notes: "Ceramic toilet seat"
+  },
+  {
+    code: "SN-COMMODE",
+    name: "One-Piece Luxury Commode",
+    category: "Other Accessories",
+    subCategory: "Combod",
+    sutarThickness: 0,
+    finish: "Nano Ceramic Glazed",
+    grade: "First Choice",
+    thicknessMm: 20,
+    standardSize: "Standard Commode",
+    unit: "Piece",
+    ratePerSqFt: 8500,
+    costPerSqFt: 6200,
+    stockSqFt: 0,
+    stockBoxes: 0,
+    stockPieces: 12,
+    minStockAlert: 3,
+    lotNo: "LOT-SN-COMMODE",
+    location: "Warehouse Sanitary Bay",
+    notes: "One-piece soft close sanitary commode"
   }
 ];
 

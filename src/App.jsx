@@ -19,6 +19,7 @@ import GatePassView from './modules/mod_04_gate_pass/GatePassView';
 import DailyExpensesView from './modules/mod_06_daily_expenses/DailyExpensesView';
 import ZakatWelfareModule from './modules/mod_09_zakat_welfare/ZakatWelfareModule';
 import EmployeesPayrollModule from './modules/mod_08_employees_payroll/EmployeesPayrollModule';
+import BalanceSheetView from './modules/mod_10_balance_sheet/BalanceSheetView';
 import AutoUpdateModal from './components/AutoUpdateModal';
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
@@ -185,6 +186,7 @@ export default function App() {
           {activeView === 'zakat' && <ZakatWelfareModule />}
           {activeView === 'employees' && <EmployeesPayrollModule />}
           {activeView === 'sales-reports' && <SalesReportsView />}
+          {activeView === 'balance-sheet' && <BalanceSheetView settings={settings} />}
           {activeView === 'settings' && (
             <SettingsView
               settings={settings}

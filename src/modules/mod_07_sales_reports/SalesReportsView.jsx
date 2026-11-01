@@ -28,7 +28,9 @@ import {
   ArrowRight,
   Boxes,
   HelpCircle,
-  X
+  X,
+  Receipt,
+  FileText
 } from 'lucide-react';
 import { db } from '../../db/index';
 import { useLanguage } from '../../context/LanguageContext';
@@ -49,6 +51,328 @@ const HORIZONS = [
   { key: 'Yearly', labelEn: 'Yearly', labelUr: 'اس سال' },
   { key: 'Custom', labelEn: 'Custom', labelUr: 'مخصوص تاریخ' }
 ];
+
+/**
+ * Pure helper function to get print configuration dynamically based on activeTab.
+ * Defined outside component to strictly follow React Rules of Hooks.
+ */
+function getPrintConfig({
+  activeTab,
+  categoryBreakdown = [],
+  sutarBreakdown = [],
+  topCustomers = [],
+  topProducts = [],
+  expensesList = [],
+  invoicesList = [],
+  summary = {}
+}) {
+  switch (activeTab) {
+    case 'OVERVIEW':
+      return {
+        title: 'Category Performance & Sales Report',
+        titleUrdu: 'اقسام ماربل و ٹائلز سیلز رپورٹ',
+        columns: [
+          { key: 'name', label: 'Category', labelUrdu: 'ماربل قسم', bold: true, render: (r) => r.name || '-' },
+          {
+            key: 'sqFt',
+            label: 'Sq. Ft. Sold',
+            labelUrdu: 'مربع فٹ',
+            align: 'right',
+            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+          },
+          {
+            key: 'avgRate',
+            label: 'Avg Rate',
+            labelUrdu: 'اوسط ریٹ',
+            align: 'right',
+            render: (r) => rs(r.avgRatePerSqFt || 0)
+          },
+          {
+            key: 'cogs',
+            label: 'COGS Cost',
+            labelUrdu: 'خام لاگت',
+            align: 'right',
+            render: (r) => rs(r.cogs || 0)
+          },
+          {
+            key: 'revenue',
+            label: 'Revenue',
+            labelUrdu: 'آمدن',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.revenue || 0)
+          },
+          {
+            key: 'profit',
+            label: 'Gross Profit',
+            labelUrdu: 'خام منافع',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.profit || 0)
+          },
+          {
+            key: 'margin',
+            label: 'Margin %',
+            labelUrdu: 'مارجن',
+            align: 'center',
+            render: (r) => `${r.marginPct || 0}%`
+          },
+          {
+            key: 'share',
+            label: 'Share %',
+            labelUrdu: 'سیلز حصہ',
+            align: 'center',
+            render: (r) => `${r.sharePct || 0}%`
+          }
+        ],
+        data: categoryBreakdown || [],
+        summaryRows: [
+          { label: 'Total Categories Sold', labelUrdu: 'کل اقسام تعداد', value: `${categoryBreakdown.length}` },
+          { label: 'Total Stone Cost (COGS)', labelUrdu: 'کل خام لاگت', value: rs(summary?.totalCOGS) },
+          { label: 'Total Gross Profit', labelUrdu: 'کل خام منافع', value: rs(summary?.grossProfit) }
+        ]
+      };
+
+    case 'SUTARS':
+      return {
+        title: 'Sutar Thickness Breakdown Audit Report',
+        titleUrdu: 'ماربل سوتر موٹائی تجزیہ رپورٹ',
+        columns: [
+          { key: 'name', label: 'Thickness Category', labelUrdu: 'سوتر موٹائی', bold: true, render: (r) => r.name || '-' },
+          {
+            key: 'sqFt',
+            label: 'Sq. Ft. Sold',
+            labelUrdu: 'مربع فٹ',
+            align: 'right',
+            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+          },
+          {
+            key: 'cogs',
+            label: 'Stone Cost (COGS)',
+            labelUrdu: 'خام لاگت',
+            align: 'right',
+            render: (r) => rs(r.cogs || 0)
+          },
+          {
+            key: 'revenue',
+            label: 'Revenue',
+            labelUrdu: 'سیلز آمدن',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.revenue || 0)
+          },
+          {
+            key: 'profit',
+            label: 'Gross Profit',
+            labelUrdu: 'منافع',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.profit || 0)
+          },
+          {
+            key: 'margin',
+            label: 'Margin %',
+            labelUrdu: 'مارجن',
+            align: 'center',
+            render: (r) => `${r.marginPct || 0}%`
+          },
+          {
+            key: 'share',
+            label: 'Sales Share %',
+            labelUrdu: 'سیلز حصہ',
+            align: 'center',
+            render: (r) => `${r.sharePct || 0}%`
+          }
+        ],
+        data: sutarBreakdown || [],
+        summaryRows: [
+          { label: 'Total Marble Sq. Ft.', labelUrdu: 'کل رقبہ فروخت', value: `${(summary?.totalSqFtSold || 0).toLocaleString()} Sq.Ft` },
+          { label: 'Total Revenue', labelUrdu: 'کل سیلز رقم', value: rs(summary?.grossSales) }
+        ]
+      };
+
+    case 'CUSTOMERS':
+      return {
+        title: 'Top Customers Khata & Revenue Audit Report',
+        titleUrdu: 'نمبر ون گاہک کھاتہ دار آڈٹ رپورٹ',
+        columns: [
+          { key: 'name', label: 'Customer / Khata Name', labelUrdu: 'گاہک کا نام', bold: true, render: (r) => r.name || '-' },
+          { key: 'phone', label: 'Phone', labelUrdu: 'فون نمبر', render: (r) => r.phone || '-' },
+          { key: 'city', label: 'City', labelUrdu: 'شہر', render: (r) => r.city || '-' },
+          { key: 'billsCount', label: 'Invoices', labelUrdu: 'بلز تعداد', align: 'center', render: (r) => `${r.billsCount || 0}` },
+          {
+            key: 'sqFt',
+            label: 'Total Sq. Ft.',
+            labelUrdu: 'کل رقبہ',
+            align: 'right',
+            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+          },
+          {
+            key: 'revenue',
+            label: 'Total Billed',
+            labelUrdu: 'کل بلنگ',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.revenue || 0)
+          },
+          {
+            key: 'balanceDue',
+            label: 'Balance Due',
+            labelUrdu: 'بقایا ادھار',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.balanceDue || 0)
+          }
+        ],
+        data: topCustomers || [],
+        summaryRows: [
+          { label: 'Ranked Customers', labelUrdu: 'گاہکوں کی تعداد', value: `${topCustomers.length}` },
+          { label: 'Total Billed to Top Customers', labelUrdu: 'کل بلنگ رقم', value: rs(topCustomers.reduce((s, c) => s + (c.revenue || 0), 0)) },
+          { label: 'Total Outstanding Receivables', labelUrdu: 'کل واجب الوصول بقایا', value: rs(topCustomers.reduce((s, c) => s + (c.balanceDue || 0), 0)) }
+        ]
+      };
+
+    case 'PRODUCTS':
+      return {
+        title: 'Top Stone Items Performance Audit Report',
+        titleUrdu: 'نمبر ون پتھر و مصنوعات سیلز رپورٹ',
+        columns: [
+          { key: 'code', label: 'Code', labelUrdu: 'کوڈ', render: (r) => r.code || '-' },
+          { key: 'name', label: 'Stone Name', labelUrdu: 'پتھر کا نام', bold: true, render: (r) => r.name || '-' },
+          { key: 'category', label: 'Category', labelUrdu: 'کیٹیگری', render: (r) => r.category || '-' },
+          {
+            key: 'sqFt',
+            label: 'Sq. Ft. Sold',
+            labelUrdu: 'مربع فٹ',
+            align: 'right',
+            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+          },
+          {
+            key: 'revenue',
+            label: 'Revenue',
+            labelUrdu: 'سیلز رقم',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.revenue || 0)
+          },
+          {
+            key: 'cogs',
+            label: 'Est. Cost',
+            labelUrdu: 'خام لاگت',
+            align: 'right',
+            render: (r) => rs(r.cogs || 0)
+          },
+          {
+            key: 'profit',
+            label: 'Gross Profit',
+            labelUrdu: 'خام منافع',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.profit || 0)
+          },
+          {
+            key: 'margin',
+            label: 'Margin %',
+            labelUrdu: 'مارجن',
+            align: 'center',
+            render: (r) => `${r.marginPct || 0}%`
+          }
+        ],
+        data: topProducts || [],
+        summaryRows: [
+          { label: 'Top Items Count', labelUrdu: 'پتھر آئٹمز تعداد', value: `${topProducts.length}` },
+          { label: 'Top Items Revenue', labelUrdu: 'کل سیلز رقم', value: rs(topProducts.reduce((s, p) => s + (p.revenue || 0), 0)) },
+          { label: 'Top Items Profit', labelUrdu: 'کل خام منافع', value: rs(topProducts.reduce((s, p) => s + (p.profit || 0), 0)) }
+        ]
+      };
+
+    case 'EXPENSES':
+      return {
+        title: 'Factory Daily Expenses Audit Report',
+        titleUrdu: 'روزانہ فیکٹری اخراجات آڈٹ رپورٹ',
+        columns: [
+          { key: 'date', label: 'Date', labelUrdu: 'تاریخ', align: 'center', render: (r) => r.date || '-' },
+          { key: 'category', label: 'Expense Category', labelUrdu: 'مد / کیٹگری', bold: true, render: (r) => r.category || '-' },
+          { key: 'paidTo', label: 'Paid To / Worker', labelUrdu: 'بنام / وصول کنندہ', render: (r) => r.paidTo || '-' },
+          { key: 'remarks', label: 'Remarks / Reason', labelUrdu: 'تفصیل / وجہ خرچ', render: (r) => r.remarks || '-' },
+          { key: 'paymentMethod', label: 'Method', labelUrdu: 'طریقہ', align: 'center', render: (r) => r.paymentMethod || 'Cash' },
+          {
+            key: 'amount',
+            label: 'Amount (Rs.)',
+            labelUrdu: 'رقم (روپے)',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.amount || 0)
+          }
+        ],
+        data: expensesList || [],
+        summaryRows: [
+          { label: 'Total Expense Entries', labelUrdu: 'کل اندراجات', value: `${expensesList.length}` },
+          { label: 'Total Factory Expenses', labelUrdu: 'کل فیکٹری اخراجات', value: rs(summary?.factoryExpenses) },
+          { label: 'Deducted from Profit', labelUrdu: 'منافع سے منہا شدہ', value: rs(summary?.factoryExpenses) }
+        ]
+      };
+
+    case 'INVOICES':
+      return {
+        title: 'Sales Invoices Audit & Register',
+        titleUrdu: 'سیلز بلز تفصیل و آڈٹ رجسٹر',
+        columns: [
+          { key: 'invoiceNo', label: 'Invoice #', labelUrdu: 'بل نمبر', bold: true, render: (r) => r.invoiceNo || '-' },
+          { key: 'date', label: 'Date', labelUrdu: 'تاریخ', align: 'center', render: (r) => r.date || '-' },
+          { key: 'customerName', label: 'Customer Name', labelUrdu: 'گاہک کا نام', bold: true, render: (r) => r.customerName || '-' },
+          { key: 'itemsCount', label: 'Items', labelUrdu: 'آئٹمز', align: 'center', render: (r) => `${r.itemsCount || 0}` },
+          {
+            key: 'totalSqFt',
+            label: 'Total Sq. Ft.',
+            labelUrdu: 'کل رقبہ',
+            align: 'right',
+            render: (r) => `${Number(r.totalSqFt || 0).toLocaleString()} sqft`
+          },
+          { key: 'paymentMethod', label: 'Method', labelUrdu: 'طریقہ', align: 'center', render: (r) => r.paymentMethod || '-' },
+          {
+            key: 'grandTotal',
+            label: 'Total Bill',
+            labelUrdu: 'کل بل',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.grandTotal || 0)
+          },
+          {
+            key: 'paidAmount',
+            label: 'Received',
+            labelUrdu: 'وصول',
+            align: 'right',
+            render: (r) => rs(r.paidAmount || 0)
+          },
+          {
+            key: 'balanceDue',
+            label: 'Balance Due',
+            labelUrdu: 'بقایا',
+            align: 'right',
+            bold: true,
+            render: (r) => rs(r.balanceDue || 0)
+          }
+        ],
+        data: invoicesList || [],
+        summaryRows: [
+          { label: 'Total Bills Issued', labelUrdu: 'کل بلز تعداد', value: `${summary?.invoicesCount || 0}` },
+          { label: 'Total Gross Billed', labelUrdu: 'کل بلنگ رقم', value: rs(summary?.grossSales) },
+          { label: 'Direct Cash Inflow', labelUrdu: 'نقد وصولی', value: rs(summary?.cashSalesDirect) },
+          { label: 'Credit Sales Outstanding', labelUrdu: 'ادھار بلنگ', value: rs(summary?.creditSalesDirect) }
+        ]
+      };
+
+    default:
+      return {
+        title: 'Sales & Financial Insights Audit Report',
+        titleUrdu: 'سیلز اور مالیاتی تجزیہ آڈٹ رپورٹ',
+        columns: [],
+        data: [],
+        summaryRows: []
+      };
+  }
+}
 
 export default function SalesReportsView() {
   const { language } = useLanguage();
@@ -164,14 +488,30 @@ export default function SalesReportsView() {
     );
   }
 
-  const { summary, categoryBreakdown, sutarBreakdown, topCustomers, topProducts, timelineSeries } = report || {
-    summary: {},
-    categoryBreakdown: [],
-    sutarBreakdown: [],
-    topCustomers: [],
-    topProducts: [],
-    timelineSeries: []
-  };
+  const {
+    summary = {},
+    categoryBreakdown = [],
+    sutarBreakdown = [],
+    topCustomers = [],
+    topProducts = [],
+    expensesByCategory = [],
+    expensesList = [],
+    invoicesList = [],
+    timelineSeries = []
+  } = report || {};
+
+  // ── Dynamic Print Configuration based on activeTab (Pure Helper, No Hook) ──
+  const printConfig = getPrintConfig({
+    activeTab,
+    categoryBreakdown,
+    sutarBreakdown,
+    topCustomers,
+    topProducts,
+    expensesList,
+    invoicesList,
+    summary
+  });
+
 
   return (
     <div
@@ -976,7 +1316,13 @@ export default function SalesReportsView() {
             >
               <span>{tr('Gross Profit', 'خام منافع')}: <strong style={{ color: '#059669' }}>{rs(summary.grossProfit)}</strong></span>
               <span>—</span>
-              <span>{tr('Expenses', 'اخراجات')}: <strong style={{ color: '#dc2626' }}>{rs(summary.factoryExpenses)}</strong></span>
+              <span
+                onClick={() => setActiveTab('EXPENSES')}
+                style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                title={tr('Click to view daily expenses breakdown', 'اخراجات کی تفصیل دیکھنے کے لیے کلک کریں')}
+              >
+                {tr('Expenses', 'اخراجات')}: <strong style={{ color: '#dc2626', textDecoration: 'underline' }}>{rs(summary.factoryExpenses)}</strong>
+              </span>
               <span>=</span>
               <span>{tr('Net Munafa', 'خالص منافع')}: <strong style={{ color: summary.netProfit >= 0 ? '#059669' : '#dc2626' }}>{rs(summary.netProfit)}</strong></span>
             </div>
@@ -1000,10 +1346,12 @@ export default function SalesReportsView() {
           }}
         >
           {[
-            { id: 'OVERVIEW', label: tr('Category Performance', 'اقسام ماربل کارکردگی'), icon: Layers },
-            { id: 'SUTARS', label: tr('Sutar Thickness Breakdown', 'سوتر موٹائی تجزیہ'), icon: SlidersHorizontal },
-            { id: 'CUSTOMERS', label: tr('Top Customers Khata', 'نمبر ون گاہک کھاتہ'), icon: Users },
-            { id: 'PRODUCTS', label: tr('Top Stone Items', 'نمبر ون پتھر و مصنوعات'), icon: Award }
+            { id: 'OVERVIEW', label: tr('Category Performance', 'اقسام ماربل کارکردگی'), icon: Layers, count: categoryBreakdown.length },
+            { id: 'SUTARS', label: tr('Sutar Thickness Breakdown', 'سوتر موٹائی تجزیہ'), icon: SlidersHorizontal, count: sutarBreakdown.length },
+            { id: 'CUSTOMERS', label: tr('Top Customers Khata', 'نمبر ون گاہک کھاتہ'), icon: Users, count: topCustomers.length },
+            { id: 'PRODUCTS', label: tr('Top Stone Items', 'نمبر ون پتھر و مصنوعات'), icon: Award, count: topProducts.length },
+            { id: 'EXPENSES', label: tr('Daily Expenses Breakdown', 'روزانہ فیکٹری اخراجات'), icon: Receipt, count: expensesList.length },
+            { id: 'INVOICES', label: tr('Sales Invoices List', 'سیلز بلز تفصیل'), icon: FileSpreadsheet, count: invoicesList.length }
           ].map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
@@ -1033,6 +1381,20 @@ export default function SalesReportsView() {
               >
                 <Icon size={16} />
                 <span>{tab.label}</span>
+                {tab.count !== undefined && (
+                  <span
+                    style={{
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: '10px',
+                      background: active ? '#2563eb' : 'var(--border-color, #e2e8f0)',
+                      color: active ? '#ffffff' : 'var(--text-muted, #64748b)'
+                    }}
+                  >
+                    {tab.count}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -1317,6 +1679,375 @@ export default function SalesReportsView() {
             </table>
           </div>
         )}
+
+        {/* ── TAB 5: DAILY EXPENSES BREAKDOWN ──────────────────────────── */}
+        {activeTab === 'EXPENSES' && (
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Top KPI Cards for Expenses */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                gap: '14px'
+              }}
+            >
+              <div
+                style={{
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Total Factory Expenses', 'کل فیکٹری اخراجات')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#dc2626', marginTop: '4px' }}>
+                  {rs(summary.factoryExpenses)}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {tr('Deducted directly from Gross Profit', 'خام منافع سے منہا شدہ رقم')}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Expense Records Count', 'کل اخراجات اندراجات')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>
+                  {expensesList.length}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {tr('Vouchers & entries in selected period', 'منتخب مدت میں کل واؤچرز')}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Expense / Net Sales Ratio', 'اخراجات تا سیلز تناسب')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#d97706', marginTop: '4px' }}>
+                  {summary.netSales > 0 ? Math.round((summary.factoryExpenses / summary.netSales) * 100) : 0}%
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {tr('Portion of sales consumed by expenses', 'سیلز کا اخراجات پر خرچ ہونے والا حصہ')}
+                </div>
+              </div>
+            </div>
+
+            {/* Category Breakdown Badges */}
+            {expensesByCategory.length > 0 && (
+              <div>
+                <h4 style={{ fontSize: '0.84rem', fontWeight: 700, margin: '0 0 10px 0', color: 'var(--text-secondary)' }}>
+                  {tr('Expense Categories Distribution (اخراجات کی مدیں):', 'اخراجات کی مدیں:')}
+                </h4>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {expensesByCategory.map((cat, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        background: 'var(--bg-primary, #f8fafc)',
+                        border: '1px solid var(--border-color, #e2e8f0)',
+                        borderRadius: '8px',
+                        padding: '6px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '0.78rem'
+                      }}
+                    >
+                      <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{cat.category}</span>
+                      <strong style={{ color: '#dc2626' }} className="font-mono">{rs(cat.totalAmount)}</strong>
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          background: 'rgba(220,38,38,0.1)',
+                          color: '#dc2626',
+                          fontWeight: 700
+                        }}
+                      >
+                        {cat.sharePct}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Itemized Expenses Table */}
+            <div style={{ overflowX: 'auto', border: '1px solid var(--border-color, #e2e8f0)', borderRadius: '10px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={TH}>#</th>
+                    <th style={TH}>{tr('Date', 'تاریخ')}</th>
+                    <th style={TH}>{tr('Category / Head', 'مد / کیٹگری')}</th>
+                    <th style={TH}>{tr('Paid To / Worker', 'بنام / وصول کنندہ')}</th>
+                    <th style={TH}>{tr('Remarks / Reason', 'تفصیل / وجہ خرچ')}</th>
+                    <th style={TH}>{tr('Payment Method', 'طریقہ')}</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>{tr('Amount (Rs.)', 'رقم (روپے)')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {expensesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '36px' }}>
+                        {tr('No daily factory expenses recorded in this horizon.', 'اس مدت میں کوئی روزانہ اخراجات ریکارڈ نہیں ہیں۔')}
+                      </td>
+                    </tr>
+                  ) : (
+                    expensesList.map((exp, idx) => (
+                      <tr
+                        key={idx}
+                        style={{
+                          background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)',
+                          transition: 'background-color 0.15s ease'
+                        }}
+                      >
+                        <td style={{ ...TD, fontWeight: 700, color: 'var(--text-muted)', width: '36px' }}>{idx + 1}</td>
+                        <td style={{ ...TD, fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          {exp.date}
+                        </td>
+                        <td style={{ ...TD, fontWeight: 700, color: 'var(--text-primary)' }}>
+                          <span
+                            style={{
+                              padding: '2px 8px',
+                              borderRadius: '4px',
+                              fontSize: '0.76rem',
+                              background: 'rgba(37,99,235,0.08)',
+                              color: '#2563eb'
+                            }}
+                          >
+                            {exp.category}
+                          </span>
+                        </td>
+                        <td style={{ ...TD, fontWeight: 600 }}>{exp.paidTo || '-'}</td>
+                        <td style={{ ...TD, color: 'var(--text-secondary)', fontSize: '0.8rem' }}>{exp.remarks || '-'}</td>
+                        <td style={{ ...TD, textAlign: 'center', fontSize: '0.78rem' }}>
+                          <span
+                            style={{
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: 'var(--bg-primary)',
+                              border: '1px solid var(--border-color)',
+                              color: 'var(--text-secondary)'
+                            }}
+                          >
+                            {exp.paymentMethod || 'Cash'}
+                          </span>
+                        </td>
+                        <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: '#dc2626' }}>
+                          {rs(exp.amount)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* ── TAB 6: SALES INVOICES LIST ────────────────────────────────── */}
+        {activeTab === 'INVOICES' && (
+          <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* Top Invoices Summary Cards */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '14px'
+              }}
+            >
+              <div
+                style={{
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Total Invoices Issued', 'کل بلز جاری کردہ')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2563eb', marginTop: '4px' }}>
+                  {invoicesList.length}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {tr('Billed in current period', 'منتخب مدت میں جاری شدہ')}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Total Gross Billed', 'کل بلنگ رقم')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2563eb', marginTop: '4px' }}>
+                  {rs(summary.grossSales)}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {tr('Before returns deductions', 'واپسی کٹوتی سے پہلے')}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Direct Cash Received', 'نقد وصول شدہ')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#059669', marginTop: '4px' }}>
+                  {rs(summary.cashSalesDirect)}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {summary.cashRatio}% {tr('of total billed', 'کل بلنگ کا')}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  background: 'var(--bg-primary, #f8fafc)',
+                  border: '1px solid var(--border-color, #e2e8f0)',
+                  borderRadius: '12px',
+                  padding: '16px'
+                }}
+              >
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                  {tr('Unpaid Credit (Udhar)', 'ادھار کھاتہ بلنگ')}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: '#dc2626', marginTop: '4px' }}>
+                  {rs(summary.creditSalesDirect)}
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                  {summary.creditRatio}% {tr('credit exposure', 'ادھار بلنگ تناسب')}
+                </div>
+              </div>
+            </div>
+
+            {/* Invoices Table */}
+            <div style={{ overflowX: 'auto', border: '1px solid var(--border-color, #e2e8f0)', borderRadius: '10px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>
+                    <th style={TH}>#</th>
+                    <th style={TH}>{tr('Invoice #', 'بل نمبر')}</th>
+                    <th style={TH}>{tr('Date', 'تاریخ')}</th>
+                    <th style={TH}>{tr('Customer / Khata', 'گاہک کا نام')}</th>
+                    <th style={TH}>{tr('Items', 'آئٹمز')}</th>
+                    <th style={TH}>{tr('Total Sq. Ft.', 'کل رقبہ')}</th>
+                    <th style={TH}>{tr('Payment Method', 'طریقہ')}</th>
+                    <th style={TH}>{tr('Status', 'حیثیت')}</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>{tr('Total Bill', 'کل بل')}</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>{tr('Paid', 'وصول')}</th>
+                    <th style={{ ...TH, textAlign: 'right' }}>{tr('Balance Due', 'بقایا')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoicesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={11} style={{ ...TD, textAlign: 'center', color: 'var(--text-muted)', padding: '36px' }}>
+                        {tr('No sales invoices found in this horizon.', 'اس مدت میں کوئی سیلز بل موجود نہیں ہے۔')}
+                      </td>
+                    </tr>
+                  ) : (
+                    invoicesList.map((inv, idx) => (
+                      <tr
+                        key={idx}
+                        style={{
+                          background: idx % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.015)',
+                          transition: 'background-color 0.15s ease'
+                        }}
+                      >
+                        <td style={{ ...TD, fontWeight: 700, color: 'var(--text-muted)', width: '36px' }}>{idx + 1}</td>
+                        <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800, color: '#2563eb' }}>
+                          {inv.invoiceNo}
+                        </td>
+                        <td style={{ ...TD, fontFamily: 'monospace', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                          {inv.date}
+                        </td>
+                        <td style={{ ...TD, fontWeight: 700, color: 'var(--text-primary)' }}>
+                          <div>{inv.customerName}</div>
+                          {inv.customerPhone && inv.customerPhone !== '-' && (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                              {inv.customerPhone}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ ...TD, textAlign: 'center', fontFamily: 'monospace' }}>{inv.itemsCount}</td>
+                        <td style={{ ...TD, fontFamily: 'monospace' }}>
+                          {(inv.totalSqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
+                        </td>
+                        <td style={{ ...TD, textAlign: 'center', fontSize: '0.78rem' }}>
+                          <span
+                            style={{
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: 'var(--bg-primary)',
+                              border: '1px solid var(--border-color)',
+                              color: 'var(--text-secondary)'
+                            }}
+                          >
+                            {inv.paymentMethod}
+                          </span>
+                        </td>
+                        <td style={{ ...TD, textAlign: 'center', fontSize: '0.76rem' }}>
+                          <span
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: '5px',
+                              fontWeight: 700,
+                              background: inv.balanceDue > 0 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                              color: inv.balanceDue > 0 ? '#dc2626' : '#059669'
+                            }}
+                          >
+                            {inv.balanceDue > 0 ? tr('Partial / Credit', 'ادھار بقایا') : tr('Paid (نقد ادا)', 'ادا شدہ')}
+                          </span>
+                        </td>
+                        <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: '#2563eb' }}>
+                          {rs(inv.grandTotal)}
+                        </td>
+                        <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', color: '#059669', fontWeight: 700 }}>
+                          {rs(inv.paidAmount)}
+                        </td>
+                        <td style={{ ...TD, textAlign: 'right', fontFamily: 'monospace', fontWeight: 800, color: inv.balanceDue > 0 ? '#dc2626' : '#059669' }}>
+                          {rs(inv.balanceDue)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ------------------------------------------------------------------------- */}
@@ -1399,7 +2130,7 @@ export default function SalesReportsView() {
                 type="button"
                 onClick={() => {
                   setExportModalOpen(false);
-                  setTimeout(() => window.print(), 200);
+                  setIsPrintModalOpen(true);
                 }}
                 style={{
                   display: 'flex',
@@ -1508,66 +2239,28 @@ export default function SalesReportsView() {
         </div>
       )}
 
-      {/* Universal Report Print Modal for Sales Reports */}
+      {/* Universal Report Print Modal for Sales Reports (Dynamic per activeTab) */}
       <UniversalReportPrintModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
-        title="Sales & Financial Insights Audit Report"
-        titleUrdu="سیلز اور مالیاتی تجزیہ آڈٹ رپورٹ"
+        title={printConfig.title}
+        titleUrdu={printConfig.titleUrdu}
         subtitle={`Period: ${horizon} ${horizon === 'Custom' ? `(${custom.from} to ${custom.to})` : ''}`}
         factorySettings={dbSettings}
         kpis={[
           { label: 'Gross Sales', labelUrdu: 'کل سیلز', value: rs(summary?.grossSales), color: '#2563eb' },
           { label: 'Net Sales', labelUrdu: 'خالص سیلز', value: rs(summary?.netSales), color: '#059669' },
-          { label: 'Total Expenses', labelUrdu: 'کل اخراجات', value: rs(summary?.totalExpenses), color: '#dc2626' },
+          { label: 'Total Expenses', labelUrdu: 'کل اخراجات', value: rs(summary?.factoryExpenses), color: '#dc2626' },
           {
             label: 'Net Operating Profit',
             labelUrdu: 'خالص منافع',
-            value: rs(summary?.netOperatingProfit),
-            color: (summary?.netOperatingProfit || 0) >= 0 ? '#059669' : '#dc2626'
+            value: rs(summary?.netProfit),
+            color: (summary?.netProfit || 0) >= 0 ? '#059669' : '#dc2626'
           }
         ]}
-        columns={[
-          { key: 'category', label: 'Category / Description', labelUrdu: 'کیٹیگری / آئٹم', bold: true, render: (r) => r.category || r.name || r.sutar || r.customerName || '-' },
-          {
-            key: 'quantity',
-            label: 'Quantity / Sq.Ft',
-            labelUrdu: 'رقبہ / تعداد',
-            align: 'right',
-            render: (r) => `${Number(r.totalSqFt || r.quantity || r.invoicesCount || 0).toLocaleString()} ${r.totalSqFt ? 'sqft' : ''}`
-          },
-          {
-            key: 'revenue',
-            label: 'Revenue (Rs.)',
-            labelUrdu: 'آمدن',
-            align: 'right',
-            bold: true,
-            render: (r) => rs(r.revenue || r.grossRevenue || r.amount || r.totalSpend || 0)
-          },
-          {
-            key: 'share',
-            label: 'Share %',
-            labelUrdu: 'حصہ',
-            align: 'center',
-            render: (r) => `${Number(r.sharePercent || r.percentage || 0).toFixed(1)}%`
-          }
-        ]}
-        data={
-          activeTab === 'CATEGORIES'
-            ? categoryBreakdown
-            : activeTab === 'SUTARS'
-            ? sutarBreakdown
-            : activeTab === 'CUSTOMERS'
-            ? topCustomers
-            : topProducts.length > 0
-            ? topProducts
-            : categoryBreakdown
-        }
-        summaryRows={[
-          { label: 'Cash Collected', labelUrdu: 'کل نقد وصولی', value: rs(summary?.cashCollected) },
-          { label: 'Unpaid Receivables', labelUrdu: 'واجب الوصول بقایا جات', value: rs(summary?.unpaidReceivables) },
-          { label: 'Invoices Count', labelUrdu: 'کل بلز تعداد', value: `${summary?.invoiceCount || 0}` }
-        ]}
+        columns={printConfig.columns}
+        data={printConfig.data}
+        summaryRows={printConfig.summaryRows}
       />
     </div>
   );

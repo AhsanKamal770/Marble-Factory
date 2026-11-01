@@ -1,4 +1,6 @@
-import { db } from "../../db/index.js";
+import { db, getLiveCashInDrawer } from "../../db/index.js";
+
+export { getLiveCashInDrawer };
 
 export const EXPENSE_CATEGORIES = [
   { id: "Food / Mess", en: "Food / Mess (Tea/Ration)", ur: "کھانا / چائے / راشن", color: "#f59e0b", icon: "Utensils" },
@@ -150,131 +152,41 @@ export async function getExpensesByDate(dateStr) {
 }
 
 /**
- * Calculate full Roznamcha metrics for a specific date
+ * Save day closing reconciliation record to db.day_closings
  */
-export async function getLiveCashInDrawer(customDate = null) {
-  try {
-    const targetDate = customDate || new Date().toISOString().slice(0, 10);
-    const settingsList = await db.settings.toArray();
-    const settings = settingsList[0] || {};
-    const openingCash = Number(settings.openingCashBalance || 0);
-
-    // 1. Spot Cash Sales for date
-    const allInvoices = await db.invoices.toArray();
-    let cashSalesToday = 0;
-    const todayInvoices = [];
-    allInvoices.forEach(inv => {
-      const invDate = (inv.createdAt || inv.date || '').slice(0, 10);
-      if (invDate === targetDate) {
-        const paid = Number(inv.paidAmount || 0);
-        if (paid > 0) {
-          todayInvoices.push(inv);
-        }
-        if (!inv.customerId) {
-          cashSalesToday += paid;
-        }
-      }
-    });
-
-    // 2. Customer Wasooli (Khata Recoveries) for date
-    const allPayments = await db.customer_payments.toArray();
-    let wasooliToday = 0;
-    const todayPayments = [];
-    allPayments.forEach(pay => {
-      const payDate = (pay.date || '').slice(0, 10);
-      if (payDate === targetDate) {
-        const amt = Number(pay.amount || 0);
-        wasooliToday += amt;
-        todayPayments.push(pay);
-      }
-    });
-
-    // 3. Daily Expenses for date
-    const allExpenses = await db.daily_expenses.toArray();
-    let expensesToday = 0;
-    const todayExpenses = [];
-    const categoryTotals = {};
-
-    allExpenses.forEach(exp => {
-      const expDate = (exp.date || exp.createdAt || '').slice(0, 10);
-      if (expDate === targetDate) {
-        const amt = Number(exp.amount || 0);
-        expensesToday += amt;
-        todayExpenses.push(exp);
-
-        const cat = exp.category || "Miscellaneous";
-        categoryTotals[cat] = (categoryTotals[cat] || 0) + amt;
-      }
-    });
-
-    // Sort today's expenses latest first
-    todayExpenses.sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
-
-    // 4. Supplier Cash Outflows (if any)
-    let supplierCashToday = 0;
-    if (db.supplier_payments) {
-      const allSupPayments = await db.supplier_payments.toArray();
-      allSupPayments.forEach(sp => {
-        const spDate = (sp.date || sp.createdAt || '').slice(0, 10);
-        if (spDate === targetDate && (sp.paymentMethod === 'Cash' || !sp.paymentMethod)) {
-          supplierCashToday += Number(sp.amount || 0);
-        }
+export async function saveDayClosing(closingData) {
+  const date = closingData.date || new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
+  
+  if (db.day_closings) {
+    const existing = await db.day_closings.where('date').equals(date).first();
+    if (existing) {
+      await db.day_closings.update(existing.id, {
+        ...closingData,
+        date,
+        updatedAt: now,
+        status: 'Closed'
+      });
+      return existing.id;
+    } else {
+      return await db.day_closings.add({
+        ...closingData,
+        date,
+        createdAt: now,
+        status: 'Closed'
       });
     }
-
-    // 5. Employee Advances in Cash (if any)
-    let employeeAdvancesToday = 0;
-    if (db.employee_advances) {
-      const allEmpAdv = await db.employee_advances.toArray();
-      allEmpAdv.forEach(ea => {
-        const eaDate = (ea.date || '').slice(0, 10);
-        if (eaDate === targetDate) {
-          employeeAdvancesToday += Number(ea.amount || 0);
-        }
-      });
-    }
-
-    const totalCashInflow = openingCash + cashSalesToday + wasooliToday;
-    const totalCashOutflow = expensesToday + supplierCashToday + employeeAdvancesToday;
-    const liveCash = totalCashInflow - totalCashOutflow;
-
-    return {
-      targetDate,
-      openingCash,
-      cashSalesToday,
-      todayInvoicesCount: todayInvoices.length,
-      wasooliToday,
-      todayPaymentsCount: todayPayments.length,
-      expensesToday,
-      todayExpensesCount: todayExpenses.length,
-      supplierCashToday,
-      employeeAdvancesToday,
-      totalCashInflow,
-      totalCashOutflow,
-      liveCash,
-      categoryTotals,
-      todayExpenses,
-      settings
-    };
-  } catch (err) {
-    console.error('Error computing live Roznamcha:', err);
-    return {
-      targetDate: customDate || new Date().toISOString().slice(0, 10),
-      openingCash: 0,
-      cashSalesToday: 0,
-      todayInvoicesCount: 0,
-      wasooliToday: 0,
-      todayPaymentsCount: 0,
-      expensesToday: 0,
-      todayExpensesCount: 0,
-      supplierCashToday: 0,
-      employeeAdvancesToday: 0,
-      totalCashInflow: 0,
-      totalCashOutflow: 0,
-      liveCash: 0,
-      categoryTotals: {},
-      todayExpenses: [],
-      settings: {}
-    };
   }
+  return null;
+}
+
+/**
+ * Get saved day closing record for a specific date
+ */
+export async function getDayClosing(dateStr) {
+  const targetDate = dateStr || new Date().toISOString().slice(0, 10);
+  if (db.day_closings) {
+    return await db.day_closings.where('date').equals(targetDate).first();
+  }
+  return null;
 }

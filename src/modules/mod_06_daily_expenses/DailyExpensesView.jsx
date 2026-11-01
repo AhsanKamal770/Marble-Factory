@@ -19,8 +19,11 @@ import DayEndReconciliationCard from "./DayEndReconciliationCard";
 import PrintableDayClosingSheet from "./PrintableDayClosingSheet";
 import {
   addExpense,
+  updateExpense,
   deleteExpense,
   getLiveCashInDrawer,
+  saveDayClosing,
+  getDayClosing,
   EXPENSE_CATEGORIES
 } from "./dailyExpenseService";
 import { db } from "../../db";
@@ -60,6 +63,17 @@ export default function DailyExpensesView() {
     [selectedDate]
   );
 
+  // Live Query: Check if day closing already saved for selectedDate
+  const existingClosing = useLiveQuery(
+    async () => {
+      if (db.day_closings) {
+        return await db.day_closings.where('date').equals(selectedDate).first();
+      }
+      return null;
+    },
+    [selectedDate]
+  );
+
   const handleAddExpense = async (data) => {
     try {
       await addExpense(data);
@@ -68,11 +82,27 @@ export default function DailyExpensesView() {
     }
   };
 
+  const handleUpdateExpense = async (id, data) => {
+    try {
+      await updateExpense(id, data);
+    } catch (err) {
+      alert("Failed to update expense: " + err.message);
+    }
+  };
+
   const handleDeleteExpense = async (id) => {
     try {
       await deleteExpense(id);
     } catch (err) {
       alert("Failed to delete expense: " + err.message);
+    }
+  };
+
+  const handleSaveDayClosing = async (closingData) => {
+    try {
+      await saveDayClosing(closingData);
+    } catch (err) {
+      alert("Failed to save day closing: " + err.message);
     }
   };
 
@@ -467,6 +497,7 @@ export default function DailyExpensesView() {
           <DailyExpenseTable
             expenses={expenses}
             onDeleteExpense={handleDeleteExpense}
+            onUpdateExpense={handleUpdateExpense}
           />
         </div>
       </div>
@@ -476,6 +507,8 @@ export default function DailyExpensesView() {
         <DayEndReconciliationCard
           cashData={cashData}
           onPrintA4={() => handleOpenPrintModal("a4")}
+          onSaveDayClosing={handleSaveDayClosing}
+          existingClosing={existingClosing}
         />
       </div>
 

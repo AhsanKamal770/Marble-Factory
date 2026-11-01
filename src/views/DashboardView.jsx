@@ -16,7 +16,8 @@ import {
   Clock,
   Activity,
   BarChart2,
-  LayoutDashboard
+  LayoutDashboard,
+  Scale
 } from 'lucide-react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, getLiveCashInDrawer, adjustItemStock } from '../db/index';
@@ -38,10 +39,11 @@ export default function DashboardView({ setActiveView, settings }) {
   const customerPayments = useLiveQuery(() => db.customer_payments.toArray(), []) || [];
   const dailyExpenses = useLiveQuery(() => db.daily_expenses.toArray(), []) || [];
   const zakatHolders = useLiveQuery(() => db.zakat_beneficiaries ? db.zakat_beneficiaries.toArray() : [], []) || [];
+  const salesReturns = useLiveQuery(() => db.returns ? db.returns.where('type').equals('Sales Return').toArray() : [], []) || [];
 
-  // Live cash drawer query - depends on invoices, customer_payments, and daily_expenses
+  // Live cash drawer query - depends on invoices, customer_payments, daily_expenses, and day closings
   const drawerDependencies = useLiveQuery(
-    () => db.invoices.count() + db.customer_payments.count() + db.daily_expenses.count(),
+    () => db.invoices.count() + db.customer_payments.count() + db.daily_expenses.count() + (db.day_closings ? db.day_closings.count() : 0),
     []
   );
 
@@ -61,17 +63,33 @@ export default function DashboardView({ setActiveView, settings }) {
   // ---------------------------------------------------------------------------
   const todayDate = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  // Primary 4 KPIs
+  // Returns Deductions (Deducting returned goods and cash refunds)
+  const totalSalesReturns = useMemo(
+    () => salesReturns.reduce((acc, ret) => acc + Number(ret.totalAmount || 0), 0),
+    [salesReturns]
+  );
+
+  const totalCashRefunds = useMemo(
+    () => salesReturns
+      .filter(ret => ret.refundMethod === 'Cash' || ret.refundMethod === 'Cash Refund' || (ret.refundMethod && ret.refundMethod.toLowerCase().includes('cash')))
+      .reduce((acc, ret) => acc + Number(ret.refundAmount || ret.totalAmount || 0), 0),
+    [salesReturns]
+  );
+
+  // Primary 4 KPIs (Net Sales after returns & Net Cash Inflow after refunds)
   const totalSales = useMemo(
-    () => invoices.reduce((acc, inv) => acc + Number(inv.grandTotal || 0), 0),
-    [invoices]
+    () => {
+      const gross = invoices.reduce((acc, inv) => acc + Number(inv.grandTotal || 0), 0);
+      return Math.max(0, gross - totalSalesReturns);
+    },
+    [invoices, totalSalesReturns]
   );
 
   const totalReceived = useMemo(() => {
     const directSalesCash = invoices.filter(inv => !inv.customerId).reduce((acc, inv) => acc + Number(inv.paidAmount || 0), 0);
     const wasooliCash = customerPayments.reduce((acc, pay) => acc + Number(pay.amount || 0), 0);
-    return directSalesCash + wasooliCash;
-  }, [invoices, customerPayments]);
+    return Math.max(0, directSalesCash + wasooliCash - totalCashRefunds);
+  }, [invoices, customerPayments, totalCashRefunds]);
 
   const totalDue = useMemo(
     () => customers.reduce((acc, cust) => acc + Number(cust.balanceDue || 0), 0),
@@ -110,16 +128,17 @@ export default function DashboardView({ setActiveView, settings }) {
   // Stock Category Breakdown (Slabs vs Tiles vs Others)
   const stockBreakdown = useMemo(() => {
     let slabsSq = 0;
-    let tilesSq = 0;
+    let tilesMeters = 0;
     let otherSq = 0;
 
     items.forEach((it) => {
       const sqft = Number(it.stockSqFt || 0);
       const cat = (it.category || '').toLowerCase();
       const nm = (it.name || '').toLowerCase();
+      const unit = (it.unit || '').toLowerCase();
 
-      if (cat.includes('tile') || nm.includes('tile') || cat.includes('porcelain') || cat.includes('ceramic')) {
-        tilesSq += sqft;
+      if (cat.includes('tile') || nm.includes('tile') || cat.includes('porcelain') || cat.includes('ceramic') || unit.includes('meter')) {
+        tilesMeters += sqft;
       } else if (cat.includes('slab') || nm.includes('slab') || cat.includes('granite') || cat.includes('marble')) {
         slabsSq += sqft;
       } else {
@@ -127,13 +146,13 @@ export default function DashboardView({ setActiveView, settings }) {
       }
     });
 
-    const totalYard = slabsSq + tilesSq + otherSq || 1;
+    const totalYard = slabsSq + tilesMeters + otherSq || 1;
     return {
       slabsSqFt: Math.round(slabsSq),
-      tilesSqFt: Math.round(tilesSq),
+      tilesMeters: Math.round(tilesMeters * 10) / 10,
       otherSqFt: Math.round(otherSq),
       slabsPct: Math.round((slabsSq / totalYard) * 100),
-      tilesPct: Math.round((tilesSq / totalYard) * 100),
+      tilesPct: Math.round((tilesMeters / totalYard) * 100),
       otherPct: Math.round((otherSq / totalYard) * 100)
     };
   }, [items]);
@@ -642,6 +661,32 @@ export default function DashboardView({ setActiveView, settings }) {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Right: Balance Sheet Quick Button */}
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            onClick={() => setActiveView('balance-sheet')}
+            style={{
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              padding: '8px 14px',
+              borderRadius: '9px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'var(--bg-card, #ffffff)',
+              border: '1px solid var(--border-color, #cbd5e1)',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+              cursor: 'pointer',
+              color: 'var(--text-primary, #0f172a)'
+            }}
+          >
+            <Scale size={15} style={{ color: '#2563eb' }} />
+            <span>{language === 'ur' ? 'بیلنس شیٹ (مالیاتی توازن)' : 'Balance Sheet'}</span>
+          </button>
         </div>
 
         {/* Right: Background Marble Image extending seamlessly across the header */}
@@ -1317,8 +1362,8 @@ export default function DashboardView({ setActiveView, settings }) {
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                     {language === 'ur' ? 'ماربل و پورسلین ٹائلز' : 'Marble & Porcelain Tiles'}
                   </span>
-                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
-                    {stockBreakdown.tilesSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.tilesPct}%)
+                  <span className="font-mono text-emerald" style={{ fontWeight: 700 }}>
+                    {stockBreakdown.tilesMeters.toLocaleString()} {language === 'ur' ? 'میٹر' : 'Meters'} ({stockBreakdown.tilesPct}%)
                   </span>
                 </div>
                 <div style={{ height: '8px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
@@ -1490,15 +1535,24 @@ export default function DashboardView({ setActiveView, settings }) {
         <div className="modal-overlay" onClick={() => setIsRoznamchaOpen(false)}>
           <div className="modal-card" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3 className="modal-title" style={{ fontSize: '0.98rem', fontWeight: 800 }}>
-                {language === 'ur' ? 'روزنامچہ کیش دراز' : 'Cash Drawer Breakdown'}
-              </h3>
+              <div>
+                <h3 className="modal-title" style={{ fontSize: '0.98rem', fontWeight: 800 }}>
+                  {language === 'ur' ? 'آج کا روزنامچہ کیش دراز' : "Today's Cash Drawer Breakdown"}
+                </h3>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  {language === 'ur' ? `تاریخ: ${todayDate}` : `Date: ${todayDate}`}
+                </span>
+              </div>
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => setIsRoznamchaOpen(false)}>
                 ✕
               </button>
             </div>
             <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.84rem' }}>
               <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '6px', marginBottom: '4px', borderBottom: '1px dashed var(--border-color)', fontSize: '0.78rem' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>All-Time Cash & Bank Wasooli:</span>
+                  <span className="font-mono text-emerald" style={{ fontWeight: 700 }}>Rs. {totalReceived.toLocaleString()}</span>
+                </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Opening Balance:</span>
                   <span className="font-mono">Rs. {Number(drawerData.openingCash).toLocaleString()}</span>
@@ -1839,7 +1893,9 @@ export default function DashboardView({ setActiveView, settings }) {
                 )}
                 <div>
                   <div style={{ fontWeight: 700 }}>{selectedRestockItem.name}</div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Current stock: {selectedRestockItem.stockSqFt} Sq.Ft</div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Current stock: {selectedRestockItem.stockSqFt} {selectedRestockItem.unit === 'Meter' || (selectedRestockItem.category || '').toLowerCase().includes('tile') ? (language === 'ur' ? 'میٹر' : 'Meters') : (language === 'ur' ? 'مربع فٹ' : 'Sq.Ft')}
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label" style={{ fontSize: '0.78rem', fontWeight: 700 }}>Add Quantity (Sq.Ft)*</label>

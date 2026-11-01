@@ -57,11 +57,10 @@ export const STOCK_TAXONOMY = {
     icon: Grid3X3,
     sizes: ['12 × 24', '24 × 24', '24 × 48', '16 × 16'],
     accessories: [
-      { name: 'Border Strip', labelUr: 'بارڈر پٹی' },
-      { name: 'Filling', labelUr: 'جوائنٹ فلنگ پاؤڈر' },
-      { name: 'Spacer', labelUr: 'ٹائل سپیسر' },
-      { name: 'Gola', labelUr: 'کارنر گولا (فی پیس)' },
-      { name: 'Tile Bond', labelUr: 'ٹائل بانڈ' }
+      { name: 'Gola' },
+      { name: 'Spacer' },
+      { name: 'Filling' },
+      { name: 'Bond' }
     ]
   },
   flowers: {
@@ -96,6 +95,44 @@ export const STOCK_TAXONOMY = {
       { id: '3D Wall Panels', labelEn: '3D Wall Panels (12×24)', labelUr: 'تھری ڈی وال پینل (12×24)' },
       { id: 'Front Elevation Panels', labelEn: 'Front Elevation Panels (12×24)', labelUr: 'فرنٹ ایلیویشن پینل (12×24)' }
     ]
+  },
+  tileAccessories: {
+    key: 'Tile Accessories',
+    labelEn: 'Tile Accessories',
+    labelUr: 'Tile Accessories',
+    icon: Boxes,
+    items: ['Gola', 'Spacer', 'Filling', 'Bond']
+  },
+  marbleAccessories: {
+    key: 'Marble Accessories',
+    labelEn: 'Marble Accessories',
+    labelUr: 'Marble Accessories',
+    icon: Gem,
+    kakriSizes: ['2 × 2', '3 × 3', '6 × 6'],
+    kalmSizes: ['1 inch', '2 inch', '3 inch']
+  },
+  otherAccessories: {
+    key: 'Other Accessories',
+    labelEn: 'Other Accessories',
+    labelUr: 'Other Accessories',
+    icon: Boxes,
+    items: ['Combod', 'Seat', 'Bason', 'Sink']
+  },
+  kakri: {
+    key: 'Kakri',
+    labelEn: 'Kakri',
+    labelUr: 'Kakri',
+    icon: Gem,
+    sizes: ['2 × 2', '3 × 3', '6 × 6'],
+    unit: 'Sq. Ft.'
+  },
+  kalm: {
+    key: 'Kalm',
+    labelEn: 'Kalm',
+    labelUr: 'Kalm',
+    icon: Ruler,
+    sizes: ['1 inch', '2 inch', '3 inch'],
+    unit: 'Sq. Ft.'
   }
 };
 
@@ -145,10 +182,15 @@ export function StockCategoryDropdownTrigger({ filter, onChange }) {
         <option value="ALL">{isUrdu ? 'تمام کیٹگریز' : 'All Categories'}</option>
         <option value="Marble">{isUrdu ? 'ماربل' : 'Marble'}</option>
         <option value="Tiles">{isUrdu ? 'ٹائلز' : 'Tiles'}</option>
+        <option value="Tile Accessories">Tile Accessories</option>
+        <option value="Marble Accessories">Marble Accessories</option>
+        <option value="Other Accessories">Other Accessories</option>
         <option value="Flowers">{isUrdu ? 'پھول' : 'Flowers'}</option>
         <option value="Borders">{isUrdu ? 'بارڈر' : 'Borders'}</option>
         <option value="Kali Patti">{isUrdu ? 'کالی پٹی' : 'Kali Patti'}</option>
         <option value="Panels">{isUrdu ? 'پینل' : 'Panels'}</option>
+        <option value="Kakri">Kakri</option>
+        <option value="Kalm">Kalm</option>
       </select>
       <Filter size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: filter?.type !== 'ALL' ? '#2563eb' : '#64748b', pointerEvents: 'none' }} />
     </div>
@@ -555,7 +597,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
           {/* Tile Accessories */}
           <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', marginBottom: '6px' }}>
-              🧱 {isUrdu ? 'ٹائلز اضافی سامان (لوازمات):' : 'Tile Accessories & Grout:'}
+              🧱 {isUrdu ? 'ٹائلز اضافی سامان:' : 'Tile Accessories:'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
               {STOCK_TAXONOMY.tiles.accessories.map((acc) => {
@@ -577,7 +619,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                       color: isSelected ? '#ffffff' : '#0f172a'
                     }}
                   >
-                    {acc.name} ({acc.labelUr})
+                    {acc.name}
                   </button>
                 );
               })}
@@ -783,6 +825,331 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                   }}
                 >
                   {tp.labelEn} ({tp.labelUr})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 6. TILE ACCESSORIES DRILL-DOWN (Gola, Spacer, Filling, Bond) */}
+      {(activeType === 'Tile Accessories' || activeType === 'Tile Accessory') && (
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#059669', marginBottom: '6px' }}>
+            🧱 {isUrdu ? 'ٹائلز اضافی سامان منتخب کریں:' : 'Select Tile Accessory Item:'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleSetSub(null)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '7px',
+                fontSize: '0.80rem',
+                fontWeight: 700,
+                border: '1px solid',
+                cursor: 'pointer',
+                background: !activeSub ? '#059669' : '#f8fafc',
+                borderColor: !activeSub ? '#059669' : '#cbd5e1',
+                color: !activeSub ? '#ffffff' : '#0f172a'
+              }}
+            >
+              {isUrdu ? 'تمام اشیاء' : 'All Tile Accessories'}
+            </button>
+            {['Gola', 'Spacer', 'Filling', 'Bond'].map((item) => {
+              const isSelected = activeSub === item;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => handleSetSub(item)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '7px',
+                    fontSize: '0.80rem',
+                    fontWeight: 800,
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    background: isSelected ? '#059669' : '#f8fafc',
+                    borderColor: isSelected ? '#059669' : '#cbd5e1',
+                    color: isSelected ? '#ffffff' : '#0f172a'
+                  }}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 7. MARBLE ACCESSORIES DRILL-DOWN (Kakri, Kalm) */}
+      {(activeType === 'Marble Accessories' || activeType === 'Marble Accessory') && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div>
+            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', marginBottom: '6px' }}>
+              💎 {isUrdu ? 'ماربل اضافی سامان منتخب کریں:' : 'Select Marble Accessory Item:'}
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={() => { handleSetSub(null); handleSetSize(null); }}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '7px',
+                  fontSize: '0.80rem',
+                  fontWeight: 700,
+                  border: '1px solid',
+                  cursor: 'pointer',
+                  background: !activeSub ? '#2563eb' : '#f8fafc',
+                  borderColor: !activeSub ? '#2563eb' : '#cbd5e1',
+                  color: !activeSub ? '#ffffff' : '#0f172a'
+                }}
+              >
+                {isUrdu ? 'تمام' : 'All Marble Accessories'}
+              </button>
+              {['Kakri', 'Kalm'].map((subItem) => {
+                const isSelected = activeSub === subItem;
+                return (
+                  <button
+                    key={subItem}
+                    type="button"
+                    onClick={() => { handleSetSub(subItem); handleSetSize(null); }}
+                    style={{
+                      padding: '6px 14px',
+                      borderRadius: '7px',
+                      fontSize: '0.80rem',
+                      fontWeight: 800,
+                      border: '1px solid',
+                      cursor: 'pointer',
+                      background: isSelected ? '#2563eb' : '#f8fafc',
+                      borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                      color: isSelected ? '#ffffff' : '#0f172a'
+                    }}
+                  >
+                    {subItem}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* If Kakri selected or no sub selected: show Kakri sizes */}
+          {(!activeSub || activeSub === 'Kakri') && (
+            <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
+                📐 Kakri Sizes (Sq. Ft.):
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {['2 × 2', '3 × 3', '6 × 6'].map((sz) => {
+                  const isSelected = activeSize === sz;
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => handleSetSize(sz)}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '7px',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        border: '1px solid',
+                        cursor: 'pointer',
+                        background: isSelected ? '#2563eb' : '#ffffff',
+                        borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                        color: isSelected ? '#ffffff' : '#0f172a'
+                      }}
+                    >
+                      Kakri {sz}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* If Kalm selected or no sub selected: show Kalm sizes */}
+          {(!activeSub || activeSub === 'Kalm') && (
+            <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
+                📐 Kalm Sizes (Sq. Ft.):
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                {['1 inch', '2 inch', '3 inch'].map((sz) => {
+                  const isSelected = activeSize === sz;
+                  return (
+                    <button
+                      key={sz}
+                      type="button"
+                      onClick={() => handleSetSize(sz)}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: '7px',
+                        fontSize: '0.78rem',
+                        fontWeight: 800,
+                        border: '1px solid',
+                        cursor: 'pointer',
+                        background: isSelected ? '#2563eb' : '#ffffff',
+                        borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                        color: isSelected ? '#ffffff' : '#0f172a'
+                      }}
+                    >
+                      Kalm {sz}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 8. OTHER ACCESSORIES DRILL-DOWN (Combod, Seat, Bason, Sink) */}
+      {(activeType === 'Other Accessories' || activeType === 'Other Accessory') && (
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#7c3aed', marginBottom: '6px' }}>
+            🚰 {isUrdu ? 'دیگر اشیاء منتخب کریں:' : 'Select Other Accessories:'}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleSetSub(null)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '7px',
+                fontSize: '0.80rem',
+                fontWeight: 700,
+                border: '1px solid',
+                cursor: 'pointer',
+                background: !activeSub ? '#7c3aed' : '#f8fafc',
+                borderColor: !activeSub ? '#7c3aed' : '#cbd5e1',
+                color: !activeSub ? '#ffffff' : '#0f172a'
+              }}
+            >
+              {isUrdu ? 'تمام' : 'All Other Accessories'}
+            </button>
+            {['Combod', 'Seat', 'Bason', 'Sink'].map((item) => {
+              const isSelected = activeSub === item;
+              return (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => handleSetSub(item)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '7px',
+                    fontSize: '0.80rem',
+                    fontWeight: 800,
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    background: isSelected ? '#7c3aed' : '#f8fafc',
+                    borderColor: isSelected ? '#7c3aed' : '#cbd5e1',
+                    color: isSelected ? '#ffffff' : '#0f172a'
+                  }}
+                >
+                  {item}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 9. STANDALONE KAKRI DRILL-DOWN */}
+      {activeType === 'Kakri' && (
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', marginBottom: '6px' }}>
+            📐 Kakri Sizes (Sq. Ft.):
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleSetSize(null)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '7px',
+                fontSize: '0.80rem',
+                fontWeight: 700,
+                border: '1px solid',
+                cursor: 'pointer',
+                background: !activeSize ? '#2563eb' : '#f8fafc',
+                borderColor: !activeSize ? '#2563eb' : '#cbd5e1',
+                color: !activeSize ? '#ffffff' : '#0f172a'
+              }}
+            >
+              All Kakri
+            </button>
+            {['2 × 2', '3 × 3', '6 × 6'].map((sz) => {
+              const isSelected = activeSize === sz;
+              return (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => handleSetSize(sz)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '7px',
+                    fontSize: '0.80rem',
+                    fontWeight: 800,
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    background: isSelected ? '#2563eb' : '#f8fafc',
+                    borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                    color: isSelected ? '#ffffff' : '#0f172a'
+                  }}
+                >
+                  {sz}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 10. STANDALONE KALM DRILL-DOWN */}
+      {activeType === 'Kalm' && (
+        <div>
+          <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', marginBottom: '6px' }}>
+            📐 Kalm Sizes (Sq. Ft.):
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleSetSize(null)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '7px',
+                fontSize: '0.80rem',
+                fontWeight: 700,
+                border: '1px solid',
+                cursor: 'pointer',
+                background: !activeSize ? '#2563eb' : '#f8fafc',
+                borderColor: !activeSize ? '#2563eb' : '#cbd5e1',
+                color: !activeSize ? '#ffffff' : '#0f172a'
+              }}
+            >
+              All Kalm
+            </button>
+            {['1 inch', '2 inch', '3 inch'].map((sz) => {
+              const isSelected = activeSize === sz;
+              return (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => handleSetSize(sz)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '7px',
+                    fontSize: '0.80rem',
+                    fontWeight: 800,
+                    border: '1px solid',
+                    cursor: 'pointer',
+                    background: isSelected ? '#2563eb' : '#f8fafc',
+                    borderColor: isSelected ? '#2563eb' : '#cbd5e1',
+                    color: isSelected ? '#ffffff' : '#0f172a'
+                  }}
+                >
+                  {sz}
                 </button>
               );
             })}

@@ -131,7 +131,7 @@ export default function InvoicesView({ settings }) {
         const target = statusFilter.toLowerCase();
         if (target === 'paid' && invStatus !== 'paid') return false;
         if (target === 'partial' && invStatus !== 'half paid' && invStatus !== 'partial') return false;
-        if (target === 'unpaid' && invStatus !== 'pending' && invStatus !== 'unpaid' && invStatus !== 'due') return false;
+        if (target === 'unpaid' && invStatus !== 'pending' && invStatus !== 'unpaid' && invStatus !== 'due' && invStatus !== 'udhar') return false;
       }
 
       // 3. Date Range Filter

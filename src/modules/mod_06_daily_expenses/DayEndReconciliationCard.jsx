@@ -1,13 +1,15 @@
-import React, { useState } from "react";
-import { Printer, CheckCircle2, AlertTriangle, Calculator, FileText, ArrowDownRight, ArrowUpRight, DollarSign } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Printer, CheckCircle2, AlertTriangle, Calculator, FileText, ArrowDownRight, ArrowUpRight, DollarSign, Lock, Check } from "lucide-react";
 import { useLanguage } from "../../context/LanguageContext";
 
-export default function DayEndReconciliationCard({ cashData, onPrintThermal, onPrintA4 }) {
+export default function DayEndReconciliationCard({ cashData, onPrintThermal, onPrintA4, onSaveDayClosing, existingClosing }) {
   const { language } = useLanguage();
   const tr = (en, ur) => (language === "ur" ? ur : en);
 
   const [actualPhysicalCash, setActualPhysicalCash] = useState("");
   const [showDenominations, setShowDenominations] = useState(false);
+  const [isSavingClosing, setIsSavingClosing] = useState(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
   const [notes, setNotes] = useState({
     5000: "",
     1000: "",
@@ -17,6 +19,18 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
     20: "",
     10: ""
   });
+
+  useEffect(() => {
+    if (existingClosing) {
+      if (existingClosing.actualCash !== undefined && existingClosing.actualCash !== null) {
+        setActualPhysicalCash(String(existingClosing.actualCash));
+      }
+      if (existingClosing.noteDenominations) {
+        setNotes(existingClosing.noteDenominations);
+        setShowDenominations(true);
+      }
+    }
+  }, [existingClosing]);
 
   if (!cashData) return null;
 
@@ -344,8 +358,81 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
         </div>
       </div>
 
-      {/* Print Action Buttons */}
+      {/* Day Closing Success / Status Notice */}
+      {(saveSuccessMsg || existingClosing?.status === 'Closed') && (
+        <div style={{
+          background: "rgba(16, 185, 129, 0.1)",
+          border: "1px solid #10b981",
+          borderRadius: "8px",
+          padding: "10px 14px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          color: "#059669",
+          fontSize: "0.84rem",
+          fontWeight: 700
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <Check size={18} />
+            <span>
+              {saveSuccessMsg || tr(`Day Reconciled & Closed (Actual Cash: Rs. ${Number(existingClosing.actualCash).toLocaleString()})`, `روزنامچہ محفوظ شدہ ہے (اصل کیش: Rs. ${Number(existingClosing.actualCash).toLocaleString()})`)}
+            </span>
+          </div>
+          <span style={{ fontSize: "0.72rem", background: "#10b981", color: "#fff", padding: "2px 8px", borderRadius: "4px" }}>
+            CLOSED
+          </span>
+        </div>
+      )}
+
+      {/* Action Buttons: Save & Close Day + Print Roznamcha */}
       <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          disabled={isSavingClosing}
+          onClick={async () => {
+            if (onSaveDayClosing) {
+              setIsSavingClosing(true);
+              try {
+                await onSaveDayClosing({
+                  date: cashData.targetDate,
+                  openingCash,
+                  cashInflow: totalCashInflow,
+                  cashOutflow: totalCashOutflow,
+                  expectedCash: liveCash,
+                  actualCash: countedNum !== null ? countedNum : liveCash,
+                  difference: difference !== null ? difference : 0,
+                  noteDenominations: notes,
+                  status: 'Closed'
+                });
+                setSaveSuccessMsg(tr("Day Closing Saved & Roznamcha Reconciled!", "روزنامچہ بند اور محفوظ ہو گیا!"));
+                setTimeout(() => setSaveSuccessMsg(""), 3500);
+              } catch (err) {
+                alert("Error saving closing: " + err.message);
+              } finally {
+                setIsSavingClosing(false);
+              }
+            }
+          }}
+          style={{
+            padding: "10px 24px",
+            borderRadius: "8px",
+            fontWeight: 800,
+            fontSize: "0.88rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            background: "#059669",
+            color: "#ffffff",
+            border: "none",
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(5, 150, 105, 0.25)"
+          }}
+        >
+          <Lock size={16} />
+          {isSavingClosing ? tr("Saving...", "محفوظ ہو رہا ہے...") : tr("Save & Close Day (روزنامچہ بند / محفوظ کریں)", "روزنامچہ بند / محفوظ کریں")}
+        </button>
+
         <button
           type="button"
           className="btn btn-primary"
