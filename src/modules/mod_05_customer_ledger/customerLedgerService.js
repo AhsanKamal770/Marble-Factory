@@ -17,6 +17,13 @@ export async function saveCustomer(customerData) {
     const existing = await db.customers.get(id);
     if (!existing) throw new Error("Customer not found");
 
+    const newAdv = customerData.advancePayment !== undefined && customerData.advancePayment !== ""
+      ? Number(customerData.advancePayment) || 0
+      : Number(existing.advanceBalance || 0);
+
+    const oldAdv = Number(existing.advanceBalance || 0);
+    const advDiff = newAdv - oldAdv;
+
     const updatePayload = {
       name: customerData.name?.trim(),
       phone: customerData.phone?.trim() || '',
@@ -24,14 +31,40 @@ export async function saveCustomer(customerData) {
       city: customerData.city?.trim() || 'Faisalabad / Jhumra',
       address: customerData.address?.trim() || '',
       creditLimit: Number(customerData.creditLimit) || 50000,
+      advanceBalance: newAdv,
       notes: customerData.notes || '',
       updatedAt: new Date().toISOString()
     };
+
+    if (advDiff !== 0) {
+      updatePayload.totalPaid = Math.max(0, Number(existing.totalPaid || 0) + advDiff);
+      updatePayload.balanceDue = Math.max(0, Number(existing.totalBilled || 0) - updatePayload.totalPaid);
+
+      if (advDiff > 0) {
+        const currentYear = new Date().getFullYear();
+        const count = await db.customer_payments.count();
+        const paymentNo = `ADV-${currentYear}-${String(count + 1).padStart(4, '0')}`;
+        await db.customer_payments.add({
+          paymentNo,
+          customerId: id,
+          customerName: updatePayload.name,
+          amount: advDiff,
+          paymentMethod: 'Cash',
+          notes: 'Additional advance payment deposited via Profile Edit (پیشگی ایڈوانس جمع)',
+          isAdvance: true,
+          date: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        });
+      }
+    }
 
     await db.customers.update(id, updatePayload);
     return id;
   } else {
     // New Customer
+    const advancePaid = Number(customerData.advancePayment) || 0;
+    const openingBalDue = openingBal;
+
     const newPayload = {
       name: customerData.name?.trim(),
       phone: customerData.phone?.trim() || '',
@@ -39,15 +72,35 @@ export async function saveCustomer(customerData) {
       city: customerData.city?.trim() || 'Faisalabad / Jhumra',
       address: customerData.address?.trim() || '',
       creditLimit: Number(customerData.creditLimit) || 50000,
-      totalBilled: openingBal,
-      totalPaid: 0,
-      balanceDue: openingBal,
+      totalBilled: openingBalDue,
+      totalPaid: advancePaid,
+      balanceDue: Math.max(0, openingBalDue - advancePaid),
+      advanceBalance: Math.max(0, advancePaid - openingBalDue),
       notes: customerData.notes || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     const newId = await db.customers.add(newPayload);
+
+    // If advance paid, record voucher in customer_payments so it reflects in Roznamcha, Cash, and Timeline
+    if (advancePaid > 0) {
+      const currentYear = new Date().getFullYear();
+      const count = await db.customer_payments.count();
+      const paymentNo = `ADV-${currentYear}-${String(count + 1).padStart(4, '0')}`;
+      await db.customer_payments.add({
+        paymentNo,
+        customerId: newId,
+        customerName: newPayload.name,
+        amount: advancePaid,
+        paymentMethod: 'Cash',
+        notes: 'Advance payment received on customer registration (پیشگی ایڈوانس وصولی)',
+        isAdvance: true,
+        date: new Date().toISOString(),
+        createdAt: new Date().toISOString()
+      });
+    }
+
     return newId;
   }
 }
@@ -71,33 +124,23 @@ export async function deleteCustomer(id) {
       throw new Error('Customer record not found.');
     }
 
-    // 2. Check customer Khata balance
-    const balanceDue = Math.round(Number(customer.balanceDue || 0));
-
-    // If Khata has an actual positive balance (udhaar exists)
-    if (balanceDue > 0) {
-      throw new Error(`Khata not cleared! Customer has an outstanding balance of Rs. ${balanceDue.toLocaleString()}. Please recover all dues before deleting.`);
-    }
-
-    // 3. Khata is Cleared (balance <= 0)
-    // Check if customer has linked invoices or payments
+    // 2. Unlink all related invoices (preserving bill audit and line items while removing customer attachment)
     const allInvoices = await db.invoices.toArray();
-    const hasInvoices = allInvoices.some((inv) => String(inv.customerId) === targetIdStr);
-    const allPayments = await db.customer_payments.toArray();
-    const hasPayments = allPayments.some((pay) => String(pay.customerId) === targetIdStr);
-
-    if (hasInvoices || hasPayments) {
-      // Data Loss Prevention: Do NOT delete invoices or payments!
-      // Archive customer record instead so past sales reports, P&L, and ledger audit trail remain intact.
-      await db.customers.update(customer.id, {
-        isArchived: true,
-        isActive: false,
-        updatedAt: new Date().toISOString()
-      });
-      return true;
+    for (const inv of allInvoices) {
+      if (String(inv.customerId) === targetIdStr || String(inv.customerId) === String(customer.id)) {
+        await db.invoices.update(inv.id, { customerId: null, customerDeleted: true });
+      }
     }
 
-    // If no linked transactions exist, safely delete the customer record
+    // 3. Clean up customer payments linked to this customer
+    const allPayments = await db.customer_payments.toArray();
+    for (const pay of allPayments) {
+      if (String(pay.customerId) === targetIdStr || String(pay.customerId) === String(customer.id)) {
+        await db.customer_payments.delete(pay.id);
+      }
+    }
+
+    // 4. Permanently delete the customer record from db.customers
     await db.customers.delete(customer.id);
     return true;
   });
@@ -145,6 +188,7 @@ export async function getCustomerTimeline(customerId) {
 
   // Filter payment vouchers for this customer
   const payments = allPayments.filter(pay => {
+    if (pay.isAdvanceAdjustment) return false;
     if (pay.customerId !== null && pay.customerId !== undefined) {
       return String(pay.customerId) === targetIdStr;
     }
@@ -182,7 +226,13 @@ export async function getCustomerTimeline(customerId) {
   ];
 
   // Sort chronologically ascending to calculate running balance
-  timeline.sort((a, b) => a.sortDate - b.sortDate);
+  timeline.sort((a, b) => {
+    const diff = a.sortDate - b.sortDate;
+    if (diff !== 0) return diff;
+    if (a.isAdvance && !b.isAdvance) return -1;
+    if (!a.isAdvance && b.isAdvance) return 1;
+    return 0;
+  });
 
   let currentRunningBalance = 0;
   const computedTimeline = timeline.map(item => {
@@ -196,7 +246,7 @@ export async function getCustomerTimeline(customerId) {
         immediatePaid
       };
     } else {
-      currentRunningBalance = Math.max(0, currentRunningBalance - item.credit);
+      currentRunningBalance -= item.credit;
       return {
         ...item,
         runningBalance: currentRunningBalance
@@ -243,14 +293,19 @@ export async function recordPaymentRecovery(customerId, amount, paymentMethod = 
 
     await db.customer_payments.add(payment);
 
-    // Update customer balance & totalPaid
+    // Update customer balance & totalPaid (Supports regular dues payment + excess advance deposit)
     const currentBalance = Number(customer.balanceDue || 0);
     const currentPaid = Number(customer.totalPaid || 0);
+    const currentAdvance = Number(customer.advanceBalance || 0);
+
     const newBalance = Math.max(0, currentBalance - paymentAmount);
+    const excessAdvance = Math.max(0, paymentAmount - currentBalance);
     const newPaid = currentPaid + paymentAmount;
+    const newAdvance = currentAdvance + excessAdvance;
 
     await db.customers.update(customer.id, {
       balanceDue: newBalance,
+      advanceBalance: newAdvance,
       totalPaid: newPaid,
       updatedAt: new Date().toISOString()
     });

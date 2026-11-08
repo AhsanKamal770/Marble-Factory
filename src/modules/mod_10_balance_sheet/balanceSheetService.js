@@ -266,7 +266,9 @@ export async function getComprehensiveBalanceSheet({ horizon = 'Monthly', custom
   })).sort((a, b) => b.saleValue - a.saleValue);
 
   // ── 2. Cash in Hand / Drawer (کیش ان ہینڈ) ─────────────────────────────────
-  const targetDateStr = end.toISOString().slice(0, 10);
+  const todayDateStr = new Date().toISOString().slice(0, 10);
+  const endDateStr = end.toISOString().slice(0, 10);
+  const targetDateStr = endDateStr > todayDateStr ? todayDateStr : endDateStr;
   let liveCashData = { liveCash: 0, openingCash: 0, cashSalesToday: 0, wasooliToday: 0, expensesToday: 0 };
   try {
     liveCashData = await getLiveCashInDrawer(targetDateStr);
@@ -283,6 +285,7 @@ export async function getComprehensiveBalanceSheet({ horizon = 'Monthly', custom
 
   customers.forEach((cust) => {
     const due = Number(cust.balanceDue || 0);
+    const adv = Number(cust.advanceBalance || 0);
     if (due > 0) {
       totalReceivables += due;
       debtorCustomers.push({
@@ -294,9 +297,8 @@ export async function getComprehensiveBalanceSheet({ horizon = 'Monthly', custom
         totalPaid: Number(cust.totalPaid || 0),
         balanceDue: due
       });
-    } else if (due < 0) {
-      // Customer has negative balance = Customer paid advance but goods not fully billed/delivered!
-      const advanceAmount = Math.abs(due);
+    }
+    if (adv > 0) {
       advanceCustomers.push({
         id: cust.id,
         name: cust.name || 'Customer Account',
@@ -304,47 +306,18 @@ export async function getComprehensiveBalanceSheet({ horizon = 'Monthly', custom
         city: cust.city || 'Faisalabad',
         totalBilled: Number(cust.totalBilled || 0),
         totalPaid: Number(cust.totalPaid || 0),
-        advanceAmount: advanceAmount,
-        notes: cust.notes || 'Advance Payment on Account (مال ڈیلیور ہونا باقی)'
+        advanceAmount: adv,
+        notes: cust.notes || 'Customer Advance Balance (پیشگی رقم)'
       });
     }
   });
 
   debtorCustomers.sort((a, b) => b.balanceDue - a.balanceDue);
-
-  // ── 4. Customer Advances / Pending Delivery (گاہک ایڈوانس / مال ڈیلیور ہونا باقی) ──
-  // Check both negative customer balances AND invoices with pending delivery/unfulfilled orders
-  let totalCustomerAdvances = advanceCustomers.reduce((s, c) => s + c.advanceAmount, 0);
-
-  // Also check invoices with delivery pending or advance paid exceeding delivered goods
-  const pendingInvoices = invoices.filter((inv) => {
-    const isPending = (inv.deliveryStatus || '').toLowerCase().includes('pending') ||
-                      (inv.paymentStatus || '').toLowerCase().includes('advance');
-    return isPending;
-  });
-
-  pendingInvoices.forEach((inv) => {
-    const advancePaid = Number(inv.paidAmount || 0);
-    if (advancePaid > 0) {
-      // Add as pending delivery advance if not already matched
-      const alreadyInList = advanceCustomers.some(c => c.id === inv.customerId);
-      if (!alreadyInList) {
-        totalCustomerAdvances += advancePaid;
-        advanceCustomers.push({
-          id: inv.customerId || `INV_${inv.id}`,
-          name: inv.customerName || 'Advance Customer',
-          phone: inv.customerPhone || '-',
-          city: 'Factory Order',
-          totalBilled: Number(inv.grandTotal || 0),
-          totalPaid: advancePaid,
-          advanceAmount: advancePaid,
-          notes: `Bill #${inv.invoiceNo} - Pending Factory Delivery (مال ڈیلیور ہونا باقی)`
-        });
-      }
-    }
-  });
-
   advanceCustomers.sort((a, b) => b.advanceAmount - a.advanceAmount);
+
+  // ── 4. Customer Advances (گاہک پیشگی رقم - واجب الادا ذمہ داری) ───────────
+  // Customer Advances reflect strictly the unapplied advance balance
+  let totalCustomerAdvances = advanceCustomers.reduce((s, c) => s + c.advanceAmount, 0);
 
   // ── 5. Supplier Payables (سپلائر واجب الادا رقم) ───────────────────────────
   let totalSupplierPayables = 0;

@@ -17,7 +17,6 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!payAmount || payAmount <= 0) return;
-    if (currentBalance > 0 && payAmount > currentBalance) return;
     onSave(formData);
   };
 
@@ -39,7 +38,7 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
                 Receive Customer Payment
               </h3>
               <p className="app-modal-subtitle">
-                ادھار وصولی — Record payment against customer ledger
+                ادھار وصولی و پیشگی ایڈوانس — Record payment or advance against customer ledger
               </p>
             </div>
           </div>
@@ -101,17 +100,9 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
                   required
                   type="number"
                   min="1"
-                  max={currentBalance > 0 ? currentBalance : undefined}
                   autoFocus
                   value={formData.amount}
-                  onChange={e => {
-                    const val = e.target.value;
-                    if (currentBalance > 0 && parseFloat(val) > currentBalance) {
-                      setFormData(p => ({ ...p, amount: currentBalance.toString() }));
-                    } else {
-                      setFormData(p => ({ ...p, amount: val }));
-                    }
-                  }}
+                  onChange={e => setFormData(p => ({ ...p, amount: e.target.value }))}
                   className="app-form-input font-mono"
                   style={{
                     fontSize: "1.15rem",
@@ -121,6 +112,16 @@ export default function PaymentRecoveryModal({ customer, onClose, onSave }) {
                   placeholder="0"
                 />
               </div>
+              {payAmount > currentBalance && currentBalance > 0 && (
+                <div style={{ fontSize: "0.74rem", color: "#15803d", fontWeight: 700, marginTop: "4px" }}>
+                  💡 Dues Cleared: Rs. {currentBalance.toLocaleString()} | Advance Deposit: Rs. {(payAmount - currentBalance).toLocaleString()} (پیشگی ایڈوانس)
+                </div>
+              )}
+              {currentBalance === 0 && payAmount > 0 && (
+                <div style={{ fontSize: "0.74rem", color: "#15803d", fontWeight: 700, marginTop: "4px" }}>
+                  💡 Advance Deposit: Rs. {payAmount.toLocaleString()} (پیشگی ایڈوانس رقم برائے گاہک کھاتہ)
+                </div>
+              )}
             </div>
 
             {/* Payment Method */}

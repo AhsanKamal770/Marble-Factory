@@ -1,4 +1,4 @@
-import { db } from "../../db/index.js";
+import { db, adjustItemStock } from "../../db/index.js";
 
 /**
  * Generate sequential Gate Pass Number (e.g. GP-2026-0001)
@@ -53,11 +53,19 @@ export async function createGatePass(data) {
 
     return {
       sr: idx + 1,
+      itemId: item.itemId || item.id || null,
+      category: item.category || "",
       name: item.name || item.itemName || "Marble / Tile Item",
       quantity: qty,
       unit: item.unit || (sqft > 0 ? "Sq.Ft" : "Pcs"),
-      thicknessSutar: item.thicknessSutar ? String(item.thicknessSutar) : "4",
-      size: item.size || item.dimensions || (item.length && item.width ? `${item.length}ft × ${item.width}ft` : ""),
+      thicknessSutar: item.thicknessSutar !== undefined && item.thicknessSutar !== "" ? String(item.thicknessSutar) : "",
+      size: item.size || item.dimensions || item.selectedSizePreset || item.standardSize || (item.length && item.width ? `${item.length}×${item.width}` : ""),
+      selectedSizePreset: item.selectedSizePreset || "",
+      standardSize: item.standardSize || "",
+      length: item.length,
+      width: item.width,
+      meters: item.meters,
+      runningFeet: item.runningFeet,
       pieces: pcs || qty,
       sqFt: sqft || qty
     };
@@ -91,6 +99,58 @@ export async function createGatePass(data) {
   };
 
   const id = await db.gate_passes.add(record);
+
+  // Decrement physical yard stock for dispatched goods
+  const allDbItems = await db.items.toArray();
+  for (const it of sanitizedManifest) {
+    let matchedItem = null;
+    if (it.itemId) {
+      matchedItem = allDbItems.find(i => String(i.id) === String(it.itemId));
+    }
+    if (!matchedItem && it.name) {
+      const cleanName = it.name.trim().toLowerCase();
+      matchedItem = allDbItems.find(i => (i.name || '').trim().toLowerCase() === cleanName);
+    }
+
+    if (matchedItem) {
+      it.itemId = matchedItem.id;
+      const cat = (matchedItem.category || '').toLowerCase();
+      const unit = (it.unit || matchedItem.unit || '').toLowerCase();
+      const isPiece = unit.includes('pc') || cat.includes('accessories') || cat.includes('flower') || cat.includes('panel');
+      const isMeter = unit.includes('meter') || (cat.includes('tile') && !isPiece);
+      const isBox = unit.includes('box');
+      const qty = Number(it.quantity) || Number(it.sqFt) || Number(it.pieces) || 0;
+
+      let dSqFt = 0;
+      let dPieces = 0;
+      let dBoxes = 0;
+
+      if (isPiece) {
+        dPieces = -qty;
+        dSqFt = -qty;
+      } else if (isMeter) {
+        dSqFt = -qty;
+      } else if (isBox) {
+        dBoxes = -qty;
+      } else {
+        dSqFt = -qty;
+        dPieces = -qty;
+      }
+
+      await adjustItemStock(
+        matchedItem.id,
+        dSqFt,
+        dBoxes,
+        dPieces,
+        'Gate Pass Dispatch',
+        gatePassNo,
+        `Dispatched via Gate Pass #${gatePassNo} (${record.vehicleRegNo || record.vehicleType}) to ${record.customerName}`
+      );
+    }
+  }
+
+  // Update gate pass with populated itemIds
+  await db.gate_passes.update(id, { manifest: sanitizedManifest });
 
   // If linked to an invoice, update invoice status in DB
   if (record.invoiceId) {
@@ -171,10 +231,12 @@ export async function updateGatePass(id, updatedData) {
 
     return {
       sr: idx + 1,
+      itemId: item.itemId || item.id || null,
+      category: item.category || "",
       name: item.name || item.itemName || "Marble / Tile Item",
       quantity: qty,
       unit: item.unit || (sqft > 0 ? "Sq.Ft" : "Pcs"),
-      thicknessSutar: item.thicknessSutar ? String(item.thicknessSutar) : "4",
+      thicknessSutar: item.thicknessSutar !== undefined && item.thicknessSutar !== "" ? String(item.thicknessSutar) : "",
       size: item.size || item.dimensions || "",
       pieces: pcs || qty,
       sqFt: sqft || qty
@@ -195,6 +257,30 @@ export async function updateGatePass(id, updatedData) {
  * Delete a Gate Pass
  */
 export async function deleteGatePass(id) {
+  const gp = await db.gate_passes.get(Number(id));
+  if (gp && Array.isArray(gp.manifest)) {
+    for (const it of gp.manifest) {
+      if (it.itemId) {
+        const qty = Number(it.quantity) || Number(it.sqFt) || Number(it.pieces) || 0;
+        const unit = (it.unit || '').toLowerCase();
+        const isPiece = unit.includes('pc');
+        const isMeter = unit.includes('meter');
+        const isBox = unit.includes('box');
+        const dSqFt = (isPiece || isBox) ? (isPiece ? qty : 0) : qty;
+        const dPieces = isPiece ? qty : 0;
+        const dBoxes = isBox ? qty : 0;
+        await adjustItemStock(
+          it.itemId,
+          dSqFt,
+          dBoxes,
+          dPieces,
+          'Gate Pass Reversal',
+          gp.gatePassNo,
+          `Cancelled Gate Pass #${gp.gatePassNo}`
+        );
+      }
+    }
+  }
   return await db.gate_passes.delete(Number(id));
 }
 

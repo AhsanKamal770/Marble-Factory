@@ -62,7 +62,7 @@ const INITIAL_FORM = {
   carriagePaidBy: "Customer (موقع پر ادا کرے گا)",
   driverAdvance: "",
   notes: "",
-  manifestItems: [{ name: "", quantity: "", unit: "Sq.Ft" }]
+  manifestItems: [{ name: "", size: "", quantity: "", unit: "Units" }]
 };
 
 // ── Status Badge Component ──────────────────────────────────────────────────
@@ -439,17 +439,30 @@ export default function GatePassView() {
         customerPhone: "",
         destination: "",
         carriageCharges: "",
-        manifestItems: [{ name: "", quantity: "", unit: "Sq.Ft" }]
+        manifestItems: [{ name: "", size: "", quantity: "", unit: "Units" }]
       }));
       return;
     }
 
     const manifestItems = (inv.items || []).map(line => {
-      const rawQty = line.quantity !== undefined && line.quantity !== "" ? line.quantity : (line.sqFt || line.totalSqFt || line.pieces || "");
-      const cappedQty = rawQty !== "" ? (Number(rawQty) > 300 ? 300 : rawQty) : "";
+      const rawQty = line.quantity !== undefined && line.quantity !== "" ? line.quantity : (line.sqFt || line.totalSqFt || line.pieces || line.meters || "");
+      const dispatchQty = rawQty !== "" ? rawQty : "";
       return {
+        itemId: line.itemId || line.id,
         name: line.name || "",
-        quantity: cappedQty,
+        category: line.category || "",
+        size: line.selectedSizePreset || line.standardSize || (line.length && line.width ? `${line.length}×${line.width}` : line.size || ""),
+        selectedSizePreset: line.selectedSizePreset || "",
+        standardSize: line.standardSize || "",
+        thicknessSutar: line.thicknessSutar !== undefined ? line.thicknessSutar : "",
+        length: line.length,
+        width: line.width,
+        pieces: line.pieces,
+        totalSqFt: line.totalSqFt,
+        meters: line.meters,
+        runningFeet: line.runningFeet,
+        billedQuantity: line.billedQuantity,
+        quantity: dispatchQty,
         unit: line.unit || (line.sqFt || line.totalSqFt ? "Sq.Ft" : "Pcs")
       };
     });
@@ -462,7 +475,7 @@ export default function GatePassView() {
       customerPhone: inv.customerPhone || "",
       destination: inv.destination || "",
       carriageCharges: inv.carriageCharges ? String(inv.carriageCharges) : "",
-      manifestItems: manifestItems.length > 0 ? manifestItems : [{ name: "", quantity: "", unit: "Sq.Ft" }]
+      manifestItems: manifestItems.length > 0 ? manifestItems : [{ name: "", quantity: "", unit: "Units" }]
     }));
   };
 
@@ -470,12 +483,7 @@ export default function GatePassView() {
     setFormData(prev => {
       const items = [...prev.manifestItems];
       let finalVal = value;
-      if (field === "quantity" && value !== "") {
-        const num = parseFloat(value);
-        if (!isNaN(num) && num > 300) {
-          finalVal = 300;
-        }
-      }
+      // No 300 quantity cap
       items[index] = { ...items[index], [field]: finalVal };
       return { ...prev, manifestItems: items };
     });
@@ -484,7 +492,7 @@ export default function GatePassView() {
   const handleAddManifestRow = () => {
     setFormData(prev => ({
       ...prev,
-      manifestItems: [...prev.manifestItems, { name: "", quantity: "", unit: "Sq.Ft" }]
+      manifestItems: [...prev.manifestItems, { name: "", size: "", quantity: "", unit: "Units" }]
     }));
   };
 
@@ -504,11 +512,7 @@ export default function GatePassView() {
         return;
       }
 
-      const exceedsMax = manifest.some(r => Number(r.quantity || r.sqFt || r.pieces || 0) > 300);
-      if (exceedsMax) {
-        alert(tr("A maximum of 300 quantity can be dispatched at a time per item.", "ایک وقت میں فی آئٹم 300 سے زیادہ مقدار روانہ نہیں کی جا سکتی۔"));
-        return;
-      }
+      // 300 cap removed per user request
 
       const created = await createGatePass({
         ...formData,
@@ -749,7 +753,7 @@ export default function GatePassView() {
               <span className="kpi-metric-label-ur">(کل رقبہ)</span>
             </div>
             <div className="kpi-metric-value font-mono">
-              {totalSqFtDispatched.toLocaleString()} <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)" }}>Sq.Ft</span>
+              {totalSqFtDispatched.toLocaleString()} <span style={{ fontSize: "0.78rem", fontWeight: 600, color: "var(--text-muted, #94a3b8)" }}>Units</span>
             </div>
           </div>
         </div>
@@ -1164,7 +1168,7 @@ export default function GatePassView() {
                       {/* Manifest Quantity */}
                       <td style={{ padding: "14px 14px" }}>
                         <div style={{ fontWeight: 800, color: "var(--text-primary)", fontFamily: "var(--font-mono)" }}>
-                          {gp.totalQuantity || gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)" }}>{gp.manifest?.[0]?.unit || "Sq.Ft"}</span>
+                          {gp.totalQuantity || gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)" }}>Units</span>
                         </div>
                         <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
                           {(gp.manifest || []).length} items {gp.totalPieces ? `• ${gp.totalPieces} Pcs` : ''}
@@ -1607,16 +1611,17 @@ export default function GatePassView() {
                     </button>
                   </div>
 
-                  <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1.2fr 1fr auto", gap: "8px", padding: "0 10px 4px 10px", fontSize: "0.72rem", fontWeight: 700, color: "#64748b" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "2.2fr 1.3fr 1.1fr 1fr auto", gap: "8px", padding: "0 10px 4px 10px", fontSize: "0.72rem", fontWeight: 700, color: "#64748b" }}>
                     <span>{tr("Item Name", "مال / آئٹم کا نام")}</span>
-                    <span style={{ textAlign: "right" }}>{tr("Quantity (Max 300)", "مقدار (زیادہ سے زیادہ 300)")}</span>
+                    <span>{tr("Size", "سائز")}</span>
+                    <span style={{ textAlign: "right" }}>{tr("Quantity", "روانہ کردہ مقدار")}</span>
                     <span style={{ textAlign: "center" }}>{tr("Unit", "اکائی / یونٹ")}</span>
                     <span style={{ width: "28px" }}></span>
                   </div>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                     {formData.manifestItems.map((item, idx) => (
-                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "2.5fr 1.2fr 1fr auto", gap: "8px", alignItems: "center", background: "#ffffff", padding: "8px 10px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
+                      <div key={idx} style={{ display: "grid", gridTemplateColumns: "2.2fr 1.3fr 1.1fr 1fr auto", gap: "8px", alignItems: "center", background: "#ffffff", padding: "8px 10px", borderRadius: "10px", border: "1px solid #e2e8f0" }}>
                         <div className="app-input-wrapper">
                           <Layers size={14} className="app-input-icon" />
                           <input
@@ -1624,9 +1629,20 @@ export default function GatePassView() {
                             required
                             value={item.name}
                             onChange={e => handleManifestChange(idx, "name", e.target.value)}
-                            placeholder="e.g. Ziarat White Slabs"
+                            placeholder="Item Name (e.g. Badal Grey)"
                             className="app-form-input"
                             style={{ padding: "7px 10px 7px 32px", fontSize: "0.82rem", height: "36px" }}
+                          />
+                        </div>
+
+                        <div className="app-input-wrapper">
+                          <input
+                            type="text"
+                            value={item.size || ""}
+                            onChange={e => handleManifestChange(idx, "size", e.target.value)}
+                            placeholder="Size (e.g. 12×24)"
+                            className="app-form-input"
+                            style={{ padding: "7px 8px", fontSize: "0.82rem", height: "36px" }}
                           />
                         </div>
 
@@ -1635,15 +1651,12 @@ export default function GatePassView() {
                             type="number"
                             step="any"
                             min={0}
-                            max={300}
                             value={
-                              item.quantity !== undefined && item.quantity !== ""
-                                ? (Number(item.quantity) > 300 ? 300 : item.quantity)
-                                : (Number(item.pieces || item.sqFt) > 300 ? 300 : (item.pieces || item.sqFt || ""))
+                              item.quantity !== undefined && item.quantity !== "" ? item.quantity : (item.pieces || item.sqFt || "")
                             }
                             onChange={e => handleManifestChange(idx, "quantity", e.target.value)}
-                            placeholder="Qty (Max 300)"
-                            title={tr("Max 300 per dispatch", "ایک وقت میں زیادہ سے زیادہ 300")}
+                            placeholder="Qty"
+                            title=""
                             className="app-form-input font-mono"
                             style={{ padding: "7px 10px", fontSize: "0.82rem", height: "36px", textAlign: "right", fontWeight: 700 }}
                           />
@@ -1654,7 +1667,7 @@ export default function GatePassView() {
                             type="text"
                             value={item.unit || ""}
                             onChange={e => handleManifestChange(idx, "unit", e.target.value)}
-                            placeholder="Unit (e.g. Sq.Ft)"
+                            placeholder="Unit (Sq.Ft/Meter/Pcs)"
                             className="app-form-input font-mono"
                             style={{ padding: "7px 8px", fontSize: "0.82rem", height: "36px", textAlign: "center" }}
                           />

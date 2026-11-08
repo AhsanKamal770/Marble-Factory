@@ -14,10 +14,12 @@ export const printElement = async (elementOrRef, options = {}) => {
   let htmlContent = '';
   if (typeof elementOrRef === 'string') {
     htmlContent = elementOrRef;
+  } else if (elementOrRef && elementOrRef.outerHTML) {
+    htmlContent = elementOrRef.outerHTML;
   } else if (elementOrRef && elementOrRef.innerHTML) {
     htmlContent = elementOrRef.innerHTML;
-  } else if (elementOrRef && elementOrRef.current && elementOrRef.current.innerHTML) {
-    htmlContent = elementOrRef.current.innerHTML;
+  } else if (elementOrRef && elementOrRef.current) {
+    htmlContent = elementOrRef.current.outerHTML || elementOrRef.current.innerHTML || '';
   }
 
   // 1. If running in Electron Desktop App

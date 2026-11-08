@@ -77,6 +77,33 @@ db.version(8).stores({
   day_closings: '++id, date, openingCash, cashInflow, cashOutflow, expectedCash, actualCash, difference, noteDenominations, status, createdAt'
 });
 
+// Version 9: Custom Categories management with configurable units and measurement methods
+db.version(9).stores({
+  users: '++id, username, role, fullName, isActive, createdAt',
+  items: '++id, code, name, category, subCategory, finish, grade, sutarThickness, stockSqFt, minStockAlert, updatedAt, createdAt',
+  stock_movements: '++id, date, itemId, itemName, category, movementType, refDocNo, createdAt',
+  customers: '++id, name, phone, city, balanceDue, totalBilled, totalPaid, createdAt',
+  invoices: '++id, invoiceNo, date, customerId, customerName, paymentStatus, balanceDue, grandTotal, paidAmount, createdAt',
+  customer_payments: '++id, paymentNo, invoiceId, customerId, customerName, date, paymentMethod, createdAt',
+  suppliers: '++id, name, phone, company, balancePayable, totalPurchased, totalPaid, createdAt',
+  supplier_purchases: '++id, purchaseNo, challanNo, date, supplierId, supplierName, paymentStatus, balanceDue, grandTotal, createdAt',
+  supplier_payments: '++id, paymentNo, purchaseId, supplierId, date, paymentMethod, createdAt',
+  gate_passes: '++id, gatePassNo, invoiceId, customerName, vehicleNo, driverName, date, status, dispatchTime, createdAt',
+  daily_expenses: '++id, date, category, amount, paidTo, remarks, paymentMethod, createdAt',
+  wastage_logs: '++id, logNo, docNo, date, type, itemId, itemName, sqFt, pieces, reason, source, createdAt',
+  employees: '++id, name, role, basicSalary, advanceDrawn, joiningDate, isActive',
+  employee_advances: '++id, employeeId, employeeName, amount, date, notes',
+  zakat_records: '++id, beneficiaryId, beneficiaryName, amount, monthYear, monthKey, status, date',
+  returns: '++id, returnNo, type, refDocNo, partyId, partyName, date, createdAt, status',
+  settings: '++id, companyName',
+  zakat_beneficiaries: '++id, name, monthlyAmount',
+  payroll_records: '++id, employeeId, employeeName, monthKey, monthYear, status, date',
+  payrolls: '++id, employeeId, employeeName, month, date, createdAt',
+  zakat_welfare: '++id, recipientName, category, amount, paymentMode, date, createdAt',
+  day_closings: '++id, date, openingCash, cashInflow, cashOutflow, expectedCash, actualCash, difference, noteDenominations, status, createdAt',
+  categories: '++id, name, defaultUnit, measurementMethod, isActive, createdAt'
+});
+
 // Helper: Calculate live cash drawer / Roznamcha for any date
 export async function getLiveCashInDrawer(customDate = null) {
   try {
@@ -95,10 +122,20 @@ export async function getLiveCashInDrawer(customDate = null) {
       if (priorClosings.length > 0) {
         openingCash = Number(priorClosings[0].actualCash ?? priorClosings[0].expectedCash ?? 0);
         hasPreviousClosing = true;
+      } else {
+        const targetClosing = allClosings.find(dc => dc.date === targetDate && dc.status === 'Closed');
+        if (targetClosing && targetClosing.openingCash !== undefined) {
+          openingCash = Number(targetClosing.openingCash || 0);
+          hasPreviousClosing = true;
+        }
       }
     }
     if (!hasPreviousClosing) {
-      openingCash = Number(settings.openingCashBalance || 0);
+      if (settings.lastClosedDate && targetDate <= settings.lastClosedDate) {
+        openingCash = settings.initialOpeningCash !== undefined ? Number(settings.initialOpeningCash) : 0;
+      } else {
+        openingCash = Number(settings.openingCashBalance || 0);
+      }
     }
 
     // 1. Cash Inflows: Cash Sales from Invoices (Walk-in or spot cash on targetDate)
@@ -124,6 +161,7 @@ export async function getLiveCashInDrawer(customDate = null) {
     let wasooliToday = 0;
     const todayPayments = [];
     allPayments.forEach(pay => {
+      if (pay.isAdvanceAdjustment) return;
       const payDate = (pay.date || pay.createdAt || '').slice(0, 10);
       const isCash = !pay.paymentMethod || pay.paymentMethod.toLowerCase().includes('cash');
       if (payDate === targetDate && isCash) {
@@ -327,19 +365,47 @@ export async function adjustItemStock(
     if (!item && typeof itemId === 'number') {
       item = await db.items.get(String(itemId));
     }
+    if (!item && typeof itemId === 'string') {
+      // Fallback: search by exact name or code
+      item = await db.items.where('name').equalsIgnoreCase(itemId.trim()).first();
+      if (!item) {
+        item = await db.items.where('code').equalsIgnoreCase(itemId.trim()).first();
+      }
+    }
     if (!item) {
-      // Fallback search in items table
+      // Fallback search across all items
       const allItems = await db.items.toArray();
-      item = allItems.find(i => String(i.id) === String(itemId));
+      item = allItems.find(i =>
+        String(i.id) === String(itemId) ||
+        (i.name && i.name.trim().toLowerCase() === String(itemId).trim().toLowerCase()) ||
+        (i.code && i.code.trim().toLowerCase() === String(itemId).trim().toLowerCase())
+      );
     }
     if (!item) throw new Error(`Item with id ${itemId} not found`);
 
     const realItemId = item.id;
+    const cat = (item.category || '').toLowerCase();
+    const unit = (item.unit || '').toLowerCase();
+    const isPieceItem = unit === 'piece' || unit === 'pieces' || unit === 'pcs' ||
+      cat.includes('accessories') || cat === 'flower' || cat === 'panels';
+
     const prevSqFt = Number(item.stockSqFt) || 0;
-    // Accurate stock tracking: calculate exact delta to prevent phantom stock inflation on void/cancellation
-    const newSqFt = Math.round((prevSqFt + deltaSqFt) * 100) / 100;
-    const newBoxes = (Number(item.stockBoxes) || 0) + deltaBoxes;
-    const newPieces = (Number(item.stockPieces) || 0) + deltaPieces;
+    const prevBoxes = Number(item.stockBoxes) || 0;
+    const prevPieces = Number(item.stockPieces !== undefined && item.stockPieces !== null ? item.stockPieces : prevSqFt) || 0;
+
+    let newSqFt = Math.max(0, Math.round((prevSqFt + deltaSqFt) * 100) / 100);
+    let newPieces = Math.max(0, prevPieces + deltaPieces);
+    let newBoxes = Math.max(0, prevBoxes + deltaBoxes);
+
+    if (isPieceItem) {
+      // Keep pieces and stockSqFt in sync for piece-based items
+      if (deltaPieces !== 0 && deltaSqFt === 0) {
+        newSqFt = newPieces;
+      } else if (deltaSqFt !== 0 && deltaPieces === 0) {
+        newPieces = newSqFt;
+      }
+      newBoxes = 0; // Strictly no boxes for accessories
+    }
 
     await db.items.update(realItemId, {
       stockSqFt: newSqFt,
@@ -362,7 +428,7 @@ export async function adjustItemStock(
       note
     });
 
-    return { prevSqFt, newSqFt };
+    return { prevSqFt, newSqFt, prevPieces, newPieces };
   });
 }
 

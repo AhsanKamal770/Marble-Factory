@@ -79,12 +79,28 @@ export default function BillProfitPrintModal({
     return `${day} ${month} ${year}`;
   };
 
+  const isPieceItem = (item) => {
+    if (!item) return false;
+    const catLower = (item.category || '').toLowerCase();
+    const nameLower = (item.name || '').toLowerCase();
+    if (item.unit === 'Piece' || item.unit === 'Pieces') return true;
+    if (catLower.includes('tile accessories') || catLower.includes('other accessories')) return true;
+    if (item.category === 'Flower' || item.category === 'Panels') return true;
+    if (nameLower.includes('gola') || nameLower.includes('spacer') || nameLower.includes('filling') || nameLower.includes('bond')) return true;
+    if (nameLower.includes('sink') || nameLower.includes('basin') || nameLower.includes('bason') || nameLower.includes('seat') || nameLower.includes('combod') || nameLower.includes('commode')) return true;
+    return false;
+  };
+
   const formatItemDimension = (item) => {
-    const isTile = item.unit === 'Meter' || (item.category && item.category.toLowerCase().includes('tile') && !item.category.toLowerCase().includes('accessories'));
+    const catLower = (item.category || '').toLowerCase();
+    const nameLower = (item.name || '').toLowerCase();
+    const isTileAcc = catLower.includes('tile accessories') || ((catLower.includes('tile') || catLower.includes('accessories')) && (nameLower.includes('gola') || nameLower.includes('spacer') || nameLower.includes('filling') || nameLower.includes('bond')));
+    const isOtherAcc = catLower.includes('other accessories') || nameLower.includes('sink') || nameLower.includes('basin') || nameLower.includes('bason') || nameLower.includes('seat') || nameLower.includes('combod') || nameLower.includes('commode');
+    const isTile = item.unit === 'Meter' || (catLower.includes('tile') && !catLower.includes('accessories') && !isTileAcc);
     const isRunning = item.unit === 'R.Ft.' || item.category === 'Border' || item.category === 'Kali Patti';
     const isGolaBox = item.unit === 'Box';
-    const isGola = (item.name && item.name.toLowerCase().includes('gola'));
-    const isPiece = item.unit === 'Piece' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories' || isGola;
+    const isGola = nameLower.includes('gola');
+    const isPiece = item.unit === 'Piece' || item.unit === 'Pieces' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories' || isTileAcc || isOtherAcc || isGola;
 
     if (isTile) {
       const m = item.meters || item.billedQuantity || item.totalSqFt || 0;
@@ -99,8 +115,8 @@ export default function BillProfitPrintModal({
       return `${b} بکس`;
     }
     if (isPiece) {
-      const p = item.pieces || item.billedQuantity || 1;
-      return `${p} عدد (${item.selectedSizePreset || (isGola ? 'گولا' : 'پیس')})`;
+      const p = item.pieces || item.billedQuantity || item.quantity || 1;
+      return `${p} عدد`;
     }
     if (item.length && item.width) {
       const qtyPrefix = item.pieces && Number(item.pieces) > 1 ? `${item.pieces} × ` : (item.quantity && Number(item.quantity) > 1 ? `${item.quantity} × ` : '');
@@ -497,24 +513,7 @@ export default function BillProfitPrintModal({
                     </div>
                   </div>
 
-                  {/* Center Geometric Logo / Divider */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '0 4px',
-                      opacity: 0.9
-                    }}
-                  >
-                    <svg width="34" height="26" viewBox="0 0 54 40" fill="none">
-                      <polygon points="4,38 22,6 38,38" fill="#1d4ed8" />
-                      <polygon points="18,38 34,2 50,38" fill="#38bdf8" opacity="0.95" />
-                      <polygon points="14,38 26,14 40,38" fill="#93c5fd" opacity="0.85" />
-                    </svg>
-                    <div style={{ width: '1px', height: '18px', background: 'rgba(255,255,255,0.25)', marginTop: '4px' }} />
-                  </div>
+
 
                   {/* Right: Urdu Factory Details */}
                   <div
@@ -773,7 +772,7 @@ export default function BillProfitPrintModal({
                             </td>
                             <td style={{ padding: '4px 8px', textAlign: 'right', border: '1px solid #cbd5e1', fontWeight: 800, fontSize: '0.82rem', color: '#1e3a8a' }}>
                               {item.name}
-                              {item.thicknessSutar ? (
+                              {(!isPieceItem(item) && item.unit !== 'Meter' && Number(item.thicknessSutar) > 0) ? (
                                 <span style={{ fontSize: '0.70rem', color: '#2563eb', marginRight: '5px', fontWeight: 700 }}>
                                   [{item.thicknessSutar} سوتر]
                                 </span>

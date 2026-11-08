@@ -75,10 +75,10 @@ function getPrintConfig({
           { key: 'name', label: 'Category', labelUrdu: 'ماربل قسم', bold: true, render: (r) => r.name || '-' },
           {
             key: 'sqFt',
-            label: 'Sq. Ft. Sold',
-            labelUrdu: 'مربع فٹ',
+            label: 'Unit Sold',
+            labelUrdu: 'یونٹس فروخت',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'avgRate',
@@ -141,10 +141,10 @@ function getPrintConfig({
           { key: 'name', label: 'Thickness Category', labelUrdu: 'سوتر موٹائی', bold: true, render: (r) => r.name || '-' },
           {
             key: 'sqFt',
-            label: 'Sq. Ft. Sold',
-            labelUrdu: 'مربع فٹ',
+            label: 'Unit Sold',
+            labelUrdu: 'یونٹس فروخت',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'cogs',
@@ -202,10 +202,10 @@ function getPrintConfig({
           { key: 'billsCount', label: 'Invoices', labelUrdu: 'بلز تعداد', align: 'center', render: (r) => `${r.billsCount || 0}` },
           {
             key: 'sqFt',
-            label: 'Total Sq. Ft.',
-            labelUrdu: 'کل رقبہ',
+            label: 'Total Units Sold',
+            labelUrdu: 'کل فروخت یونٹس',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'revenue',
@@ -242,10 +242,10 @@ function getPrintConfig({
           { key: 'category', label: 'Category', labelUrdu: 'کیٹیگری', render: (r) => r.category || '-' },
           {
             key: 'sqFt',
-            label: 'Sq. Ft. Sold',
-            labelUrdu: 'مربع فٹ',
+            label: 'Unit Sold',
+            labelUrdu: 'یونٹس فروخت',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || 0).toLocaleString()} sqft`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'revenue',
@@ -324,10 +324,10 @@ function getPrintConfig({
           { key: 'itemsCount', label: 'Items', labelUrdu: 'آئٹمز', align: 'center', render: (r) => `${r.itemsCount || 0}` },
           {
             key: 'totalSqFt',
-            label: 'Total Sq. Ft.',
-            labelUrdu: 'کل رقبہ',
+            label: 'Total Units Sold',
+            labelUrdu: 'کل فروخت یونٹس',
             align: 'right',
-            render: (r) => `${Number(r.totalSqFt || 0).toLocaleString()} sqft`
+            render: (r) => `${Number(r.totalUnits || r.totalSqFt || 0).toLocaleString()} ${r.unit || 'Units'}`
           },
           { key: 'paymentMethod', label: 'Method', labelUrdu: 'طریقہ', align: 'center', render: (r) => r.paymentMethod || '-' },
           {
@@ -515,7 +515,6 @@ export default function SalesReportsView() {
 
   return (
     <div
-      className="sales-report-printable-area"
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -525,46 +524,7 @@ export default function SalesReportsView() {
         paddingBottom: '30px'
       }}
     >
-      {/* ── Dynamic Print Styles Fix ────────────────────────────────────── */}
-      <style>{`
-        @media print {
-          body * { visibility: hidden !important; }
-          .sales-report-printable-area, .sales-report-printable-area * { visibility: visible !important; }
-          .sales-report-printable-area {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            padding: 15px !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            color: #000000 !important;
-          }
-          .no-print { display: none !important; }
-          h1, h2, h3, p, span, td, th, div {
-            color: #000000 !important;
-            background: transparent !important;
-            box-shadow: none !important;
-          }
-          table { border: 1px solid #ccc !important; width: 100% !important; border-collapse: collapse !important; }
-          th, td { border-bottom: 1px solid #ddd !important; padding: 6px 8px !important; }
-        }
-      `}</style>
-
-      {/* Print-Only Header Banner */}
-      <div style={{ display: 'none' }} className="print-target">
-        <div style={{ textAlign: 'center', marginBottom: '16px', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 900, margin: 0, color: '#000' }}>
-            رانا عبداللہ صدیق ماربل فیکٹری (Rana Abdullah Siddique Marble Factory)
-          </h2>
-          <div style={{ fontSize: '0.9rem', fontWeight: 700, marginTop: '3px' }}>
-            Executive Sales, Cost & Profit Audit Report (سیلز، لاگت و خالص منافع رپورٹ)
-          </div>
-          <div style={{ fontSize: '0.78rem', color: '#555', marginTop: '2px' }}>
-            Period Horizon: {horizon} | Printed on: {new Date().toLocaleString()}
-          </div>
-        </div>
-      </div>
+      <div className="no-print" style={{ display: 'flex', flexDirection: 'column', gap: '18px', width: '100%' }}>
 
       {/* ------------------------------------------------------------------------- */}
       {/* 1. SEAMLESS HERO HEADER (Matching Dashboard & general_background.jpg)       */}
@@ -1086,6 +1046,7 @@ export default function SalesReportsView() {
             const w = 780;
             const h = 160;
             const step = timelineSeries.length > 1 ? (w - 80) / (timelineSeries.length - 1) : 100;
+            const monthName = timelineSeries.find(p => p.fullMonthName)?.fullMonthName || timelineSeries[0]?.monthName || '';
 
             const salesPoints = timelineSeries.map((p, i) => `${40 + i * step},${h - 30 - ((p.sales || 0) / maxVal) * (h - 55)}`).join(' ');
             const wasooliPoints = timelineSeries.map((p, i) => `${40 + i * step},${h - 30 - ((p.wasooli || 0) / maxVal) * (h - 55)}`).join(' ');
@@ -1131,25 +1092,43 @@ export default function SalesReportsView() {
                     const cx = 40 + i * step;
                     const cySales = h - 30 - ((p.sales || 0) / maxVal) * (h - 55);
                     const cyWasooli = h - 30 - ((p.wasooli || 0) / maxVal) * (h - 55);
+                    const dateDisplay = p.dayNumber !== undefined ? `${p.dayNumber}` : p.label;
+                    const fullDateTooltip = p.fullLabel || `${p.label} ${monthName}`;
 
                     return (
                       <g key={i} style={{ cursor: 'pointer' }}>
+                        <title>{`${fullDateTooltip}\nSales: Rs. ${(p.sales || 0).toLocaleString()}\nWasooli: Rs. ${(p.wasooli || 0).toLocaleString()}\nExpenses: Rs. ${(p.expenses || 0).toLocaleString()}`}</title>
                         <circle cx={cx} cy={cySales} r="4" fill="#2563eb" stroke="#ffffff" strokeWidth="1.5" />
                         <circle cx={cx} cy={cyWasooli} r="3.5" fill="#10b981" stroke="#ffffff" strokeWidth="1.5" />
                         <text
                           x={cx}
-                          y={h - 12}
+                          y={h - 14}
                           textAnchor="middle"
-                          fontSize="10.5"
+                          fontSize={timelineSeries.length > 20 ? "9" : "10"}
                           fill="var(--text-secondary, #64748b)"
                           fontWeight="700"
                         >
-                          {p.label}
+                          {dateDisplay}
                         </text>
                       </g>
                     );
                   })}
                 </svg>
+
+                {/* Clean Month Badge at bottom side */}
+                {monthName && (
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    padding: '4px 12px 0 12px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#2563eb'
+                  }}>
+                    <span>{language === 'ur' ? `ماہ: ${monthName}` : `Month: ${monthName}`}</span>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -1408,7 +1387,7 @@ export default function SalesReportsView() {
                 <tr>
                   <th style={TH}>{tr('Stone Category', 'ماربل / ٹائل قسم')}</th>
                   <th style={TH}>{tr('Revenue', 'سیلز رقم')}</th>
-                  <th style={TH}>{tr('Sq. Ft. Sold', 'مربع فٹ')}</th>
+                  <th style={TH}>{tr('Unit Sold', 'یونٹس فروخت')}</th>
                   <th style={TH}>{tr('Avg Rate / SqFt', 'اوسط ریٹ')}</th>
                   <th style={TH}>{tr('Est. Cost (COGS)', 'خام لاگت')}</th>
                   <th style={TH}>{tr('Gross Profit', 'خام منافع')}</th>
@@ -1437,7 +1416,7 @@ export default function SalesReportsView() {
                         {rs(cat.revenue)}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {(cat.sqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
+                        {(cat.quantity || cat.sqFt || 0).toLocaleString()} {cat.unit || (cat.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(cat.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(cat.name) ? 'R.Ft' : 'Sq.Ft')))}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>{rs(cat.avgRatePerSqFt)}</td>
                       <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{rs(cat.cogs)}</td>
@@ -1531,7 +1510,7 @@ export default function SalesReportsView() {
                     {rs(s.revenue)}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                    <span>{tr('Sq. Ft.', 'رقبہ')}: <strong>{(s.sqFt || 0).toLocaleString()}</strong></span>
+                    <span>{tr('Units Sold', 'فروخت یونٹس')}: <strong>{(s.quantity || s.sqFt || 0).toLocaleString()} {s.name.includes('Tiles') || s.name.includes('Patti') ? tr('Units', 'یونٹس') : 'Sq.Ft'}</strong></span>
                     <span>{tr('Profit', 'منافع')}: <strong style={{ color: '#059669' }}>{rs(s.profit)}</strong></span>
                   </div>
                   <div style={{ height: '6px', borderRadius: '3px', background: 'var(--border-color, #e2e8f0)', marginTop: '10px', overflow: 'hidden' }}>
@@ -1555,7 +1534,7 @@ export default function SalesReportsView() {
                   <th style={TH}>{tr('City', 'شہر')}</th>
                   <th style={TH}>{tr('Total Billed', 'کل بلنگ رقم')}</th>
                   <th style={TH}>{tr('Invoices', 'بلز تعداد')}</th>
-                  <th style={TH}>{tr('Total Sq. Ft.', 'کل رقبہ')}</th>
+                  <th style={TH}>{tr('Total Units Sold', 'کل فروخت یونٹس')}</th>
                   <th style={TH}>{tr('Current Balance Due', 'موجودہ بقایا ادھار')}</th>
                 </tr>
               </thead>
@@ -1584,7 +1563,7 @@ export default function SalesReportsView() {
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>{cust.billsCount}</td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {(cust.sqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
+                        {(cust.totalUnits || cust.sqFt || 0).toLocaleString()} {tr('Units', 'یونٹس')}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800 }}>
                         <span
@@ -1617,7 +1596,7 @@ export default function SalesReportsView() {
                   <th style={TH}>{tr('Code', 'کوڈ')}</th>
                   <th style={TH}>{tr('Stone Name', 'ماربل / پتھر کا نام')}</th>
                   <th style={TH}>{tr('Category', 'کیٹگری')}</th>
-                  <th style={TH}>{tr('Sq. Ft. Sold', 'مربع فٹ')}</th>
+                  <th style={TH}>{tr('Unit Sold', 'یونٹس فروخت')}</th>
                   <th style={TH}>{tr('Revenue', 'سیلز رقم')}</th>
                   <th style={TH}>{tr('Est. Cost', 'خام لاگت')}</th>
                   <th style={TH}>{tr('Gross Profit', 'خام منافع')}</th>
@@ -1649,7 +1628,7 @@ export default function SalesReportsView() {
                       <td style={{ ...TD, fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</td>
                       <td style={{ ...TD, color: 'var(--text-muted)', fontSize: '0.8rem' }}>{p.category}</td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {(p.sqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
+                        {(p.quantity || p.sqFt || 0).toLocaleString()} {p.unit || (p.category === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(p.category) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(p.category) ? 'R.Ft' : 'Sq.Ft')))}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800, color: '#2563eb' }}>
                         {rs(p.revenue)}
@@ -1962,7 +1941,7 @@ export default function SalesReportsView() {
                     <th style={TH}>{tr('Date', 'تاریخ')}</th>
                     <th style={TH}>{tr('Customer / Khata', 'گاہک کا نام')}</th>
                     <th style={TH}>{tr('Items', 'آئٹمز')}</th>
-                    <th style={TH}>{tr('Total Sq. Ft.', 'کل رقبہ')}</th>
+                    <th style={TH}>{tr('Total Units Sold', 'کل فروخت یونٹس')}</th>
                     <th style={TH}>{tr('Payment Method', 'طریقہ')}</th>
                     <th style={TH}>{tr('Status', 'حیثیت')}</th>
                     <th style={{ ...TH, textAlign: 'right' }}>{tr('Total Bill', 'کل بل')}</th>
@@ -2003,7 +1982,7 @@ export default function SalesReportsView() {
                         </td>
                         <td style={{ ...TD, textAlign: 'center', fontFamily: 'monospace' }}>{inv.itemsCount}</td>
                         <td style={{ ...TD, fontFamily: 'monospace' }}>
-                          {(inv.totalSqFt || 0).toLocaleString()} {tr('SqFt', 'فٹ')}
+                          {(inv.totalUnits || inv.totalSqFt || 0).toLocaleString()} {inv.unit || tr('Units', 'یونٹس')}
                         </td>
                         <td style={{ ...TD, textAlign: 'center', fontSize: '0.78rem' }}>
                           <span
@@ -2238,6 +2217,7 @@ export default function SalesReportsView() {
           </div>
         </div>
       )}
+      </div>
 
       {/* Universal Report Print Modal for Sales Reports (Dynamic per activeTab) */}
       <UniversalReportPrintModal

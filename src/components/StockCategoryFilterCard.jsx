@@ -1,4 +1,6 @@
 import React from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/index.js';
 import {
   Gem,
   Grid3X3,
@@ -143,6 +145,11 @@ export function StockCategoryDropdownTrigger({ filter, onChange }) {
   const { language } = useLanguage();
   const isUrdu = language === 'ur';
 
+  const customCategories = useLiveQuery(() => {
+    if (!db.categories) return [];
+    return db.categories.toArray();
+  }, []) || [];
+
   const displaySummary = () => {
     if (!filter || filter.type === 'ALL') return isUrdu ? 'تمام کیٹگریز' : 'All Categories';
     let text = filter.type;
@@ -189,8 +196,11 @@ export function StockCategoryDropdownTrigger({ filter, onChange }) {
         <option value="Borders">{isUrdu ? 'بارڈر' : 'Borders'}</option>
         <option value="Kali Patti">{isUrdu ? 'کالی پٹی' : 'Kali Patti'}</option>
         <option value="Panels">{isUrdu ? 'پینل' : 'Panels'}</option>
-        <option value="Kakri">Kakri</option>
-        <option value="Kalm">Kalm</option>
+        {customCategories
+          .filter(c => c.isActive !== false && !['Marble', 'Tiles', 'Tile Accessories', 'Marble Accessories', 'Other Accessories', 'Flowers', 'Borders', 'Kali Patti', 'Panels', 'Kakri', 'Kalm'].includes(c.name))
+          .map(c => (
+            <option key={c.id || c.name} value={c.name}>{c.name}</option>
+          ))}
       </select>
       <Filter size={15} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: filter?.type !== 'ALL' ? '#2563eb' : '#64748b', pointerEvents: 'none' }} />
     </div>
@@ -938,7 +948,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
           {(!activeSub || activeSub === 'Kakri') && (
             <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-                📐 Kakri Sizes (Sq. Ft.):
+                📐 Sizes (Sq. Ft.):
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 {['2 × 2', '3 × 3', '6 × 6'].map((sz) => {
@@ -960,7 +970,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                         color: isSelected ? '#ffffff' : '#0f172a'
                       }}
                     >
-                      Kakri {sz}
+                      {sz}
                     </button>
                   );
                 })}
@@ -972,7 +982,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
           {(!activeSub || activeSub === 'Kalm') && (
             <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-                📐 Kalm Sizes (Sq. Ft.):
+                📐 Sizes (Sq. Ft.):
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                 {['1 inch', '2 inch', '3 inch'].map((sz) => {
@@ -994,7 +1004,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                         color: isSelected ? '#ffffff' : '#0f172a'
                       }}
                     >
-                      Kalm {sz}
+                      {sz}
                     </button>
                   );
                 })}
@@ -1059,7 +1069,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
       {activeType === 'Kakri' && (
         <div>
           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', marginBottom: '6px' }}>
-            📐 Kakri Sizes (Sq. Ft.):
+            📐 Sizes (Sq. Ft.):
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <button
@@ -1077,7 +1087,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                 color: !activeSize ? '#ffffff' : '#0f172a'
               }}
             >
-              All Kakri
+              All
             </button>
             {['2 × 2', '3 × 3', '6 × 6'].map((sz) => {
               const isSelected = activeSize === sz;
@@ -1110,7 +1120,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
       {activeType === 'Kalm' && (
         <div>
           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', marginBottom: '6px' }}>
-            📐 Kalm Sizes (Sq. Ft.):
+            📐 Sizes (Sq. Ft.):
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <button
@@ -1128,7 +1138,7 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                 color: !activeSize ? '#ffffff' : '#0f172a'
               }}
             >
-              All Kalm
+              All
             </button>
             {['1 inch', '2 inch', '3 inch'].map((sz) => {
               const isSelected = activeSize === sz;

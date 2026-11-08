@@ -26,7 +26,9 @@ export async function exportDatabaseToJson() {
     zakat_beneficiaries: await db.zakat_beneficiaries.toArray(),
     payroll_records: await db.payroll_records.toArray(),
     payrolls: db.payrolls ? await db.payrolls.toArray() : [],
-    zakat_welfare: db.zakat_welfare ? await db.zakat_welfare.toArray() : []
+    zakat_welfare: db.zakat_welfare ? await db.zakat_welfare.toArray() : [],
+    day_closings: db.day_closings ? await db.day_closings.toArray() : [],
+    categories: db.categories ? await db.categories.toArray() : []
   };
 
   const jsonString = JSON.stringify(data, null, 2);
@@ -89,6 +91,8 @@ export async function importDatabaseFromJson(jsonString) {
     ];
     if (db.payrolls) txStores.push(db.payrolls);
     if (db.zakat_welfare) txStores.push(db.zakat_welfare);
+    if (db.day_closings) txStores.push(db.day_closings);
+    if (db.categories) txStores.push(db.categories);
 
     await db.transaction('rw', txStores, async () => {
       await db.settings.clear();
@@ -112,6 +116,8 @@ export async function importDatabaseFromJson(jsonString) {
       await db.payroll_records.clear();
       if (db.payrolls) await db.payrolls.clear();
       if (db.zakat_welfare) await db.zakat_welfare.clear();
+      if (db.day_closings) await db.day_closings.clear();
+      if (db.categories) await db.categories.clear();
 
       if (data.settings?.length) await db.settings.bulkAdd(data.settings);
       if (data.users?.length) await db.users.bulkAdd(data.users);
@@ -134,6 +140,8 @@ export async function importDatabaseFromJson(jsonString) {
       if (data.payroll_records?.length) await db.payroll_records.bulkAdd(data.payroll_records);
       if (db.payrolls && data.payrolls?.length) await db.payrolls.bulkAdd(data.payrolls);
       if (db.zakat_welfare && data.zakat_welfare?.length) await db.zakat_welfare.bulkAdd(data.zakat_welfare);
+      if (db.day_closings && data.day_closings?.length) await db.day_closings.bulkAdd(data.day_closings);
+      if (db.categories && data.categories?.length) await db.categories.bulkAdd(data.categories);
     });
 
     return { success: true };

@@ -102,58 +102,64 @@ export async function initializeDatabaseWithSeedData() {
  * Wipe all transaction and inventory data for a completely clean slate
  */
 export async function wipeAllData() {
-  const stores = [
-    db.items,
-    db.customers,
-    db.suppliers,
-    db.invoices,
-    db.customer_payments,
-    db.supplier_purchases,
-    db.supplier_payments,
-    db.returns,
-    db.stock_movements,
-    db.gate_passes,
-    db.daily_expenses,
-    db.wastage_logs,
-    db.employees,
-    db.employee_advances,
-    db.zakat_records,
-    db.zakat_beneficiaries,
-    db.payroll_records
+  const tablesToClear = [
+    'items',
+    'customers',
+    'suppliers',
+    'invoices',
+    'customer_payments',
+    'supplier_purchases',
+    'supplier_payments',
+    'returns',
+    'stock_movements',
+    'gate_passes',
+    'daily_expenses',
+    'wastage_logs',
+    'employees',
+    'employee_advances',
+    'zakat_records',
+    'zakat_beneficiaries',
+    'payroll_records',
+    'payrolls',
+    'zakat_welfare',
+    'day_closings',
+    'categories'
   ];
-  if (db.payrolls) stores.push(db.payrolls);
-  if (db.zakat_welfare) stores.push(db.zakat_welfare);
-  if (db.day_closings) stores.push(db.day_closings);
-  if (db.settings) stores.push(db.settings);
 
-  await db.transaction('rw', stores, async () => {
-    await db.items.clear();
-    await db.customers.clear();
-    await db.suppliers.clear();
-    await db.invoices.clear();
-    await db.customer_payments.clear();
-    await db.supplier_purchases.clear();
-    await db.supplier_payments.clear();
-    await db.returns.clear();
-    await db.stock_movements.clear();
-    await db.gate_passes.clear();
-    await db.daily_expenses.clear();
-    await db.wastage_logs.clear();
-    await db.employees.clear();
-    await db.employee_advances.clear();
-    await db.zakat_records.clear();
-    await db.zakat_beneficiaries.clear();
-    await db.payroll_records.clear();
-    if (db.payrolls) await db.payrolls.clear();
-    if (db.zakat_welfare) await db.zakat_welfare.clear();
-    if (db.day_closings) await db.day_closings.clear();
+  for (const name of tablesToClear) {
+    try {
+      if (db[name]) {
+        await db[name].clear();
+      }
+    } catch (err) {
+      console.warn(`[wipeAllData] Skipping store '${name}' (not present in current IDB):`, err.message);
+    }
+  }
+
+  // Also check all tables registered on db.tables (excluding users and settings)
+  try {
+    if (Array.isArray(db.tables)) {
+      for (const table of db.tables) {
+        if (table.name !== 'users' && table.name !== 'settings') {
+          try {
+            await table.clear();
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (_) {}
+
+  // Reset opening cash balance in settings
+  try {
     if (db.settings) {
       const currentSettings = await db.settings.toCollection().first();
       if (currentSettings) {
         await db.settings.update(currentSettings.id, { openingCashBalance: 0 });
       }
     }
-  });
+  } catch (err) {
+    console.warn('[wipeAllData] Error resetting settings:', err.message);
+  }
 }
 
 // ==========================================
@@ -634,7 +640,7 @@ export const sampleItems = [
     unit: "Pieces",
     ratePerSqFt: 650,
     costPerSqFt: 450,
-    stockSqFt: 200,
+    stockSqFt: 100,
     stockBoxes: 0,
     stockPieces: 100,
     minStockAlert: 25,
@@ -656,7 +662,7 @@ export const sampleItems = [
     ratePerSqFt: 120,
     costPerSqFt: 75,
     stockSqFt: 500,
-    stockBoxes: 50,
+    stockBoxes: 0,
     stockPieces: 500,
     minStockAlert: 100,
     lotNo: "LOT-SP-01",
@@ -676,7 +682,7 @@ export const sampleItems = [
     unit: "Pieces",
     ratePerSqFt: 85,
     costPerSqFt: 55,
-    stockSqFt: 450,
+    stockSqFt: 150,
     stockBoxes: 0,
     stockPieces: 150,
     minStockAlert: 80,

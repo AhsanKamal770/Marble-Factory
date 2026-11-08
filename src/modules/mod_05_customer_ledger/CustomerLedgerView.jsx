@@ -24,7 +24,7 @@ import { db } from "../../db";
 import { useLanguage } from "../../context/LanguageContext";
 import CustomerProfileModal from "./CustomerProfileModal";
 import PaymentRecoveryModal from "./PaymentRecoveryModal";
-import PrintableKhataModal from "./PrintableKhataModal";
+import UniversalReportPrintModal from "../../components/UniversalReportPrintModal";
 import GlobalPagination from "../../components/GlobalPagination";
 import {
   getCustomerTimeline,
@@ -45,9 +45,11 @@ export default function CustomerLedgerView() {
   const settingsList = useLiveQuery(() => db.settings.toArray(), []) || [];
   const settings = settingsList[0] || {};
 
-  // Sort customers by balanceDue descending
+  // Sort customers by balanceDue descending (excluding archived)
   const customers = useMemo(() => {
-    return [...rawCustomers].sort((a, b) => Number(b.balanceDue || 0) - Number(a.balanceDue || 0));
+    return rawCustomers
+      .filter((c) => !c.isArchived)
+      .sort((a, b) => Number(b.balanceDue || 0) - Number(a.balanceDue || 0));
   }, [rawCustomers]);
 
   // Selected Customer ID
@@ -94,10 +96,226 @@ export default function CustomerLedgerView() {
   );
 
   const totalWasooliAllTime = useMemo(
-    () => customerPayments.reduce((acc, p) => acc + Number(p.amount || 0), 0) +
-      invoices.filter(inv => !inv.customerId).reduce((acc, inv) => acc + Number(inv.paidAmount || 0), 0),
+    () => customerPayments.filter((p) => !p.isAdvanceAdjustment).reduce((acc, p) => acc + Number(p.amount || 0), 0) +
+      invoices.filter((inv) => !inv.customerId).reduce((acc, inv) => acc + Number(inv.paidAmount || 0), 0),
     [customerPayments, invoices]
   );
+
+  const selectedCustomerPaid = useMemo(() => {
+    if (!selectedCustomer) return 0;
+    const custIdStr = String(selectedCustomer.id);
+    const custNameClean = (selectedCustomer.name || '').trim().toLowerCase();
+    const vPayments = customerPayments.filter((p) => {
+      if (p.isAdvanceAdjustment) return false;
+      if (p.customerId !== null && p.customerId !== undefined) {
+        return String(p.customerId) === custIdStr;
+      }
+      if (p.customerName) {
+        return p.customerName.trim().toLowerCase() === custNameClean;
+      }
+      return false;
+    });
+    if (vPayments.length > 0) {
+      return vPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    }
+    return Number(selectedCustomer.totalPaid || 0);
+  }, [selectedCustomer, customerPayments]);
+
+  // Khata Ledger Audit Report Data for UniversalReportPrintModal
+  const khataReportData = useMemo(() => {
+    if (!selectedCustomer) return { rows: [], kpis: [], summaryRows: [], columns: [] };
+
+    let bal = 0;
+    const sorted = [...(activeTimeline || [])].sort(
+      (a, b) => new Date(a.sortDate || a.date).getTime() - new Date(b.sortDate || b.date).getTime()
+    );
+
+    const rows = sorted.map((t, idx) => {
+      const isInv = t.type === 'INVOICE';
+      const debitAmt = isInv ? Number(t.debit || t.amount || t.grandTotal || 0) : 0;
+      const creditAmt = !isInv && !t.isAdvanceAdjustment ? Number(t.credit || t.amount || 0) : 0;
+      const isAdvAdj = Boolean(t.isAdvanceAdjustment);
+
+      bal = bal + debitAmt - creditAmt;
+
+      const d = new Date(t.sortDate || t.date || Date.now());
+      const dateStr = isNaN(d.getTime())
+        ? '—'
+        : `${String(d.getDate()).padStart(2, '0')}-${d.toLocaleString('en-US', { month: 'short' })}-${d.getFullYear()}`;
+
+      let desc = '';
+      if (isInv) {
+        if (t.items && t.items.length > 0) {
+          desc = t.items.map(it => {
+            const nameLower = (it.name || '').toLowerCase();
+            const catLower = (it.category || '').toLowerCase();
+            const unitLower = (it.unit || '').toLowerCase();
+
+            let unitName = 'Sq.Ft';
+            if (unitLower.includes('meter') || catLower.includes('tile') || nameLower.includes('tile')) {
+              unitName = 'Meters';
+            } else if (unitLower.includes('piece') || unitLower.includes('pcs') || catLower.includes('accessori') || catLower.includes('kakri') || catLower.includes('kalm')) {
+              unitName = 'Pcs';
+            } else if (unitLower.includes('r.ft') || catLower.includes('border') || catLower.includes('patti')) {
+              unitName = 'R.Ft.';
+            }
+
+            const qty = it.billedQuantity || it.meters || it.runningFeet || it.pieces || it.quantity || it.totalSqFt || 0;
+            return `${it.name || 'آئٹم'}${qty ? ` (${qty} ${unitName})` : ''}`;
+          }).join('، ');
+        } else {
+          desc = 'ماربل و ٹائلز خریداری';
+        }
+      } else if (isAdvAdj) {
+        desc = 'پیشگی ایڈوانس سے بل کٹوتی';
+      } else {
+        const rawNote = (t.notes || t.description || '').toLowerCase();
+        if (t.isAdvance || rawNote.includes('advance') || rawNote.includes('پیشگی') || rawNote.includes('ایڈوانس')) {
+          desc = 'پیشگی ایڈوانس وصولی';
+        } else if (rawNote.includes('pos') || rawNote.includes('invoice') || rawNote.includes('collection')) {
+          desc = 'بل ادائیگی کیش وصولی';
+        } else {
+          desc = 'کیش وصولی (کھاتہ ادائیگی)';
+        }
+      }
+
+      return {
+        sr: idx + 1,
+        date: dateStr,
+        refNo: isInv
+          ? (t.invoiceNo ? `Bill #${t.invoiceNo}` : 'Bill')
+          : (t.paymentNo ? `Rec #${t.paymentNo}` : (isAdvAdj ? 'Adv-Adj' : 'Wasooli')),
+        description: desc,
+        debit: debitAmt,
+        credit: creditAmt,
+        isAdvAdj,
+        adjAmount: Number(t.credit || t.debit || 0),
+        runningBalance: bal
+      };
+    });
+
+    const totalBilled = Number(selectedCustomer.totalBilled || 0);
+    const balanceDue = Number(selectedCustomer.balanceDue || 0);
+    const advanceBalance = Number(selectedCustomer.advanceBalance || 0);
+    const totalPaid = Number(selectedCustomerPaid || 0);
+
+    const kpis = [
+      {
+        label: 'Total Purchases',
+        labelUrdu: 'کل خریداری (Billed)',
+        value: `Rs. ${totalBilled.toLocaleString()}`,
+        color: '#1e293b'
+      },
+      {
+        label: 'Total Received',
+        labelUrdu: 'کل وصولی (Received)',
+        value: `Rs. ${totalPaid.toLocaleString()}`,
+        color: '#059669'
+      },
+      {
+        label: 'Available Advance',
+        labelUrdu: 'پیشگی ایڈوانس (Advance)',
+        value: `Rs. ${advanceBalance.toLocaleString()}`,
+        color: '#2563eb'
+      },
+      {
+        label: 'Balance Due',
+        labelUrdu: 'بقایا واجب الادا (Balance Due)',
+        value: `Rs. ${balanceDue.toLocaleString()}`,
+        color: balanceDue > 0 ? '#dc2626' : '#059669'
+      }
+    ];
+
+    const columns = [
+      {
+        key: 'date',
+        label: 'Date',
+        labelUrdu: 'تاریخ',
+        width: '95px',
+        align: 'center',
+        nowrap: true
+      },
+      {
+        key: 'refNo',
+        label: 'Voucher / Doc',
+        labelUrdu: 'واؤچر / بل #',
+        width: '125px',
+        align: 'center',
+        bold: true,
+        nowrap: true
+      },
+      {
+        key: 'description',
+        label: 'Description',
+        labelUrdu: 'تفصیل و دستاویز',
+        align: 'right'
+      },
+      {
+        key: 'debit',
+        label: 'Debit (+)',
+        labelUrdu: 'بل کی رقم (ڈیبٹ +)',
+        width: '115px',
+        align: 'center',
+        nowrap: true,
+        color: (r) => (r.debit > 0 ? '#dc2626' : '#94a3b8'),
+        render: (r) => (r.debit > 0 ? `Rs. ${r.debit.toLocaleString()}` : '—')
+      },
+      {
+        key: 'credit',
+        label: 'Credit (-)',
+        labelUrdu: 'وصولی (کریڈٹ -)',
+        width: '115px',
+        align: 'center',
+        nowrap: true,
+        color: (r) => (r.credit > 0 ? '#059669' : '#94a3b8'),
+        render: (r) =>
+          r.credit > 0
+            ? `Rs. ${r.credit.toLocaleString()}`
+            : r.isAdvAdj
+            ? `(Rs. ${r.adjAmount.toLocaleString()})`
+            : '—'
+      },
+      {
+        key: 'runningBalance',
+        label: 'Balance',
+        labelUrdu: 'بقایا بیلنس',
+        width: '135px',
+        align: 'center',
+        nowrap: true,
+        bold: true,
+        color: (r) => (r.runningBalance > 0 ? '#dc2626' : r.runningBalance < 0 ? '#2563eb' : '#059669'),
+        render: (r) =>
+          r.runningBalance > 0
+            ? `Rs. ${r.runningBalance.toLocaleString()} (بقایا)`
+            : r.runningBalance < 0
+            ? `Rs. ${Math.abs(r.runningBalance).toLocaleString()} (ایڈوانس)`
+            : 'Rs. 0 (صاف)'
+      }
+    ];
+
+    const summaryRows = [
+      {
+        label: 'Total Billed',
+        labelUrdu: 'کل بلنگ (ڈیبٹ)',
+        value: `Rs. ${totalBilled.toLocaleString()}`,
+        color: '#dc2626'
+      },
+      {
+        label: 'Total Received',
+        labelUrdu: 'کل وصولی (کریڈٹ)',
+        value: `Rs. ${totalPaid.toLocaleString()}`,
+        color: '#059669'
+      },
+      {
+        label: 'Net Balance Due',
+        labelUrdu: 'حتمی واجب الادا بقایا',
+        value: balanceDue > 0 ? `Rs. ${balanceDue.toLocaleString()} (بقایا)` : advanceBalance > 0 ? `Rs. ${advanceBalance.toLocaleString()} (ایڈوانس)` : 'Rs. 0 (صاف)',
+        color: balanceDue > 0 ? '#dc2626' : advanceBalance > 0 ? '#2563eb' : '#059669'
+      }
+    ];
+
+    return { rows, kpis, columns, summaryRows };
+  }, [selectedCustomer, activeTimeline, selectedCustomerPaid]);
 
   const overdueCustomersCount = useMemo(
     () => customers.filter(c => Number(c.balanceDue || 0) > 0).length,
@@ -196,31 +414,28 @@ export default function CustomerLedgerView() {
 
     const balanceDue = Math.round(Number(cust.balanceDue || 0));
 
-    // 1. If Khata is not clear (balance > 0)
+    let confirmMsg = '';
     if (balanceDue > 0) {
-      const unclearedMsg = language === 'ur'
-        ? `کھاتہ کلیئر نہیں ہے! ${cust.name} کا بقایا ادھار Rs. ${balanceDue.toLocaleString()} ہے۔ پہلے تمام ادھار وصول کریں پھر کھاتہ ڈیلیٹ کیا جا سکتا ہے۔`
-        : `Khata not cleared! ${cust.name} has an outstanding balance of Rs. ${balanceDue.toLocaleString()}. You cannot delete an account with pending dues.`;
-      alert(unclearedMsg);
-      return;
+      confirmMsg = language === 'ur'
+        ? `تنبیہ: گاہک "${cust.name}" کے کھاتے میں Rs. ${balanceDue.toLocaleString()} بقایا ادھار ہے۔\n\nکیا آپ واقعی اس گاہک کا کھاتہ اور تمام لین دین کا ریکارڈ ہمیشہ کے لیے ڈیلیٹ کرنا چاہتے ہیں؟`
+        : `Warning: "${cust.name}" has an outstanding balance of Rs. ${balanceDue.toLocaleString()}.\n\nAre you sure you want to permanently delete this customer account?`;
+    } else {
+      confirmMsg = language === 'ur'
+        ? `کیا آپ واقعی گاہک "${cust.name}" کا کھاتہ ہمیشہ کے لیے ڈیلیٹ کرنا چاہتے ہیں؟`
+        : `Are you sure you want to permanently delete "${cust.name}"'s account?`;
     }
-
-    // 2. If Khata is cleared (balance <= 0)
-    const confirmMsg = language === 'ur'
-      ? `کیا آپ واقعی ${cust.name} کا کھاتہ اور اس کے تمام پرانے بل (Invoices) و وصولیاں ہمیشہ کے لیے ڈیلیٹ کرنا چاہتے ہیں؟`
-      : `Are you sure you want to delete ${cust.name}'s account along with all related invoices and payment history? This action cannot be undone.`;
 
     if (!window.confirm(confirmMsg)) return;
 
     try {
-      await deleteCustomer(id);
+      await deleteCustomer(cust.id);
       setSelectedCustomerId(null);
       const successMsg = language === 'ur'
-        ? `${cust.name} کا کھاتہ اور اس کا تمام متعلقہ ڈیٹا (بشمول بل) کامیابی سے ڈیلیٹ ہو گیا۔`
-        : `${cust.name}'s account and all related invoices/payments deleted successfully.`;
+        ? `${cust.name} کا کھاتہ کامیابی سے ڈیلیٹ ہو گیا۔`
+        : `${cust.name}'s account deleted successfully.`;
       alert(successMsg);
     } catch (err) {
-      alert(err.message);
+      alert("Error: " + err.message);
     }
   };
 
@@ -751,7 +966,7 @@ export default function CustomerLedgerView() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
                   gap: '10px'
                 }}
               >
@@ -795,7 +1010,29 @@ export default function CustomerLedgerView() {
                     Total Received
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 800, color: '#16a34a' }}>
-                    Rs. {Number(selectedCustomer.totalPaid || 0).toLocaleString()}
+                    Rs. {Number(selectedCustomerPaid).toLocaleString()}
+                  </div>
+                </div>
+
+                {/* Card 2B: Available Advance */}
+                <div
+                  style={{
+                    background: 'var(--bg-card, #ffffff)',
+                    borderRadius: '12px',
+                    border: '1px solid var(--border-color, #e2e8f0)',
+                    padding: '12px 14px',
+                    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.03)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <div style={{ fontSize: '0.72rem', color: '#2563eb', fontWeight: 700 }}>
+                    Available Advance
+                  </div>
+                  <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 800, color: '#2563eb' }}>
+                    Rs. {Number(selectedCustomer.advanceBalance || 0).toLocaleString()}
                   </div>
                 </div>
 
@@ -813,8 +1050,9 @@ export default function CustomerLedgerView() {
                     gap: '4px'
                   }}
                 >
-                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>
-                    Balance Due
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 700 }}>Balance Due</span>
+                    
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.02rem', fontWeight: 900, color: Number(selectedCustomer.balanceDue) > 0 ? '#dc2626' : '#16a34a' }}>
                     Rs. {Number(selectedCustomer.balanceDue || 0).toLocaleString()}
@@ -969,8 +1207,14 @@ export default function CustomerLedgerView() {
                               <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#16a34a' }}>
                                 {!isInvoice ? `Rs. ${Number(item.credit).toLocaleString()}` : '-'}
                               </td>
-                              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
-                                Rs. {Number(item.runningBalance !== undefined ? item.runningBalance : selectedCustomer.balanceDue).toLocaleString()}
+                              <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 800 }}>
+                                {item.runningBalance > 0 ? (
+                                  <span style={{ color: '#dc2626' }}>Rs. {item.runningBalance.toLocaleString()}</span>
+                                ) : item.runningBalance < 0 ? (
+                                  <span style={{ color: '#2563eb' }}>Rs. {Math.abs(item.runningBalance).toLocaleString()} <span style={{ fontSize: '0.68rem', fontWeight: 700 }}>(Adv)</span></span>
+                                ) : (
+                                  <span style={{ color: '#16a34a' }}>Rs. 0</span>
+                                )}
                               </td>
                             </tr>
                           );
@@ -1010,12 +1254,26 @@ export default function CustomerLedgerView() {
       )}
 
       {isPrintModalOpen && selectedCustomer && (
-        <PrintableKhataModal
+        <UniversalReportPrintModal
           isOpen={isPrintModalOpen}
           onClose={() => setIsPrintModalOpen(false)}
-          customer={selectedCustomer}
-          timeline={activeTimeline}
-          settings={settings}
+          title="Customer Khata Ledger Statement"
+          titleUrdu="کسٹمر کھاتہ و لین دین اسٹیٹمنٹ"
+          subtitle={
+            language === 'ur'
+              ? `گاہک کا نام: ${selectedCustomer.name} • باضابطہ تصدیق شدہ کھاتہ اسٹیٹمنٹ`
+              : `Customer: ${selectedCustomer.name} • Official Khata Ledger Statement`
+          }
+          customerInfo={{
+            name: selectedCustomer.name,
+            phone: selectedCustomer.phone,
+            city: selectedCustomer.city || selectedCustomer.address
+          }}
+          factorySettings={settings}
+          kpis={khataReportData.kpis}
+          columns={khataReportData.columns}
+          data={khataReportData.rows}
+          summaryRows={khataReportData.summaryRows}
         />
       )}
     </div>

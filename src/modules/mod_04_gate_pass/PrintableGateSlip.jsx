@@ -6,6 +6,7 @@ import {
 import { useLanguage } from "../../context/LanguageContext";
 import { db } from "../../db/index";
 import { printElement } from "../../utils/printHelper";
+import { formatPrintRow } from "../../utils/printItemFormatter";
 
 export default function PrintableGateSlip({
   isOpen,
@@ -104,40 +105,45 @@ export default function PrintableGateSlip({
   // Manifest items logic
   let manifestItems = [];
   if (Array.isArray(gatePass.manifest) && gatePass.manifest.length > 0) {
-    manifestItems = gatePass.manifest.map((it, idx) => ({
-      ...it,
-      sr: it.sr || idx + 1,
-      name: it.name || it.itemName || "ماربل",
-      quantity: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.pieces || it.sqFt || "-"),
-      unit: it.unit || (it.sqFt ? "Sq.Ft" : ""),
-      thicknessSutar: it.thicknessSutar || "4",
-      size: it.size || it.dimensions || "-",
-      pieces: it.pieces || it.quantity || "-",
-      sqFt: it.sqFt || it.quantity || "-",
-      amount: it.amount || 0,
-      rate: it.rate || 0
-    }));
+    manifestItems = gatePass.manifest.map((it, idx) => {
+      const linkedLine = linkedInvoice?.items?.find(
+        (li) => (it.itemId && String(li.itemId || li.id) === String(it.itemId)) ||
+                (li.name && it.name && li.name.trim().toLowerCase() === it.name.trim().toLowerCase())
+      );
+      return {
+        ...linkedLine,
+        ...it,
+        sr: it.sr || idx + 1,
+        name: it.name || it.itemName || linkedLine?.name || "ماربل",
+        category: it.category || linkedLine?.category || "",
+        size: it.size || linkedLine?.size || linkedLine?.selectedSizePreset || linkedLine?.standardSize || "-",
+        selectedSizePreset: it.selectedSizePreset || linkedLine?.selectedSizePreset || "",
+        thicknessSutar: it.thicknessSutar !== undefined && it.thicknessSutar !== "" ? it.thicknessSutar : (linkedLine?.thicknessSutar || ""),
+        length: it.length || linkedLine?.length,
+        width: it.width || linkedLine?.width,
+        pieces: it.pieces !== undefined && it.pieces !== "" ? it.pieces : (linkedLine?.pieces || ""),
+        totalSqFt: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.totalSqFt || linkedLine?.totalSqFt || ""),
+        meters: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.meters || linkedLine?.meters || ""),
+        runningFeet: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.runningFeet || linkedLine?.runningFeet || ""),
+        quantity: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.pieces || it.sqFt || linkedLine?.billedQuantity || "-"),
+        unit: it.unit || linkedLine?.unit || (it.sqFt ? "Sq.Ft" : "Units")
+      };
+    });
   } else if (linkedInvoice?.items && linkedInvoice.items.length > 0) {
     manifestItems = linkedInvoice.items.map((it, idx) => ({
+      ...it,
       sr: idx + 1,
       name: it.name || it.itemName || "ماربل",
-      quantity: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.totalSqFt || it.sqFt || it.pieces || "-"),
+      quantity: it.quantity !== undefined && it.quantity !== "" ? it.quantity : (it.totalSqFt || it.sqFt || it.pieces || it.meters || "-"),
       unit: it.unit || (it.totalSqFt || it.sqFt ? "Sq.Ft" : "Pcs"),
-      thicknessSutar: it.thicknessSutar || "4",
-      size: it.dimensions || (it.length && it.width ? `${it.length}ft × ${it.width}ft` : it.size || "-"),
-      pieces: it.quantity || it.pieces || "-",
-      sqFt: it.totalSqFt || it.sqFt || "-",
-      rate: it.ratePerSqFt || it.rate || 0,
-      amount: it.amount || (Number(it.rate || 0) * Number(it.totalSqFt || it.quantity || 1))
+      size: it.selectedSizePreset || it.standardSize || (it.length && it.width ? `${it.length}×${it.width}` : it.size || "-")
     }));
   }
 
   // Fallback sample items if completely empty to maintain visual aesthetics
   if (manifestItems.length === 0) {
     manifestItems = [
-      { name: "گرین", size: "4ft x 2.5ft", pieces: 100, sqFt: "-", amount: 38000 },
-      { name: "سفید ماربل", size: "3ft x 2ft", pieces: 50, sqFt: "-", amount: 22500 },
-      { name: "بلیک ماربل", size: "2ft x 2ft", pieces: 25, sqFt: "-", amount: 18750 }
+      { name: "سفید ماربل", size: "3×2 ft", thicknessSutar: 4, quantity: 50, unit: "Sq.Ft" }
     ];
   }
 
@@ -194,12 +200,17 @@ export default function PrintableGateSlip({
       `*گاڑی نمبر:* ${vehicleNo}`,
       gatePass.carriageCharges > 0 ? `*کرایہ باربرداری:* Rs. ${Number(gatePass.carriageCharges).toLocaleString()}` : null,
       `---------------------------------`,
-      `*تفصیل اشیاء:*`,
+      `*تفصیل اشیاء (Manifest Items):*`,
       ...manifestItems.map(
-        (it, idx) => `${idx + 1}. ${it.name} | مقدار: ${it.quantity !== undefined ? `${it.quantity} ${it.unit || ''}`.trim() : (it.pieces || it.sqFt || '-')} ${it.size && it.size !== '-' ? `| سائز: ${it.size}` : ''} | رقم: Rs. ${it.amount ? Number(it.amount).toLocaleString() : '-'}`
+        (it, idx) => {
+          const row = formatPrintRow(it, idx);
+          const sizeStr = row.size !== '-' ? ` | سائز: ${row.size}` : '';
+          const detStr = row.details !== '-' ? ` | تفصیل: ${row.details}` : '';
+          return `${idx + 1}. ${row.name}${sizeStr}${detStr} | مقدار: ${row.quantity} ${row.unit} | کل پیمائش: ${row.totalMeasurement}`;
+        }
       ),
       `---------------------------------`,
-      `*کل رقم:* Rs. ${Number(grandTotal).toLocaleString()}`,
+      `*کل روانہ شدہ آئٹمز:* ${manifestItems.length}`,
       `---------------------------------`,
       `شکریہ! رابطہ: ${phone}`
     ].filter(Boolean);
@@ -530,24 +541,7 @@ export default function PrintableGateSlip({
                     </div>
                   </div>
 
-                  {/* Center Geometric Logo / Divider */}
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "0 4px",
-                      opacity: 0.9
-                    }}
-                  >
-                    <svg width="34" height="26" viewBox="0 0 54 40" fill="none">
-                      <polygon points="4,38 22,6 38,38" fill="#1d4ed8" />
-                      <polygon points="18,38 34,2 50,38" fill="#38bdf8" opacity="0.95" />
-                      <polygon points="14,38 26,14 40,38" fill="#93c5fd" opacity="0.85" />
-                    </svg>
-                    <div style={{ width: "1px", height: "18px", background: "rgba(255,255,255,0.25)", marginTop: "4px" }} />
-                  </div>
+
 
                   {/* Right: Urdu Factory Details */}
                   <div
@@ -838,8 +832,9 @@ export default function PrintableGateSlip({
                     </div>
                   </div>
 
-                  {/* 4. ITEMS & MANIFEST TABLE */}
+                  {/* 4. ITEMS & MANIFEST TABLE (Standardized RTL Urdu Columns) */}
                   <div
+                    dir="rtl"
                     style={{
                       border: "1.5px solid #0b2e59",
                       borderRadius: "8px",
@@ -849,138 +844,142 @@ export default function PrintableGateSlip({
                       printColorAdjust: "exact"
                     }}
                   >
-                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.86rem" }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.84rem" }}>
                       <thead>
                         <tr style={{ background: "#0b2e59", color: "#ffffff", WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}>
-                          <th style={{ padding: "8px 10px", width: "18%", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
-                            رقم / نوٹ
-                          </th>
-                          <th style={{ padding: "8px 8px", width: "12%", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.35)", fontWeight: 800, fontFamily: "var(--font-main)" }}>
-                            R.T.F
-                          </th>
-                          <th style={{ padding: "8px 10px", width: "22%", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
-                            تفصیل
-                          </th>
-                          <th style={{ padding: "8px 10px", width: "14%", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
-                            مقدار
-                          </th>
-                          <th style={{ padding: "8px 10px", width: "22%", textAlign: "center", borderRight: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
-                            کوالٹی
-                          </th>
-                          <th style={{ padding: "8px 8px", width: "12%", textAlign: "center", fontWeight: 800 }}>
+                          <th style={{ padding: "8px 6px", width: "40px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
                             سیریل نمبر
+                          </th>
+                          <th style={{ padding: "8px 10px", textAlign: "right", borderLeft: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
+                            کوالٹی / آئٹم
+                          </th>
+                          <th style={{ padding: "8px 6px", width: "85px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
+                            سائز
+                          </th>
+                          <th style={{ padding: "8px 8px", width: "120px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
+                            تفصیل / پیمائش
+                          </th>
+                          <th style={{ padding: "8px 6px", width: "75px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
+                            تعداد
+                          </th>
+                          <th style={{ padding: "8px 6px", width: "65px", textAlign: "center", borderLeft: "1px solid rgba(255,255,255,0.35)", fontWeight: 800 }}>
+                            یونٹ
+                          </th>
+                          <th style={{ padding: "8px 8px", width: "100px", textAlign: "center", fontWeight: 800 }}>
+                            کل پیمائش
                           </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {manifestItems.map((item, idx) => (
-                          <tr
-                            key={idx}
-                            style={{
-                              borderBottom: "1px solid #bce0fd",
-                              background: idx % 2 === 1 ? "#f8fbff" : "#ffffff",
-                              WebkitPrintColorAdjust: "exact",
-                              printColorAdjust: "exact"
-                            }}
-                          >
-                            {/* 1. رقم / نوٹ */}
-                            <td
-                              className="font-mono"
-                              dir="ltr"
+                        {manifestItems.map((item, idx) => {
+                          const row = formatPrintRow(item, idx);
+                          return (
+                            <tr
+                              key={idx}
                               style={{
-                                padding: "8px 10px",
-                                textAlign: "center",
-                                fontWeight: 800,
-                                color: "#0b2e59",
-                                borderRight: "1px solid #bce0fd"
+                                borderBottom: "1px solid #bce0fd",
+                                background: idx % 2 === 1 ? "#f8fbff" : "#ffffff",
+                                WebkitPrintColorAdjust: "exact",
+                                printColorAdjust: "exact"
                               }}
                             >
-                              {item.amount
-                                ? Number(item.amount).toLocaleString()
-                                : item.rate
-                                ? Number(item.rate).toLocaleString()
-                                : item.thicknessSutar
-                                ? `${item.thicknessSutar} سوتر`
-                                : "-"}
-                            </td>
+                              {/* 1. سیریل نمبر */}
+                              <td
+                                className="font-mono"
+                                style={{
+                                  padding: "7px 6px",
+                                  textAlign: "center",
+                                  fontWeight: 800,
+                                  color: "#0b2e59",
+                                  borderLeft: "1px solid #bce0fd"
+                                }}
+                              >
+                                {row.sr}
+                              </td>
 
-                            {/* 2. R.T.F */}
-                            <td
-                              dir="ltr"
-                              style={{
-                                padding: "8px 8px",
-                                textAlign: "center",
-                                color: "#0b2e59",
-                                fontWeight: 600,
-                                borderRight: "1px solid #bce0fd"
-                              }}
-                            >
-                              {item.rtf || "-"}
-                            </td>
+                              {/* 2. کوالٹی / آئٹم */}
+                              <td
+                                dir="rtl"
+                                style={{
+                                  padding: "7px 10px",
+                                  textAlign: "right",
+                                  fontWeight: 800,
+                                  color: "#0b2e59",
+                                  fontSize: "0.92rem",
+                                  borderLeft: "1px solid #bce0fd"
+                                }}
+                              >
+                                {row.name}
+                              </td>
 
-                            {/* 3. تفصیل */}
-                            <td
-                              style={{
-                                padding: "8px 10px",
-                                textAlign: "center",
-                                color: "#0b2e59",
-                                fontWeight: 700,
-                                borderRight: "1px solid #bce0fd"
-                              }}
-                            >
-                              {item.size && item.size !== "-"
-                                ? <span dir="ltr">{item.size}</span>
-                                : (item.unit ? <span><span dir="rtl">یونٹ:</span> <span dir="ltr">{item.unit}</span></span> : "-")}
-                            </td>
+                              {/* 3. سائز */}
+                              <td
+                                style={{
+                                  padding: "7px 6px",
+                                  textAlign: "center",
+                                  color: "#334155",
+                                  fontWeight: 700,
+                                  borderLeft: "1px solid #bce0fd"
+                                }}
+                              >
+                                {row.size}
+                              </td>
 
-                            {/* 4. مقدار */}
-                            <td
-                              className="font-mono"
-                              style={{
-                                padding: "8px 10px",
-                                textAlign: "center",
-                                fontWeight: 800,
-                                color: "#0b2e59",
-                                borderRight: "1px solid #bce0fd"
-                              }}
-                            >
-                              <span dir="ltr">
-                                {item.quantity !== undefined && item.quantity !== ""
-                                  ? `${item.quantity} ${item.unit || ""}`.trim()
-                                  : (item.pieces || item.sqFt || "-")}
-                              </span>
-                            </td>
+                              {/* 4. تفصیل / پیمائش */}
+                              <td
+                                style={{
+                                  padding: "7px 8px",
+                                  textAlign: "center",
+                                  color: "#0b2e59",
+                                  fontWeight: 700,
+                                  borderLeft: "1px solid #bce0fd"
+                                }}
+                              >
+                                {row.details}
+                              </td>
 
-                            {/* 5. کوالٹی */}
-                            <td
-                              dir="rtl"
-                              style={{
-                                padding: "8px 10px",
-                                textAlign: "center",
-                                fontWeight: 800,
-                                color: "#0b2e59",
-                                fontSize: "0.95rem",
-                                borderRight: "1px solid #bce0fd"
-                              }}
-                            >
-                              {item.name || item.itemName || "ماربل"}
-                            </td>
+                              {/* 5. تعداد */}
+                              <td
+                                className="font-mono"
+                                style={{
+                                  padding: "7px 6px",
+                                  textAlign: "center",
+                                  fontWeight: 800,
+                                  color: "#0b2e59",
+                                  borderLeft: "1px solid #bce0fd"
+                                }}
+                              >
+                                {row.quantity}
+                              </td>
 
-                            {/* 6. سیریل نمبر */}
-                            <td
-                              className="font-mono"
-                              dir="ltr"
-                              style={{
-                                padding: "8px 8px",
-                                textAlign: "center",
-                                fontWeight: 800,
-                                color: "#0b2e59"
-                              }}
-                            >
-                              {idx + 1}
-                            </td>
-                          </tr>
-                        ))}
+                              {/* 6. یونٹ */}
+                              <td
+                                style={{
+                                  padding: "7px 6px",
+                                  textAlign: "center",
+                                  fontWeight: 700,
+                                  color: "#2563eb",
+                                  borderLeft: "1px solid #bce0fd"
+                                }}
+                              >
+                                {row.unit}
+                              </td>
+
+                              {/* 7. کل پیمائش */}
+                              <td
+                                className="font-mono"
+                                style={{
+                                  padding: "7px 8px",
+                                  textAlign: "center",
+                                  fontWeight: 800,
+                                  color: "#0b2e59"
+                                }}
+                              >
+                                {row.totalMeasurement}
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                       <tfoot>
                         <tr
@@ -992,50 +991,62 @@ export default function PrintableGateSlip({
                             printColorAdjust: "exact"
                           }}
                         >
-                          {/* Grand Total Amount */}
+                          {/* Colspan 4: Summary label */}
                           <td
-                            className="font-mono"
-                            dir="ltr"
-                            style={{
-                              padding: "10px 10px",
-                              textAlign: "center",
-                              fontSize: "1.08rem",
-                              fontWeight: 900,
-                              color: "#0b2e59",
-                              borderRight: "1px solid #bce0fd"
-                            }}
-                          >
-                            {Number(grandTotal).toLocaleString()}
-                          </td>
-
-                          {/* R.T.F */}
-                          <td style={{ padding: "10px 8px", textAlign: "center", color: "#0b2e59", borderRight: "1px solid #bce0fd" }}>
-                            -
-                          </td>
-
-                          {/* تفصیل */}
-                          <td style={{ padding: "10px 10px", textAlign: "center", color: "#0b2e59", borderRight: "1px solid #bce0fd" }}>
-                            -
-                          </td>
-
-                          {/* مقدار */}
-                          <td style={{ padding: "10px 10px", textAlign: "center", color: "#0b2e59", borderRight: "1px solid #bce0fd" }}>
-                            -
-                          </td>
-
-                          {/* کل رقم (Span 2 Columns) */}
-                          <td
-                            colSpan={2}
+                            colSpan={4}
                             dir="rtl"
                             style={{
-                              padding: "10px 14px",
+                              padding: "9px 12px",
+                              textAlign: "right",
+                              fontSize: "0.95rem",
+                              fontWeight: 900,
+                              color: "#0b2e59",
+                              borderLeft: "1px solid #bce0fd"
+                            }}
+                          >
+                            میزان / کل روانگی مال (Total Dispatched)
+                          </td>
+
+                          {/* Total Quantity */}
+                          <td
+                            className="font-mono"
+                            style={{
+                              padding: "9px 6px",
                               textAlign: "center",
-                              fontSize: "1.35rem",
+                              fontSize: "0.98rem",
+                              fontWeight: 900,
+                              color: "#0b2e59",
+                              borderLeft: "1px solid #bce0fd"
+                            }}
+                          >
+                            {manifestItems.reduce((acc, it) => acc + (Number(it.quantity) || Number(it.pieces) || Number(it.sqFt) || 0), 0)}
+                          </td>
+
+                          {/* Unit */}
+                          <td
+                            style={{
+                              padding: "9px 6px",
+                              textAlign: "center",
+                              fontSize: "0.82rem",
+                              fontWeight: 800,
+                              color: "#2563eb",
+                              borderLeft: "1px solid #bce0fd"
+                            }}
+                          >
+                            -
+                          </td>
+
+                          {/* Total Manifest Items Count */}
+                          <td
+                            style={{
+                              padding: "9px 8px",
+                              textAlign: "center",
+                              fontSize: "0.88rem",
                               fontWeight: 900,
                               color: "#0b2e59"
                             }}
                           >
-                            کل رقم
+                            {manifestItems.length} آئٹمز
                           </td>
                         </tr>
                       </tfoot>
@@ -1234,21 +1245,24 @@ export default function PrintableGateSlip({
 
                 {/* Manifest Table */}
                 <div style={{ borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
-                  <div style={{ fontWeight: "bold", marginBottom: "4px" }}>ITEMS DISPATCHED:</div>
-                  {manifestItems.map((item, idx) => (
-                    <div key={idx} style={{ marginBottom: "3px", fontSize: "10px" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between" }}>
-                        <span>{idx + 1}. {item.name}</span>
-                        <span style={{ fontWeight: "bold" }}>Rs. {item.amount ? Number(item.amount).toLocaleString() : "-"}</span>
+                  <div style={{ fontWeight: "bold", marginBottom: "4px" }}>ITEMS DISPATCHED (مال کی تفصیل):</div>
+                  {manifestItems.map((item, idx) => {
+                    const row = formatPrintRow(item, idx);
+                    return (
+                      <div key={idx} style={{ marginBottom: "4px", fontSize: "10px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
+                          <span>{idx + 1}. {row.name}</span>
+                          <span>{row.totalMeasurement}</span>
+                        </div>
+                        <div style={{ color: "#444", fontSize: "9px", paddingLeft: "8px" }}>
+                          {row.size !== '-' ? `Size: ${row.size} • ` : ''}Qty: {row.quantity} {row.unit} {row.details !== '-' ? `• ${row.details}` : ''}
+                        </div>
                       </div>
-                      <div style={{ color: "#444", fontSize: "9px", paddingLeft: "10px" }}>
-                        {item.quantity !== undefined && item.quantity !== "" ? `Qty: ${item.quantity} ${item.unit || ''}`.trim() : (item.pieces ? `• ${item.pieces} Pcs` : "")} {item.size && item.size !== '-' ? `• ${item.size}` : ""}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div style={{ borderTop: "1px dotted #000", marginTop: "4px", paddingTop: "4px", display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
-                    <span>Total:</span>
-                    <span>Rs. {Number(grandTotal).toLocaleString()}</span>
+                    <span>Total Dispatched Items:</span>
+                    <span>{manifestItems.length} Items</span>
                   </div>
                 </div>
 

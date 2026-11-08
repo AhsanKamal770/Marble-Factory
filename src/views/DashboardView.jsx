@@ -87,7 +87,9 @@ export default function DashboardView({ setActiveView, settings }) {
 
   const totalReceived = useMemo(() => {
     const directSalesCash = invoices.filter(inv => !inv.customerId).reduce((acc, inv) => acc + Number(inv.paidAmount || 0), 0);
-    const wasooliCash = customerPayments.reduce((acc, pay) => acc + Number(pay.amount || 0), 0);
+    const wasooliCash = customerPayments
+      .filter(pay => !pay.isAdvanceAdjustment)
+      .reduce((acc, pay) => acc + Number(pay.amount || 0), 0);
     return Math.max(0, directSalesCash + wasooliCash - totalCashRefunds);
   }, [invoices, customerPayments, totalCashRefunds]);
 
@@ -125,35 +127,61 @@ export default function DashboardView({ setActiveView, settings }) {
     [dailyExpenses, todayDate]
   );
 
-  // Stock Category Breakdown (Slabs vs Tiles vs Others)
+  // Stock Category Breakdown (Marble Sq.Ft vs Tiles Meters vs Borders R.ft vs Accessories Pieces)
   const stockBreakdown = useMemo(() => {
-    let slabsSq = 0;
+    let marbleSqFt = 0;
     let tilesMeters = 0;
-    let otherSq = 0;
+    let runningFeet = 0;
+    let accessoriesPieces = 0;
 
     items.forEach((it) => {
-      const sqft = Number(it.stockSqFt || 0);
       const cat = (it.category || '').toLowerCase();
+      const sub = (it.subCategory || '').toLowerCase();
       const nm = (it.name || '').toLowerCase();
       const unit = (it.unit || '').toLowerCase();
 
-      if (cat.includes('tile') || nm.includes('tile') || cat.includes('porcelain') || cat.includes('ceramic') || unit.includes('meter')) {
-        tilesMeters += sqft;
-      } else if (cat.includes('slab') || nm.includes('slab') || cat.includes('granite') || cat.includes('marble')) {
-        slabsSq += sqft;
+      const isTiles = (cat.includes('tile') || nm.includes('tile') || cat.includes('porcelain') || cat.includes('ceramic') || unit.includes('meter')) &&
+        !cat.includes('accessories') && !nm.includes('gola') && !nm.includes('spacer') && !nm.includes('filling') && !nm.includes('bond');
+
+      const isRFt = (unit.includes('r.ft') || unit.includes('running') || cat.includes('border') || cat.includes('kali patti') || nm.includes('border') || nm.includes('patti')) &&
+        !cat.includes('tile') && !nm.includes('tile');
+
+      const isPiece = cat.includes('accessories') || sub.includes('accessories') ||
+        cat.includes('flower') || cat.includes('panel') || cat.includes('kakri') || cat.includes('kalm') ||
+        unit.includes('piece') || unit.includes('pcs') ||
+        nm.includes('gola') || nm.includes('spacer') || nm.includes('filling') || nm.includes('bond') ||
+        nm.includes('sink') || nm.includes('basin') || nm.includes('seat') || nm.includes('combod');
+
+      if (isTiles) {
+        tilesMeters += Number(it.stockSqFt || 0);
+      } else if (isRFt) {
+        runningFeet += Number(it.stockSqFt || it.stockPieces || 0);
+      } else if (isPiece) {
+        accessoriesPieces += Number(it.stockPieces !== undefined && it.stockPieces !== null ? it.stockPieces : it.stockSqFt) || 0;
       } else {
-        otherSq += sqft;
+        marbleSqFt += Number(it.stockSqFt || 0);
       }
     });
 
-    const totalYard = slabsSq + tilesMeters + otherSq || 1;
+    const totalUnits = Math.round(marbleSqFt) + Math.round(tilesMeters) + Math.round(runningFeet) + Math.round(accessoriesPieces);
+    const totalYard = totalUnits || 1;
+    const slabsPct = Math.round((marbleSqFt / totalYard) * 100);
+    const tilesPct = Math.round((tilesMeters / totalYard) * 100);
+    const rFtPct = Math.round((runningFeet / totalYard) * 100);
+    const otherPct = Math.max(0, 100 - slabsPct - tilesPct - rFtPct);
+
     return {
-      slabsSqFt: Math.round(slabsSq),
+      slabsSqFt: Math.round(marbleSqFt),
+      marbleSqFt: Math.round(marbleSqFt),
       tilesMeters: Math.round(tilesMeters * 10) / 10,
-      otherSqFt: Math.round(otherSq),
-      slabsPct: Math.round((slabsSq / totalYard) * 100),
-      tilesPct: Math.round((tilesMeters / totalYard) * 100),
-      otherPct: Math.round((otherSq / totalYard) * 100)
+      runningFeet: Math.round(runningFeet * 10) / 10,
+      accessoriesPieces: Math.round(accessoriesPieces),
+      otherSqFt: Math.round(accessoriesPieces),
+      totalUnits,
+      slabsPct,
+      tilesPct,
+      rFtPct,
+      otherPct
     };
   }, [items]);
 
@@ -196,6 +224,7 @@ export default function DashboardView({ setActiveView, settings }) {
       });
 
       customerPayments.forEach((pay) => {
+        if (pay.isAdvanceAdjustment) return;
         const dateStr = (pay.date || pay.createdAt || '').slice(0, 10);
         if (dateStr === todayDate) {
           const amount = Number(pay.amount || 0);
@@ -258,6 +287,7 @@ export default function DashboardView({ setActiveView, settings }) {
       });
 
       customerPayments.forEach((pay) => {
+        if (pay.isAdvanceAdjustment) return;
         const rawDate = pay.date || pay.createdAt || '';
         if (rawDate.slice(0, 7) === currentMonthStr) {
           const amount = Number(pay.amount || 0);
@@ -307,6 +337,7 @@ export default function DashboardView({ setActiveView, settings }) {
       });
 
       customerPayments.forEach((pay) => {
+        if (pay.isAdvanceAdjustment) return;
         if ((pay.date || pay.createdAt || '').slice(0, 10) === dStr) {
           wAmt += Number(pay.amount || 0);
         }
@@ -348,16 +379,18 @@ export default function DashboardView({ setActiveView, settings }) {
       });
     });
 
-    customerPayments.forEach((pay) => {
-      activities.push({
-        id: `pay-${pay.id}`,
-        type: 'payment',
-        title: `Wasooli received`,
-        subtitle: `${pay.customerName || 'Customer'} • ${pay.paymentMethod || 'Cash'}`,
-        amount: `+Rs. ${Number(pay.amount || 0).toLocaleString()}`,
-        date: new Date(pay.date || pay.createdAt || Date.now())
+    customerPayments
+      .filter((pay) => !pay.isAdvanceAdjustment)
+      .forEach((pay) => {
+        activities.push({
+          id: `pay-${pay.id}`,
+          type: 'payment',
+          title: `Wasooli received`,
+          subtitle: `${pay.customerName || 'Customer'} • ${pay.paymentMethod || 'Cash'}`,
+          amount: `+Rs. ${Number(pay.amount || 0).toLocaleString()}`,
+          date: new Date(pay.date || pay.createdAt || Date.now())
+        });
       });
-    });
 
     dailyExpenses.forEach((exp) => {
       activities.push({
@@ -764,18 +797,35 @@ export default function DashboardView({ setActiveView, settings }) {
           </div>
         </div>
 
-        {/* KPI 4: YARD STOCK */}
-        <div className="kpi-metric-card">
+        {/* KPI 4: YARD STOCK (General Units & Multi-Unit Breakdown) */}
+        <div
+          className="kpi-metric-card"
+          title={[
+            `${stockBreakdown.marbleSqFt.toLocaleString()} Sq.Ft Marble`,
+            `${stockBreakdown.tilesMeters.toLocaleString()} Meters Tiles`,
+            stockBreakdown.runningFeet > 0 ? `${stockBreakdown.runningFeet.toLocaleString()} R.ft. Borders` : null,
+            `${stockBreakdown.accessoriesPieces.toLocaleString()} Pcs Accessories`
+          ].filter(Boolean).join(' • ')}
+        >
           <div className="kpi-metric-icon purple">
             <Boxes size={22} />
           </div>
-          <div className="kpi-metric-body">
+          <div className="kpi-metric-body" style={{ flex: 1, minWidth: 0 }}>
             <div className="kpi-metric-label">
               <span className="kpi-metric-label-en">Yard Stock</span>
-              <span className="kpi-metric-label-ur">(یارڈ اسٹاک)</span>
+              <span className="kpi-metric-label-ur">(کل یارڈ اسٹاک)</span>
             </div>
             <div className="kpi-metric-value font-mono">
-              {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)' }}>Sq.Ft</span>
+              {stockBreakdown.totalUnits.toLocaleString()}{' '}
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted, #94a3b8)' }}>Units</span>
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #64748b)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {[
+                stockBreakdown.marbleSqFt > 0 ? `${stockBreakdown.marbleSqFt.toLocaleString()} Sq.Ft` : null,
+                stockBreakdown.tilesMeters > 0 ? `${stockBreakdown.tilesMeters.toLocaleString()} Mtr` : null,
+                stockBreakdown.runningFeet > 0 ? `${stockBreakdown.runningFeet.toLocaleString()} R.ft.` : null,
+                stockBreakdown.accessoriesPieces > 0 ? `${stockBreakdown.accessoriesPieces.toLocaleString()} Pcs` : null
+              ].filter(Boolean).join(' • ') || `${stockBreakdown.totalUnits.toLocaleString()} Units`}
             </div>
           </div>
         </div>
@@ -1334,9 +1384,26 @@ export default function DashboardView({ setActiveView, settings }) {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <span className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                {totalStockSqFt.toLocaleString()} <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Sq.Ft Total</span>
-              </span>
+              <div className="font-mono" style={{ fontSize: '1.42rem', fontWeight: 900, color: 'var(--text-primary)', display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', gap: '8px' }}>
+                <span>
+                  {stockBreakdown.marbleSqFt.toLocaleString()}{' '}
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    Sq.Ft
+                  </span>
+                </span>
+                {stockBreakdown.runningFeet > 0 && (
+                  <span style={{ color: '#d97706' }}>
+                    • {stockBreakdown.runningFeet.toLocaleString()}{' '}
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>R.ft.</span>
+                  </span>
+                )}
+                {stockBreakdown.tilesMeters > 0 && (
+                  <span style={{ color: '#059669' }}>
+                    • {stockBreakdown.tilesMeters.toLocaleString()}{' '}
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{language === 'ur' ? 'میٹر' : 'Meters'}</span>
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Category Proportion Bars */}
@@ -1371,18 +1438,33 @@ export default function DashboardView({ setActiveView, settings }) {
                 </div>
               </div>
 
-              {/* Other & Borders */}
+              {/* Borders & Patti in Running Feet (R.ft.) */}
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {language === 'ur' ? 'سیڑھیاں، گرینائٹ و پٹی' : 'Steps, Granite & Borders'}
+                    {language === 'ur' ? 'بارڈرز و کالی پٹی' : 'Borders & Kali Patti'}
                   </span>
-                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
-                    {stockBreakdown.otherSqFt.toLocaleString()} Sq.Ft ({stockBreakdown.otherPct}%)
+                  <span className="font-mono" style={{ color: '#d97706', fontWeight: 700 }}>
+                    {stockBreakdown.runningFeet.toLocaleString()} R.ft. ({stockBreakdown.rFtPct}%)
                   </span>
                 </div>
                 <div style={{ height: '8px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
-                  <div style={{ width: `${stockBreakdown.otherPct}%`, height: '100%', background: '#d97706', borderRadius: '99px' }}></div>
+                  <div style={{ width: `${stockBreakdown.rFtPct}%`, height: '100%', background: '#d97706', borderRadius: '99px' }}></div>
+                </div>
+              </div>
+
+              {/* Accessories & Other */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.76rem', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {language === 'ur' ? 'لوازمات، گرینائٹ و دیگر' : 'Accessories, Granite & Others'}
+                  </span>
+                  <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+                    {stockBreakdown.otherSqFt.toLocaleString()} {language === 'ur' ? 'یونٹس' : 'Pcs/Units'} ({stockBreakdown.otherPct}%)
+                  </span>
+                </div>
+                <div style={{ height: '8px', background: 'var(--border-subtle)', borderRadius: '99px', overflow: 'hidden' }}>
+                  <div style={{ width: `${stockBreakdown.otherPct}%`, height: '100%', background: '#8b5cf6', borderRadius: '99px' }}></div>
                 </div>
               </div>
             </div>

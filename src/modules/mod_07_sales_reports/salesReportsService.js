@@ -138,6 +138,14 @@ export async function fetchInvoicesInRange(start, end) {
 export async function fetchCustomerPaymentsInRange(start, end) {
   const all = await db.customer_payments.toArray();
   return all.filter((pay) => {
+    if (
+      pay.isAdvanceAdjustment === true ||
+      pay.paymentMethod === 'Advance Adjustment' ||
+      (typeof pay.paymentNo === 'string' && pay.paymentNo.startsWith('ADV-ADJ')) ||
+      (typeof pay.notes === 'string' && pay.notes.includes('Advance applied against Bill'))
+    ) {
+      return false;
+    }
     const d = parseDate(pay.date || pay.createdAt);
     return d && d >= start && d <= end;
   });
@@ -237,6 +245,7 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
   let totalTax = 0;
   let cashSalesDirect = 0;
   let creditSalesDirect = 0;
+  let advanceAdjustedDirect = 0;
   let totalSqFtSold = 0;
   let totalCOGS = 0;
 
@@ -267,14 +276,20 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
     totalPolish += Number(inv.polishCharges) || 0;
     totalTax += Number(inv.taxAmount) || 0;
 
-    // Cash vs Credit breakdown
-    const isCredit = (inv.paymentMethod || '').toLowerCase() === 'credit' || due > 0;
-    if (isCredit) {
-      cashSalesDirect += paid;
-      creditSalesDirect += due;
+    // Invoicing breakdown (Accrual basis)
+    creditSalesDirect += due;
+    const appliedAdv = Number(inv.appliedAdvance) || 0;
+    advanceAdjustedDirect += appliedAdv;
+
+    // Spot cash billed directly on this invoice
+    let invoiceSpotCash = 0;
+    if (inv.customerId) {
+      invoiceSpotCash = paid;
     } else {
-      cashSalesDirect += billTotal;
+      const isCash = !inv.paymentMethod || !inv.paymentMethod.toLowerCase().includes('credit');
+      invoiceSpotCash = isCash ? (paid || billTotal) : paid;
     }
+    cashSalesDirect += invoiceSpotCash;
 
     // Payment method distribution
     const method = inv.paymentMethod || (isCredit ? 'Credit (ادھار کھاتہ)' : 'Cash (نقد)');
@@ -302,9 +317,11 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
     // Process line items for COGS, categories, sutars, and items
     (inv.items || []).forEach((line) => {
       const lineSqFt = Number(line.totalSqFt) || (Number(line.sqft) || 0);
+      const lineQty = Number(line.quantity !== undefined && line.quantity !== "" ? line.quantity : (line.totalSqFt || line.sqft || line.pieces || line.meters || line.runningFeet || 0));
       const lineAmount = Number(line.amount) || 0;
       totalSqFtSold += lineSqFt;
       customerAggregate[custKey].sqFt += lineSqFt;
+      customerAggregate[custKey].totalUnits = (customerAggregate[custKey].totalUnits || 0) + lineQty;
 
       // Item & COGS lookup
       const catalogItem = (line.itemId ? itemCostMap.get(line.itemId) : null) ||
@@ -315,11 +332,14 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
 
       // ── Category Aggregation
       const cat = line.category || (catalogItem ? catalogItem.category : 'General Marble');
+      const detUnit = line.unit || catalogItem?.unit || (cat === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(cat) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(cat) ? 'R.Ft' : 'Sq.Ft')));
       if (!categoryStats[cat]) {
         categoryStats[cat] = {
           name: cat,
           revenue: 0,
           sqFt: 0,
+          quantity: 0,
+          unit: detUnit,
           cogs: 0,
           profit: 0,
           itemsCount: 0
@@ -327,6 +347,8 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
       }
       categoryStats[cat].revenue += lineAmount;
       categoryStats[cat].sqFt += lineSqFt;
+      categoryStats[cat].quantity = (categoryStats[cat].quantity || 0) + lineQty;
+      if (!categoryStats[cat].unit && detUnit) categoryStats[cat].unit = detUnit;
       categoryStats[cat].cogs += lineCost;
       categoryStats[cat].profit += (lineAmount - lineCost);
       categoryStats[cat].itemsCount += 1;
@@ -352,26 +374,124 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
           code: line.code || catalogItem?.code || 'MB-GEN',
           name: line.name || 'Marble Slab',
           category: cat,
+          unit: detUnit,
           sqFt: 0,
+          quantity: 0,
           revenue: 0,
           cogs: 0,
           profit: 0
         };
       }
       itemAggregate[itemKey].sqFt += lineSqFt;
+      itemAggregate[itemKey].quantity = (itemAggregate[itemKey].quantity || 0) + lineQty;
+      if (!itemAggregate[itemKey].unit && detUnit) itemAggregate[itemKey].unit = detUnit;
       itemAggregate[itemKey].revenue += lineAmount;
       itemAggregate[itemKey].cogs += lineCost;
       itemAggregate[itemKey].profit += (lineAmount - lineCost);
     });
   });
 
-  // Calculate Sales Returns Impact
+  // ── Calculate Sales Returns Impact & Restock Cost Reversal ──
   const salesReturnsAmount = returns.reduce((sum, r) => sum + (Number(r.totalAmount) || 0), 0);
   const netSales = Math.max(0, grossSales - salesReturnsAmount);
 
-  // Wasooli & Factory Daily Expenses
-  const wasooliCollections = payments.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
-  const factoryExpenses = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  // Reconcile Cost of Goods Sold (COGS) for restocked goods
+  let returnedCOGS = 0;
+  let returnedSqFt = 0;
+
+  returns.forEach((ret) => {
+    (ret.items || []).forEach((rItem) => {
+      const isRestocked = !rItem.condition || rItem.condition.toLowerCase().includes('good');
+      const rSqFt = Number(rItem.sqft) || 0;
+      const rAmt = Number(rItem.amount) || (rSqFt * (Number(rItem.rate) || 0));
+      returnedSqFt += rSqFt;
+
+      if (isRestocked) {
+        const catalogItem = (rItem.itemId ? itemCostMap.get(rItem.itemId) : null) ||
+                            (rItem.name ? itemCostNameMap.get(rItem.name.trim().toLowerCase()) : null);
+        const unitCost = catalogItem ? catalogItem.costPerSqFt : Math.round((Number(rItem.rate) || 150) * 0.72);
+        const itemReturnedCost = rSqFt > 0 ? (rSqFt * unitCost) : Math.round(rAmt * 0.72);
+        returnedCOGS += itemReturnedCost;
+
+        // Reconcile category breakdown
+        const cat = rItem.category || (catalogItem ? catalogItem.category : 'General Marble');
+        if (categoryStats[cat]) {
+          categoryStats[cat].revenue = Math.max(0, categoryStats[cat].revenue - rAmt);
+          categoryStats[cat].sqFt = Math.max(0, categoryStats[cat].sqFt - rSqFt);
+          categoryStats[cat].cogs = Math.max(0, categoryStats[cat].cogs - itemReturnedCost);
+          categoryStats[cat].profit = Math.round(categoryStats[cat].revenue - categoryStats[cat].cogs);
+        }
+
+        // Reconcile stone items aggregate
+        const itemKey = rItem.itemId ? `ITM_${rItem.itemId}` : (rItem.name || 'Custom Cut Marble');
+        if (itemAggregate[itemKey]) {
+          itemAggregate[itemKey].revenue = Math.max(0, itemAggregate[itemKey].revenue - rAmt);
+          itemAggregate[itemKey].sqFt = Math.max(0, itemAggregate[itemKey].sqFt - rSqFt);
+          itemAggregate[itemKey].cogs = Math.max(0, itemAggregate[itemKey].cogs - itemReturnedCost);
+          itemAggregate[itemKey].profit = Math.round(itemAggregate[itemKey].revenue - itemAggregate[itemKey].cogs);
+        }
+      }
+    });
+  });
+
+  totalCOGS = Math.max(0, totalCOGS - returnedCOGS);
+  totalSqFtSold = Math.max(0, totalSqFtSold - returnedSqFt);
+
+  // Wasooli & Factory Daily Expenses (Actual cash/bank receipts only; advance adjustments excluded)
+  const isAdjustment = (p) =>
+    p.isAdvanceAdjustment === true ||
+    p.paymentMethod === 'Advance Adjustment' ||
+    (typeof p.paymentNo === 'string' && p.paymentNo.startsWith('ADV-ADJ')) ||
+    (typeof p.notes === 'string' && p.notes.includes('Advance applied against Bill'));
+
+  // 1. Actual Customer Receipts from vouchers (Advance deposits, khata recoveries, spot payments in customer_payments)
+  const actualReceipts = payments.filter((p) => !isAdjustment(p));
+  const wasooliCollections = actualReceipts.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+  // Operational Expenses for Net Profit (P&L):
+  // Filter out customer return cash refunds to avoid double deducting them (they are already deducted in netSales)
+  const isSalesRefundExpense = (e) => {
+    const cat = (e.category || '').toLowerCase();
+    const rem = (e.remarks || '').toLowerCase();
+    return (
+      cat.includes('sales cash refund') ||
+      cat.includes('واپسی مال نقد') ||
+      cat.includes('customer return') ||
+      cat.includes('گاہک ادھار / ایڈوانس واپسی') ||
+      rem.includes('refund for return')
+    );
+  };
+
+  const factoryOperatingExpenses = expenses
+    .filter((e) => !isSalesRefundExpense(e))
+    .reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+  const physicalExpensesTotal = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+  const factoryExpenses = factoryOperatingExpenses;
+
+  // 2. Direct Walk-in Cash Sales (Invoices without customerId, which do not create customer_payments vouchers)
+  // Plus safeguard for unlinked invoices to preserve historical data
+  const paidInvoiceIds = new Set(actualReceipts.filter((p) => p.invoiceId).map((p) => p.invoiceId));
+  const paidInvoiceNos = new Set(actualReceipts.filter((p) => p.referenceNo).map((p) => p.referenceNo));
+
+  let walkinDirectCashReceipts = 0;
+  invoices.forEach((inv) => {
+    const isLinkedToPayment =
+      (inv.id && paidInvoiceIds.has(inv.id)) ||
+      (inv.invoiceNo && paidInvoiceNos.has(inv.invoiceNo));
+
+    if (!isLinkedToPayment) {
+      if (!inv.customerId) {
+        const isCash = !inv.paymentMethod || !inv.paymentMethod.toLowerCase().includes('credit');
+        walkinDirectCashReceipts += isCash ? (Number(inv.paidAmount) || Number(inv.grandTotal) || 0) : Number(inv.paidAmount || 0);
+      } else {
+        const amt = Number(inv.paidAmount) || 0;
+        if (amt > 0 && inv.paymentMethod !== 'Advance Adjustment') {
+          walkinDirectCashReceipts += amt;
+        }
+      }
+    }
+  });
 
   // Profit & Loss (Munafa) Engine
   const grossProfit = Math.round(netSales - totalCOGS);
@@ -379,11 +499,13 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
   const netProfit = Math.round(grossProfit - factoryExpenses);
   const netMarginPct = netSales > 0 ? Math.round((netProfit / netSales) * 100) : 0;
 
-  // Cash Flow Ratios
-  const cashRatio = grossSales > 0 ? Math.round((cashSalesDirect / grossSales) * 100) : 0;
-  const creditRatio = 100 - cashRatio;
-  const totalCashInflow = cashSalesDirect + wasooliCollections;
-  const netCashFlow = totalCashInflow - factoryExpenses;
+  // Total Cash Inflow = Actual Receipts from Vouchers + Direct Walk-in / Unlinked Cash Sales (100% Cashbook Synchronized)
+  const totalCashInflow = wasooliCollections + walkinDirectCashReceipts;
+  const netCashFlow = totalCashInflow - physicalExpensesTotal;
+
+  // Cash Ratio: Portion of gross sales covered by spot cash & applied advance vs credit
+  const cashRatio = grossSales > 0 ? Math.round(((cashSalesDirect + advanceAdjustedDirect) / grossSales) * 100) : 0;
+  const creditRatio = Math.max(0, 100 - cashRatio);
 
   // Previous Period Comparison for Growth %
   const prevGrossSales = prevInvoices.reduce((sum, inv) => sum + (Number(inv.grandTotal) || 0), 0);
@@ -508,6 +630,8 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
       netSales,
       cashSalesDirect,
       creditSalesDirect,
+      advanceAdjustedDirect,
+      walkinDirectCashReceipts,
       cashRatio,
       creditRatio,
       wasooliCollections,
@@ -559,9 +683,15 @@ function generateTimelineSeries(start, end, horizon, invoices, payments, expense
     if (!map.has(key)) {
       map.set(key, {
         key,
+        dayNumber: cur.getDate(),
+        monthName: cur.toLocaleString('default', { month: 'short' }),
+        fullMonthName: cur.toLocaleString('default', { month: 'long', year: 'numeric' }),
         label: isYearly
           ? cur.toLocaleString('default', { month: 'short', year: 'numeric' })
-          : cur.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+          : `${cur.getDate()}`,
+        fullLabel: isYearly
+          ? cur.toLocaleString('default', { month: 'short', year: 'numeric' })
+          : cur.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }),
         sales: 0,
         wasooli: 0,
         expenses: 0,
@@ -587,13 +717,35 @@ function generateTimelineSeries(start, end, horizon, invoices, payments, expense
     }
   });
 
-  // Populate Payments (Wasooli)
-  payments.forEach((pay) => {
+  // Populate Payments (Wasooli - excluding advance adjustments)
+  const isAdjustmentVoucher = (pay) =>
+    pay.isAdvanceAdjustment === true ||
+    pay.paymentMethod === 'Advance Adjustment' ||
+    (typeof pay.paymentNo === 'string' && pay.paymentNo.startsWith('ADV-ADJ')) ||
+    (typeof pay.notes === 'string' && pay.notes.includes('Advance applied against Bill'));
+
+  payments.filter((pay) => !isAdjustmentVoucher(pay)).forEach((pay) => {
     const dStr = (pay.date || pay.createdAt || '').slice(0, 10);
     const key = isYearly ? dStr.slice(0, 7) : dStr;
     const bucket = map.get(key);
     if (bucket) {
       bucket.wasooli += Number(pay.amount) || 0;
+    }
+  });
+
+  // Also include walk-in cash sales into timeline inflow
+  invoices.forEach((inv) => {
+    if (!inv.customerId) {
+      const isCash = !inv.paymentMethod || !inv.paymentMethod.toLowerCase().includes('credit');
+      const amt = isCash ? (Number(inv.paidAmount) || Number(inv.grandTotal) || 0) : Number(inv.paidAmount || 0);
+      if (amt > 0) {
+        const dStr = (inv.date || inv.createdAt || '').slice(0, 10);
+        const key = isYearly ? dStr.slice(0, 7) : dStr;
+        const bucket = map.get(key);
+        if (bucket) {
+          bucket.wasooli += amt;
+        }
+      }
     }
   });
 

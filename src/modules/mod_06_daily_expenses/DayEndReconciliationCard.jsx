@@ -9,7 +9,8 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
   const [actualPhysicalCash, setActualPhysicalCash] = useState("");
   const [showDenominations, setShowDenominations] = useState(false);
   const [isSavingClosing, setIsSavingClosing] = useState(false);
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [closingSummaryAmount, setClosingSummaryAmount] = useState(0);
   const [notes, setNotes] = useState({
     5000: "",
     1000: "",
@@ -88,6 +89,24 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
         <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "3px" }}>
           {tr("Compare system expected cash with actual physical cash in the drawer", "اوپننگ کیش، نقد سیلز، ریکوری اور اخراجات کا جامع موازنہ")}
         </p>
+
+        {existingClosing?.status === 'Closed' && (
+          <div style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            background: "#dcfce7",
+            color: "#16a34a",
+            padding: "3px 12px",
+            borderRadius: "20px",
+            fontSize: "0.74rem",
+            fontWeight: 800,
+            marginTop: "6px"
+          }}>
+            <Check size={14} />
+            <span>{tr("Day Reconciled & Closed", "روزنامچہ بند شدہ")} • Rs. {Number(existingClosing.actualCash).toLocaleString()}</span>
+          </div>
+        )}
       </div>
 
       {/* Main 2-Column Math Grid */}
@@ -358,33 +377,6 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
         </div>
       </div>
 
-      {/* Day Closing Success / Status Notice */}
-      {(saveSuccessMsg || existingClosing?.status === 'Closed') && (
-        <div style={{
-          background: "rgba(16, 185, 129, 0.1)",
-          border: "1px solid #10b981",
-          borderRadius: "8px",
-          padding: "10px 14px",
-          marginBottom: "16px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          color: "#059669",
-          fontSize: "0.84rem",
-          fontWeight: 700
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <Check size={18} />
-            <span>
-              {saveSuccessMsg || tr(`Day Reconciled & Closed (Actual Cash: Rs. ${Number(existingClosing.actualCash).toLocaleString()})`, `روزنامچہ محفوظ شدہ ہے (اصل کیش: Rs. ${Number(existingClosing.actualCash).toLocaleString()})`)}
-            </span>
-          </div>
-          <span style={{ fontSize: "0.72rem", background: "#10b981", color: "#fff", padding: "2px 8px", borderRadius: "4px" }}>
-            CLOSED
-          </span>
-        </div>
-      )}
-
       {/* Action Buttons: Save & Close Day + Print Roznamcha */}
       <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
         <button
@@ -394,19 +386,20 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
             if (onSaveDayClosing) {
               setIsSavingClosing(true);
               try {
+                const finalActualCash = countedNum !== null ? countedNum : liveCash;
                 await onSaveDayClosing({
                   date: cashData.targetDate,
                   openingCash,
                   cashInflow: totalCashInflow,
                   cashOutflow: totalCashOutflow,
                   expectedCash: liveCash,
-                  actualCash: countedNum !== null ? countedNum : liveCash,
+                  actualCash: finalActualCash,
                   difference: difference !== null ? difference : 0,
                   noteDenominations: notes,
                   status: 'Closed'
                 });
-                setSaveSuccessMsg(tr("Day Closing Saved & Roznamcha Reconciled!", "روزنامچہ بند اور محفوظ ہو گیا!"));
-                setTimeout(() => setSaveSuccessMsg(""), 3500);
+                setClosingSummaryAmount(finalActualCash);
+                setShowSuccessModal(true);
               } catch (err) {
                 alert("Error saving closing: " + err.message);
               } finally {
@@ -429,8 +422,14 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
             boxShadow: "0 2px 8px rgba(5, 150, 105, 0.25)"
           }}
         >
-          <Lock size={16} />
-          {isSavingClosing ? tr("Saving...", "محفوظ ہو رہا ہے...") : tr("Save & Close Day (روزنامچہ بند / محفوظ کریں)", "روزنامچہ بند / محفوظ کریں")}
+          {isSavingClosing ? <Lock size={16} /> : existingClosing?.status === 'Closed' ? <Check size={16} /> : <Lock size={16} />}
+          <span>
+            {isSavingClosing
+              ? tr("Saving...", "محفوظ ہو رہا ہے...")
+              : existingClosing?.status === 'Closed'
+              ? tr("Update Day Closing (روزنامچہ اپڈیٹ کریں)", "روزنامچہ اپڈیٹ کریں")
+              : tr("Save & Close Day (روزنامچہ بند / محفوظ کریں)", "روزنامچہ بند / محفوظ کریں")}
+          </span>
         </button>
 
         <button
@@ -452,6 +451,110 @@ export default function DayEndReconciliationCard({ cashData, onPrintThermal, onP
           {tr("Print Full Roznamcha (A4)", "مکمل روزنامچہ پرنٹ کریں (A4)")}
         </button>
       </div>
+      {/* Success Message Box Modal */}
+      {showSuccessModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            zIndex: 99999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px"
+          }}
+          onClick={() => setShowSuccessModal(false)}
+        >
+          <div
+            className="modal-card"
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              maxWidth: "420px",
+              width: "100%",
+              padding: "26px 22px",
+              textAlign: "center",
+              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              border: "1px solid #e2e8f0"
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Green Icon Circle */}
+            <div
+              style={{
+                width: "58px",
+                height: "58px",
+                borderRadius: "50%",
+                background: "#dcfce7",
+                color: "#16a34a",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 14px auto"
+              }}
+            >
+              <CheckCircle2 size={34} />
+            </div>
+
+            {/* Title */}
+            <h3 style={{ fontSize: "1.22rem", fontWeight: 800, color: "#0f172a", margin: "0 0 8px 0" }}>
+              {tr("Day Reconciled & Closed!", "روزنامچہ کامیابی سے بند ہو گیا!")}
+            </h3>
+
+            {/* Cash Highlight Card */}
+            <div
+              style={{
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                borderRadius: "10px",
+                padding: "12px",
+                margin: "14px 0",
+                textAlign: "center"
+              }}
+            >
+              <div style={{ fontSize: "0.76rem", color: "#15803d", fontWeight: 700 }}>
+                {tr("Closing Cash Transferred to Opening Cash", "کلوزنگ کیش (اوپننگ کیش میں شامل)")}
+              </div>
+              <div style={{ fontSize: "1.45rem", fontWeight: 900, color: "#16a34a", fontFamily: "var(--font-mono)", marginTop: "4px" }}>
+                Rs. {Number(closingSummaryAmount).toLocaleString()}
+              </div>
+            </div>
+
+            <p style={{ fontSize: "0.82rem", color: "#64748b", margin: "0 0 20px 0", lineHeight: 1.5 }}>
+              {tr(
+                "Cash drawer audit has been successfully saved. This closing balance is now added to the opening cash for the next business day.",
+                "روزنامچہ اور دراز کیش مکمل طور پر محفوظ ہو چکے ہیں۔ یہ رقم اگلے دن کے کاروبار کے لیے اوپننگ کیش میں شامل کر دی گئی ہے۔"
+              )}
+            </p>
+
+            {/* Action Button: OK */}
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setShowSuccessModal(false)}
+              style={{
+                width: "100%",
+                padding: "11px 18px",
+                borderRadius: "10px",
+                fontWeight: 800,
+                fontSize: "0.95rem",
+                background: "#16a34a",
+                borderColor: "#16a34a",
+                color: "#ffffff",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(22, 163, 74, 0.25)"
+              }}
+            >
+              {tr("OK / Continue", "ٹھیک ہے (OK)")}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

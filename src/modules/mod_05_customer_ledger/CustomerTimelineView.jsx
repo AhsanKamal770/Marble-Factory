@@ -208,6 +208,15 @@ export default function CustomerTimelineView({
           </div>
 
           <div>
+            <div style={{ fontSize: "0.68rem", color: "#2563eb", fontWeight: 700, textTransform: "uppercase" }}>
+              Available Advance
+            </div>
+            <div className="font-mono" style={{ fontSize: "0.95rem", fontWeight: 800, color: "#2563eb" }}>
+              Rs. {Number(customer.advanceBalance || 0).toLocaleString()}
+            </div>
+          </div>
+
+          <div>
             <div style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>
               Balance Due
             </div>
@@ -290,7 +299,14 @@ export default function CustomerTimelineView({
 
                         {isInvoice && item.items && item.items.length > 0 && (
                           <div style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                            {item.items.map(i => `${i.name} (${i.totalSqFt} Sq.Ft)`).join(', ')}
+                            {item.items.map(i => {
+                              const nl = (i.name || '').toLowerCase();
+                              const cl = (i.category || '').toLowerCase();
+                              const ul = (i.unit || '').toLowerCase();
+                              const uName = ul.includes('meter') || cl.includes('tile') || nl.includes('tile') ? 'Meters' : (ul.includes('piece') || ul.includes('pcs') || cl.includes('accessori') || cl.includes('kakri') || cl.includes('kalm') ? 'Pcs' : (ul.includes('r.ft') || cl.includes('border') || cl.includes('patti') ? 'R.Ft.' : 'Sq.Ft'));
+                              const q = i.billedQuantity || i.meters || i.runningFeet || i.pieces || i.quantity || i.totalSqFt || 0;
+                              return `${i.name || 'آئٹم'}${q ? ` (${q} ${uName})` : ''}`;
+                            }).join(', ')}
                           </div>
                         )}
 
@@ -313,7 +329,7 @@ export default function CustomerTimelineView({
 
                       {/* Running Balance */}
                       <td style={{ padding: "12px 14px", textAlign: "right", color: "var(--text-primary)", fontWeight: 800, fontFamily: "monospace" }}>
-                        Rs. {Number(item.runningBalance !== undefined ? item.runningBalance : customer.balanceDue).toLocaleString()}
+                        {item.runningBalance > 0 ? ('Rs. ' + item.runningBalance.toLocaleString()) : item.runningBalance < 0 ? ('Rs. ' + Math.abs(item.runningBalance).toLocaleString() + ' (Adv)') : 'Rs. 0'}
                       </td>
                     </tr>
                   );

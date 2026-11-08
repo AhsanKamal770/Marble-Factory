@@ -13,6 +13,7 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
     address: "",
     creditLimit: 50000,
     balanceDue: 0,
+    advancePayment: "",
     notes: ""
   });
 
@@ -21,7 +22,8 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
       setFormData({
         ...customer,
         creditLimit: customer.creditLimit !== undefined && customer.creditLimit !== null ? Number(customer.creditLimit) : 50000,
-        balanceDue: Number(customer.balanceDue || 0)
+        balanceDue: Number(customer.balanceDue || 0),
+        advancePayment: customer.advanceBalance !== undefined ? customer.advanceBalance : (customer.advancePayment || 0)
       });
     }
   }, [customer]);
@@ -160,8 +162,8 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
               </div>
             </div>
 
-            {/* Credit Limit & Opening Balance */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            {/* Financial Details: Credit Limit, Opening Balance & Advance Payment */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "12px" }}>
               <div className="app-form-group">
                 <label className="app-form-label">Credit Limit (Rs)</label>
                 <div className="app-input-wrapper">
@@ -185,6 +187,7 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                   Min: Rs. 50,000 | Max: Rs. 500,000
                 </div>
               </div>
+
               <div className="app-form-group">
                 <label className="app-form-label">Opening Balance (Rs)</label>
                 <div className="app-input-wrapper">
@@ -202,11 +205,35 @@ export default function CustomerProfileModal({ customer, onClose, onSave }) {
                     placeholder="0"
                   />
                 </div>
-                {!!customer && (
+                {!!customer ? (
                   <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "3px" }}>
                     Khata balance updates via Bills & Receipts.
                   </div>
+                ) : (
+                  <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "3px" }}>
+                    Previous ledger debit balance
+                  </div>
                 )}
+              </div>
+
+              <div className="app-form-group">
+                <label className="app-form-label">Advance Payment (Rs)</label>
+                <div className="app-input-wrapper">
+                  <span className="app-input-icon">
+                    <DollarSign size={16} />
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.advancePayment === undefined || formData.advancePayment === null ? "" : formData.advancePayment}
+                    onChange={(e) => setFormData((p) => ({ ...p, advancePayment: e.target.value }))}
+                    className="app-form-input has-icon font-mono"
+                    placeholder="0"
+                  />
+                </div>
+                <div style={{ fontSize: "0.7rem", color: "var(--text-muted)", marginTop: "3px" }}>
+                  {customer ? "Customer advance balance" : "Advance deposit received"}
+                </div>
               </div>
             </div>
 

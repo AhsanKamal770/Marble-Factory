@@ -160,6 +160,7 @@ export async function saveDayClosing(closingData) {
   
   if (db.day_closings) {
     const existing = await db.day_closings.where('date').equals(date).first();
+    let resId;
     if (existing) {
       await db.day_closings.update(existing.id, {
         ...closingData,
@@ -167,15 +168,41 @@ export async function saveDayClosing(closingData) {
         updatedAt: now,
         status: 'Closed'
       });
-      return existing.id;
+      resId = existing.id;
     } else {
-      return await db.day_closings.add({
+      resId = await db.day_closings.add({
         ...closingData,
         date,
         createdAt: now,
         status: 'Closed'
       });
     }
+
+    // Auto-sync closed cash to settings so next day's opening cash immediately receives this balance
+    try {
+      const settingsList = await db.settings.toArray();
+      const closedCash = Number(
+        closingData.actualCash !== undefined && closingData.actualCash !== null
+          ? closingData.actualCash
+          : (closingData.expectedCash || 0)
+      );
+      if (settingsList.length > 0) {
+        const initialCash = settingsList[0].initialOpeningCash !== undefined
+          ? settingsList[0].initialOpeningCash
+          : (settingsList[0].openingCashBalance || 0);
+
+        await db.settings.update(settingsList[0].id, {
+          initialOpeningCash: initialCash,
+          openingCashBalance: closedCash,
+          lastClosedDate: date,
+          lastClosedCash: closedCash
+        });
+      }
+    } catch (e) {
+      console.warn("Could not sync settings openingCashBalance:", e);
+    }
+
+    return resId;
   }
   return null;
 }

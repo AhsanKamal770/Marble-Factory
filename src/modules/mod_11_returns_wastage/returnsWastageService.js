@@ -89,7 +89,7 @@ export async function recordSalesReturn({
 
   return await db.transaction(
     'rw',
-    [db.returns, db.items, db.customers, db.stock_movements, db.daily_expenses],
+    [db.returns, db.items, db.customers, db.stock_movements, db.daily_expenses, db.invoices],
     async () => {
       // 1. Insert Return Record
       const returnRecord = {
@@ -145,7 +145,29 @@ export async function recordSalesReturn({
         }
       }
 
-      // 4. Cash Drawer Reconciliation if Cash Refund
+      // 4. Update linked invoice if this return is against a specific bill
+      if (refDocNo && refDocNo !== 'N/A' && !refDocNo.toLowerCase().includes('n/a')) {
+        try {
+          const inv = await db.invoices.where('invoiceNo').equals(refDocNo.trim()).first();
+          if (inv) {
+            const currentReturned = (Number(inv.returnedAmount) || 0) + totalAmount;
+            const newDue = refundMethod === 'Deduct from Khata Due Balance'
+              ? Math.max(0, (Number(inv.balanceDue) || 0) - totalAmount)
+              : Number(inv.balanceDue || 0);
+            const isFull = currentReturned >= (Number(inv.grandTotal) || 0);
+            await db.invoices.update(inv.id, {
+              returnedAmount: currentReturned,
+              balanceDue: newDue,
+              returnStatus: isFull ? 'Fully Returned' : 'Partially Returned',
+              updatedAt: now
+            });
+          }
+        } catch (invErr) {
+          console.warn('Could not update linked invoice return status:', invErr);
+        }
+      }
+
+      // 5. Cash Drawer Reconciliation if Cash Refund
       if (refundMethod === 'Cash Refund') {
         await db.daily_expenses.add({
           date: now.slice(0, 10),
@@ -498,7 +520,7 @@ export async function deleteReturnRecord(returnId) {
 
   return await db.transaction(
     'rw',
-    [db.returns, db.wastage_logs, db.items, db.customers, db.suppliers, db.stock_movements],
+    [db.returns, db.wastage_logs, db.items, db.customers, db.suppliers, db.stock_movements, db.invoices, db.daily_expenses],
     async () => {
       // 1. Revert Stock Adjustments
       for (const it of record.items || []) {
@@ -545,7 +567,42 @@ export async function deleteReturnRecord(returnId) {
         }
       }
 
-      // 3. Revert Supplier Balance
+      // 3. Revert Linked Invoice Return Status & Balance if linked
+      if (record.type === 'Sales Return' && record.refDocNo && record.refDocNo !== 'N/A' && !record.refDocNo.toLowerCase().includes('n/a')) {
+        try {
+          const inv = await db.invoices.where('invoiceNo').equals(record.refDocNo.trim()).first();
+          if (inv) {
+            const currentReturned = Math.max(0, (Number(inv.returnedAmount) || 0) - Number(record.totalAmount || 0));
+            const newDue = record.refundMethod === 'Deduct from Khata Due Balance'
+              ? (Number(inv.balanceDue) || 0) + Number(record.totalAmount || 0)
+              : Number(inv.balanceDue || 0);
+            await db.invoices.update(inv.id, {
+              returnedAmount: currentReturned,
+              balanceDue: newDue,
+              returnStatus: currentReturned > 0 ? 'Partially Returned' : 'None',
+              updatedAt: new Date().toISOString()
+            });
+          }
+        } catch (e) {
+          console.warn('Could not revert linked invoice:', e);
+        }
+      }
+
+      // 4. Revert Daily Expense if Cash Refund was given
+      if (record.refundMethod === 'Cash Refund') {
+        try {
+          const matchedExpense = await db.daily_expenses
+            .filter((e) => (e.remarks && e.remarks.includes(record.returnNo)))
+            .first();
+          if (matchedExpense) {
+            await db.daily_expenses.delete(matchedExpense.id);
+          }
+        } catch (e) {
+          console.warn('Could not revert daily expense refund:', e);
+        }
+      }
+
+      // 5. Revert Supplier Balance
       if (record.type === 'Purchase Return' && record.partyId) {
         const supplier = await db.suppliers.get(record.partyId);
         if (supplier) {
@@ -557,7 +614,7 @@ export async function deleteReturnRecord(returnId) {
         }
       }
 
-      // 4. Delete corresponding wastage_logs if matched
+      // 6. Delete corresponding wastage_logs if matched
       if (record.type === 'Factory Wastage') {
         const matchedLog = await db.wastage_logs.where('logNo').equals(record.returnNo).first();
         if (matchedLog) {
@@ -565,7 +622,7 @@ export async function deleteReturnRecord(returnId) {
         }
       }
 
-      // 5. Delete from db.returns
+      // 7. Delete from db.returns
       await db.returns.delete(record.id);
 
       return { success: true, rolledBack: record.returnNo };
@@ -590,15 +647,23 @@ export async function getInvoiceDetailsForReturn(invoiceNo) {
     customerId: inv.customerId,
     customerName: inv.customerName,
     date: (inv.createdAt || inv.date || '').slice(0, 10),
-    grandTotal: inv.grandTotal,
-    balanceDue: inv.balanceDue,
-    items: (inv.items || []).map((it) => ({
+    grandTotal: Number(inv.grandTotal || 0),
+    balanceDue: Number(inv.balanceDue || 0),
+    paymentMethod: inv.paymentMethod || 'Cash',
+    items: (inv.items || []).map((it, idx) => ({
+      index: idx,
       itemId: it.itemId,
-      name: it.name,
-      category: it.category,
-      sqft: it.totalSqFt || it.sqft || 0,
-      rate: it.ratePerSqFt || it.rate || 0,
-      amount: it.amount || 0
+      name: it.name || 'Marble Item',
+      code: it.code || '',
+      category: it.category || 'General Marble',
+      unit: it.unit || (it.category === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(it.category) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(it.category) ? 'R.Ft' : 'Sq.Ft'))),
+      size: it.size || it.standardSize || it.selectedSizePreset || '-',
+      quantity: Number(it.billedQuantity !== undefined && it.billedQuantity !== '' ? it.billedQuantity : (it.totalSqFt || it.sqft || it.pieces || it.meters || it.runningFeet || 1)),
+      sqft: Number(it.totalSqFt || it.sqft || 0),
+      pieces: Number(it.pieces || 0),
+      meters: Number(it.meters || 0),
+      rate: Number(it.ratePerSqFt || it.rate || 0),
+      amount: Number(it.amount || 0)
     }))
   };
 }

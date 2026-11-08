@@ -17,6 +17,7 @@ import ExpenseEntryForm from "./ExpenseEntryForm";
 import DailyExpenseTable from "./DailyExpenseTable";
 import DayEndReconciliationCard from "./DayEndReconciliationCard";
 import PrintableDayClosingSheet from "./PrintableDayClosingSheet";
+import UniversalReportPrintModal from "../../components/UniversalReportPrintModal";
 import {
   addExpense,
   updateExpense,
@@ -512,14 +513,121 @@ export default function DailyExpensesView() {
         />
       </div>
 
-      {/* ── PRINT MODAL (A4 & 80mm Thermal Replica) ── */}
-      <PrintableDayClosingSheet
+      {/* ── UNIVERSAL REPORT PRINT MODAL (Executive Bilingual Standard) ── */}
+      <UniversalReportPrintModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
-        cashData={cashData}
-        expenses={expenses}
+        title="Daily Expenses & Cash Audit Report"
+        titleUrdu="روزنامہ اخراجات و کیش آڈٹ رپورٹ"
+        subtitle={
+          language === "ur"
+            ? `تاریخ رپورٹ: ${selectedDate} | روزنامہ روزنامچہ و اخراجات کی تفصیلی آڈٹ رپورٹ`
+            : `Date: ${selectedDate} | Daily Factory Expenses & Cash Audit Report`
+        }
         factorySettings={settings}
         defaultFormat={printFormat}
+        kpis={[
+          {
+            label: "Opening Cash",
+            labelUrdu: "اوپننگ کیش",
+            value: `Rs. ${Number(cashData?.openingCash || 0).toLocaleString()}`,
+            color: "#64748b"
+          },
+          {
+            label: "Total Cash Inflow",
+            labelUrdu: "کل کیش آمد (+)",
+            value: `+ Rs. ${Number(cashData?.totalCashInflow || 0).toLocaleString()}`,
+            color: "#059669"
+          },
+          {
+            label: "Total Cash Outflow",
+            labelUrdu: "کل کیش اخراج (-)",
+            value: `- Rs. ${Number(cashData?.totalCashOutflow || totalExpenseAmount || 0).toLocaleString()}`,
+            color: "#dc2626"
+          },
+          {
+            label: "Net Live Cash in Drawer",
+            labelUrdu: "دراز میں موجود نیٹ کیش",
+            value: `Rs. ${Number(cashData?.liveCash || 0).toLocaleString()}`,
+            color: "#2563eb"
+          }
+        ]}
+        columns={[
+          {
+            key: "sr",
+            label: "Sr #",
+            labelUrdu: "نمبر شمار",
+            width: "50px",
+            align: "center",
+            render: (_, i) => i + 1
+          },
+          {
+            key: "time",
+            label: "Time",
+            labelUrdu: "وقت",
+            align: "center",
+            render: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleTimeString("en-PK", { hour: "2-digit", minute: "2-digit", hour12: true }) : "-")
+          },
+          {
+            key: "category",
+            label: "Expense Category",
+            labelUrdu: "شعبہ / مد خرچ",
+            render: (r) => r.category || "General"
+          },
+          {
+            key: "description",
+            label: "Description / Purpose",
+            labelUrdu: "تفصیل و وجہ خرچ",
+            render: (r) => r.description || "-"
+          },
+          {
+            key: "paidTo",
+            label: "Paid To / Recipient",
+            labelUrdu: "وصول کنندہ",
+            render: (r) => r.paidTo || "-"
+          },
+          {
+            key: "paymentMode",
+            label: "Payment Mode",
+            labelUrdu: "طریقہ ادائیگی",
+            align: "center",
+            render: (r) => r.paymentMode || "Cash"
+          },
+          {
+            key: "amount",
+            label: "Amount (PKR)",
+            labelUrdu: "رقم (روپے)",
+            align: "right",
+            isMono: true,
+            render: (r) => `Rs. ${Number(r.amount || 0).toLocaleString()}`
+          }
+        ]}
+        data={expenses}
+        summaryRows={[
+          {
+            label: "Total Entries Count (کل اخراجات کی تعداد)",
+            value: `${expenses.length} Entries`
+          },
+          {
+            label: "Total Daily Expenses (آج کے فیکٹری اخراجات)",
+            value: `Rs. ${Number(totalExpenseAmount || 0).toLocaleString()}`
+          },
+          {
+            label: "Total Cash Inflow (کل کیش آمد - سیلز و وصولی)",
+            value: `+ Rs. ${Number(cashData?.totalCashInflow || 0).toLocaleString()}`,
+            isBold: true
+          },
+          {
+            label: "Total Cash Outflow (کل کیش اخراج - اخراجات و ادائیگیاں)",
+            value: `- Rs. ${Number(cashData?.totalCashOutflow || totalExpenseAmount || 0).toLocaleString()}`,
+            isBold: true
+          },
+          {
+            label: "Net Live Cash in Drawer (دراز میں محفوظ کیش)",
+            value: `Rs. ${Number(cashData?.liveCash || 0).toLocaleString()}`,
+            isBold: true
+          }
+        ]}
       />
 
     </div>
