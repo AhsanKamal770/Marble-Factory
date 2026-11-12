@@ -154,7 +154,7 @@ export default function CustomerLedgerView() {
             let unitName = 'Sq.Ft';
             if (unitLower.includes('meter') || catLower.includes('tile') || nameLower.includes('tile')) {
               unitName = 'Meters';
-            } else if (unitLower.includes('piece') || unitLower.includes('pcs') || catLower.includes('accessori') || catLower.includes('kakri') || catLower.includes('kalm')) {
+            } else if (unitLower.includes('piece') || unitLower.includes('pcs') || catLower.includes('accessori') || catLower.includes('tukri') || catLower.includes('kalm')) {
               unitName = 'Pcs';
             } else if (unitLower.includes('r.ft') || catLower.includes('border') || catLower.includes('patti')) {
               unitName = 'R.Ft.';

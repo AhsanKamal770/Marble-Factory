@@ -2060,7 +2060,7 @@ export default function ReturnsView({ settings }) {
             const dIt = items.find((i) => i.id === it.itemId);
             const cat = (it.category || dIt?.category || '').toLowerCase();
             const unit = (it.unit || dIt?.unit || '').toLowerCase();
-            const isMarbleAccessory = cat.includes('marble accessories') || (dIt?.name || it.name || '').toLowerCase().includes('kakri') || (dIt?.name || it.name || '').toLowerCase().includes('kalm');
+            const isMarbleAccessory = cat.includes('marble accessories') || (dIt?.name || it.name || '').toLowerCase().includes('tukri') || (dIt?.name || it.name || '').toLowerCase().includes('kalm');
             const isPiece = (unit === 'piece' || unit === 'pieces' || cat.includes('accessories') || cat.includes('accessory')) && !isMarbleAccessory;
             if (isPiece) {
               return `${it.pieces || it.quantity || r.pieces || 0} Pcs`;

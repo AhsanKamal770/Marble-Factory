@@ -48,13 +48,13 @@ export const DEFAULT_CATEGORIES = [
     isActive: true
   },
   {
-    id: 'kakri',
-    name: 'Kakri',
+    id: 'tukri',
+    name: 'Tukri',
     isDefault: true,
     defaultUnit: 'Pieces',
     measurementMethod: 'Fixed Quantity',
     attributes: ['Size', 'Length', 'Width'],
-    description: 'Marble Kakri cut stone (2×2, 3×3, 6×6, Custom) sold in Pieces',
+    description: 'Marble Tukri cut stone (2×2, 3×3, 6×6, Custom) sold in Pieces',
     codePrefix: 'KK',
     isActive: true
   },
@@ -205,13 +205,13 @@ export function getCategoryConfigSync(categoryName, customCategories = []) {
   }
 
   // 3. Fallback / legacy compatibility
-  if (clean === 'kakri' || clean === 'kalm') {
+  if (clean === 'tukri' || clean === 'kalm') {
     return {
       name: categoryName,
       defaultUnit: 'Sq.ft',
       measurementMethod: 'Length × Width',
       attributes: ['Size', 'Length', 'Width', 'Thickness/Sutar'],
-      codePrefix: clean === 'kakri' ? 'KK' : 'KL',
+      codePrefix: clean === 'tukri' ? 'TK' : 'KL',
       isDefault: false,
       isActive: true
     };
@@ -274,7 +274,7 @@ export function getEffectiveCategoryConfig(categoryName, customCategories = []) 
   if (!method) {
     if (normUnit === 'Running Feet' || cleanCat === 'borders' || cleanCat === 'kali patti') {
       method = 'Length Only';
-    } else if (['Pieces', 'Bags', 'Boxes'].includes(normUnit) || ['kakri', 'kalm', 'marble accessories', 'flowers', 'panels', 'tile accessories', 'other accessories', 'accessories'].includes(cleanCat)) {
+    } else if (['Pieces', 'Bags', 'Boxes'].includes(normUnit) || ['tukri', 'kalm', 'marble accessories', 'flowers', 'panels', 'tile accessories', 'other accessories', 'accessories'].includes(cleanCat)) {
       method = 'Fixed Quantity';
     } else if (normUnit === 'Meters' || cleanCat === 'tiles') {
       method = 'Fixed Quantity';

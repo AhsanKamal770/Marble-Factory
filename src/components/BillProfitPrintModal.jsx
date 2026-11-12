@@ -12,8 +12,11 @@ import {
   Download,
   TrendingUp
 } from 'lucide-react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import { printElement } from '../utils/printHelper';
+import { getItemCategoryType, formatCleanDetails } from '../utils/printItemFormatter';
 
 export default function BillProfitPrintModal({
   isOpen,
@@ -23,6 +26,7 @@ export default function BillProfitPrintModal({
   customer
 }) {
   const { language } = useLanguage();
+  const customCategories = useLiveQuery(() => (db.categories ? db.categories.toArray() : []), []) || [];
   const [printFormat, setPrintFormat] = useState('a4'); // 'a4' | 'thermal'
   const [copied, setCopied] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -97,10 +101,10 @@ export default function BillProfitPrintModal({
     const isTileAcc = catLower.includes('tile accessories') || ((catLower.includes('tile') || catLower.includes('accessories')) && (nameLower.includes('gola') || nameLower.includes('spacer') || nameLower.includes('filling') || nameLower.includes('bond')));
     const isOtherAcc = catLower.includes('other accessories') || nameLower.includes('sink') || nameLower.includes('basin') || nameLower.includes('bason') || nameLower.includes('seat') || nameLower.includes('combod') || nameLower.includes('commode');
     const isTile = item.unit === 'Meter' || (catLower.includes('tile') && !catLower.includes('accessories') && !isTileAcc);
-    const isRunning = item.unit === 'R.Ft.' || item.category === 'Border' || item.category === 'Kali Patti';
-    const isGolaBox = item.unit === 'Box';
+    const isRunning = item.unit === 'R.Ft.' || item.unit === 'Running Feet' || catLower.includes('border') || catLower.includes('kali');
+    const isGolaBox = item.unit === 'Box' || item.unit === 'Boxes';
     const isGola = nameLower.includes('gola');
-    const isPiece = item.unit === 'Piece' || item.unit === 'Pieces' || item.category === 'Flower' || item.category === 'Panels' || item.category === 'Accessories' || isTileAcc || isOtherAcc || isGola;
+    const isPiece = item.unit === 'Piece' || item.unit === 'Pieces' || catLower.includes('flower') || catLower.includes('panel') || catLower.includes('accessori') || catLower.includes('tukri') || catLower.includes('kalm') || isTileAcc || isOtherAcc || isGola;
 
     if (isTile) {
       const m = item.meters || item.billedQuantity || item.totalSqFt || 0;
@@ -108,7 +112,7 @@ export default function BillProfitPrintModal({
     }
     if (isRunning) {
       const rft = item.runningFeet || item.billedQuantity || item.totalSqFt;
-      return `${rft} رننگ فٹ (${item.thicknessSutar || 3}" چوڑائی)`;
+      return `${rft} رننگ فٹ`;
     }
     if (isGolaBox) {
       const b = item.boxes || item.billedQuantity || item.pieces || 1;
@@ -772,11 +776,18 @@ export default function BillProfitPrintModal({
                             </td>
                             <td style={{ padding: '4px 8px', textAlign: 'right', border: '1px solid #cbd5e1', fontWeight: 800, fontSize: '0.82rem', color: '#1e3a8a' }}>
                               {item.name}
-                              {(!isPieceItem(item) && item.unit !== 'Meter' && Number(item.thicknessSutar) > 0) ? (
-                                <span style={{ fontSize: '0.70rem', color: '#2563eb', marginRight: '5px', fontWeight: 700 }}>
-                                  [{item.thicknessSutar} سوتر]
-                                </span>
-                              ) : null}
+                              {(() => {
+                                const catType = getItemCategoryType(item, customCategories);
+                                const detailTag = (catType === 'MARBLE' || catType === 'CUSTOM')
+                                  ? formatCleanDetails(item, catType, customCategories)
+                                  : '';
+                                if (!detailTag || detailTag === 'معیاری سلیب') return null;
+                                return (
+                                  <span style={{ fontSize: '0.70rem', color: '#2563eb', marginRight: '5px', fontWeight: 700 }}>
+                                    [{detailTag}]
+                                  </span>
+                                );
+                              })()}
                             </td>
                             <td style={{ padding: '4px 4px', textAlign: 'center', border: '1px solid #cbd5e1', fontFamily: 'var(--font-mono), monospace', color: '#475569' }}>
                               {formatItemDimension(item)}

@@ -88,15 +88,11 @@ export const STOCK_TAXONOMY = {
   },
   panels: {
     key: 'Panels',
-    labelEn: 'Wall & Islamic Panels (12 × 24)',
-    labelUr: 'ماشاء اللہ و قرآنی پینل (12×24)',
+    labelEn: 'Panels (12 × 24)',
+    labelUr: 'پینل (12×24)',
     icon: Layers,
     sizes: ['12 × 24'],
-    types: [
-      { id: 'Mashallah Islamic Panels', labelEn: 'Mashallah Islamic Panels (12×24)', labelUr: 'ماشاء اللہ قرآنی پینل (12×24)' },
-      { id: '3D Wall Panels', labelEn: '3D Wall Panels (12×24)', labelUr: 'تھری ڈی وال پینل (12×24)' },
-      { id: 'Front Elevation Panels', labelEn: 'Front Elevation Panels (12×24)', labelUr: 'فرنٹ ایلیویشن پینل (12×24)' }
-    ]
+    types: []
   },
   tileAccessories: {
     key: 'Tile Accessories',
@@ -105,14 +101,6 @@ export const STOCK_TAXONOMY = {
     icon: Boxes,
     items: ['Gola', 'Spacer', 'Filling', 'Bond']
   },
-  marbleAccessories: {
-    key: 'Marble Accessories',
-    labelEn: 'Marble Accessories',
-    labelUr: 'Marble Accessories',
-    icon: Gem,
-    kakriSizes: ['2 × 2', '3 × 3', '6 × 6'],
-    kalmSizes: ['1 inch', '2 inch', '3 inch']
-  },
   otherAccessories: {
     key: 'Other Accessories',
     labelEn: 'Other Accessories',
@@ -120,10 +108,10 @@ export const STOCK_TAXONOMY = {
     icon: Boxes,
     items: ['Combod', 'Seat', 'Bason', 'Sink']
   },
-  kakri: {
-    key: 'Kakri',
-    labelEn: 'Kakri',
-    labelUr: 'Kakri',
+  tukri: {
+    key: 'Tukri',
+    labelEn: 'Tukri',
+    labelUr: 'Tukri',
     icon: Gem,
     sizes: ['2 × 2', '3 × 3', '6 × 6'],
     unit: 'Sq. Ft.'
@@ -190,14 +178,15 @@ export function StockCategoryDropdownTrigger({ filter, onChange }) {
         <option value="Marble">{isUrdu ? 'ماربل' : 'Marble'}</option>
         <option value="Tiles">{isUrdu ? 'ٹائلز' : 'Tiles'}</option>
         <option value="Tile Accessories">Tile Accessories</option>
-        <option value="Marble Accessories">Marble Accessories</option>
+        <option value="Tukri">Tukri</option>
+        <option value="Kalm">Kalm</option>
         <option value="Other Accessories">Other Accessories</option>
         <option value="Flowers">{isUrdu ? 'پھول' : 'Flowers'}</option>
         <option value="Borders">{isUrdu ? 'بارڈر' : 'Borders'}</option>
         <option value="Kali Patti">{isUrdu ? 'کالی پٹی' : 'Kali Patti'}</option>
         <option value="Panels">{isUrdu ? 'پینل' : 'Panels'}</option>
         {customCategories
-          .filter(c => c.isActive !== false && !['Marble', 'Tiles', 'Tile Accessories', 'Marble Accessories', 'Other Accessories', 'Flowers', 'Borders', 'Kali Patti', 'Panels', 'Kakri', 'Kalm'].includes(c.name))
+          .filter(c => c.isActive !== false && !['Marble', 'Tiles', 'Tile Accessories', 'Marble Accessories', 'Other Accessories', 'Flowers', 'Borders', 'Kali Patti', 'Panels', 'Tukri', 'Kalm'].includes(c.name))
           .map(c => (
             <option key={c.id || c.name} value={c.name}>{c.name}</option>
           ))}
@@ -795,12 +784,12 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
       {activeType === 'Panels' && (
         <div>
           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-            ✨ {isUrdu ? 'پینل کی قسم منتخب کریں:' : 'Select Panel Type:'}
+            ✨ {isUrdu ? 'پینل سائز منتخب کریں:' : 'Select Panel Size:'}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
             <button
               type="button"
-              onClick={() => handleSetSub(null)}
+              onClick={() => { handleSetSub(null); handleSetSize(null); }}
               style={{
                 padding: '6px 12px',
                 borderRadius: '7px',
@@ -808,36 +797,30 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
                 fontWeight: 700,
                 border: '1px solid',
                 cursor: 'pointer',
-                background: !activeSub ? '#2563eb' : '#f8fafc',
-                borderColor: !activeSub ? '#2563eb' : '#cbd5e1',
-                color: !activeSub ? '#ffffff' : '#0f172a'
+                background: !activeSize && !activeSub ? '#2563eb' : '#f8fafc',
+                borderColor: !activeSize && !activeSub ? '#2563eb' : '#cbd5e1',
+                color: !activeSize && !activeSub ? '#ffffff' : '#0f172a'
               }}
             >
               {isUrdu ? 'تمام پینلز' : 'All Panels'}
             </button>
-            {STOCK_TAXONOMY.panels.types.map((tp) => {
-              const isSelected = activeSub === tp.id;
-              return (
-                <button
-                  key={tp.id}
-                  type="button"
-                  onClick={() => handleSetSub(tp.id)}
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: '7px',
-                    fontSize: '0.80rem',
-                    fontWeight: 800,
-                    border: '1px solid',
-                    cursor: 'pointer',
-                    background: isSelected ? '#2563eb' : '#f8fafc',
-                    borderColor: isSelected ? '#2563eb' : '#cbd5e1',
-                    color: isSelected ? '#ffffff' : '#0f172a'
-                  }}
-                >
-                  {tp.labelEn} ({tp.labelUr})
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => { handleSetSub(null); handleSetSize('12 × 24'); }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '7px',
+                fontSize: '0.80rem',
+                fontWeight: 800,
+                border: '1px solid',
+                cursor: 'pointer',
+                background: activeSize === '12 × 24' ? '#2563eb' : '#f8fafc',
+                borderColor: activeSize === '12 × 24' ? '#2563eb' : '#cbd5e1',
+                color: activeSize === '12 × 24' ? '#ffffff' : '#0f172a'
+              }}
+            >
+              12 × 24
+            </button>
           </div>
         </div>
       )}
@@ -893,127 +876,6 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
         </div>
       )}
 
-      {/* 7. MARBLE ACCESSORIES DRILL-DOWN (Kakri, Kalm) */}
-      {(activeType === 'Marble Accessories' || activeType === 'Marble Accessory') && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div>
-            <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', marginBottom: '6px' }}>
-              💎 {isUrdu ? 'ماربل اضافی سامان منتخب کریں:' : 'Select Marble Accessory Item:'}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                onClick={() => { handleSetSub(null); handleSetSize(null); }}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '7px',
-                  fontSize: '0.80rem',
-                  fontWeight: 700,
-                  border: '1px solid',
-                  cursor: 'pointer',
-                  background: !activeSub ? '#2563eb' : '#f8fafc',
-                  borderColor: !activeSub ? '#2563eb' : '#cbd5e1',
-                  color: !activeSub ? '#ffffff' : '#0f172a'
-                }}
-              >
-                {isUrdu ? 'تمام' : 'All Marble Accessories'}
-              </button>
-              {['Kakri', 'Kalm'].map((subItem) => {
-                const isSelected = activeSub === subItem;
-                return (
-                  <button
-                    key={subItem}
-                    type="button"
-                    onClick={() => { handleSetSub(subItem); handleSetSize(null); }}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: '7px',
-                      fontSize: '0.80rem',
-                      fontWeight: 800,
-                      border: '1px solid',
-                      cursor: 'pointer',
-                      background: isSelected ? '#2563eb' : '#f8fafc',
-                      borderColor: isSelected ? '#2563eb' : '#cbd5e1',
-                      color: isSelected ? '#ffffff' : '#0f172a'
-                    }}
-                  >
-                    {subItem}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* If Kakri selected or no sub selected: show Kakri sizes */}
-          {(!activeSub || activeSub === 'Kakri') && (
-            <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-                📐 Sizes (Sq. Ft.):
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                {['2 × 2', '3 × 3', '6 × 6'].map((sz) => {
-                  const isSelected = activeSize === sz;
-                  return (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => handleSetSize(sz)}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '7px',
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        border: '1px solid',
-                        cursor: 'pointer',
-                        background: isSelected ? '#2563eb' : '#ffffff',
-                        borderColor: isSelected ? '#2563eb' : '#cbd5e1',
-                        color: isSelected ? '#ffffff' : '#0f172a'
-                      }}
-                    >
-                      {sz}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* If Kalm selected or no sub selected: show Kalm sizes */}
-          {(!activeSub || activeSub === 'Kalm') && (
-            <div style={{ borderTop: '1px dashed #e2e8f0', paddingTop: '8px' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#1e3a8a', marginBottom: '6px' }}>
-                📐 Sizes (Sq. Ft.):
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                {['1 inch', '2 inch', '3 inch'].map((sz) => {
-                  const isSelected = activeSize === sz;
-                  return (
-                    <button
-                      key={sz}
-                      type="button"
-                      onClick={() => handleSetSize(sz)}
-                      style={{
-                        padding: '5px 12px',
-                        borderRadius: '7px',
-                        fontSize: '0.78rem',
-                        fontWeight: 800,
-                        border: '1px solid',
-                        cursor: 'pointer',
-                        background: isSelected ? '#2563eb' : '#ffffff',
-                        borderColor: isSelected ? '#2563eb' : '#cbd5e1',
-                        color: isSelected ? '#ffffff' : '#0f172a'
-                      }}
-                    >
-                      {sz}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* 8. OTHER ACCESSORIES DRILL-DOWN (Combod, Seat, Bason, Sink) */}
       {(activeType === 'Other Accessories' || activeType === 'Other Accessory') && (
         <div>
@@ -1065,8 +927,8 @@ export function StockCategoryFilterCard({ filter, onChange, totalMatches = 0 }) 
         </div>
       )}
 
-      {/* 9. STANDALONE KAKRI DRILL-DOWN */}
-      {activeType === 'Kakri' && (
+      {/* 9. STANDALONE TUKRI DRILL-DOWN */}
+      {activeType === 'Tukri' && (
         <div>
           <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#2563eb', marginBottom: '6px' }}>
             📐 Sizes (Sq. Ft.):

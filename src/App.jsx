@@ -23,6 +23,19 @@ import BalanceSheetView from './modules/mod_10_balance_sheet/BalanceSheetView';
 import AutoUpdateModal from './components/AutoUpdateModal';
 export default function App() {
   const [activeView, setActiveView] = useState('dashboard');
+  const [editingInvoice, setEditingInvoice] = useState(null);
+
+  const handleNavigateView = (nextView) => {
+    if (nextView !== 'billing' || activeView === 'billing') {
+      setEditingInvoice(null);
+    }
+    setActiveView(nextView);
+  };
+
+  const handleEditInvoice = (invoice) => {
+    setEditingInvoice(invoice);
+    setActiveView('billing');
+  };
   const [settings, setSettings] = useState(defaultSettings);
   const [isDbReady, setIsDbReady] = useState(false);
   const [theme, setTheme] = useState(() => {
@@ -123,7 +136,7 @@ export default function App() {
       {/* Collapsible Sidebar */}
       <Sidebar
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={handleNavigateView}
         settings={settings}
         isCollapsed={isSidebarCollapsed}
         toggleCollapse={toggleSidebar}
@@ -134,7 +147,7 @@ export default function App() {
       <div className="main-content">
         <Header
           activeView={activeView}
-          setActiveView={setActiveView}
+          setActiveView={handleNavigateView}
           settings={settings}
           theme={theme}
           toggleTheme={toggleTheme}
@@ -149,11 +162,11 @@ export default function App() {
           )}
 
           {activeView === 'billing' && (
-            <BillingView setActiveView={setActiveView} settings={settings} />
+            <BillingView setActiveView={handleNavigateView} settings={settings} editingInvoice={editingInvoice} onClearEditingInvoice={() => setEditingInvoice(null)} />
           )}
 
           {activeView === 'invoices' && (
-            <InvoicesView settings={settings} />
+            <InvoicesView settings={settings} onEditInvoice={handleEditInvoice} />
           )}
 
           {activeView === 'stock' && (

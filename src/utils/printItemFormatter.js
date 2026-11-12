@@ -3,7 +3,7 @@
  * Universal, standardized product item formatter for Bill Print and Gate Pass Print.
  * Correctly distinguishes:
  * - Marble (Sq.ft, Sutar, Length × Width)
- * - Marble Accessories (Kakri, Kalm - Sq.ft / Pieces)
+ * - Marble Accessories (Tukri, Kalm - Sq.ft / Pieces)
  * - Border & Kali Patti (Running Feet / Sq.ft)
  * - Tiles (Meter, Dimensions e.g. 24×24)
  * - Tile Accessories (Gola, Spacer, Filling, Bond - Pieces / Bags)
@@ -13,11 +13,50 @@
  * - Custom Categories (Granite, etc.)
  */
 
-export function getItemCategoryType(item) {
+const BUILTIN_CATEGORY_KEYS = new Set([
+  'marble',
+  'tiles',
+  'tile',
+  'tile accessories',
+  'other accessories',
+  'marble accessories',
+  'accessories',
+  'borders',
+  'border',
+  'kali patti',
+  'flowers',
+  'flower',
+  'panels',
+  'panel',
+  'tukri',
+  'kakri',
+  'kalm'
+]);
+
+export function findCustomCategoryConfig(item, customCategories = []) {
+  if (!item || !Array.isArray(customCategories) || customCategories.length === 0) return null;
+  const cat = (item.category || '').trim().toLowerCase();
+  if (!cat || BUILTIN_CATEGORY_KEYS.has(cat)) return null;
+  return customCategories.find(
+    c => c && c.isActive !== false && (c.name || '').trim().toLowerCase() === cat
+  ) || null;
+}
+
+export function getItemCategoryType(item, customCategories = []) {
   if (!item) return 'MARBLE';
+  if (findCustomCategoryConfig(item, customCategories)) {
+    return 'CUSTOM';
+  }
   const cat = (item.category || '').toLowerCase();
   const name = (item.name || item.itemName || '').toLowerCase();
   const unit = (item.unit || '').toLowerCase();
+
+  if (cat.includes('tile accessories')) return 'TILE_ACCESSORIES';
+  if (cat.includes('other accessories') || cat.trim() === 'accessories') return 'OTHER_ACCESSORIES';
+  if (cat.includes('kali patti') || cat.includes('kali')) return 'KALI_PATTI';
+  if (cat === 'border' || cat === 'borders') return 'BORDER';
+  if (cat === 'flower' || cat === 'flowers') return 'FLOWER';
+  if (cat === 'panel' || cat === 'panels') return 'PANELS';
 
   if (
     cat.includes('tile accessories') ||
@@ -37,8 +76,8 @@ export function getItemCategoryType(item) {
 
   if (
     cat.includes('marble accessories') ||
-    cat.includes('kakri') || cat.includes('kalm') ||
-    name.includes('kakri') || name.includes('kalm')
+    cat.includes('tukri') || cat.includes('kakri') || cat.includes('kalm') ||
+    name.includes('tukri') || name.includes('kakri') || name.includes('kalm')
   ) {
     return 'MARBLE_ACCESSORIES';
   }
@@ -145,8 +184,8 @@ export function formatCleanSize(item, catType) {
   return '-';
 }
 
-export function formatCleanDetails(item, catType) {
-  if (!item) return '-';
+export function formatCleanDetails(item, catType, customCategories = []) {
+  if (!item) return '';
 
   // 1. Marble: Thickness in Sutar is primary specification
   if (catType === 'MARBLE') {
@@ -157,74 +196,73 @@ export function formatCleanDetails(item, catType) {
     return 'معیاری سلیب';
   }
 
-  // 2. Marble Accessories: Sutar or dimension detail
-  if (catType === 'MARBLE_ACCESSORIES') {
-    const sutar = Number(item.thicknessSutar || item.sutarThickness);
-    if (!isNaN(sutar) && sutar > 0) {
-      return `${sutar} سوتر`;
+  // 2. New Custom Categories: Format strictly according to New Category Form settings
+  if (catType === 'CUSTOM') {
+    const customCat = findCustomCategoryConfig(item, customCategories);
+    if (!customCat) return '';
+
+    const attrs = Array.isArray(customCat.attributes) ? customCat.attributes : [];
+    const method = customCat.measurementMethod || '';
+    const desc = (customCat.description || '').trim();
+    const parts = [];
+
+    if (attrs.includes('Thickness/Sutar')) {
+      const sutar = Number(item.thicknessSutar || item.sutarThickness);
+      if (!isNaN(sutar) && sutar > 0) {
+        parts.push(`${sutar} سوتر`);
+      }
     }
-    const nameLower = (item.name || '').toLowerCase();
-    if (nameLower.includes('kakri')) return 'ککڑی ماربل';
-    if (nameLower.includes('kalm')) return 'قلم پٹی';
-    return '-';
-  }
 
-  // 3. Border / Kali Patti
-  if (catType === 'BORDER' || catType === 'KALI_PATTI') {
-    const sutar = Number(item.thicknessSutar || item.sutarThickness);
-    if (!isNaN(sutar) && sutar > 0) {
-      return `${sutar} سوتر`;
+    const len = Number(item.length);
+    const wid = Number(item.width);
+    if (method === 'Length × Width' || (attrs.includes('Length') && attrs.includes('Width'))) {
+      if (!isNaN(len) && len > 0 && !isNaN(wid) && wid > 0) {
+        if (!attrs.includes('Thickness/Sutar') || parts.length === 0) {
+          parts.push(`${len} × ${wid} فٹ`);
+        }
+      }
+    } else if (method === 'Length Only' || (attrs.includes('Length') && !attrs.includes('Width'))) {
+      const lenVal = Number(item.runningFeet || item.length);
+      if (!isNaN(lenVal) && lenVal > 0) {
+        parts.push(`${lenVal} فٹ لمبائی`);
+      }
+    } else if (method === 'Manual Measurement') {
+      const measVal = Number(item.totalSqFt || item.billedQuantity || item.meters || item.runningFeet);
+      if (!isNaN(measVal) && measVal > 0) {
+        const unitLabel = item.unit || customCat.defaultUnit || '';
+        parts.push(unitLabel ? `${measVal} ${unitLabel}` : `${measVal}`);
+      }
+    } else if (method === 'Fixed Quantity') {
+      const boxes = Number(item.boxes);
+      if ((customCat.defaultUnit === 'Boxes' || item.unit === 'Box' || item.unit === 'Boxes') && !isNaN(boxes) && boxes > 0) {
+        parts.push(`${boxes} کارٹن`);
+      }
     }
-    return 'رننگ فٹ پٹی';
-  }
 
-  // 4. Tiles: NEVER show Sutar. Show boxes if present, or -
-  if (catType === 'TILES') {
-    const boxes = Number(item.boxes);
-    if (!isNaN(boxes) && boxes > 0) {
-      return `${boxes} کارٹن`;
+    if (parts.length === 0 && attrs.includes('Size')) {
+      const sz = (item.selectedSizePreset || item.standardSize || item.size || '').toString().trim();
+      if (sz && sz !== '-' && sz !== 'Standard') {
+        parts.push(sz);
+      }
     }
-    return '-';
+
+    if (parts.length === 0 && desc) {
+      parts.push(desc);
+    }
+
+    return parts.join(' • ');
   }
 
-  // 5. Tile Accessories: NEVER show Sutar
-  if (catType === 'TILE_ACCESSORIES') {
-    const nameLower = (item.name || '').toLowerCase();
-    if (nameLower.includes('gola')) return 'گولا پٹی';
-    if (nameLower.includes('spacer')) return 'ٹائل اسپیسر';
-    if (nameLower.includes('filling')) return 'جوائنٹ فلنگ';
-    if (nameLower.includes('bond')) return 'ٹائل بونڈ';
-    return '-';
-  }
-
-  // 6. Other Accessories: NEVER show Sutar
-  if (catType === 'OTHER_ACCESSORIES') {
-    const nameLower = (item.name || '').toLowerCase();
-    if (nameLower.includes('sink')) return 'سنگ مرمر سنک';
-    if (nameLower.includes('basin') || nameLower.includes('bason')) return 'وینٹی بیسن';
-    if (nameLower.includes('seat')) return 'ٹوالیٹ سیٹ';
-    if (nameLower.includes('combod') || nameLower.includes('commode')) return 'کموڈ';
-    return 'سینیٹری';
-  }
-
-  // 7. Panels & Flower
-  if (catType === 'PANELS') return 'وال پینل';
-  if (catType === 'FLOWER') return 'فرشی پھول';
-
-  // 8. Custom Categories: show sutar only if valid
-  const sutar = Number(item.thicknessSutar || item.sutarThickness);
-  if (!isNaN(sutar) && sutar > 0) {
-    return `${sutar} سوتر`;
-  }
-
-  return '-';
+  // 3. Built-in non-marble categories (Kali Patti, Borders, Flowers, Panels, Tukri, Kalm, Tiles, Tile Accessories, Other Accessories):
+  // Nothing should appear in پیمائش / تفصیل column on Bill Print.
+  return '';
 }
 
 /**
  * Universal formatter for an item row for Bill Print & Gate Pass
  */
-export function formatPrintRow(item, idx = 0) {
-  const catType = getItemCategoryType(item);
+export function formatPrintRow(item, idx = 0, customCategories = []) {
+  const catType = getItemCategoryType(item, customCategories);
 
   // Clean Quality / Item Name
   const cleanName = (item.name || item.itemName || 'ماربل')
@@ -235,7 +273,7 @@ export function formatPrintRow(item, idx = 0) {
   const size = formatCleanSize(item, catType);
 
   // Details / Measurement
-  const details = formatCleanDetails(item, catType);
+  const details = formatCleanDetails(item, catType, customCategories);
 
   // Quantity & Unit determination (Honoring explicit item.quantity from Gate Pass first!)
   let quantity = 0;
@@ -275,8 +313,34 @@ export function formatPrintRow(item, idx = 0) {
       unit = 'مربع فٹ';
       totalMeasurement = `${quantity} مربع فٹ`;
     }
+  } else if (catType === 'CUSTOM') {
+    const customCat = findCustomCategoryConfig(item, customCategories);
+    const rawUnit = item.unit || customCat?.defaultUnit || 'Sq. Ft.';
+    const unitLower = rawUnit.toLowerCase();
+    const unitFormatted = formatUrduUnit(rawUnit, catType);
+
+    if (unitLower.includes('meter')) {
+      quantity = hasExplicitQty ? Number(item.quantity) : Number(item.meters || item.billedQuantity || item.totalSqFt || 0);
+      unit = 'میٹر';
+    } else if (unitLower.includes('running') || unitLower.includes('r.ft')) {
+      quantity = hasExplicitQty ? Number(item.quantity) : Number(item.runningFeet || item.billedQuantity || item.totalSqFt || 0);
+      unit = 'رننگ فٹ';
+    } else if (unitLower.includes('piece') || unitLower.includes('pc')) {
+      quantity = hasExplicitQty ? Number(item.quantity) : Number(item.pieces || item.billedQuantity || 1);
+      unit = 'عدد';
+    } else if (unitLower.includes('box')) {
+      quantity = hasExplicitQty ? Number(item.quantity) : Number(item.boxes || item.billedQuantity || item.pieces || 1);
+      unit = 'کارٹن';
+    } else if (unitLower.includes('bag')) {
+      quantity = hasExplicitQty ? Number(item.quantity) : Number(item.billedQuantity || item.pieces || item.totalSqFt || 1);
+      unit = unitFormatted !== '-' && unitFormatted !== 'مربع فٹ' ? unitFormatted : 'بیگ';
+    } else {
+      quantity = hasExplicitQty ? Number(item.quantity) : Number(item.billedQuantity || item.totalSqFt || (item.pieces && item.length && item.width ? item.pieces * item.length * item.width : 0) || item.pieces || 0);
+      unit = unitFormatted || rawUnit || 'مربع فٹ';
+    }
+    totalMeasurement = `${quantity} ${unit}`;
   } else {
-    // Marble, Granite & Custom Stone Categories
+    // Marble
     const unitFormatted = formatUrduUnit(item.unit, catType);
     const isPiece = (item.unit || '').toLowerCase().includes('piece') || unitFormatted === 'عدد';
     if (isPiece) {

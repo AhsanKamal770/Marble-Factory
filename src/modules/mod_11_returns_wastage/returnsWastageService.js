@@ -656,7 +656,7 @@ export async function getInvoiceDetailsForReturn(invoiceNo) {
       name: it.name || 'Marble Item',
       code: it.code || '',
       category: it.category || 'General Marble',
-      unit: it.unit || (it.category === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(it.category) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(it.category) ? 'R.Ft' : 'Sq.Ft'))),
+      unit: it.unit || (it.category === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(it.category) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(it.category) ? 'R.Ft' : 'Sq.Ft'))),
       size: it.size || it.standardSize || it.selectedSizePreset || '-',
       quantity: Number(it.billedQuantity !== undefined && it.billedQuantity !== '' ? it.billedQuantity : (it.totalSqFt || it.sqft || it.pieces || it.meters || it.runningFeet || 1)),
       sqft: Number(it.totalSqFt || it.sqft || 0),

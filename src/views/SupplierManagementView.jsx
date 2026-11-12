@@ -50,11 +50,8 @@ export function matchItemToCategory(item, category) {
   if (target === 'accessories') {
     return ['tile accessories', 'marble accessories', 'other accessories', 'accessories'].includes(itemCat);
   }
-  if (target === 'marble accessories') {
-    return itemCat === 'marble accessories' || itemCat === 'kakri' || itemCat === 'kalm';
-  }
-  if (target === 'kakri') {
-    return itemCat === 'kakri' || (itemCat === 'marble accessories' && itemName.includes('kakri'));
+  if (target === 'tukri') {
+    return itemCat === 'tukri' || (itemCat === 'marble accessories' && itemName.includes('tukri'));
   }
   if (target === 'kalm') {
     return itemCat === 'kalm' || (itemCat === 'marble accessories' && itemName.includes('kalm'));
@@ -70,7 +67,13 @@ export function matchItemToCategory(item, category) {
 
 export function getItemCategoryKey(item) {
   if (!item) return 'Marble';
-  if (item.category) return item.category;
+  if (item.category) {
+    if (String(item.category).toLowerCase() === 'marble accessories') {
+      const nm = String(item.name || '').toLowerCase();
+      return nm.includes('kalm') ? 'Kalm' : 'Tukri';
+    }
+    return item.category;
+  }
   const sub = (item.subCategory || '').toLowerCase();
   const name = (item.name || '').toLowerCase();
 
@@ -83,14 +86,12 @@ export function getItemCategoryKey(item) {
     return 'Tile Accessories';
   }
 
-  // 2. Marble Accessories (Kakri, Kalm)
-  if (
-    sub.includes('marble accessories') ||
-    name.includes('kakri') || sub.includes('kakri') ||
-    name.includes('kalm') || sub.includes('kalm') ||
-    name.includes('kk-') || name.includes('kl-')
-  ) {
-    return 'Marble Accessories';
+  // 2. Tukri & Kalm
+  if (name.includes('tukri') || sub.includes('tukri') || name.includes('tk-')) {
+    return 'Tukri';
+  }
+  if (name.includes('kalm') || sub.includes('kalm') || name.includes('kl-')) {
+    return 'Kalm';
   }
 
   // 3. Other Accessories (Combod, Seat, Bason, Sink)
@@ -118,17 +119,29 @@ export function getItemCategoryKey(item) {
   return 'Marble';
 }
 
-export function getCategoryUnitDetails(category, customCategories = []) {
-  if (category === 'Tiles') {
+export function getCategoryUnitDetails(category, customCategories = [], item = null) {
+  const itemUnit = (item?.unit || '').trim();
+  const itemUnitLower = itemUnit.toLowerCase();
+  const catLower = String(category || '').toLowerCase();
+
+  if (catLower === 'tiles' || itemUnitLower === 'meters' || itemUnitLower === 'meter') {
     return { unit: 'Meters', qtyLabel: 'Meters', rateLabel: 'Rs/Meter', placeholderQty: 'Meters', isTiles: true, isRunning: false, isPieces: false };
   }
-  if (category === 'Borders' || category === 'Kali Patti') {
+  if (itemUnitLower === 'running feet' || itemUnitLower === 'r.ft.' || itemUnitLower === 'r.ft' || category === 'Borders' || category === 'Kali Patti') {
     return { unit: 'Running Feet', qtyLabel: 'R.Ft', rateLabel: 'Rs/R.Ft', placeholderQty: 'R.Ft', isTiles: false, isRunning: true, isPieces: false };
   }
-  if (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Accessories'].includes(category)) {
+  if (itemUnitLower === 'sq. ft.' || itemUnitLower === 'sq.ft' || itemUnitLower === 'sqft') {
+    return { unit: 'Sq. Ft.', qtyLabel: 'Sq.Ft', rateLabel: 'Rs/Sq.Ft', placeholderQty: 'Sq.Ft', isTiles: false, isRunning: false, isPieces: false };
+  }
+  if (['pieces', 'piece', 'pcs', 'bags', 'boxes'].includes(itemUnitLower)) {
+    const label = itemUnit || 'Pieces';
+    const singular = label === 'Pieces' ? 'Piece' : label;
+    return { unit: label, qtyLabel: label, rateLabel: `Rs/${singular}`, placeholderQty: label, isTiles: false, isRunning: false, isPieces: true };
+  }
+  if (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Accessories', 'Tukri', 'Kalm'].includes(category)) {
     return { unit: 'Pieces', qtyLabel: 'Pieces', rateLabel: 'Rs/Piece', placeholderQty: 'Pieces', isTiles: false, isRunning: false, isPieces: true };
   }
-  if (['Marble Accessories', 'Kakri', 'Kalm', 'Marble'].includes(category)) {
+  if (category === 'Marble' || category === 'Granite') {
     return { unit: 'Sq. Ft.', qtyLabel: 'Sq.Ft', rateLabel: 'Rs/Sq.Ft', placeholderQty: 'Sq.Ft', isTiles: false, isRunning: false, isPieces: false };
   }
 
@@ -383,9 +396,11 @@ export default function SupplierManagementView({ settings }) {
     if (items.length > 0) {
       const defaultItem = items[0];
       const categoryKey = getItemCategoryKey(defaultItem);
-      const details = getCategoryUnitDetails(categoryKey);
-      const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
-      const defPcs = (details.isTiles || details.isRunning) ? 0 : 50;
+      const details = getCategoryUnitDetails(categoryKey, customCategories, defaultItem);
+      const defPcs = (details.isTiles || details.isRunning) ? 0 : (details.isPieces ? 10 : 50);
+      const l = parseFloat(defaultItem.length) || 1;
+      const w = parseFloat(defaultItem.width) || 1;
+      const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : Math.round(l * w * defPcs * 100) / 100));
       const rate = defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200;
 
       setPurchaseItems([
@@ -419,13 +434,15 @@ export default function SupplierManagementView({ settings }) {
 
     if (pur.items && pur.items.length > 0) {
       const mapped = pur.items.map(it => {
-        const found = items.find(i => String(i.id) === String(it.itemId));
+        const found = items.find(i => String(i.id) === String(it.itemId)) ||
+          items.find(i => (i.name || '').toLowerCase() === (it.name || '').toLowerCase());
         const categoryKey = it.category || getItemCategoryKey(found || it);
-        const details = getCategoryUnitDetails(categoryKey);
+        const details = getCategoryUnitDetails(categoryKey, customCategories, found || it);
         const qty = it.quantity !== undefined ? it.quantity : it.totalSqFt;
-        const pcs = details.isTiles ? 0 : (it.pieces !== undefined ? it.pieces : (details.isRunning ? 0 : Number(qty)));
+        const pcs = (details.isTiles || details.isRunning) ? 0 : (it.pieces !== undefined && it.pieces !== null ? Number(it.pieces) : Number(qty));
         return {
           ...it,
+          itemId: it.itemId || found?.id || '',
           category: categoryKey,
           unit: it.unit || details.unit,
           pieces: pcs,
@@ -437,9 +454,11 @@ export default function SupplierManagementView({ settings }) {
     } else if (items.length > 0) {
       const defaultItem = items[0];
       const categoryKey = getItemCategoryKey(defaultItem);
-      const details = getCategoryUnitDetails(categoryKey);
-      const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
-      const defPcs = (details.isTiles || details.isRunning) ? 0 : 50;
+      const details = getCategoryUnitDetails(categoryKey, customCategories, defaultItem);
+      const defPcs = (details.isTiles || details.isRunning) ? 0 : (details.isPieces ? 10 : 50);
+      const l = parseFloat(defaultItem.length) || 1;
+      const w = parseFloat(defaultItem.width) || 1;
+      const defQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : Math.round(l * w * defPcs * 100) / 100));
       const rate = defaultItem.costPerSqFt || defaultItem.ratePerSqFt || 200;
       setPurchaseItems([
         {
@@ -470,14 +489,20 @@ export default function SupplierManagementView({ settings }) {
         // 1. Reverse stock for each inward item
         if (pur.items && Array.isArray(pur.items)) {
           for (const it of pur.items) {
-            if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
-              const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+            const matchedByName = !it.itemId && it.name ? items.find(x => (x.name || '').toLowerCase() === (it.name || '').toLowerCase()) : null;
+            const rawTargetId = (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') ? it.itemId : (matchedByName?.id || it.name);
+            if (rawTargetId) {
+              const finalItemId = !isNaN(Number(rawTargetId)) ? Number(rawTargetId) : rawTargetId;
               const deltaQty = -(parseFloat(it.quantity !== undefined ? it.quantity : it.totalSqFt) || 0);
-              const deltaPcs = -(parseFloat(it.pieces) || 0);
+              const matchedItem = items.find(x => String(x.id) === String(finalItemId)) || matchedByName;
+              const det = getCategoryUnitDetails(it.category || getItemCategoryKey(matchedItem || it), customCategories, matchedItem || it);
+              const rawPcs = parseFloat(it.pieces);
+              const deltaPcs = det.isPieces ? -(rawPcs || Math.abs(deltaQty)) : -(rawPcs || 0);
+              const deltaBoxes = String(it.unit || matchedItem?.unit || '').toLowerCase() === 'boxes' && det.isPieces ? deltaQty : 0;
               await adjustItemStock(
                 finalItemId,
                 deltaQty,
-                0,
+                deltaBoxes,
                 deltaPcs,
                 'Adjustment',
                 pur.purchaseNo,
@@ -527,10 +552,12 @@ export default function SupplierManagementView({ settings }) {
     const selectedIds = new Set(purchaseItems.map((p) => String(p.itemId)));
     const nextItem = items.find((i) => !selectedIds.has(String(i.id))) || items[0];
     const categoryKey = getItemCategoryKey(nextItem);
-    const details = getCategoryUnitDetails(categoryKey);
+    const details = getCategoryUnitDetails(categoryKey, customCategories, nextItem);
 
-    const defaultQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : 50));
-    const defaultPcs = details.isTiles ? 100 : (details.isRunning ? 0 : 50);
+    const defaultPcs = (details.isTiles || details.isRunning) ? 0 : (details.isPieces ? 10 : 50);
+    const l = parseFloat(nextItem.length) || 1;
+    const w = parseFloat(nextItem.width) || 1;
+    const defaultQty = details.isTiles ? 20 : (details.isRunning ? 50 : (details.isPieces ? 10 : Math.round(l * w * defaultPcs * 100) / 100));
     const rate = nextItem.costPerSqFt || nextItem.ratePerSqFt || 200;
 
     setPurchaseItems([
@@ -555,10 +582,10 @@ export default function SupplierManagementView({ settings }) {
 
     if (field === 'category') {
       row.category = value;
-      const details = getCategoryUnitDetails(value, customCategories);
-      row.unit = details.unit;
       const catItems = items.filter(i => matchItemToCategory(i, value));
       const chosenItem = catItems[0] || null;
+      const details = getCategoryUnitDetails(value, customCategories, chosenItem);
+      row.unit = details.unit;
       if (chosenItem) {
         row.itemId = chosenItem.id;
         row.name = chosenItem.name;
@@ -597,7 +624,7 @@ export default function SupplierManagementView({ settings }) {
         row.itemId = found.id;
         row.name = found.name;
         row.category = getItemCategoryKey(found);
-        const details = getCategoryUnitDetails(row.category);
+        const details = getCategoryUnitDetails(row.category, customCategories, found);
         row.unit = details.unit;
         row.ratePerSqFt = found.costPerSqFt || found.ratePerSqFt || row.ratePerSqFt || 200;
 
@@ -612,7 +639,7 @@ export default function SupplierManagementView({ settings }) {
           row.totalSqFt = rft;
           row.pieces = 0;
         } else if (details.isPieces) {
-          const pcs = parseFloat(row.pieces !== undefined ? row.pieces : row.quantity) || 10;
+          const pcs = parseFloat(row.pieces) || parseFloat(row.quantity) || 10;
           row.quantity = pcs;
           row.totalSqFt = pcs;
           row.pieces = pcs;
@@ -631,14 +658,14 @@ export default function SupplierManagementView({ settings }) {
     } else if (field === 'pieces') {
       const pcs = parseFloat(value) || 0;
       row.pieces = value;
-      const details = getCategoryUnitDetails(row.category);
+      const found = items.find((i) => String(i.id) === String(row.itemId));
+      const details = getCategoryUnitDetails(row.category, customCategories, found);
       if (details.isTiles) {
         row.pieces = 0;
       } else if (details.isPieces) {
         row.quantity = pcs;
         row.totalSqFt = pcs;
       } else if (!details.isRunning) {
-        const found = items.find((i) => String(i.id) === String(row.itemId));
         const l = parseFloat(found?.length) || 1;
         const w = parseFloat(found?.width) || 1;
         if (l && w) {
@@ -651,7 +678,8 @@ export default function SupplierManagementView({ settings }) {
       const qty = parseFloat(value) || 0;
       row.quantity = value;
       row.totalSqFt = value;
-      const details = getCategoryUnitDetails(row.category);
+      const found = items.find((i) => String(i.id) === String(row.itemId));
+      const details = getCategoryUnitDetails(row.category, customCategories, found);
       if (details.isTiles) {
         row.pieces = 0;
       } else if (details.isPieces) {
@@ -723,14 +751,20 @@ export default function SupplierManagementView({ settings }) {
           // 1. Revert previous stock movements
           if (oldPur.items && Array.isArray(oldPur.items)) {
             for (const oldIt of oldPur.items) {
-              if (oldIt.itemId) {
-                const finalId = !isNaN(Number(oldIt.itemId)) ? Number(oldIt.itemId) : oldIt.itemId;
+              const matchedByName = !oldIt.itemId && oldIt.name ? items.find(x => (x.name || '').toLowerCase() === (oldIt.name || '').toLowerCase()) : null;
+              const rawTargetId = (oldIt.itemId !== undefined && oldIt.itemId !== null && oldIt.itemId !== '') ? oldIt.itemId : (matchedByName?.id || oldIt.name);
+              if (rawTargetId) {
+                const finalId = !isNaN(Number(rawTargetId)) ? Number(rawTargetId) : rawTargetId;
                 const oldQty = -(parseFloat(oldIt.quantity !== undefined ? oldIt.quantity : oldIt.totalSqFt) || 0);
-                const oldPcs = -(parseFloat(oldIt.pieces) || 0);
+                const matchedItem = items.find(x => String(x.id) === String(finalId)) || matchedByName;
+                const det = getCategoryUnitDetails(oldIt.category || getItemCategoryKey(matchedItem || oldIt), customCategories, matchedItem || oldIt);
+                const rawPcs = parseFloat(oldIt.pieces);
+                const oldPcs = det.isPieces ? -(rawPcs || Math.abs(oldQty)) : -(rawPcs || 0);
+                const oldBoxes = String(oldIt.unit || matchedItem?.unit || '').toLowerCase() === 'boxes' && det.isPieces ? oldQty : 0;
                 await adjustItemStock(
                   finalId,
                   oldQty,
-                  0,
+                  oldBoxes,
                   oldPcs,
                   'Adjustment',
                   purchaseNo,
@@ -742,14 +776,20 @@ export default function SupplierManagementView({ settings }) {
 
           // 2. Add new updated stock
           for (const it of purchaseItems) {
-            if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
-              const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+            const matchedByName = !it.itemId && it.name ? items.find(x => (x.name || '').toLowerCase() === (it.name || '').toLowerCase()) : null;
+            const rawTargetId = (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') ? it.itemId : (matchedByName?.id || it.name);
+            if (rawTargetId) {
+              const finalItemId = !isNaN(Number(rawTargetId)) ? Number(rawTargetId) : rawTargetId;
               const itQty = parseFloat(it.quantity !== undefined ? it.quantity : it.totalSqFt) || 0;
-              const itPcs = parseFloat(it.pieces) || 0;
+              const matchedItem = items.find(x => String(x.id) === String(finalItemId)) || matchedByName;
+              const det = getCategoryUnitDetails(it.category || getItemCategoryKey(matchedItem || it), customCategories, matchedItem || it);
+              const rawPcs = parseFloat(it.pieces);
+              const itPcs = det.isPieces ? (rawPcs || itQty) : (rawPcs || 0);
+              const itBoxes = String(it.unit || matchedItem?.unit || '').toLowerCase() === 'boxes' && det.isPieces ? itQty : 0;
               await adjustItemStock(
                 finalItemId,
                 itQty,
-                0,
+                itBoxes,
                 itPcs,
                 'Purchase',
                 purchaseNo,
@@ -867,14 +907,20 @@ export default function SupplierManagementView({ settings }) {
 
           // Add stock to yard inventory and log stock movement
           for (const it of purchaseItems) {
-            if (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') {
-              const finalItemId = !isNaN(Number(it.itemId)) ? Number(it.itemId) : it.itemId;
+            const matchedByName = !it.itemId && it.name ? items.find(x => (x.name || '').toLowerCase() === (it.name || '').toLowerCase()) : null;
+            const rawTargetId = (it.itemId !== undefined && it.itemId !== null && it.itemId !== '') ? it.itemId : (matchedByName?.id || it.name);
+            if (rawTargetId) {
+              const finalItemId = !isNaN(Number(rawTargetId)) ? Number(rawTargetId) : rawTargetId;
               const itQty = parseFloat(it.quantity !== undefined ? it.quantity : it.totalSqFt) || 0;
-              const itPcs = parseFloat(it.pieces) || 0;
+              const matchedItem = items.find(x => String(x.id) === String(finalItemId)) || matchedByName;
+              const det = getCategoryUnitDetails(it.category || getItemCategoryKey(matchedItem || it), customCategories, matchedItem || it);
+              const rawPcs = parseFloat(it.pieces);
+              const itPcs = det.isPieces ? (rawPcs || itQty) : (rawPcs || 0);
+              const itBoxes = String(it.unit || matchedItem?.unit || '').toLowerCase() === 'boxes' && det.isPieces ? itQty : 0;
               await adjustItemStock(
                 finalItemId,
                 itQty,
-                0,
+                itBoxes,
                 itPcs,
                 'Purchase',
                 purchaseNo,
@@ -1612,16 +1658,16 @@ export default function SupplierManagementView({ settings }) {
             <table className="global-table" style={{ width: '100%' }}>
               <thead>
                 <tr>
-                  <th style={{ width: '110px', padding: '10px 8px' }}>PURCHASE #</th>
-                  <th style={{ width: '90px', padding: '10px 6px' }}>DATE</th>
-                  <th style={{ padding: '10px 8px' }}>SUPPLIER / QUARRY</th>
-                  <th style={{ width: '130px', padding: '10px 6px' }}>CHALLAN & TRUCK</th>
-                  <th style={{ width: '160px', padding: '10px 6px' }}>ITEMS RECEIVED</th>
-                  <th style={{ width: '105px', textAlign: 'right', padding: '10px 6px' }}>GRAND TOTAL</th>
-                  <th style={{ width: '95px', textAlign: 'right', padding: '10px 6px' }}>PAID</th>
-                  <th style={{ width: '105px', textAlign: 'right', padding: '10px 6px' }}>BALANCE</th>
-                  <th style={{ width: '85px', textAlign: 'center', padding: '10px 4px' }}>STATUS</th>
-                  <th style={{ width: '110px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
+                  <th style={{ width: '92px', padding: '10px 6px' }}>PURCHASE #</th>
+                  <th style={{ width: '80px', padding: '10px 6px' }}>DATE</th>
+                  <th style={{ padding: '10px 6px' }}>SUPPLIER / QUARRY</th>
+                  <th style={{ padding: '10px 6px' }}>CHALLAN & TRUCK</th>
+                  <th style={{ padding: '10px 6px' }}>ITEMS RECEIVED</th>
+                  <th style={{ width: '88px', textAlign: 'right', padding: '10px 6px' }}>GRAND TOTAL</th>
+                  <th style={{ width: '76px', textAlign: 'right', padding: '10px 6px' }}>PAID</th>
+                  <th style={{ width: '82px', textAlign: 'right', padding: '10px 6px' }}>BALANCE</th>
+                  <th style={{ width: '74px', textAlign: 'center', padding: '10px 4px' }}>STATUS</th>
+                  <th style={{ width: '98px', textAlign: 'center', padding: '10px 4px' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -1718,22 +1764,23 @@ export default function SupplierManagementView({ settings }) {
                         </td>
 
                         {/* Actions */}
-                        <td style={{ textAlign: 'center', padding: '8px 4px' }}>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <td style={{ textAlign: 'center', padding: '8px 4px', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}>
                             <button
                               type="button"
                               onClick={() => setDrawerPurchase(pur)}
                               style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                border: 'none',
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '6px',
+                                border: '1px solid #bfdbfe',
                                 background: '#eff6ff',
                                 color: '#2563eb',
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                padding: 0
                               }}
                               title="View Shipment Details"
                             >
@@ -1744,16 +1791,17 @@ export default function SupplierManagementView({ settings }) {
                               type="button"
                               onClick={() => handleOpenEditPurchase(pur)}
                               style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                background: '#f0fdf4',
-                                color: '#16a34a',
-                                display: 'flex',
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '6px',
+                                border: '1px solid #fde68a',
+                                background: '#fffbeb',
+                                color: '#d97706',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                padding: 0
                               }}
                               title="Edit Inward Shipment"
                             >
@@ -1764,16 +1812,17 @@ export default function SupplierManagementView({ settings }) {
                               type="button"
                               onClick={() => handleDeletePurchase(pur)}
                               style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                background: '#fff1f2',
-                                color: '#e11d48',
-                                display: 'flex',
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '6px',
+                                border: '1px solid #fecaca',
+                                background: '#fef2f2',
+                                color: '#dc2626',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                padding: 0
                               }}
                               title="Delete Inward Shipment"
                             >
@@ -1914,16 +1963,17 @@ export default function SupplierManagementView({ settings }) {
                               type="button"
                               onClick={() => setLedgerSupplier(sup)}
                               style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                border: 'none',
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '6px',
+                                border: '1px solid #bfdbfe',
                                 background: '#eff6ff',
                                 color: '#2563eb',
-                                display: 'flex',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                padding: 0
                               }}
                               title="View Supplier Khata"
                             >
@@ -1934,16 +1984,17 @@ export default function SupplierManagementView({ settings }) {
                               type="button"
                               onClick={() => handleOpenEditSupplier(sup)}
                               style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                background: '#f0fdf4',
-                                color: '#16a34a',
-                                display: 'flex',
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '6px',
+                                border: '1px solid #fde68a',
+                                background: '#fffbeb',
+                                color: '#d97706',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                padding: 0
                               }}
                               title="Edit Supplier"
                             >
@@ -1954,16 +2005,17 @@ export default function SupplierManagementView({ settings }) {
                               type="button"
                               onClick={() => handleDeleteSupplier(sup)}
                               style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                background: '#fff1f2',
-                                color: '#e11d48',
-                                display: 'flex',
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '6px',
+                                border: '1px solid #fecaca',
+                                background: '#fef2f2',
+                                color: '#dc2626',
+                                display: 'inline-flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                padding: 0
                               }}
                               title="Delete Supplier"
                             >
@@ -2427,7 +2479,10 @@ export default function SupplierManagementView({ settings }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
                     {purchaseItems.map((it, idx) => {
                       const currentCategory = it.category || 'Marble';
-                      const details = getCategoryUnitDetails(currentCategory, customCategories);
+                      const selectedRowItem = items.find((i) => String(i.id) === String(it.itemId)) ||
+                        items.find((i) => (i.name || '').toLowerCase() === (it.name || '').toLowerCase()) ||
+                        null;
+                      const details = getCategoryUnitDetails(currentCategory, customCategories, selectedRowItem);
                       const catItems = items.filter((i) => matchItemToCategory(i, currentCategory));
                       const availableItems = catItems;
 
@@ -2457,18 +2512,19 @@ export default function SupplierManagementView({ settings }) {
                               <option value="Marble">Marble</option>
                               <option value="Tiles">Tiles</option>
                               <option value="Tile Accessories">Tile Accessories</option>
-                              <option value="Marble Accessories">Marble Accessories</option>
+                              <option value="Tukri">Tukri</option>
+                              <option value="Kalm">Kalm</option>
                               <option value="Other Accessories">Other Accessories</option>
                               <option value="Flowers">Flowers</option>
                               <option value="Borders">Borders</option>
                               <option value="Kali Patti">Kali Patti</option>
                               <option value="Panels">Panels</option>
                               {customCategories
-                                .filter(c => c.isActive !== false && !["Marble", "Tiles", "Tile Accessories", "Marble Accessories", "Other Accessories", "Flowers", "Borders", "Kali Patti", "Panels", "Kakri", "Kalm"].includes(c.name))
+                                .filter(c => c.isActive !== false && !["Marble", "Tiles", "Tile Accessories", "Marble Accessories", "Other Accessories", "Flowers", "Borders", "Kali Patti", "Panels", "Tukri", "Kalm"].includes(c.name))
                                 .map(c => (
                                   <option key={c.id || c.name} value={c.name}>{c.name}</option>
                                 ))}
-                              {Array.from(new Set((items || []).map(i => i.category).filter(c => c && !["Marble", "Tiles", "Tile Accessories", "Marble Accessories", "Other Accessories", "Kakri", "Kalm", "Flowers", "Borders", "Kali Patti", "Panels", "Accessories"].includes(c) && !customCategories.some(cc => cc.name === c)))).map(customCat => (
+                              {Array.from(new Set((items || []).map(i => i.category).filter(c => c && !["Marble", "Tiles", "Tile Accessories", "Marble Accessories", "Other Accessories", "Tukri", "Kalm", "Flowers", "Borders", "Kali Patti", "Panels", "Accessories"].includes(c) && !customCategories.some(cc => cc.name === c)))).map(customCat => (
                                 <option key={customCat} value={customCat}>{customCat}</option>
                               ))}
                             </select>

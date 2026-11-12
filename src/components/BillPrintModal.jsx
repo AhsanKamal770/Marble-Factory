@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Printer, X, FileText, Receipt, Share2, Check, User, MapPin, Phone, Download, Calendar, Truck } from 'lucide-react';
+import { db } from '../db/index';
 import { useLanguage } from '../context/LanguageContext';
 import { printElement } from '../utils/printHelper';
 import { formatPrintRow } from '../utils/printItemFormatter';
@@ -12,6 +14,7 @@ export default function BillPrintModal({
   customer
 }) {
   const { language } = useLanguage();
+  const customCategories = useLiveQuery(() => (db.categories ? db.categories.toArray() : []), []) || [];
   const [printFormat, setPrintFormat] = useState('a4'); // 'a4' | 'thermal'
   const [copied, setCopied] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -138,9 +141,9 @@ export default function BillPrintModal({
       `---------------------------------`,
       `*تفصیل اشیاء (ITEMS):*`,
       ...(invoice.items || []).map((it, idx) => {
-        const row = formatPrintRow(it, idx);
-        const sizePart = row.size !== '-' ? ` [${row.size}]` : '';
-        const detPart = row.details !== '-' ? ` (${row.details})` : '';
+        const row = formatPrintRow(it, idx, customCategories);
+        const sizePart = row.size && row.size !== '-' ? ` [${row.size}]` : '';
+        const detPart = row.details && row.details !== '-' ? ` (${row.details})` : '';
         return `${idx + 1}. ${row.name}${sizePart}${detPart} - ${row.quantity} ${row.unit} @ Rs.${row.rate.toLocaleString()} = Rs.${row.amount.toLocaleString()}`;
       }),
       `---------------------------------`,
@@ -759,7 +762,7 @@ export default function BillPrintModal({
                       {items.map((item, idx) => {
                         const isOdd = idx % 2 === 1;
                         const rowBg = isOdd ? '#f1f5f9' : '#ffffff';
-                        const row = formatPrintRow(item, idx);
+                        const row = formatPrintRow(item, idx, customCategories);
                         return (
                           <tr
                             key={idx}
@@ -1115,11 +1118,11 @@ export default function BillPrintModal({
                   </thead>
                   <tbody>
                     {items.map((it, idx) => {
-                      const row = formatPrintRow(it, idx);
+                      const row = formatPrintRow(it, idx, customCategories);
                       return (
                         <tr key={idx}>
                           <td style={{ padding: '2px 0' }}>
-                            {row.name} {row.details !== '-' && <span style={{ fontSize: '9px' }}>({row.details})</span>}
+                            {row.name} {row.details && row.details !== '-' && <span style={{ fontSize: '9px' }}>({row.details})</span>}
                           </td>
                           <td style={{ textAlign: 'center', padding: '2px 0' }}>{row.size}</td>
                           <td style={{ textAlign: 'center', padding: '2px 0' }}>{row.quantity} {row.unit}</td>

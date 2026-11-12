@@ -18,7 +18,8 @@ import {
   Wallet,
   Phone,
   Filter,
-  TrendingUp
+  TrendingUp,
+  Edit2
 } from 'lucide-react';
 import { db, adjustItemStock } from '../db/index';
 import BillPrintModal from '../components/BillPrintModal';
@@ -27,7 +28,7 @@ import PaymentCollectionModal from '../components/PaymentCollectionModal';
 import GlobalPagination from '../components/GlobalPagination';
 import { useLanguage } from '../context/LanguageContext';
 
-export default function InvoicesView({ settings }) {
+export default function InvoicesView({ settings, onEditInvoice }) {
   const { language } = useLanguage();
   
   // Filter and Search States
@@ -799,7 +800,7 @@ export default function InvoicesView({ settings }) {
                 <th style={{ padding: '10px 6px', width: '90px', textAlign: 'right' }}>{language === 'ur' ? 'نقد وصولی' : 'PAID'}</th>
                 <th style={{ padding: '10px 6px', width: '90px', textAlign: 'right' }}>{language === 'ur' ? 'بقایا ادھار' : 'BALANCE'}</th>
                 <th style={{ padding: '10px 4px', width: '75px', textAlign: 'center' }}>{language === 'ur' ? 'اسٹیٹس' : 'STATUS'}</th>
-                <th style={{ padding: '10px 4px', width: '85px', textAlign: 'center' }}>{language === 'ur' ? 'ایکشن' : 'ACTIONS'}</th>
+                <th style={{ padding: '10px 4px', width: '115px', textAlign: 'center' }}>{language === 'ur' ? 'ایکشن' : 'ACTIONS'}</th>
               </tr>
             </thead>
             <tbody>
@@ -896,6 +897,29 @@ export default function InvoicesView({ settings }) {
                           >
                             <Printer size={12} />
                           </button>
+
+                          {/* Edit Invoice Button */}
+                          {onEditInvoice && (
+                            <button
+                              type="button"
+                              onClick={() => onEditInvoice(inv)}
+                              title={language === 'ur' ? 'بل میں ترمیم کریں' : 'Edit invoice bill'}
+                              style={{
+                                width: '26px',
+                                height: '26px',
+                                borderRadius: '6px',
+                                border: '1px solid #fde68a',
+                                background: '#fffbeb',
+                                color: '#d97706',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Edit2 size={12} />
+                            </button>
+                          )}
 
                           {/* Admin Profit Report Button */}
                           <button

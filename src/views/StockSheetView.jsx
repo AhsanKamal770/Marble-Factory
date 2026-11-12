@@ -47,39 +47,35 @@ function getStockDisplay(item) {
   const cat = (item.category || "").toLowerCase();
   const name = (item.name || "").toLowerCase();
   const subCat = (item.subCategory || "").toLowerCase();
-  const unit = item.unit || (item.category === "Tiles" ? "Meters" : "Sq. Ft.");
-  const isTiles = item.category === "Tiles" || unit === "Meters" || unit === "Meter";
-  const isPiece = unit === "Pieces" || unit === "Piece" || unit === "Pcs" ||
+  const rawUnit = (item.unit || "").trim();
+  const unitLower = rawUnit.toLowerCase();
+  const unit = rawUnit || (item.category === "Tiles" ? "Meters" : "Sq. Ft.");
+
+  if (unitLower === "meters" || unitLower === "meter" || cat === "tiles") {
+    return { qty: Number(item.stockSqFt || 0), unit: "Meters", sub: null };
+  }
+  if (unitLower === "running feet" || unitLower === "r.ft." || unitLower === "r.ft") {
+    return { qty: Number(item.stockSqFt || item.stockPieces || 0), unit: "R.Ft.", sub: null };
+  }
+  if (unitLower === "sq. ft." || unitLower === "sq.ft" || unitLower === "sqft") {
+    return { qty: Number(item.stockSqFt || 0), unit: "Sq.Ft", sub: null };
+  }
+
+  const isPiece = unitLower === "pieces" || unitLower === "piece" || unitLower === "pcs" ||
+    unitLower === "bags" || unitLower === "boxes" ||
     cat.includes("accessories") || subCat.includes("accessories") ||
     cat === "flowers" || cat === "flower" || cat === "panels" ||
+    cat === "tukri" || cat === "kalm" ||
     name.includes("gola") || name.includes("spacer") || name.includes("filling") || name.includes("bond") ||
     name.includes("sink") || name.includes("basin") || name.includes("bason") || name.includes("seat") || name.includes("combod");
 
-  if (isTiles) {
-    const meters = Number(item.stockSqFt || 0);
-    return {
-      qty: meters,
-      unit: "Meters",
-      sub: null
-    };
-  }
-
   if (isPiece) {
     const qty = Number(item.stockPieces !== undefined && item.stockPieces !== null ? item.stockPieces : item.stockSqFt) || 0;
-    return {
-      qty,
-      unit: "Pcs",
-      sub: null
-    };
+    const displayUnit = unitLower === "bags" ? "Bags" : (unitLower === "boxes" ? "Boxes" : "Pcs");
+    return { qty, unit: displayUnit, sub: null };
   }
 
-  const qty = Number(item.stockSqFt || 0);
-  switch (unit) {
-    case "Running Feet":
-      return { qty, unit: "R.Ft.", sub: null };
-    default:
-      return { qty, unit: "Sq.Ft", sub: null };
-  }
+  return { qty: Number(item.stockSqFt || 0), unit: "Sq.Ft", sub: null };
 }
 
 export function getItemDimensionAndSpec(item) {
@@ -87,7 +83,7 @@ export function getItemDimensionAndSpec(item) {
   const name = (item.name || "").toLowerCase();
   const subCat = (item.subCategory || "").toLowerCase();
 
-  if (cat.includes("kakri") || subCat.includes("kakri") || name.includes("kakri")) {
+  if (cat.includes("tukri") || subCat.includes("tukri") || name.includes("tukri")) {
     return {
       main: item.standardSize || "2 × 2",
       sub: ""
@@ -224,7 +220,7 @@ export default function StockSheetView({ settings }) {
       "Marble",
       "Tiles",
       "Tile Accessories",
-      "Kakri",
+      "Tukri",
       "Kalm",
       "Other Accessories",
       "Flowers",
@@ -235,7 +231,7 @@ export default function StockSheetView({ settings }) {
     const activeCustom = customCategories
       .filter(c => c.isActive !== false)
       .map(c => c.name);
-    const fromItems = (items || []).map(i => i.category).filter(c => c && c !== "Kakri" && c !== "Kalm" && c !== "Accessories");
+    const fromItems = (items || []).map(i => i.category).filter(c => c && c !== "Tukri" && c !== "Kalm" && c !== "Accessories" && c !== "Marble Accessories");
     return Array.from(new Set([...defaultCats, ...activeCustom, ...fromItems]));
   }, [items, customCategories]);
 
@@ -255,15 +251,18 @@ export default function StockSheetView({ settings }) {
       const cat = (item.category || '').toLowerCase();
       const sub = (item.subCategory || '').toLowerCase();
       const name = (item.name || '').toLowerCase();
-      const unit = (item.unit || '').toLowerCase();
+      const unit = (item.unit || '').trim().toLowerCase();
 
-      const isTiles = cat.includes('tile') && !cat.includes('accessories') && !name.includes('gola') && !name.includes('spacer') && !name.includes('filling') && !name.includes('bond');
-      const isRFt = (unit.includes('r.ft') || unit.includes('running') || cat.includes('border') || cat.includes('kali patti') || name.includes('border') || name.includes('patti')) && !cat.includes('tile') && !name.includes('tile');
-      const isAccessory = cat.includes('accessories') || sub.includes('accessories') ||
-        cat.includes('flower') || cat.includes('panel') || cat.includes('kakri') || cat.includes('kalm') ||
-        unit === 'piece' || unit === 'pieces' || unit === 'pcs' ||
+      const isTiles = unit === 'meters' || unit === 'meter' || (!unit && cat.includes('tile') && !cat.includes('accessories') && !name.includes('gola') && !name.includes('spacer') && !name.includes('filling') && !name.includes('bond'));
+      const isRFt = unit.includes('r.ft') || unit.includes('running') || (!unit && (cat.includes('border') || cat.includes('kali patti') || name.includes('border') || name.includes('patti')) && !cat.includes('tile') && !name.includes('tile'));
+      const isSqFtExplicit = unit === 'sq. ft.' || unit === 'sq.ft' || unit === 'sqft';
+      const isAccessory = !isSqFtExplicit && !isTiles && !isRFt && (
+        unit === 'piece' || unit === 'pieces' || unit === 'pcs' || unit === 'bags' || unit === 'boxes' ||
+        cat.includes('accessories') || sub.includes('accessories') ||
+        cat.includes('flower') || cat.includes('panel') || cat.includes('tukri') || cat.includes('kalm') ||
         name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond') ||
-        name.includes('sink') || name.includes('basin') || name.includes('seat') || name.includes('combod');
+        name.includes('sink') || name.includes('basin') || name.includes('seat') || name.includes('combod')
+      );
 
       const rate = Number(item.ratePerSqFt || 0);
 
@@ -413,6 +412,11 @@ export default function StockSheetView({ settings }) {
         } else if (itemTypeFilter.type === "Panels") {
           const isPanel = cat.includes("panel") || sub.includes("panel") || name.includes("panel") || name.includes("mashallah");
           if (!isPanel) return false;
+          if (itemTypeFilter.size) {
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace(/×/g, "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace(/×/g, "x");
+            if (!cleanItemSz.includes(cleanSz)) return false;
+          }
           if (itemTypeFilter.sub) {
             const cleanSub = itemTypeFilter.sub.toLowerCase();
             if (!sub.includes(cleanSub) && !name.includes(cleanSub)) return false;
@@ -428,22 +432,6 @@ export default function StockSheetView({ settings }) {
             const cleanSub = itemTypeFilter.sub.toLowerCase();
             if (!name.includes(cleanSub) && !sub.includes(cleanSub)) return false;
           }
-        } else if (itemTypeFilter.type === "Marble Accessories") {
-          const isMarbleAcc = cat.includes("marble accessories") || sub.includes("marble accessories") ||
-            name.includes("kakri") || cat.includes("kakri") || sub.includes("kakri") ||
-            name.includes("kalm") || cat.includes("kalm") || sub.includes("kalm") ||
-            name.includes("kk-") || name.includes("kl-");
-          if (!isMarbleAcc) return false;
-
-          if (itemTypeFilter.sub) {
-            const cleanSub = itemTypeFilter.sub.toLowerCase();
-            if (!name.includes(cleanSub) && !sub.includes(cleanSub)) return false;
-          }
-          if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
-            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
-            if (!cleanItemSz.includes(cleanSz)) return false;
-          }
         } else if (itemTypeFilter.type === "Other Accessories") {
           const isOtherAcc = cat.includes("other accessories") || sub.includes("other accessories") ||
             name.includes("combod") || name.includes("commode") || sub.includes("combod") || sub.includes("commode") ||
@@ -456,13 +444,13 @@ export default function StockSheetView({ settings }) {
             const cleanSub = itemTypeFilter.sub.toLowerCase();
             if (!name.includes(cleanSub) && !sub.includes(cleanSub)) return false;
           }
-        } else if (itemTypeFilter.type === "Kakri") {
-          const isKakri = name.includes("kakri") || cat.includes("kakri") || sub.includes("kakri") || name.includes("kk-");
-          if (!isKakri) return false;
+        } else if (itemTypeFilter.type === "Tukri") {
+          const isTukri = name.includes("tukri") || cat.includes("tukri") || sub.includes("tukri") || name.includes("tk-");
+          if (!isTukri) return false;
 
           if (itemTypeFilter.size) {
-            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace("×", "x");
-            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace("×", "x");
+            const cleanSz = itemTypeFilter.size.replace(/\s+/g, "").toLowerCase().replace(/×/g, "x");
+            const cleanItemSz = (sz + " " + sub + " " + name).replace(/\s+/g, "").toLowerCase().replace(/×/g, "x");
             if (!cleanItemSz.includes(cleanSz)) return false;
           }
         } else if (itemTypeFilter.type === "Kalm") {
@@ -478,7 +466,7 @@ export default function StockSheetView({ settings }) {
           const isAcc = cat.includes("accessories") || sub.includes("accessories") ||
             name.includes("spacer") || name.includes("filling") || name.includes("gola") || name.includes("bond") ||
             name.includes("sink") || name.includes("basin") || name.includes("bason") || name.includes("seat") || name.includes("combod") || name.includes("commode") ||
-            name.includes("kakri") || name.includes("kalm");
+            name.includes("tukri") || name.includes("kalm");
           if (!isAcc) return false;
         } else if (itemTypeFilter.type && itemTypeFilter.type !== "ALL") {
           if (cat !== itemTypeFilter.type.toLowerCase()) return false;
@@ -612,13 +600,13 @@ export default function StockSheetView({ settings }) {
       defaultLen = 2;
       defaultWid = 1;
       defaultCodePrefix = "PN";
-    } else if (cat === "Kakri" || cat === "Marble Accessories") {
+    } else if (cat === "Tukri") {
       defaultUnit = "Pieces";
       defaultSutar = "";
       defaultSize = "2 × 2";
       defaultLen = 1;
       defaultWid = 1;
-      defaultCodePrefix = "KK";
+      defaultCodePrefix = "TK";
     } else if (cat === "Kalm") {
       defaultUnit = "Pieces";
       defaultSutar = "";
@@ -730,13 +718,13 @@ export default function StockSheetView({ settings }) {
       defaultLen = 2;
       defaultWid = 1;
       defaultCodePrefix = "PN";
-    } else if (newCat === "Kakri" || newCat === "Marble Accessories") {
+    } else if (newCat === "Tukri") {
       defaultUnit = "Pieces";
       defaultSutar = "";
       defaultSize = "2 × 2";
       defaultLen = 1;
       defaultWid = 1;
-      defaultCodePrefix = "KK";
+      defaultCodePrefix = "TK";
     } else if (newCat === "Kalm") {
       defaultUnit = "Pieces";
       defaultSutar = "";
@@ -2148,21 +2136,11 @@ export default function StockSheetView({ settings }) {
                       { label: "Sink", sub: "Marble Sink (Piece)", length: 1, width: 1, unit: "Pieces" },
                       { label: "Custom", sub: "User Defined", isCustom: true, length: 1, width: 1, unit: "Pieces" }
                     ];
-                  } else if (formData.category === "Kakri") {
+                  } else if (formData.category === "Tukri") {
                     sizeOptions = [
                       { label: "2 × 2", sub: '2" × 2" (Piece)', length: 2/12, width: 2/12, unit: "Pieces" },
                       { label: "3 × 3", sub: '3" × 3" (Piece)', length: 3/12, width: 3/12, unit: "Pieces" },
                       { label: "6 × 6", sub: '6" × 6" (Piece)', length: 6/12, width: 6/12, unit: "Pieces" },
-                      { label: "Custom", sub: "User Defined", isCustom: true, length: 1, width: 1, unit: "Pieces" }
-                    ];
-                  } else if (formData.category === "Marble Accessories") {
-                    sizeOptions = [
-                      { label: "2 × 2", sub: '2" × 2" (Piece)', length: 2/12, width: 2/12, unit: "Pieces" },
-                      { label: "3 × 3", sub: '3" × 3" (Piece)', length: 3/12, width: 3/12, unit: "Pieces" },
-                      { label: "6 × 6", sub: '6" × 6" (Piece)', length: 6/12, width: 6/12, unit: "Pieces" },
-                      { label: "1 inch", sub: '1" Strip (Piece)', length: 1, width: 1/12, unit: "Pieces" },
-                      { label: "2 inch", sub: '2" Strip (Piece)', length: 1, width: 2/12, unit: "Pieces" },
-                      { label: "3 inch", sub: '3" Strip (Piece)', length: 1, width: 3/12, unit: "Pieces" },
                       { label: "Custom", sub: "User Defined", isCustom: true, length: 1, width: 1, unit: "Pieces" }
                     ];
                   } else if (formData.category === "Kalm") {

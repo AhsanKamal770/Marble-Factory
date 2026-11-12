@@ -147,7 +147,7 @@ export default function DashboardView({ setActiveView, settings }) {
         !cat.includes('tile') && !nm.includes('tile');
 
       const isPiece = cat.includes('accessories') || sub.includes('accessories') ||
-        cat.includes('flower') || cat.includes('panel') || cat.includes('kakri') || cat.includes('kalm') ||
+        cat.includes('flower') || cat.includes('panel') || cat.includes('tukri') || cat.includes('kalm') ||
         unit.includes('piece') || unit.includes('pcs') ||
         nm.includes('gola') || nm.includes('spacer') || nm.includes('filling') || nm.includes('bond') ||
         nm.includes('sink') || nm.includes('basin') || nm.includes('seat') || nm.includes('combod');

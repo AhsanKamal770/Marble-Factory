@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useLiveQuery } from "dexie-react-hooks";
 import {
   Printer, X, FileText, Receipt, Share2, Check,
   Truck, User, MapPin, Phone, Info, Calendar, Download
@@ -16,6 +17,7 @@ export default function PrintableGateSlip({
   defaultFormat = "a4"
 }) {
   const { language } = useLanguage();
+  const customCategories = useLiveQuery(() => (db.categories ? db.categories.toArray() : []), []) || [];
   const [printFormat, setPrintFormat] = useState(defaultFormat || "a4");
   const [copied, setCopied] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
@@ -203,9 +205,9 @@ export default function PrintableGateSlip({
       `*تفصیل اشیاء (Manifest Items):*`,
       ...manifestItems.map(
         (it, idx) => {
-          const row = formatPrintRow(it, idx);
-          const sizeStr = row.size !== '-' ? ` | سائز: ${row.size}` : '';
-          const detStr = row.details !== '-' ? ` | تفصیل: ${row.details}` : '';
+          const row = formatPrintRow(it, idx, customCategories);
+          const sizeStr = row.size && row.size !== '-' ? ` | سائز: ${row.size}` : '';
+          const detStr = row.details && row.details !== '-' ? ` | تفصیل: ${row.details}` : '';
           return `${idx + 1}. ${row.name}${sizeStr}${detStr} | مقدار: ${row.quantity} ${row.unit} | کل پیمائش: ${row.totalMeasurement}`;
         }
       ),
@@ -872,7 +874,7 @@ export default function PrintableGateSlip({
                       </thead>
                       <tbody>
                         {manifestItems.map((item, idx) => {
-                          const row = formatPrintRow(item, idx);
+                          const row = formatPrintRow(item, idx, customCategories);
                           return (
                             <tr
                               key={idx}
@@ -1247,7 +1249,7 @@ export default function PrintableGateSlip({
                 <div style={{ borderBottom: "1px dashed #000", paddingBottom: "6px", marginBottom: "6px" }}>
                   <div style={{ fontWeight: "bold", marginBottom: "4px" }}>ITEMS DISPATCHED (مال کی تفصیل):</div>
                   {manifestItems.map((item, idx) => {
-                    const row = formatPrintRow(item, idx);
+                    const row = formatPrintRow(item, idx, customCategories);
                     return (
                       <div key={idx} style={{ marginBottom: "4px", fontSize: "10px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold" }}>
@@ -1255,7 +1257,7 @@ export default function PrintableGateSlip({
                           <span>{row.totalMeasurement}</span>
                         </div>
                         <div style={{ color: "#444", fontSize: "9px", paddingLeft: "8px" }}>
-                          {row.size !== '-' ? `Size: ${row.size} • ` : ''}Qty: {row.quantity} {row.unit} {row.details !== '-' ? `• ${row.details}` : ''}
+                          {row.size && row.size !== '-' ? `Size: ${row.size} • ` : ''}Qty: {row.quantity} {row.unit} {row.details && row.details !== '-' ? `• ${row.details}` : ''}
                         </div>
                       </div>
                     );

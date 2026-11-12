@@ -36,8 +36,9 @@ import BillPrintModal from '../components/BillPrintModal';
 import BillProfitPrintModal from '../components/BillProfitPrintModal';
 import CustomerProfileModal from '../modules/mod_05_customer_ledger/CustomerProfileModal';
 import { saveCustomer } from '../modules/mod_05_customer_ledger/customerLedgerService';
+import { getEffectiveCategoryConfig } from '../services/categoryService';
 
-export default function BillingView({ setActiveView, settings }) {
+export default function BillingView({ setActiveView, settings, editingInvoice = null, onClearEditingInvoice }) {
   const { language } = useLanguage();
   const isUrdu = language === 'ur';
 
@@ -75,8 +76,18 @@ export default function BillingView({ setActiveView, settings }) {
   const [liveCash, setLiveCash] = useState(0);
 
   // Bill Identity
-  const [invoiceNo] = useState(`INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`);
-  const [billDate] = useState(new Date().toLocaleDateString(isUrdu ? 'ur-PK' : 'en-US', {
+  const generateFreshInvoiceNo = () => `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-4)}`;
+  const formatDisplayDate = (dateVal = new Date()) => new Date(dateVal).toLocaleDateString(isUrdu ? 'ur-PK' : 'en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const [invoiceNo, setInvoiceNo] = useState(generateFreshInvoiceNo);
+  const [originalInvoice, setOriginalInvoice] = useState(null);
+  const [justFinishedEdit, setJustFinishedEdit] = useState(false);
+  const isEditMode = Boolean(originalInvoice && originalInvoice.id);
+  const [billDate, setBillDate] = useState(() => new Date().toLocaleDateString(isUrdu ? 'ur-PK' : 'en-US', {
     day: 'numeric',
     month: 'short',
     year: 'numeric'
@@ -161,6 +172,129 @@ export default function BillingView({ setActiveView, settings }) {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const resetBillForm = () => {
+    setOriginalInvoice(null);
+    setInvoiceNo(generateFreshInvoiceNo());
+    setBillDate(formatDisplayDate());
+    setLineItems([]);
+    setSelectedCustomer(null);
+    setCustomerSearch('');
+    setCarrierDetails(null);
+    setDeliveryForm({ method: 'Rickshaw (رکشہ)', driverName: '', vehicleNo: '', notes: '' });
+    setCharges({ carriage: 0, labour: 0, polish: 0, other: 0 });
+    setDiscount({ type: 'fixed', value: 0, reason: '' });
+    setBillNote('');
+    setPaidAmount(0);
+    setPaymentMethod('Cash');
+    setApplyAdvance(true);
+    setAppliedAdvanceAmount(0);
+    setErrorMessage('');
+  };
+
+  useEffect(() => {
+    let active = true;
+    const hydrateEditingInvoice = async () => {
+      if (!editingInvoice) {
+        if (originalInvoice) {
+          resetBillForm();
+        }
+        return;
+      }
+
+      setJustFinishedEdit(false);
+      const freshInv = editingInvoice.id
+        ? (await db.invoices.get(editingInvoice.id)) || editingInvoice
+        : editingInvoice;
+      if (!active) return;
+
+      setOriginalInvoice(freshInv);
+      setInvoiceNo(freshInv.invoiceNo || generateFreshInvoiceNo());
+      setBillDate(formatDisplayDate(freshInv.date || freshInv.createdAt || new Date()));
+
+      if (freshInv.customerId) {
+        let cust = await db.customers.get(Number(freshInv.customerId));
+        if (!cust) cust = await db.customers.get(freshInv.customerId);
+        if (!cust) {
+          const allCust = await db.customers.toArray();
+          cust = allCust.find(c => String(c.id) === String(freshInv.customerId));
+        }
+        if (active) {
+          setSelectedCustomer(cust || {
+            id: freshInv.customerId,
+            name: freshInv.customerName || '',
+            phone: freshInv.customerPhone || '',
+            advanceBalance: 0,
+            balanceDue: 0
+          });
+          setCustomerSearch('');
+        }
+      } else {
+        setSelectedCustomer(null);
+        setCustomerSearch('');
+      }
+
+      if (freshInv.carrierDetails && (freshInv.carrierDetails.driverName || freshInv.carrierDetails.vehicleNo || freshInv.carrierDetails.method)) {
+        setCarrierDetails(freshInv.carrierDetails);
+        setDeliveryForm({
+          method: freshInv.carrierDetails.method || 'Rickshaw (رکشہ)',
+          driverName: freshInv.carrierDetails.driverName || '',
+          vehicleNo: freshInv.carrierDetails.vehicleNo || '',
+          notes: freshInv.carrierDetails.notes || ''
+        });
+      } else if (freshInv.carrier && freshInv.carrier !== 'Direct Factory Pickup' && freshInv.carrier !== 'فیکٹری گیٹ ڈائریکٹ') {
+        const matchCarrier = freshInv.carrier.match(/^(.+?)\s*•\s*(.*?)\s*\((.*?)\)\s*$/);
+        const parsed = matchCarrier
+          ? { method: matchCarrier[1].trim(), driverName: matchCarrier[2].trim(), vehicleNo: matchCarrier[3].trim(), notes: '' }
+          : { method: 'Rickshaw (رکشہ)', driverName: freshInv.carrier, vehicleNo: '', notes: '' };
+        setCarrierDetails(parsed);
+        setDeliveryForm(parsed);
+      } else {
+        setCarrierDetails(null);
+        setDeliveryForm({ method: 'Rickshaw (رکشہ)', driverName: '', vehicleNo: '', notes: '' });
+      }
+
+      const hydratedItems = (freshInv.items || []).map((it, idx) => ({
+        ...it,
+        id: it.id || `item-edit-${Date.now()}-${idx}`
+      }));
+      setLineItems(hydratedItems);
+
+      setCharges({
+        carriage: Number(freshInv.carriageCharges || 0),
+        labour: Number(freshInv.labourCharges || 0),
+        polish: Number(freshInv.polishCharges || 0),
+        other: Number(freshInv.otherCharges || 0)
+      });
+      const discAmt = Number(freshInv.discountAmount || 0);
+      setDiscount({
+        type: 'fixed',
+        value: discAmt,
+        reason: freshInv.discountReason || (discAmt > 0 ? 'Direct Bill Discount' : '')
+      });
+      setBillNote(freshInv.notes || '');
+
+      const origAdvApplied = Number(freshInv.appliedAdvance || 0);
+      setApplyAdvance(origAdvApplied > 0);
+      setAppliedAdvanceAmount(origAdvApplied);
+      setPaidAmount(Number(freshInv.paidAmount || 0));
+
+      const rawPm = (freshInv.paymentMethod || 'Cash').toString();
+      if (rawPm.includes('Bank Transfer')) {
+        setPaymentMethod('Bank Transfer');
+      } else if (rawPm.includes('Card')) {
+        setPaymentMethod('Card');
+      } else {
+        setPaymentMethod('Cash');
+      }
+
+      setCreatedInvoice(null);
+      setErrorMessage('');
+    };
+
+    hydrateEditingInvoice();
+    return () => { active = false; };
+  }, [editingInvoice]);
+
   // -------------------------------------------------------------
   // Data Fetching & Internal Keyboard Handlers (Zero UI Clutter)
   // -------------------------------------------------------------
@@ -235,16 +369,18 @@ export default function BillingView({ setActiveView, settings }) {
 
   // Auto-sync applied advance amount with available customer advance
   const grandTotal = Math.max(0, billTotalBeforeDiscount - netDiscount);
-  const customerAdvanceAvailable = Number(selectedCustomer?.advanceBalance || 0);
+  const sameCustomerAsOriginal = Boolean(isEditMode && selectedCustomer && originalInvoice?.customerId && String(selectedCustomer.id) === String(originalInvoice.customerId));
+  const restoredOriginalAdvance = sameCustomerAsOriginal ? Number(originalInvoice.appliedAdvance || 0) : 0;
+  const customerAdvanceAvailable = Number(selectedCustomer?.advanceBalance || 0) + restoredOriginalAdvance;
 
   useEffect(() => {
-    if (selectedCustomer && Number(selectedCustomer.advanceBalance || 0) > 0 && applyAdvance) {
-      const maxApp = Math.min(grandTotal, Number(selectedCustomer.advanceBalance || 0));
+    if (selectedCustomer && customerAdvanceAvailable > 0 && applyAdvance) {
+      const maxApp = Math.min(grandTotal, customerAdvanceAvailable);
       setAppliedAdvanceAmount(maxApp);
     } else {
       setAppliedAdvanceAmount(0);
     }
-  }, [selectedCustomer?.id, selectedCustomer?.advanceBalance, grandTotal, applyAdvance]);
+  }, [selectedCustomer?.id, customerAdvanceAvailable, grandTotal, applyAdvance]);
 
   // Auto-cap applied advance to available balance & grand total
   const defaultAdvanceToApply = Math.min(grandTotal, customerAdvanceAvailable);
@@ -340,9 +476,6 @@ export default function BillingView({ setActiveView, settings }) {
       const savedId = await saveCustomer(formData);
       const newCust = await db.customers.get(savedId);
 
-      const updatedCustomers = await db.customers.toArray();
-      setCustomers(updatedCustomers.sort((a, b) => Number(b.balanceDue || 0) - Number(a.balanceDue || 0)));
-
       setSelectedCustomer(newCust);
       setIsNewCustomerModalOpen(false);
       setIsCustomerDropdownOpen(false);
@@ -360,7 +493,7 @@ export default function BillingView({ setActiveView, settings }) {
       { id: 'Marble', label: 'Marble' },
       { id: 'Tiles', label: 'Tiles' },
       { id: 'Tile Accessories', label: 'Tile Accessories' },
-      { id: 'Kakri', label: 'Kakri' },
+      { id: 'Tukri', label: 'Tukri' },
       { id: 'Kalm', label: 'Kalm' },
       { id: 'Other Accessories', label: 'Other Accessories' },
       { id: 'Borders', label: 'Borders' },
@@ -371,7 +504,7 @@ export default function BillingView({ setActiveView, settings }) {
     const seen = new Set(base.map(b => b.id.toLowerCase()));
     seen.add('border');
     seen.add('borders');
-    seen.add('kakri');
+    seen.add('tukri');
     seen.add('kalm');
     seen.add('accessories');
     seen.add('marble accessories');
@@ -406,21 +539,21 @@ export default function BillingView({ setActiveView, settings }) {
       return true;
     }
 
-    if (filter === 'Kakri') {
-      return cat === 'kakri' || name.includes('kakri') || sub.includes('kakri') || name.includes('kk-');
+    if (filter === 'Tukri') {
+      return cat === 'tukri' || name.includes('tukri') || sub.includes('tukri') || name.includes('tk-');
     }
     if (filter === 'Kalm') {
       return cat === 'kalm' || name.includes('kalm') || sub.includes('kalm') || name.includes('kl-');
     }
     if (filter === 'Marble Accessories') {
       return cat.includes('marble accessories') || sub.includes('marble accessories') ||
-        name.includes('kakri') || cat.includes('kakri') || sub.includes('kakri') ||
+        name.includes('tukri') || cat.includes('tukri') || sub.includes('tukri') ||
         name.includes('kalm') || cat.includes('kalm') || sub.includes('kalm') ||
         name.includes('kk-') || name.includes('kl-');
     }
     if (filter === 'Marble') {
       return (cat.includes('marble') || sub.includes('marble') || name.includes('marble') || cat.includes('slab') || name.includes('slab') || name.includes('sutar')) &&
-        !cat.includes('tile') && !sub.includes('tile') && !name.includes('flower') && !name.includes('border') && !name.includes('patti') && !name.includes('panel') && !name.includes('mashallah') && !cat.includes('accessories') && !name.includes('kakri') && !name.includes('kalm');
+        !cat.includes('tile') && !sub.includes('tile') && !name.includes('flower') && !name.includes('border') && !name.includes('patti') && !name.includes('panel') && !name.includes('mashallah') && !cat.includes('accessories') && !name.includes('tukri') && !name.includes('kalm');
     }
     if (filter === 'Tile Accessories') {
       return (cat.includes('tile accessories') || sub.includes('tile accessories') ||
@@ -575,9 +708,9 @@ export default function BillingView({ setActiveView, settings }) {
       ((itemCat.includes('tile') || itemCat.includes('accessories')) && (name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond')));
     const isOtherAcc = catStr.includes('other accessories') || itemCat.includes('other accessories') ||
       name.includes('sink') || name.includes('basin') || name.includes('bason') || name.includes('seat') || name.includes('combod') || name.includes('commode');
-    const isKakri = cat === 'Kakri' || name.includes('kakri') || sub.includes('kakri');
+    const isTukri = cat === 'Tukri' || name.includes('tukri') || sub.includes('tukri');
     const isKalm = cat === 'Kalm' || name.includes('kalm') || sub.includes('kalm');
-    const isMarbleAcc = catStr.includes('marble accessories') || itemCat.includes('marble accessories') || isKakri || isKalm;
+    const isMarbleAcc = catStr.includes('marble accessories') || itemCat.includes('marble accessories') || isTukri || isKalm;
 
     const isTiles = (cat === 'Tiles' || itemCat.includes('tile')) && !isTileAcc && !isOtherAcc && !isMarbleAcc && !catStr.includes('accessories');
 
@@ -598,7 +731,7 @@ export default function BillingView({ setActiveView, settings }) {
       return { stock: stockInMeters, unit: 'Meter' };
     }
 
-    if (isMarbleAcc || isKakri || isKalm) {
+    if (isMarbleAcc || isTukri || isKalm) {
       const sqft = Number(item.stockSqFt || 0);
       return { stock: Math.round(sqft * 100) / 100, unit: 'Sq. Ft.' };
     }
@@ -666,7 +799,7 @@ export default function BillingView({ setActiveView, settings }) {
       return { preset: '12 × 12', length: 1, width: 1, defaultRate: 850 };
     }
 
-    if (cat === 'Kakri' || text.includes('kakri')) {
+    if (cat === 'Tukri' || text.includes('tukri')) {
       if (text.includes('6 × 6') || text.includes('6x6') || text.includes('0606')) {
         return { preset: '6 × 6', length: 6/12, width: 6/12, defaultRate: 210, unit: 'Sq. Ft.' };
       }
@@ -694,7 +827,7 @@ export default function BillingView({ setActiveView, settings }) {
       if (text.includes('bond')) return { preset: 'Bond', unit: 'Piece', defaultRate: 650 };
       if (text.includes('spacer')) return { preset: 'Spacer', unit: 'Piece', defaultRate: 250 };
       if (text.includes('gola')) return { preset: 'Gola', unit: 'Piece', defaultRate: 85 };
-      if (text.includes('kakri')) {
+      if (text.includes('tukri')) {
         if (text.includes('6x6') || text.includes('6 × 6')) return { preset: '6 × 6', length: 6/12, width: 6/12, defaultRate: 210, unit: 'Sq. Ft.' };
         if (text.includes('3x3') || text.includes('3 × 3')) return { preset: '3 × 3', length: 3/12, width: 3/12, defaultRate: 190, unit: 'Sq. Ft.' };
         return { preset: '2 × 2', length: 2/12, width: 2/12, defaultRate: 180, unit: 'Sq. Ft.' };
@@ -742,8 +875,8 @@ export default function BillingView({ setActiveView, settings }) {
       ? it.standardSize
       : (it.length && it.width ? `${it.length} × ${it.width}` : '');
     const spec = (sutar || size) ? `(${sutar}${size})`.trim() : '';
-    const unit = it.unit || (it.category === 'Tiles' ? 'Meters' : (['Kakri', 'Kalm'].includes(it.category) ? 'Pieces' : 'Sq. Ft.'));
-    const stockQty = Number((unit === 'Pieces' || ['Kakri', 'Kalm', 'Pieces'].includes(it.category)) && it.stockPieces !== undefined && it.stockPieces !== null ? it.stockPieces : (it.stockSqFt || 0));
+    const unit = it.unit || (it.category === 'Tiles' ? 'Meters' : (['Tukri', 'Kalm'].includes(it.category) ? 'Pieces' : 'Sq. Ft.'));
+    const stockQty = Number((unit === 'Pieces' || ['Tukri', 'Kalm', 'Pieces'].includes(it.category)) && it.stockPieces !== undefined && it.stockPieces !== null ? it.stockPieces : (it.stockSqFt || 0));
     return `${name} ${spec} — Available: ${stockQty.toLocaleString()} ${unit}`.replace(/\s+/g, ' ');
   };
 
@@ -766,6 +899,29 @@ export default function BillingView({ setActiveView, settings }) {
     return list;
   }, [items, itemCategoryFilter, stockSearchQuery]);
 
+  const isSutarAllowedForItem = (categoryName, unitName, itemName) => {
+    const cleanCat = (categoryName || '').trim().toLowerCase();
+    const builtInKeys = new Set([
+      'marble', 'tiles', 'tile', 'tile accessories', 'other accessories', 'marble accessories',
+      'accessories', 'borders', 'border', 'kali patti', 'flowers', 'flower', 'panels', 'panel',
+      'tukri', 'kakri', 'kalm'
+    ]);
+    const isCustomCat = (customCategories || []).some(
+      c => c && c.isActive !== false && (c.name || '').trim().toLowerCase() === cleanCat
+    ) && !builtInKeys.has(cleanCat);
+
+    if (isCustomCat) {
+      return Boolean(getEffectiveCategoryConfig(categoryName, customCategories).hasSutar);
+    }
+
+    const meta = `${categoryName || ''} ${itemName || ''}`.toLowerCase();
+    const nonSutar = meta.includes('border') || meta.includes('patti') || meta.includes('tile') ||
+      meta.includes('flower') || meta.includes('panel') || meta.includes('accessori') ||
+      meta.includes('tukri') || meta.includes('kakri') || meta.includes('kalm') ||
+      ['Meters', 'Meter', 'Pieces', 'Piece', 'Running Feet', 'R.Ft.', 'Boxes', 'Box', 'Bags'].includes(unitName);
+    return !nonSutar;
+  };
+
   const handleItemSelectInModal = (selectedItem) => {
     if (!selectedItem) return;
 
@@ -774,7 +930,9 @@ export default function BillingView({ setActiveView, settings }) {
     const available = Number(selectedItem.stockSqFt !== undefined && selectedItem.stockSqFt !== null ? selectedItem.stockSqFt : (selectedItem.stockPieces || 0));
     const unit = selectedItem.unit || (selectedItem.category === 'Tiles' ? 'Meters' : 'Sq. Ft.');
     const size = selectedItem.standardSize || (selectedItem.length && selectedItem.width ? `${selectedItem.length} × ${selectedItem.width}` : '-');
-    const sutar = Number(selectedItem.sutarThickness) || 0;
+    const selMeta = `${selectedItem.category || ''} ${selectedItem.name || ''}`.toLowerCase();
+    const isNonSutarCat = !isSutarAllowedForItem(selectedItem.category, selectedItem.unit, selectedItem.name);
+    const sutar = isNonSutarCat ? 0 : (Number(selectedItem.sutarThickness) || 0);
 
     setItemModalForm(prev => {
       const prevQty = parseFloat(prev.billedQuantity) || 0;
@@ -867,7 +1025,7 @@ export default function BillingView({ setActiveView, settings }) {
       standardSize: item.standardSize || item.selectedSizePreset || (matchItem ? matchItem.standardSize : '-'),
       selectedSizePreset: item.selectedSizePreset || item.standardSize || '-',
       size: item.size || item.standardSize || '-',
-      thicknessSutar: Number(item.thicknessSutar || (matchItem ? matchItem.sutarThickness : 0)),
+      thicknessSutar: isSutarAllowedForItem(item.category || matchItem?.category, item.unit || matchItem?.unit, item.name) ? Number(item.thicknessSutar || (matchItem ? matchItem.sutarThickness : 0)) : 0,
       usageTag: item.usageTag || '',
       unit: item.unit || (matchItem ? matchItem.unit : 'Sq. Ft.'),
       stockUnit: item.unit || (matchItem ? matchItem.unit : 'Sq. Ft.'),
@@ -1084,7 +1242,230 @@ export default function BillingView({ setActiveView, settings }) {
   // -------------------------------------------------------------
   // Final Database Save Execution (Atomic Dexie Transaction)
   // -------------------------------------------------------------
+  const handleUpdateExistingInvoice = async () => {
+    if (lineItems.length === 0) {
+      setErrorMessage(isUrdu ? 'برائے مہربانی کم از کم ایک آئٹم شامل کریں۔' : 'Please add at least one marble item.');
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      setErrorMessage('');
+
+      let effectiveCustomer = selectedCustomer;
+      if (!effectiveCustomer && customerSearch.trim()) {
+        const queryName = customerSearch.trim();
+        const allCust = await db.customers.toArray();
+        const match = allCust.find(c => c.name?.trim().toLowerCase() === queryName.toLowerCase());
+        if (match) {
+          effectiveCustomer = match;
+        } else {
+          const newCustId = await db.customers.add({
+            name: queryName,
+            phone: '',
+            city: 'Faisalabad / Jhumra',
+            totalBilled: 0,
+            totalPaid: 0,
+            balanceDue: 0,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+          effectiveCustomer = await db.customers.get(newCustId);
+        }
+      }
+
+      if (!effectiveCustomer && balanceDue > 0) {
+        setErrorMessage(
+          isUrdu
+            ? 'ادھار بل کے لیے کسٹمر منتخب کرنا یا نام اور فون نمبر درج کرنا لازمی ہے! عام خریدار پر ادھار ممکن نہیں۔'
+            : 'Credit / Udhaar sales require selecting or registering a customer with their Name and Phone number!'
+        );
+        setIsSaving(false);
+        return;
+      }
+
+      const nowIso = new Date().toISOString();
+      const customerName = effectiveCustomer ? effectiveCustomer.name : (isUrdu ? 'عام خریدار (نقد)' : 'Walk-in Cash Sale');
+      const customerPhone = effectiveCustomer ? (effectiveCustomer.phone || '') : '';
+      const customerId = effectiveCustomer ? effectiveCustomer.id : null;
+
+      let savedInvoiceRecord = null;
+
+      await db.transaction('rw', [db.invoices, db.customers, db.customer_payments], async () => {
+        const latestOldInv = (await db.invoices.get(originalInvoice.id)) || originalInvoice;
+        const updatedFields = {
+          invoiceNo: latestOldInv.invoiceNo || invoiceNo,
+          date: latestOldInv.date || latestOldInv.createdAt || nowIso,
+          customerId,
+          customerName,
+          customerPhone,
+          carrier: carrierDetails
+            ? `${carrierDetails.method} • ${carrierDetails.driverName} (${carrierDetails.vehicleNo})`
+            : (isUrdu ? 'فیکٹری گیٹ ڈائریکٹ' : 'Direct Factory Pickup'),
+          carrierDetails: carrierDetails || null,
+          items: lineItems,
+          subtotal,
+          carriageCharges: charges.carriage || 0,
+          labourCharges: charges.labour || 0,
+          polishCharges: charges.polish || 0,
+          otherCharges: charges.other || 0,
+          discountAmount: netDiscount,
+          discountReason: discount.reason || '',
+          grandTotal,
+          appliedAdvance: effectiveAppliedAdvance,
+          paidAmount: numPaid,
+          totalPaid: totalCovered,
+          balanceDue,
+          paymentStatus,
+          paymentMethod: effectiveAppliedAdvance > 0 && numPaid > 0
+            ? `${paymentMethod} + Advance`
+            : (effectiveAppliedAdvance > 0 ? 'Advance Adjustment' : paymentMethod),
+          notes: billNote,
+          updatedAt: nowIso
+        };
+
+        await db.invoices.update(originalInvoice.id, updatedFields);
+        savedInvoiceRecord = { ...latestOldInv, ...updatedFields, id: originalInvoice.id };
+
+        const resolveCustomerInTx = async (cid) => {
+          if (!cid) return null;
+          let cust = await db.customers.get(cid);
+          if (!cust && typeof cid === 'string' && !isNaN(Number(cid))) {
+            cust = await db.customers.get(Number(cid));
+          }
+          if (!cust) {
+            const allCust = await db.customers.toArray();
+            cust = allCust.find(c => String(c.id) === String(cid));
+          }
+          return cust || null;
+        };
+
+        const oldCustId = latestOldInv.customerId ? String(latestOldInv.customerId) : null;
+        const newCustId = effectiveCustomer ? String(effectiveCustomer.id) : null;
+        const oldGrand = Number(latestOldInv.grandTotal || 0);
+        const oldPaid = Number(latestOldInv.paidAmount || 0);
+        const oldAppliedAdv = Number(latestOldInv.appliedAdvance || 0);
+        const oldDue = Math.max(0, Number(latestOldInv.balanceDue !== undefined ? latestOldInv.balanceDue : (oldGrand - oldAppliedAdv - oldPaid)));
+
+        if (oldCustId && newCustId && oldCustId === newCustId) {
+          const freshCust = await resolveCustomerInTx(newCustId);
+          if (freshCust) {
+            await db.customers.update(freshCust.id, {
+              totalBilled: Math.max(0, (Number(freshCust.totalBilled) || 0) - oldGrand + grandTotal),
+              totalPaid: Math.max(0, (Number(freshCust.totalPaid) || 0) - oldPaid + numPaid),
+              balanceDue: Math.max(0, (Number(freshCust.balanceDue) || 0) - oldDue + balanceDue),
+              advanceBalance: Math.max(0, (Number(freshCust.advanceBalance) || 0) + oldAppliedAdv - effectiveAppliedAdvance),
+              updatedAt: nowIso
+            });
+          }
+        } else {
+          if (oldCustId) {
+            const oldCust = await resolveCustomerInTx(oldCustId);
+            if (oldCust) {
+              await db.customers.update(oldCust.id, {
+                totalBilled: Math.max(0, (Number(oldCust.totalBilled) || 0) - oldGrand),
+                totalPaid: Math.max(0, (Number(oldCust.totalPaid) || 0) - oldPaid),
+                balanceDue: Math.max(0, (Number(oldCust.balanceDue) || 0) - oldDue),
+                advanceBalance: Math.max(0, (Number(oldCust.advanceBalance) || 0) + oldAppliedAdv),
+                updatedAt: nowIso
+              });
+            }
+          }
+          if (newCustId) {
+            const newCust = await resolveCustomerInTx(newCustId);
+            if (newCust) {
+              await db.customers.update(newCust.id, {
+                totalBilled: (Number(newCust.totalBilled) || 0) + grandTotal,
+                totalPaid: (Number(newCust.totalPaid) || 0) + numPaid,
+                balanceDue: (Number(newCust.balanceDue) || 0) + balanceDue,
+                advanceBalance: Math.max(0, (Number(newCust.advanceBalance) || 0) - effectiveAppliedAdvance),
+                updatedAt: nowIso
+              });
+            }
+          }
+        }
+
+        const linkedPayments = await db.customer_payments.where('invoiceId').equals(originalInvoice.id).toArray();
+        const advRows = linkedPayments.filter(p => p.isAdvanceAdjustment || (p.paymentNo || '').startsWith('ADV-ADJ-'));
+        const cashRows = linkedPayments.filter(p => !p.isAdvanceAdjustment && !(p.paymentNo || '').startsWith('ADV-ADJ-'));
+
+        if (advRows.length > 0) {
+          await db.customer_payments.bulkDelete(advRows.map(p => p.id));
+        }
+        if (effectiveCustomer && effectiveAppliedAdvance > 0) {
+          await db.customer_payments.add({
+            paymentNo: `ADV-ADJ-${Date.now().toString().slice(-6)}`,
+            invoiceId: originalInvoice.id,
+            customerId: effectiveCustomer.id,
+            customerName: effectiveCustomer.name,
+            date: latestOldInv.date || nowIso,
+            amount: effectiveAppliedAdvance,
+            paymentMethod: 'Advance Adjustment',
+            isAdvanceAdjustment: true,
+            referenceNo: latestOldInv.invoiceNo || invoiceNo,
+            notes: `Advance applied against Bill #${latestOldInv.invoiceNo || invoiceNo} (پیشگی ایڈوانس سے کٹوتی)`,
+            createdAt: nowIso
+          });
+        }
+
+        if (!effectiveCustomer || numPaid <= 0) {
+          if (cashRows.length > 0) {
+            await db.customer_payments.bulkDelete(cashRows.map(p => p.id));
+          }
+        } else if (oldCustId === newCustId && numPaid === oldPaid && cashRows.length > 0) {
+          if (cashRows.length === 1) {
+            await db.customer_payments.update(cashRows[0].id, {
+              customerName: effectiveCustomer.name,
+              paymentMethod,
+              updatedAt: nowIso
+            });
+          }
+        } else if (cashRows.length === 1) {
+          await db.customer_payments.update(cashRows[0].id, {
+            customerId: effectiveCustomer.id,
+            customerName: effectiveCustomer.name,
+            amount: numPaid,
+            paymentMethod,
+            referenceNo: latestOldInv.invoiceNo || invoiceNo,
+            updatedAt: nowIso
+          });
+        } else {
+          if (cashRows.length > 0) {
+            await db.customer_payments.bulkDelete(cashRows.map(p => p.id));
+          }
+          await db.customer_payments.add({
+            paymentNo: `PAY-${Date.now().toString().slice(-6)}`,
+            invoiceId: originalInvoice.id,
+            customerId: effectiveCustomer.id,
+            customerName: effectiveCustomer.name,
+            date: latestOldInv.date || nowIso,
+            amount: numPaid,
+            paymentMethod,
+            referenceNo: latestOldInv.invoiceNo || invoiceNo,
+            notes: `Updated POS Collection for Invoice #${latestOldInv.invoiceNo || invoiceNo}`,
+            createdAt: nowIso
+          });
+        }
+      });
+
+      setCreatedInvoice(savedInvoiceRecord);
+      setIsReviewModalOpen(false);
+      setJustFinishedEdit(true);
+      setIsPrintModalOpen(true);
+      resetBillForm();
+      if (onClearEditingInvoice) onClearEditingInvoice();
+    } catch (err) {
+      console.error('Error updating invoice:', err);
+      setErrorMessage(err.message || 'Update failed');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleExecuteSaveInvoice = async () => {
+    if (originalInvoice && originalInvoice.id) {
+      return await handleUpdateExistingInvoice();
+    }
     if (lineItems.length === 0) {
       setErrorMessage(isUrdu ? 'برائے مہربانی کم از کم ایک آئٹم شامل کریں۔' : 'Please add at least one marble item.');
       return;
@@ -1157,6 +1538,9 @@ export default function BillingView({ setActiveView, settings }) {
         paymentMethod: effectiveAppliedAdvance > 0 && numPaid > 0
           ? `${paymentMethod} + Advance`
           : (effectiveAppliedAdvance > 0 ? 'Advance Adjustment' : paymentMethod),
+        carrierDetails: carrierDetails || null,
+        otherCharges: charges.other || 0,
+        discountReason: discount.reason || '',
         notes: billNote,
         createdAt: new Date().toISOString()
       };
@@ -1248,6 +1632,7 @@ export default function BillingView({ setActiveView, settings }) {
       setPaidAmount(0);
       setApplyAdvance(true);
       setAppliedAdvanceAmount(0);
+      setInvoiceNo(generateFreshInvoiceNo());
     } catch (err) {
       console.error('Error saving invoice:', err);
       setErrorMessage(err.message || 'Transaction failed');
@@ -1308,7 +1693,7 @@ export default function BillingView({ setActiveView, settings }) {
                 letterSpacing: '-0.02em',
                 lineHeight: 1.2
               }}>
-                New Bill (نیا بل)
+                {isEditMode ? (isUrdu ? `بل ترمیم #${invoiceNo}` : `Edit Bill #${invoiceNo}`) : 'New Bill (نیا بل)'}
               </h1>
               <p style={{
                 fontSize: '0.86rem',
@@ -1316,7 +1701,32 @@ export default function BillingView({ setActiveView, settings }) {
                 margin: '2px 0 0 0',
                 fontWeight: 500
               }}>
-                {isUrdu ? 'نئی سیلز کا بل بنائیں، کسٹمر کھاتہ اور رکشہ گیٹ پاس جاری کریں' : 'Create new sales invoice, update customer khata, and dispatch gate pass'}
+                {isEditMode
+                  ? (isUrdu ? `موجودہ انوائس #${invoiceNo} میں آئٹمز، مقدار یا ادائیگی کی ترمیم کریں` : `Modifying existing invoice #${invoiceNo} — items & khata will reconcile cleanly`)
+                  : (isUrdu ? 'نئی سیلز کا بل بنائیں، کسٹمر کھاتہ اور رکشہ گیٹ پاس جاری کریں' : 'Create new sales invoice, update customer khata, and dispatch gate pass')}
+                {isEditMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetBillForm();
+                      if (onClearEditingInvoice) onClearEditingInvoice();
+                      if (setActiveView) setActiveView('invoices');
+                    }}
+                    style={{
+                      marginLeft: '10px',
+                      background: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      borderRadius: '6px',
+                      padding: '2px 10px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      color: '#b45309',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {isUrdu ? 'ترمیم منسوخ کریں (واپس انوائسز)' : '← Cancel Edit'}
+                  </button>
+                )}
               </p>
             </div>
           </div>
@@ -1735,18 +2145,18 @@ export default function BillingView({ setActiveView, settings }) {
                           {item.unit === 'Meter'
                             ? `Tiles • Per Meter • ${item.selectedSizePreset || 'Standard'}`
                             : item.unit === 'R.Ft.'
-                            ? `${item.thicknessSutar || 3}" Patti • Running Feet`
+                            ? `${item.selectedSizePreset || item.standardSize || (Number(item.width) > 0 ? `${Math.round(Number(item.width) * 12)}"` : (item.category === 'Kali Patti' ? '2"' : '3"'))} Patti • Running Feet`
                             : item.unit === 'Box'
                             ? `Corner Gola • Per Box`
                             : (item.unit === 'Piece' || item.category === 'Tile Accessories' || item.category === 'Other Accessories' || item.category === 'Flower' || item.category === 'Panels')
                             ? (item.category === 'Flower' ? `Flower Medallion • Per Piece` : (item.category === 'Panels' ? `Decorative Wall Panel (12×24) • Per Piece` : `${item.selectedSizePreset || (item.category === 'Tile Accessories' ? 'Tile Accessory' : (item.category === 'Other Accessories' ? 'Sanitary Piece' : 'Accessory'))} • Per Piece`))
-                            : `${item.thicknessSutar || 4} Sutar • ${item.selectedSizePreset ? item.selectedSizePreset + ' • ' : ''}${item.usageTag || 'Standard'}`}
+                            : `${isSutarAllowedForItem(item.category, item.unit, item.name) && Number(item.thicknessSutar) > 0 ? `${item.thicknessSutar} Sutar • ` : ''}${item.category ? `${item.category} • ` : ''}${item.selectedSizePreset && item.selectedSizePreset !== '-' ? item.selectedSizePreset + ' • ' : ''}${item.usageTag || 'Standard'}`}
                         </div>
                         <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {item.unit === 'Meter' ? (
                             `${item.billedQuantity || item.meters || 0} Meters × Rs. ${item.ratePerSqFt || item.rate}`
                           ) : item.unit === 'R.Ft.' ? (
-                            `${item.billedQuantity || item.runningFeet || item.totalSqFt} R.Ft. × Rs. ${item.ratePerSqFt || item.rate} (${item.thicknessSutar || 3}" Width • ${item.runningFeet || item.length || item.billedQuantity} ft Length)`
+                            `${item.billedQuantity || item.runningFeet || item.totalSqFt} R.Ft. × Rs. ${item.ratePerSqFt || item.rate} (${item.selectedSizePreset || item.standardSize || (Number(item.width) > 0 ? `${Math.round(Number(item.width) * 12)}"` : (item.category === 'Kali Patti' ? '2"' : '3"'))} Width • ${item.runningFeet || item.length || item.billedQuantity} ft Length)`
                           ) : item.unit === 'Box' ? (
                             `${item.billedQuantity || item.boxes} Box × Rs. ${item.ratePerSqFt || item.rate} (Corner Gola)`
                           ) : (item.unit === 'Piece' || item.category === 'Tile Accessories' || item.category === 'Other Accessories') ? (
@@ -2943,7 +3353,7 @@ export default function BillingView({ setActiveView, settings }) {
             <div className="modal-header">
               <div>
                 <h3 className="modal-title" style={{ fontSize: '1rem', fontWeight: 800 }}>
-                  {isUrdu ? 'بل جائزہ و تصدیق' : 'Bill Review'}
+                  {isEditMode ? (isUrdu ? 'بل ترمیم جائزہ و تصدیق' : 'Edit Bill Review') : (isUrdu ? 'بل جائزہ و تصدیق' : 'Bill Review')}
                 </h3>
                 <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
                   {invoiceNo} • {selectedCustomer ? selectedCustomer.name : 'Walk-in Cash Sale'}
@@ -3005,7 +3415,7 @@ export default function BillingView({ setActiveView, settings }) {
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <ShieldCheck size={14} style={{ color: 'var(--accent-blue)' }} />
-                  <span><strong>Inventory:</strong> Automatic stock deduction across {lineItems.length} items.</span>
+                  <span><strong>{isEditMode ? 'Invoice & Khata:' : 'Inventory:'}</strong> {isEditMode ? `Updates existing invoice #${invoiceNo}, customer khata, and advance balance.` : `Automatic stock deduction across ${lineItems.length} items.`}</span>
                 </div>
                 {paymentMethod === 'Cash' && numPaid > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -3048,7 +3458,7 @@ export default function BillingView({ setActiveView, settings }) {
                   onClick={handleExecuteSaveInvoice}
                   style={{ fontWeight: 800, padding: '7px 16px' }}
                 >
-                  {isSaving ? 'Saving...' : (isUrdu ? 'محفوظ کریں' : 'Confirm & Save')}
+                  {isSaving ? 'Saving...' : (isEditMode ? (isUrdu ? 'تبدیلیاں محفوظ کریں' : 'Update & Save') : (isUrdu ? 'محفوظ کریں' : 'Confirm & Save'))}
                 </button>
               </div>
             </div>
@@ -3113,6 +3523,10 @@ export default function BillingView({ setActiveView, settings }) {
         onClose={() => {
           setIsPrintModalOpen(false);
           setCreatedInvoice(null);
+          if (justFinishedEdit) {
+            setJustFinishedEdit(false);
+            if (setActiveView) setActiveView('invoices');
+          }
         }}
         invoice={createdInvoice}
         settings={settings}

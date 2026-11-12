@@ -96,7 +96,7 @@ export default function PrintableKhataModal({
             const nl = (it.name || '').toLowerCase();
             const cl = (it.category || '').toLowerCase();
             const ul = (it.unit || '').toLowerCase();
-            const uName = ul.includes('meter') || cl.includes('tile') || nl.includes('tile') ? 'Meters' : (ul.includes('piece') || ul.includes('pcs') || cl.includes('accessori') || cl.includes('kakri') || cl.includes('kalm') ? 'Pcs' : (ul.includes('r.ft') || cl.includes('border') || cl.includes('patti') ? 'R.Ft.' : 'Sq.Ft'));
+            const uName = ul.includes('meter') || cl.includes('tile') || nl.includes('tile') ? 'Meters' : (ul.includes('piece') || ul.includes('pcs') || cl.includes('accessori') || cl.includes('tukri') || cl.includes('kalm') ? 'Pcs' : (ul.includes('r.ft') || cl.includes('border') || cl.includes('patti') ? 'R.Ft.' : 'Sq.Ft'));
             const q = it.billedQuantity || it.meters || it.runningFeet || it.pieces || it.quantity || it.totalSqFt || 0;
             return `${it.name || 'آئٹم'}${q ? ` (${q} ${uName})` : ''}`;
           }).join('، ');

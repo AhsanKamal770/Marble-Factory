@@ -78,7 +78,7 @@ function getPrintConfig({
             label: 'Unit Sold',
             labelUrdu: 'یونٹس فروخت',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'avgRate',
@@ -144,7 +144,7 @@ function getPrintConfig({
             label: 'Unit Sold',
             labelUrdu: 'یونٹس فروخت',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'cogs',
@@ -205,7 +205,7 @@ function getPrintConfig({
             label: 'Total Units Sold',
             labelUrdu: 'کل فروخت یونٹس',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'revenue',
@@ -245,7 +245,7 @@ function getPrintConfig({
             label: 'Unit Sold',
             labelUrdu: 'یونٹس فروخت',
             align: 'right',
-            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
+            render: (r) => `${Number(r.sqFt || r.quantity || 0).toLocaleString()} ${r.unit || (r.category === 'Tiles' || r.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(r.category || r.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(r.category || r.name) ? 'R.Ft' : 'Sq.Ft')))}`
           },
           {
             key: 'revenue',
@@ -1416,7 +1416,7 @@ export default function SalesReportsView() {
                         {rs(cat.revenue)}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {(cat.quantity || cat.sqFt || 0).toLocaleString()} {cat.unit || (cat.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(cat.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(cat.name) ? 'R.Ft' : 'Sq.Ft')))}
+                        {(cat.quantity || cat.sqFt || 0).toLocaleString()} {cat.unit || (cat.name === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(cat.name) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(cat.name) ? 'R.Ft' : 'Sq.Ft')))}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>{rs(cat.avgRatePerSqFt)}</td>
                       <td style={{ ...TD, fontFamily: 'monospace', color: 'var(--text-muted)' }}>{rs(cat.cogs)}</td>
@@ -1628,7 +1628,7 @@ export default function SalesReportsView() {
                       <td style={{ ...TD, fontWeight: 800, color: 'var(--text-primary)' }}>{p.name}</td>
                       <td style={{ ...TD, color: 'var(--text-muted)', fontSize: '0.8rem' }}>{p.category}</td>
                       <td style={{ ...TD, fontFamily: 'monospace' }}>
-                        {(p.quantity || p.sqFt || 0).toLocaleString()} {p.unit || (p.category === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(p.category) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(p.category) ? 'R.Ft' : 'Sq.Ft')))}
+                        {(p.quantity || p.sqFt || 0).toLocaleString()} {p.unit || (p.category === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(p.category) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(p.category) ? 'R.Ft' : 'Sq.Ft')))}
                       </td>
                       <td style={{ ...TD, fontFamily: 'monospace', fontWeight: 800, color: '#2563eb' }}>
                         {rs(p.revenue)}

@@ -303,7 +303,7 @@ export default function CustomerTimelineView({
                               const nl = (i.name || '').toLowerCase();
                               const cl = (i.category || '').toLowerCase();
                               const ul = (i.unit || '').toLowerCase();
-                              const uName = ul.includes('meter') || cl.includes('tile') || nl.includes('tile') ? 'Meters' : (ul.includes('piece') || ul.includes('pcs') || cl.includes('accessori') || cl.includes('kakri') || cl.includes('kalm') ? 'Pcs' : (ul.includes('r.ft') || cl.includes('border') || cl.includes('patti') ? 'R.Ft.' : 'Sq.Ft'));
+                              const uName = ul.includes('meter') || cl.includes('tile') || nl.includes('tile') ? 'Meters' : (ul.includes('piece') || ul.includes('pcs') || cl.includes('accessori') || cl.includes('tukri') || cl.includes('kalm') ? 'Pcs' : (ul.includes('r.ft') || cl.includes('border') || cl.includes('patti') ? 'R.Ft.' : 'Sq.Ft'));
                               const q = i.billedQuantity || i.meters || i.runningFeet || i.pieces || i.quantity || i.totalSqFt || 0;
                               return `${i.name || 'آئٹم'}${q ? ` (${q} ${uName})` : ''}`;
                             }).join(', ')}

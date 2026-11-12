@@ -385,9 +385,13 @@ export async function adjustItemStock(
 
     const realItemId = item.id;
     const cat = (item.category || '').toLowerCase();
-    const unit = (item.unit || '').toLowerCase();
-    const isPieceItem = unit === 'piece' || unit === 'pieces' || unit === 'pcs' ||
-      cat.includes('accessories') || cat === 'flower' || cat === 'panels';
+    const unit = (item.unit || '').trim().toLowerCase();
+    const isTilesItem = cat === 'tiles' || unit === 'meters' || unit === 'meter';
+    const isExplicitAreaOrLength = isTilesItem || unit === 'sq. ft.' || unit === 'sq.ft' || unit === 'sqft' || unit === 'running feet' || unit === 'r.ft.' || unit === 'r.ft';
+    const isPieceItem = !isExplicitAreaOrLength && (
+      unit === 'piece' || unit === 'pieces' || unit === 'pcs' || unit === 'bags' || unit === 'boxes' ||
+      cat.includes('accessories') || cat === 'flower' || cat === 'flowers' || cat === 'panels' || cat === 'tukri' || cat === 'kalm'
+    );
 
     const prevSqFt = Number(item.stockSqFt) || 0;
     const prevBoxes = Number(item.stockBoxes) || 0;
@@ -399,12 +403,10 @@ export async function adjustItemStock(
 
     if (isPieceItem) {
       // Keep pieces and stockSqFt in sync for piece-based items
-      if (deltaPieces !== 0 && deltaSqFt === 0) {
-        newSqFt = newPieces;
-      } else if (deltaSqFt !== 0 && deltaPieces === 0) {
-        newPieces = newSqFt;
-      }
-      newBoxes = 0; // Strictly no boxes for accessories
+      const pieceDelta = deltaPieces !== 0 ? deltaPieces : deltaSqFt;
+      newPieces = Math.max(0, prevPieces + pieceDelta);
+      newSqFt = newPieces;
+      newBoxes = unit === 'boxes' ? Math.max(0, prevBoxes + (deltaBoxes !== 0 ? deltaBoxes : pieceDelta)) : 0; // Strictly no boxes for piece accessories
     }
 
     await db.items.update(realItemId, {

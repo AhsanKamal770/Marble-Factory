@@ -145,7 +145,7 @@ function normalizeCategory(item) {
   if (cat.includes('tile accessories') || sub.includes('tile accessories') || name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond')) return 'Tile Accessories';
   if (cat.includes('marble accessories') || sub.includes('marble accessories')) return 'Marble Accessories';
   if (cat.includes('other accessories') || sub.includes('other accessories')) return 'Other Accessories';
-  if (cat.includes('kakri') || sub.includes('kakri') || name.includes('kakri')) return 'Kakri';
+  if (cat.includes('tukri') || sub.includes('tukri') || name.includes('tukri')) return 'Tukri';
   if (cat.includes('kalm') || sub.includes('kalm') || name.includes('kalm')) return 'Kalm';
   if (name.includes('sink') || name.includes('basin') || name.includes('seat') || name.includes('combod') || name.includes('commode')) return 'Other Accessories';
   if (cat.includes('tile') || sub.includes('tile') || name.includes('tile')) return 'Tiles';

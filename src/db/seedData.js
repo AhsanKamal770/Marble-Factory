@@ -84,14 +84,57 @@ export async function initializeDatabaseWithSeedData() {
     }
   }
 
-  // Auto-clean any remaining items in Dexie with Urdu names (if items exist)
+  // Auto-clean Urdu names & migrate legacy Kakri / Marble Accessories records safely
   try {
     const allItems = await db.items.toArray();
     for (const it of allItems) {
+      const updates = {};
       if (it.name && /[\u0600-\u06FF]/.test(it.name)) {
         const sanitized = it.name.replace(/\s*\([\u0600-\u06FF\s]+\)/g, '').replace(/[\u0600-\u06FF]+/g, '').trim();
         if (sanitized && sanitized !== it.name) {
-          await db.items.update(it.id, { name: sanitized });
+          updates.name = sanitized;
+        }
+      }
+      const curName = updates.name || it.name || '';
+      const curSub = it.subCategory || '';
+      const curNotes = it.notes || '';
+      const curCat = it.category || '';
+      const curCatLower = curCat.toLowerCase();
+      const combinedLower = `${curName} ${curSub} ${curCat}`.toLowerCase();
+
+      if (/kakri/i.test(curName)) {
+        updates.name = curName.replace(/kakri/gi, 'Tukri');
+      }
+      if (/kakri/i.test(curSub)) {
+        updates.subCategory = curSub.replace(/kakri/gi, 'Tukri');
+      }
+      if (/kakri/i.test(curNotes)) {
+        updates.notes = curNotes.replace(/kakri/gi, 'Tukri');
+      }
+      if (curCatLower === 'kakri') {
+        updates.category = 'Tukri';
+      } else if (curCatLower === 'marble accessories') {
+        updates.category = combinedLower.includes('kalm') ? 'Kalm' : 'Tukri';
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await db.items.update(it.id, updates);
+      }
+    }
+
+    if (db.categories) {
+      const allCats = await db.categories.toArray();
+      const hasTukri = allCats.some(c => (c.name || '').toLowerCase() === 'tukri');
+      for (const c of allCats) {
+        const cLower = (c.name || '').toLowerCase();
+        if (cLower === 'kakri') {
+          if (hasTukri) {
+            await db.categories.delete(c.id);
+          } else {
+            await db.categories.update(c.id, { name: 'Tukri', id: c.id });
+          }
+        } else if (cLower === 'marble accessories') {
+          await db.categories.delete(c.id);
         }
       }
     }
@@ -412,7 +455,7 @@ export const sampleItems = [
     name: "Standard Border Patti (3 inch)",
     category: "Border",
     subCategory: "Border 3 inch",
-    sutarThickness: 4,
+    sutarThickness: 0,
     finish: "Polished Edge",
     grade: "Grade A",
     thicknessMm: 12,
@@ -433,7 +476,7 @@ export const sampleItems = [
     name: "Standard Border Patti (6 inch)",
     category: "Border",
     subCategory: "Border 6 inch",
-    sutarThickness: 4,
+    sutarThickness: 0,
     finish: "Polished Edge",
     grade: "Grade A",
     thicknessMm: 12,
@@ -456,7 +499,7 @@ export const sampleItems = [
     name: "Black Border (2 inch)",
     category: "Kali Patti",
     subCategory: "Kali Patti 2 inch",
-    sutarThickness: 4,
+    sutarThickness: 0,
     finish: "Polished Edge",
     grade: "Pure Jet Black",
     thicknessMm: 12,
@@ -477,7 +520,7 @@ export const sampleItems = [
     name: "Black Border (3 inch)",
     category: "Kali Patti",
     subCategory: "Kali Patti 3 inch",
-    sutarThickness: 4,
+    sutarThickness: 0,
     finish: "Polished Edge",
     grade: "Pure Jet Black",
     thicknessMm: 12,
@@ -735,12 +778,12 @@ export const sampleItems = [
     notes: "Higher rate decorative Islamic panel"
   },
 
-  // ── MARBLE ACCESSORIES: KAKRI (SQ. FT.) ──
+  // ── TUKRI (SQ. FT.) ──
   {
-    code: "KK-0202",
-    name: "Ziarat White Kakri (2 × 2)",
-    category: "Marble Accessories",
-    subCategory: "Kakri 2x2",
+    code: "TK-0202",
+    name: "Ziarat White Tukri (2 × 2)",
+    category: "Tukri",
+    subCategory: "Tukri 2x2",
     sutarThickness: 4,
     finish: "Polished",
     grade: "Grade A",
@@ -753,15 +796,15 @@ export const sampleItems = [
     stockBoxes: 0,
     stockPieces: 0,
     minStockAlert: 50,
-    lotNo: "LOT-KK-0202",
+    lotNo: "LOT-TK-0202",
     location: "Accessories Bay 1",
-    notes: "Kakri 2x2 decorative cut stone in Sq. Ft."
+    notes: "Tukri 2x2 decorative cut stone in Sq. Ft."
   },
   {
-    code: "KK-0303",
-    name: "Super White Kakri (3 × 3)",
-    category: "Marble Accessories",
-    subCategory: "Kakri 3x3",
+    code: "TK-0303",
+    name: "Super White Tukri (3 × 3)",
+    category: "Tukri",
+    subCategory: "Tukri 3x3",
     sutarThickness: 4,
     finish: "Polished",
     grade: "Grade A",
@@ -774,15 +817,15 @@ export const sampleItems = [
     stockBoxes: 0,
     stockPieces: 0,
     minStockAlert: 50,
-    lotNo: "LOT-KK-0303",
+    lotNo: "LOT-TK-0303",
     location: "Accessories Bay 1",
-    notes: "Kakri 3x3 decorative cut stone in Sq. Ft."
+    notes: "Tukri 3x3 decorative cut stone in Sq. Ft."
   },
   {
-    code: "KK-0606",
-    name: "Sunny Grey Kakri (6 × 6)",
-    category: "Marble Accessories",
-    subCategory: "Kakri 6x6",
+    code: "TK-0606",
+    name: "Sunny Grey Tukri (6 × 6)",
+    category: "Tukri",
+    subCategory: "Tukri 6x6",
     sutarThickness: 4,
     finish: "Polished",
     grade: "Grade A",
@@ -795,16 +838,16 @@ export const sampleItems = [
     stockBoxes: 0,
     stockPieces: 0,
     minStockAlert: 50,
-    lotNo: "LOT-KK-0606",
+    lotNo: "LOT-TK-0606",
     location: "Accessories Bay 1",
-    notes: "Kakri 6x6 decorative cut stone in Sq. Ft."
+    notes: "Tukri 6x6 decorative cut stone in Sq. Ft."
   },
 
-  // ── MARBLE ACCESSORIES: KALM (SQ. FT.) ──
+  // ── KALM (SQ. FT.) ──
   {
     code: "KL-01IN",
     name: "Marble Kalm (1 inch)",
-    category: "Marble Accessories",
+    category: "Kalm",
     subCategory: "Kalm 1 inch",
     sutarThickness: 4,
     finish: "Polished Edge",
@@ -825,7 +868,7 @@ export const sampleItems = [
   {
     code: "KL-02IN",
     name: "Marble Kalm (2 inch)",
-    category: "Marble Accessories",
+    category: "Kalm",
     subCategory: "Kalm 2 inch",
     sutarThickness: 4,
     finish: "Polished Edge",
@@ -846,7 +889,7 @@ export const sampleItems = [
   {
     code: "KL-03IN",
     name: "Marble Kalm (3 inch)",
-    category: "Marble Accessories",
+    category: "Kalm",
     subCategory: "Kalm 3 inch",
     sutarThickness: 4,
     finish: "Polished Edge",

@@ -332,7 +332,7 @@ export async function getComprehensiveSalesReport({ horizon = 'Monthly', custom 
 
       // ── Category Aggregation
       const cat = line.category || (catalogItem ? catalogItem.category : 'General Marble');
-      const detUnit = line.unit || catalogItem?.unit || (cat === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Kakri', 'Kalm'].includes(cat) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(cat) ? 'R.Ft' : 'Sq.Ft')));
+      const detUnit = line.unit || catalogItem?.unit || (cat === 'Tiles' ? 'Meters' : (['Flowers', 'Panels', 'Tile Accessories', 'Other Accessories', 'Tukri', 'Kalm'].includes(cat) ? 'Pieces' : (['Borders', 'Kali Patti'].includes(cat) ? 'R.Ft' : 'Sq.Ft')));
       if (!categoryStats[cat]) {
         categoryStats[cat] = {
           name: cat,
