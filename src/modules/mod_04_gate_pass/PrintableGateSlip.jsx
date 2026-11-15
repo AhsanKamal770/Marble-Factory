@@ -8,6 +8,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import { db } from "../../db/index";
 import { printElement } from "../../utils/printHelper";
 import { formatPrintRow } from "../../utils/printItemFormatter";
+import { deductGatePassStock } from "./gatePassService";
 
 export default function PrintableGateSlip({
   isOpen,
@@ -160,8 +161,15 @@ export default function PrintableGateSlip({
   const handlePrint = async () => {
     setIsPrinting(true);
     try {
+      if (gatePass) {
+        try {
+          await deductGatePassStock(gatePass);
+        } catch (stockErr) {
+          console.error("Auto stock deduction error on gate pass print:", stockErr);
+        }
+      }
       await printElement(printRef, {
-        title: `GatePass_${gatePass.gatePassNo || 'Slip'}`,
+        title: `GatePass_${gatePass?.gatePassNo || 'Slip'}`,
         format: printFormat,
         isExportPDF: false,
         dir: 'ltr'
@@ -174,8 +182,15 @@ export default function PrintableGateSlip({
   const handleExportPDF = async () => {
     setIsPrinting(true);
     try {
+      if (gatePass) {
+        try {
+          await deductGatePassStock(gatePass);
+        } catch (stockErr) {
+          console.error("Auto stock deduction error on gate pass PDF export:", stockErr);
+        }
+      }
       await printElement(printRef, {
-        title: `GatePass_${gatePass.gatePassNo || 'Slip'}`,
+        title: `GatePass_${gatePass?.gatePassNo || 'Slip'}`,
         format: printFormat,
         isExportPDF: true,
         dir: 'ltr'

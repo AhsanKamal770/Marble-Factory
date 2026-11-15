@@ -508,6 +508,10 @@ export default function BillingView({ setActiveView, settings, editingInvoice = 
     seen.add('kalm');
     seen.add('accessories');
     seen.add('marble accessories');
+    seen.add('tile accessories');
+    seen.add('tiles accessories');
+    seen.add('tile accessory');
+    seen.add('tiles accessory');
 
     // Add active custom categories
     (customCategories || []).forEach(c => {
@@ -555,11 +559,29 @@ export default function BillingView({ setActiveView, settings, editingInvoice = 
       return (cat.includes('marble') || sub.includes('marble') || name.includes('marble') || cat.includes('slab') || name.includes('slab') || name.includes('sutar')) &&
         !cat.includes('tile') && !sub.includes('tile') && !name.includes('flower') && !name.includes('border') && !name.includes('patti') && !name.includes('panel') && !name.includes('mashallah') && !cat.includes('accessories') && !name.includes('tukri') && !name.includes('kalm');
     }
-    if (filter === 'Tile Accessories') {
-      return (cat.includes('tile accessories') || sub.includes('tile accessories') ||
-        ((cat.includes('tile') || cat.includes('accessories')) && (name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond')))) ||
-        name.includes('gola') || name.includes('spacer') || name.includes('filling') || name.includes('bond') ||
-        sub.includes('gola') || sub.includes('spacer') || sub.includes('filling') || sub.includes('bond');
+    if (filter === 'Tile Accessories' || filter === 'Tiles Accessories') {
+      const isCatMatch = cat.includes('tile accessorie') || cat.includes('tiles accessorie') ||
+        (cat.includes('accessor') && !cat.includes('marble') && !cat.includes('other')) ||
+        sub.includes('tile accessorie') || sub.includes('tiles accessorie') ||
+        cat.includes('bond') || cat.includes('adhesive') || cat.includes('بانڈ');
+
+      const isKeywordMatch =
+        name.includes('bond') || name.includes('adhesive') || name.includes('بانڈ') ||
+        name.includes('gola') || name.includes('گولہ') ||
+        name.includes('spacer') || name.includes('اسپیسر') ||
+        name.includes('filling') || name.includes('فلنگ') || name.includes('grout') ||
+        sub.includes('bond') || sub.includes('adhesive') || sub.includes('بانڈ') ||
+        sub.includes('gola') || sub.includes('spacer') || sub.includes('filling') || sub.includes('grout') ||
+        (it.standardSize || '').toLowerCase().includes('bond') ||
+        (it.standardSize || '').toLowerCase().includes('adhesive') ||
+        (it.standardSize || '').toLowerCase().includes('بانڈ') ||
+        (it.standardSize || '').toLowerCase().includes('gola') ||
+        (it.standardSize || '').toLowerCase().includes('spacer') ||
+        (it.standardSize || '').toLowerCase().includes('filling') ||
+        (it.code || '').toLowerCase().includes('bd') ||
+        (it.code || '').toLowerCase().includes('ta-');
+
+      return isCatMatch || isKeywordMatch;
     }
     if (filter === 'Other Accessories') {
       return cat.includes('other accessories') || sub.includes('other accessories') ||
@@ -876,7 +898,7 @@ export default function BillingView({ setActiveView, settings, editingInvoice = 
       : (it.length && it.width ? `${it.length} × ${it.width}` : '');
     const spec = (sutar || size) ? `(${sutar}${size})`.trim() : '';
     const unit = it.unit || (it.category === 'Tiles' ? 'Meters' : (['Tukri', 'Kalm'].includes(it.category) ? 'Pieces' : 'Sq. Ft.'));
-    const stockQty = Number((unit === 'Pieces' || ['Tukri', 'Kalm', 'Pieces'].includes(it.category)) && it.stockPieces !== undefined && it.stockPieces !== null ? it.stockPieces : (it.stockSqFt || 0));
+    const stockQty = Number((unit === 'Pieces' || ['Tukri', 'Kalm', 'Pieces', 'Tile Accessories', 'Other Accessories', 'Accessories'].includes(it.category)) && it.stockPieces !== undefined && it.stockPieces !== null ? it.stockPieces : (it.stockSqFt || 0));
     return `${name} ${spec} — Available: ${stockQty.toLocaleString()} ${unit}`.replace(/\s+/g, ' ');
   };
 
@@ -927,7 +949,10 @@ export default function BillingView({ setActiveView, settings, editingInvoice = 
 
     const rate = Number(selectedItem.ratePerSqFt || selectedItem.rate || 0);
     const cost = Number(selectedItem.costPerSqFt || selectedItem.purchasePrice || selectedItem.unitCost || Math.round(rate * 0.72));
-    const available = Number(selectedItem.stockSqFt !== undefined && selectedItem.stockSqFt !== null ? selectedItem.stockSqFt : (selectedItem.stockPieces || 0));
+    const isPieceBased = selectedItem.unit === 'Pieces' || selectedItem.unit === 'Piece' || selectedItem.unit === 'Bags' || selectedItem.unit === 'Boxes' || ['Tile Accessories', 'Other Accessories', 'Accessories', 'Tukri', 'Kalm', 'Flowers', 'Panels'].includes(selectedItem.category);
+    const available = isPieceBased && selectedItem.stockPieces !== undefined && selectedItem.stockPieces !== null
+      ? Number(selectedItem.stockPieces)
+      : Number(selectedItem.stockSqFt !== undefined && selectedItem.stockSqFt !== null ? selectedItem.stockSqFt : (selectedItem.stockPieces || 0));
     const unit = selectedItem.unit || (selectedItem.category === 'Tiles' ? 'Meters' : 'Sq. Ft.');
     const size = selectedItem.standardSize || (selectedItem.length && selectedItem.width ? `${selectedItem.length} × ${selectedItem.width}` : '-');
     const selMeta = `${selectedItem.category || ''} ${selectedItem.name || ''}`.toLowerCase();

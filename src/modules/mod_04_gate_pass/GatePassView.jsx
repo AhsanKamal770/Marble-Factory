@@ -1171,7 +1171,7 @@ export default function GatePassView() {
                           {gp.totalQuantity || gp.totalSqFt || 0} <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)" }}>Units</span>
                         </div>
                         <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", marginTop: "2px" }}>
-                          {(gp.manifest || []).length} items {gp.totalPieces ? `• ${gp.totalPieces} Pcs` : ''}
+                          {(gp.manifest || []).length} items
                         </div>
                       </td>
 

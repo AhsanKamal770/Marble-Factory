@@ -233,6 +233,27 @@ export const sampleItems = [
     notes: "4 Sutar 12×12 cut-to-size floor tiles"
   },
   {
+    code: "MB-4S-BD-1224",
+    name: "Badal Grey Marble 4-Sutar (12×24)",
+    category: "Marble",
+    subCategory: "4 Sutar (12×24)",
+    sutarThickness: 4,
+    finish: "Polished",
+    grade: "Grade A",
+    thicknessMm: 12,
+    standardSize: "12 × 24 in",
+    unit: "Sq. Ft.",
+    ratePerSqFt: 185,
+    costPerSqFt: 130,
+    stockSqFt: 3000,
+    stockBoxes: 0,
+    stockPieces: 1500,
+    minStockAlert: 500,
+    lotNo: "LOT-BD-1224",
+    location: "Shed 1 - Bay A",
+    notes: "4 Sutar 12×24 cut-to-size floor tiles"
+  },
+  {
     code: "MB-4S-1224",
     name: "Sunny White Marble 4-Sutar (12×24)",
     category: "Marble",
